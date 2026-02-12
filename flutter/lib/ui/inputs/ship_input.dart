@@ -50,6 +50,10 @@ class ScannerTargetIntent extends Intent {
   const ScannerTargetIntent(this.ship);
 }
 
+class ScannerTargetModeIntent extends Intent {
+  const ScannerTargetModeIntent();
+}
+
 class AwaitIntent extends Intent {
   const AwaitIntent();
 }
@@ -182,6 +186,9 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         LogicalKeySet(LogicalKeyboardKey.keyT, LogicalKeyboardKey.shift):
         const ScannerTargetIntent(true),
 
+        LogicalKeySet(LogicalKeyboardKey.minus):
+        const ScannerTargetModeIntent(),
+
         LogicalKeySet(LogicalKeyboardKey.enter):
         const AwaitIntent(),
 
@@ -269,6 +276,12 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
               }
               return null;
             }
+        ),
+        ScannerTargetModeIntent: CallbackAction<ScannerTargetModeIntent>(
+          onInvoke: (_) {
+           fm.scannerController.cycleScannerTargetMode();
+           return null;
+          }
         ),
         AwaitIntent: CallbackAction<AwaitIntent>(
             onInvoke: (_) {

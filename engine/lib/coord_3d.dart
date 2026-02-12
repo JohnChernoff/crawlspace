@@ -9,7 +9,7 @@ class Coord3D {
     final dx = (c.x - x).abs();
     final dy = (c.y - y).abs();
     final dz = (c.z - z).abs();
-    return sqrt(dx*dx + dy*dy + dz*dz);
+    return sqrt((dx*dx) + (dy*dy) + (dz*dz));
   }
 
   factory Coord3D.random(int size, Random rnd) {

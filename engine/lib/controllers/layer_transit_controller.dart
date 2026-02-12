@@ -128,7 +128,7 @@ class LayerTransitController extends FugueController {
         impLevel = ImpulseLevel(impMap,sysLoc.cell);
         sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel);
       }
-      _enterImpulse(impLevel,playShip,cell: impLevel.map.cells.entries.where((c) => c.value.hazLevel == 0).first.value as ImpulseCell);
+      _enterImpulse(impLevel,playShip,cell: impLevel.map.cells.entries.firstWhere((c) => c.value.hazLevel == 0).value as ImpulseCell);
       final ships = List.of(sysLoc.ships); //avoids ConcurrentModificationError (hopefully)
       try {
         fm.msgController.addMsg("Entering impulse...");

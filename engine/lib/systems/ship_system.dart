@@ -20,9 +20,9 @@ enum SystemSlotType {
   //weapon,pow,conv
   salazar([],[ShipSystemType.weapon,ShipSystemType.power,ShipSystemType.powerConverter]),
   //weapon,shield,pow,conv
-  bauchmann([],[ShipSystemType.weapon,ShipSystemType.shield,ShipSystemType.power,ShipSystemType.powerConverter]),
+  bauchmann([],[ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.shield,ShipSystemType.power,ShipSystemType.powerConverter]),
   //rimbaud * weapon,shield
-  nimrod([SystemSlotType.rimbaud],[ShipSystemType.weapon,ShipSystemType.shield]),
+  nimrod([SystemSlotType.rimbaud],[ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.shield]),
   //salazar * power
   lopez([SystemSlotType.salazar],[ShipSystemType.power]),
   //generic * weapon,shield

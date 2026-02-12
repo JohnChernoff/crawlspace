@@ -56,7 +56,7 @@ abstract class PathGenerator {
     if (start == goal) return;
 
     // Use greedy pathfinding to find a low-hazard route
-    final path = grid.greedyPath(start, goal, grid.size * 2, rnd, minHaz: 0);
+    final path = grid.greedyPath(start, goal, grid.size * 2, rnd);
 
     // Clear hazards along the path with a certain width
     for (final cell in path) {
@@ -192,7 +192,7 @@ abstract class AdvancedPathGenerator {
     }
 
     // Find path with some noise to avoid straight corridors
-    final path = grid.greedyPath(start, goal, grid.size * 2, rnd, minHaz: 1);
+    final path = grid.greedyPath(start, goal, grid.size * 2, rnd, ignoreHaz: true);
 
     // Clear the path
     for (final cell in path) {

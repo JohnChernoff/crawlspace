@@ -35,7 +35,7 @@ enum StockSystem {
   thermalLance(ShipSystemType.weapon,1,.1),
 
   plasmaCannon(ShipSystemType.launcher,1,.1),
-  fedTorpTube1(ShipSystemType.launcher,1,.1),
+  fedTorpLauncher(ShipSystemType.launcher,1,.1),
 
   plasmaBall(ShipSystemType.ammo,1,.1),
   fedTorp(ShipSystemType.ammo,1,.1),

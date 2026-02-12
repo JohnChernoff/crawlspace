@@ -10,17 +10,19 @@ final Map<StockSystem, WeaponData> stockLaunchers = {
         slot: const SystemSlot(SystemSlotType.bauchmann,1)),
     dmgDice: 0, dmgDiceSides: 0, dmgBase: 0,
     dmgType: DamageType.plasma,
+    dmgMult: 1,
     energyRate: 20,
     fireRate: 12,
     baseAccuracy: .8,
     clipRate: 1,
     dmgRangeConfig: const RangeConfig(idealRange: 2, minRange: 0, maxRange: 12, closeFalloff: .1, farFalloff: .1),
     accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .1),
+    ammoType: AmmoType.slug,
   ),
 
-  StockSystem.fedTorpTube1: WeaponData(
+  StockSystem.fedTorpLauncher: WeaponData(
     systemData: ShipSystemData("Fed Torp Mk 1",
-        techLvl: StockSystem.fedTorpTube1.techLvl, rarity: StockSystem.fedTorpTube1.rarity,
+        techLvl: StockSystem.fedTorpLauncher.techLvl, rarity: StockSystem.fedTorpLauncher.rarity,
         mass: 10, baseCost: 10000, baseRepairCost: 1.5, powerDraw: .5,
         slot: const SystemSlot(SystemSlotType.bauchmann,1)),
     dmgDice: 0, dmgDiceSides: 0, dmgBase: 0,

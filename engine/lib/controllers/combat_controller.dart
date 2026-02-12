@@ -1,3 +1,5 @@
+import 'package:collection/collection.dart';
+
 import '../coord_3d.dart';
 import '../impulse.dart';
 import '../ship.dart';
@@ -36,19 +38,35 @@ class CombatController extends FugueController {
         } else {
           for (final result in results) {
             if (ship.targetShip != null) {
-              if (result.dmg > 0) {
-                fm.msgController.addMsg("${ship.targetShip} takes ${result.dmg} damage");
-                if (ship.targetShip!.takeDamage(result.dmg.roundToDouble(),result.weapon.dmgType)) explode(ship.targetShip!);
+              fm.msgController.addMsg("Firing weapon: ${result.weapon.name}");
+              bool rangedMishap = false;
+              if (result.weapon.usesAmmo) {
+                if (result.ammoWarn) {
+                  fm.msgController.addMsg("No ammo for ${result.weapon.name}");
+                  rangedMishap = true;
+                } else {
+                  final path = ship.loc.level.map.greedyPath(ship.loc.cell, ship.targetShip!.loc.cell, ship.loc.level.map.size, fm.rnd, jitter: 0, ignoreHaz: true);
+                  final obstacle = path.firstWhereOrNull((c) => c.hazLevel > 0);
+                  if (obstacle != null) {
+                    fm.msgController.addMsg("${result.weapon.ammo!.name} hits ${obstacle.hazMap.entries.firstWhere((o) => o.value > 0).key}!");
+                    rangedMishap = true;
+                  }
+                }
               }
-              else {
-                fm.msgController.addMsg("${ship.name} misses!");
+              if (!rangedMishap) {
+                if (result.dmg <= 0) {
+                  fm.msgController.addMsg("${ship.name} misses!");
+                } else {
+                  fm.msgController.addMsg("${ship.targetShip} takes ${result.dmg} damage");
+                  if (ship.targetShip!.takeDamage(result.dmg.roundToDouble(),result.weapon.dmgType)) explode(ship.targetShip!);
+                }
               }
               fm.pilotController.action(ship.pilot, ActionType.combat, actionAuts: 1); //or result.minCool?
             }
           }
         }
       } else {
-        fm.msgController.addMsg("Wrong firing level");
+        fm.msgController.addMsg("Wrong firing domain");
       }
     }
   }

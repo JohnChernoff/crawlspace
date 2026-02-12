@@ -7,7 +7,6 @@ import '../inputs/menu_input.dart';
 import '../inputs/ship_input.dart';
 import 'ascii_grid.dart';
 import 'galaxy_map.dart';
-import 'galaxy_view.dart';
 import 'menu_view.dart';
 import 'message_log.dart';
 

@@ -10,11 +10,12 @@ class GridCellWidget extends StatefulWidget {
   final double size;
   final bool scanned;
   final bool targeted;
+  final bool inTargetPath;
   final Ship playShip;
   final Set<Ship> ships;
   final GridCell cell;
   final bool invert;
-  const GridCellWidget(this.cell,this.size,this.ships,this.playShip, {super.key, this.targeted = false, this.scanned = false, this.invert = false});
+  const GridCellWidget(this.cell,this.size,this.ships,this.playShip, {super.key, this.inTargetPath = false, this.targeted = false, this.scanned = false, this.invert = false});
 
   bool get sameDepth => (cell.coord.z - playShip.loc.cell.coord.z).abs() == 0;
   bool get sameDepthAndNotEmpty => sameDepth && !cell.empty(playShip.loc.level.map);
@@ -35,7 +36,6 @@ class GridCellWidgetState extends State<GridCellWidget> {
     final depthFactor = 0.6 + 0.6 * t; // min 0.6, max 1.2
     final opacity = 0.55 + 0.45 * t;  //final offsetY = (1 - t) * 24; // stronger offset for ASCII
     final distFromPlayer = widget.cell.coord.distance(widget.playShip.loc.cell.coord);
-    final zDistFromPlayer = (widget.cell.coord.z - widget.playShip.loc.cell.coord.z).abs();
     final maxDist = sqrt(3) * level.map.size; // diagonal of grid
     // Normalize 0.0 → 1.0, closer = higher value
     final proximityFactor = 1.0 - (distFromPlayer / maxDist).clamp(0, 1);
@@ -61,8 +61,7 @@ class GridCellWidgetState extends State<GridCellWidget> {
         width: widget.size,
         height: widget.size,
         decoration: BoxDecoration( //color: Colors.black,
-        border: !widget.cell.empty(level.map) && zDistFromPlayer == 0
-            ? Border.all(color: Colors.black, width: 1) : null
+        border: widget.inTargetPath ? Border.all(color: Colors.white, width: 1) : null
     ), child:  Center(
       child: Opacity(
         opacity: widget.special || widget.invert ? 1 : opacity,
@@ -80,6 +79,8 @@ class GridCellWidgetState extends State<GridCellWidget> {
     );
     List<Widget> stack = [];
     final cell = widget.cell;
+
+    //if (widget.inTargetPath) stack.add(Text("□", style: style));
 
     final hazards = cell.hazMap.entries
         .where((e) => e.value > 0 && e.key != Hazard.wake)

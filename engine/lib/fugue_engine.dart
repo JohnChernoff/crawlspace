@@ -48,7 +48,7 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1f";
+  final String version = "0.1g";
   Galaxy galaxy;
   DirectedGraph<System> systemGraph = DirectedGraph({});
   late Player player;
@@ -106,8 +106,8 @@ class FugueEngine {
     final playCell = player.system.map.rndCell(rnd);
     Ship playShip = Ship("HMS Sebastian",
         player,shipClass: ShipClass.hermes,loc: SystemLocation(player.system, playCell),
-        weapons: [Weapon.fromStock(StockSystem.fedLaser3)]
-    );
+        weapons: [Weapon.fromStock(StockSystem.fedLaser3),Weapon.fromStock(StockSystem.plasmaCannon)],
+        ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 8});
     pilotMap[player] = playShip;
     for (System sys in galaxy.systems) {
       for (int i=0;i<rnd.nextInt(3);i++) {

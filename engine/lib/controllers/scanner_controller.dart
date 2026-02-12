@@ -31,6 +31,10 @@ enum ScannerMode {
   bool get scaningStarOne => this == ScannerMode.oddities;
 }
 
+enum TargetPathMode {
+  safe,safest,direct
+}
+
 class ScannerController extends FugueController {
   ScannerController(super.fm);
 
@@ -39,6 +43,18 @@ class ScannerController extends FugueController {
   GridCell? currentScanSelection;
   int currentScannedShipIndex = 0;
   bool showAllCellsOnZPlane = true;
+  TargetPathMode targetPathMode = TargetPathMode.direct;
+
+  List<GridCell> get targetPath {
+    final tLoc = fm.playerShip?.targetShip?.loc;
+    if (tLoc != null) {
+      return switch(targetPathMode) {
+        TargetPathMode.safe => tLoc.level.map.greedyPath(fm.playerShip!.loc.cell, tLoc.cell, tLoc.level.map.size, fm.rnd, jitter: 0, minHaz: 0),
+        TargetPathMode.safest => tLoc.level.map.greedyPath(fm.playerShip!.loc.cell, tLoc.cell, tLoc.level.map.size, fm.rnd, jitter: 0, forceHaz: true),
+        TargetPathMode.direct => tLoc.level.map.greedyPath(fm.playerShip!.loc.cell, tLoc.cell, tLoc.level.map.size, fm.rnd, jitter: 0,  ignoreHaz: true),
+      };
+    } else return [];
+  }
 
   List<TextBlock> statusText() {
     List<TextBlock> blocks = []; //blocks.add(const TextBlock("Status: ",Colors.white,true));
@@ -53,6 +69,16 @@ class ScannerController extends FugueController {
       blocks.addAll(ship.status());
     }
     return blocks;
+  }
+
+  void cycleScannerTargetMode() {
+    int i = targetPathMode.index < TargetPathMode.values.length - 1
+        ? targetPathMode.index + 1
+        : 0;
+    targetPathMode = TargetPathMode.values.elementAt(i);
+    if (targetPathMode == TargetPathMode.safest) targetPathMode = TargetPathMode.direct; // skipping safest for now
+    fm.msgController.addMsg("Scanner Target Path Mode: ${targetPathMode.name}");
+    fm.update();
   }
 
   List<TextBlock> scannerText({ScannerMode? mode}) {

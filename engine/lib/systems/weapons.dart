@@ -75,7 +75,7 @@ class Weapon extends ShipSystem {
   int cooldown = 0;
 
   @override
-  ShipSystemType get type => ammoType != null ? ShipSystemType.launcher : ShipSystemType.weapon;
+  ShipSystemType get type => usesAmmo ? ShipSystemType.launcher : ShipSystemType.weapon;
 
   Weapon(super.name,{
     required this.dmgDice,
@@ -122,6 +122,7 @@ class Weapon extends ShipSystem {
       dmgType: data.dmgType,
       ego: data.ego,
       clipRate: data.clipRate,
+      ammoType: data.ammoType,
       energyRate: data.energyRate,
       fireRate: data.fireRate,
       baseAccuracy: data.baseAccuracy,
@@ -161,7 +162,10 @@ class Weapon extends ShipSystem {
   }
 
   double _calcDamage(double dist, math.Random rnd) {
-    double dmg = dmgBase + Rng.rollDice(dmgDice, dmgDiceSides, rnd) * dmgMult; //print("Gross damage: $dmg");
+    double dmg = ammo == null
+      ? dmgBase + Rng.rollDice(dmgDice, dmgDiceSides, rnd) * dmgMult
+      : (dmgBase + (rnd.nextDouble() * ammo!.avgDamage)) * dmgMult;
+    //print("Gross damage: $dmg");
     //TODO: egos, etc.
     final netDamage = dmg * dmgRangeConfig.rangeMultiplier(dist); //print("Net damage: $netDamage");
     return netDamage;

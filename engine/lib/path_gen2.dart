@@ -26,7 +26,7 @@ abstract class PathGenerator2<T extends GridCell> {
     T end = endCells.elementAt(rnd.nextInt(endCells.length));
     start.clearHazards();
     end.clearHazards();
-    final path = grid.greedyPath(start, end, grid.size * 2, rnd, minHaz: 1);
+    final path = grid.greedyPath(start, end, grid.size * 2, rnd, ignoreHaz: true);
     for (final s in path) s.clearHazards();
     return path.length;
   }

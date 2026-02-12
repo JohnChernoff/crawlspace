@@ -126,7 +126,7 @@ class Grid<T extends GridCell> {
     return [];
   }
 
-  List<T> greedyPath(T start, T goal, int maxSteps, Random rnd, {int nDist = 1, double minHaz = 0, forceHaz = false}) {
+  List<T> greedyPath(T start, T goal, int maxSteps, Random rnd, {int nDist = 1, double minHaz = 0, double jitter = .2, forceHaz = false, ignoreHaz = false}) {
     final path = <T>[];
     T current = start;
 
@@ -135,15 +135,19 @@ class Grid<T extends GridCell> {
 
       final candidates = getAdjacentCells(current, distance: nDist).where((c) => !path.contains(c)).toList();
 
-      // Sort by distance to goal (with noise!)
       candidates.sort((a, b) {
-        final da = a.coord.distance(goal.coord) + rnd.nextDouble() * 0.2;
-        final db = b.coord.distance(goal.coord) + rnd.nextDouble() * 0.2;
+        final da = a.coord.distance(goal.coord) + (rnd.nextDouble() * jitter);
+        final db = b.coord.distance(goal.coord) + (rnd.nextDouble() * jitter);
         return da.compareTo(db);
       });
 
-      var next = (candidates.contains(goal)) ? goal : candidates.firstWhereOrNull((c) => c.hazLevel <= minHaz);
-      if (next == null && forceHaz) next = candidates.firstOrNull;
+      var next;
+      if (ignoreHaz) {
+        next = candidates.contains(goal) ? goal : candidates.first;
+      } else {
+        next = (candidates.contains(goal)) ? goal : candidates.firstWhereOrNull((c) => c.hazLevel <= minHaz);
+        if (next == null && forceHaz) next = candidates.firstOrNull;
+      }
       if (next == null) break;
       path.add(next);
       current = next;

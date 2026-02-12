@@ -76,6 +76,7 @@ class Ship {
     Pilot? altPilot,
     PowerGenerator? generator,
     List<Weapon>? weapons,
+    Map<Ammo,int>? ammo,
     Shield? shield,
     Engine? impEngine,
     Engine? subEngine,
@@ -94,6 +95,7 @@ class Ship {
     impEngine ??= Engine.fromStock(StockSystem.basicFedImpulse);
     shield ??= Shield.fromStock(StockSystem.basicEnergon);
     weapons ??= [Weapon.fromStock(StockSystem.fedLaser1)];
+    ammo ??= {};
 
     addToInventory(generator);
     installSystem(generator);
@@ -114,7 +116,13 @@ class Ship {
 
     for (final w in weapons) {
       inventory.add(w);
-      installSystem(w);
+      if (installSystem(w) == null) {
+        print("Error installing: ${w.name}");
+      }
+    }
+
+    for (final a in ammo.entries) { //print("Adding ammo: ${a.key.name}");
+      addAmmo(a.key, a.value, setWeapon: true);
     }
 
     loc.level.addShip(this,loc.cell);
@@ -143,13 +151,13 @@ class Ship {
 
   InstalledSystem? installSystem(ShipSystem system, {SystemSlot? slot}) {
     if (slot == null) {
-      final slots = availableSlots(system);
+      final slots = availableSlots(system).toList();
       if (slots.isNotEmpty) {
         slots.first.system = system;
         return slots.first;
       }
     } else {
-      final slots = exactSlots(slot);
+      final slots = exactSlots(slot).toList();
       if (slots.isNotEmpty && slots.first.slot.supports(system)) {
         slots.first.system = system;
       }
@@ -233,7 +241,7 @@ class Ship {
   }
 
   Iterable<Weapon> get availableWeapons {
-    return getInstalledSystems([ShipSystemType.weapon]).where((w) => w is Weapon && w.active).map((s) => s as Weapon);
+    return getInstalledSystems([ShipSystemType.weapon,ShipSystemType.launcher]).where((w) => w is Weapon && w.active).map((s) => s as Weapon);
   }
 
   Iterable<Weapon> get readyWeapons {
@@ -317,7 +325,7 @@ class Ship {
         double dmg = 0;
         bool ammoWarn = false;
         bool ammoOK = true; int? clips;
-        if (weapon.ammo != null) {
+        if (weapon.usesAmmo) {
           ammoOK = ammoMap.containsKey(weapon.ammo) && ammoMap[weapon.ammo]! > 0;
           if (ammoOK) {
             final prevAmmo = ammoMap[weapon.ammo]!;
@@ -349,10 +357,36 @@ class Ship {
     return t;
   }
 
-  bool addAmmo(Ammo ammo, int n) {
+  bool addAmmo(Ammo ammo, int n, {setWeapon = false}) {
     if (okMass(ammo.mass * n)) return false;
     ammoMap[ammo] = ammoMap.containsKey(ammo) ? ammoMap[ammo]! + n : n;
+    //print("Setting weapon...");
+    if (setWeapon) {
+      final weapons = getInstalledSystems([ShipSystemType.launcher]);
+      if (weapons.isNotEmpty) {
+        for (final w in weapons) {
+          if (w is Weapon) {
+            if (setWeaponAmmo(w, ammo)) break;
+          }
+        }
+      } else {
+        print("No launchers");
+      }
+    }
     return true;
+  }
+
+  bool setWeaponAmmo(Weapon w, Ammo a) {
+    if (w.usesAmmo) {
+      final weapon = getAllInstalledSystems.firstWhereOrNull((e) => e == w);
+      if (weapon != null) { //print("Setting ${w.name},${w.ammoType}...");
+        if (weapon is Weapon && weapon.ammoType == a.ammoType) {
+          weapon.ammo = a; //print("${weapon.name} -> ${a.name}");
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   double get currentMass {
@@ -399,7 +433,7 @@ class Ship {
       }
     } //print("$name: Net energy per tick: ${recharge - totalBurn}");
 
-    for (final w in getInstalledSystems([ShipSystemType.weapon])) {
+    for (final w in getInstalledSystems([ShipSystemType.weapon,ShipSystemType.launcher])) {
       if (w is Weapon && w.cooldown > 0) w.cooldown--;
     }
   }

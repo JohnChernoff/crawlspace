@@ -146,7 +146,7 @@ class PilotController extends FugueController {
             }
         } else if (loc is SystemLocation) {
           ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell,ship.targetShip!.loc.cell,3,fm.rnd, forceHaz: true);
-          print(ship.currentPath);
+          //print(ship.currentPath);
         }
       }
       if (ship.currentPath.isNotEmpty) {

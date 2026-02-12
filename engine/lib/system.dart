@@ -8,7 +8,6 @@ import 'hazards.dart';
 import 'impulse.dart';
 import 'planet.dart';
 import 'rng.dart';
-import 'ship.dart';
 
 enum TrafficLvl { normal, culDeSac, hub }
 
