@@ -368,6 +368,7 @@ class Ship {
   bool okMass(double m) => availableMass < m;
 
   void move(GridCell destination, {bool toSystem = false, ImpulseLevel? impLevel }) {
+
     loc.level.removeShip(this);
 
     ShipLocation l = loc; loc = switch(l) {

@@ -1,6 +1,7 @@
 import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/grid.dart';
+import 'package:crawlspace_engine/impulse.dart';
 import 'package:crawlspace_engine/ship.dart';
 import 'package:flutter/material.dart';
 import 'ascii_gridcell_widget.dart';
@@ -84,15 +85,16 @@ List<GridCellWidget> createStack(int x, int y, double size, Grid<GridCell> map, 
   GridCell closestCell = map.cells[Coord3D(x, y, 0)]!;
   final shipCoord = playship.loc.cell.coord;
   final cellWidgets = <GridCellWidget>[];
+  final invert = map is ImpulseMap && map.cells.entries.any((e) => e.value.hazLevel > 0);
   for (int z = 0; z < map.size; z++) {
     final cell = map.cells[Coord3D(x,y,z)]!;
+    final scanned = scannedCell?.coord == cell.coord;
     if (showAllCellsOnZPlane) {
-      final color = scannedCell?.coord == cell.coord ? Colors.white : null;
-      cellWidgets.add(GridCellWidget(cell,size,playship.loc.level.shipsAt(cell), playship, color: color));
+      cellWidgets.add(GridCellWidget(cell,size,playship.loc.level.shipsAt(cell), playship, scanned: scanned, invert: invert,));
     }
     else {
       if (scannedCell?.coord == cell.coord) { //print("Adding scanned coord: ${cell.coord}");
-        cellWidgets.add(GridCellWidget(cell,size,playship.loc.level.shipsAt(scannedCell!), playship, color: Colors.white));
+        cellWidgets.add(GridCellWidget(cell,size,playship.loc.level.shipsAt(scannedCell!), playship, scanned: scanned, invert: invert,));
       } else {
         if (shipCoord == cell.coord) {
           closestCell = cell; break;
@@ -107,7 +109,7 @@ List<GridCellWidget> createStack(int x, int y, double size, Grid<GridCell> map, 
     }
   }
   if (!showAllCellsOnZPlane && (cellWidgets.isEmpty || cellWidgets.first.cell.coord.distance(shipCoord) > closestCell.coord.distance(shipCoord))) {
-    cellWidgets.add(GridCellWidget(closestCell,size,playship.loc.level.shipsAt(closestCell), playship));
+    cellWidgets.add(GridCellWidget(closestCell,size,playship.loc.level.shipsAt(closestCell), playship, invert: invert,));
     //if (cellWidgets.length > 1) print("adding closest coord: ${closestCell.coord}");
   } else {
     cellWidgets.sort((a, b) => a.cell.coord.z.compareTo(b.cell.coord.z)); // IMPORTANT: back → front

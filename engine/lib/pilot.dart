@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'controllers/pilot_controller.dart';
+import 'hazards.dart';
 import 'system.dart';
 
 enum AttribType {
@@ -31,6 +32,8 @@ class Pilot {
   int auCooldown = 0;
   ActionType? lastAct;
   bool hostile;
+  bool safeMovement = true;
+  Set<Hazard> safeList = { Hazard.nebula, Hazard.wake };
 
   bool get ready => auCooldown == 0;
   void tick() => auCooldown = max(0,auCooldown - 1);

@@ -17,7 +17,7 @@ class Coord3D {
   }
 
   bool isEdge(int size) {
-    int edge = size-1;
+    final edge = size-1;
     return x == 0 || y == 0 || z == 0 || x == edge || y == edge || z == edge;
   }
 

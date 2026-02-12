@@ -1,13 +1,14 @@
+import 'package:crawlspace_engine/path_gen2.dart';
 import '../agent.dart';
 import '../audio_service.dart';
 import '../coord_3d.dart';
 import '../grid.dart';
+import '../hazards.dart';
 import '../impulse.dart';
 import '../location.dart';
 import '../pilot.dart';
 import '../ship.dart';
 import '../system.dart';
-import 'audio_controller.dart';
 import 'fugue_controller.dart';
 import 'menu_controller.dart';
 import 'pilot_controller.dart';
@@ -24,35 +25,6 @@ class LayerTransitController extends FugueController {
       return l;
     } else {
       return null;
-    }
-  }
-
-  void planetFall() {
-    Ship? ship = fm.playerShip; if (ship == null) {
-      fm.msgController.addMsg("No ship!"); return;
-    }
-    final cell = ship.loc.cell; if (cell is! SectorCell) {
-      fm.msgController.addMsg("Wrong layer!"); return;
-    }
-    final planet = fm.player.planet = cell.planet; if (planet == null) {
-      fm.msgController.addMsg("No planet!"); return;
-    }
-
-    if (planet == fm.galaxy.homeWorld) {
-      fm.endGame("You complete your mission!",home: true);
-    } else {
-      fm.menuController.showPlanetMenu(planet);
-      fm.audioController.newTrack(newMood: MusicalMood.planet);
-      fm.pilotController.action(fm.player,ActionType.planetLand);
-      fm.msgController.addMsg("Landing on ${planet.name}");
-      fm.msgController.addMsg(planet.description);
-      if (fm.player.tradeTarget?.planet == planet) {
-        fm.msgController.addMsg(
-            "You deliver your cargo.  Reward: ${fm.player.tradeTarget
-                ?.reward}");
-        fm.player.credits += fm.player.tradeTarget?.reward ?? 0;
-        fm.player.tradeTarget = null;
-      }
     }
   }
 
@@ -141,17 +113,22 @@ class LayerTransitController extends FugueController {
           for (int y=0;y<size;y++) {
             for (int z=0;z<size;z++) {
               final c = Coord3D(x, y, z);
-              cells.putIfAbsent(c, () => ImpulseCell(c,
-                  wakeTurb: c.isEdge(size) ? 1 : 0
-              ));
+              cells.putIfAbsent(c, () => ImpulseCell(c,{
+                    Hazard.nebula : sysLoc.cell.hazMap[Hazard.nebula] ?? 0,
+                    Hazard.ion : sysLoc.cell.hazMap[Hazard.ion] ?? 0,
+                    Hazard.roid : sysLoc.cell.hazMap[Hazard.roid] ?? 0,
+                    Hazard.wake: c.isEdge(size) ? 1 : 0
+              }));
             }
           }
         }
-        impLevel = ImpulseLevel(ImpulseMap(size,cells),sysLoc.cell);
-        //TODO: hazards?
+        //impLevel = ImpulseLevel(ImpulseMap(size,cells),sysLoc.cell);
+        final impMap = ImpulseMap(size,cells);
+        if (sysLoc.cell.hazLevel > 0) PathGenerator2.generate(impMap,4,0,fm.rnd);
+        impLevel = ImpulseLevel(impMap,sysLoc.cell);
         sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel);
       }
-      _enterImpulse(impLevel,playShip);
+      _enterImpulse(impLevel,playShip,cell: impLevel.map.cells.entries.where((c) => c.value.hazLevel == 0).first.value as ImpulseCell);
       final ships = List.of(sysLoc.ships); //avoids ConcurrentModificationError (hopefully)
       try {
         fm.msgController.addMsg("Entering impulse...");
@@ -168,21 +145,24 @@ class LayerTransitController extends FugueController {
   void _enterImpulse(ImpulseLevel impLvl, Ship? ship, {ImpulseCell? cell, safeDist = 4}) {
     if (ship == null) return;
     final sysLoc = ship.loc;
-    if (sysLoc is SystemLocation) {
-      GridCell targetCell = cell ?? impLvl.map.rndCell(fm.rnd);
-      final pic = playerImpulseLoc;
-      if (ship.npc && pic != null && pic.systemLoc.cell == sysLoc.cell && targetCell.coord.distance(pic.cell.coord) < safeDist) {
-        List<GridCell> safeDistCells;
-        do {
-          safeDistCells = impLvl.map.cells.values.where((c) => c.coord.distance(pic.cell.coord) >= safeDist).toList();
+    final pic = playerImpulseLoc;
+    GridCell targetCell = cell ?? impLvl.map.rndCell(fm.rnd);
+    if (sysLoc is SystemLocation && pic != null) {
+      bool okCell(GridCell cell) => targetCell.coord.distance(pic.cell.coord) >= safeDist && cell.hazLevel == 0;
+      if (ship.npc && pic.systemLoc.cell == sysLoc.cell && !okCell(targetCell)) {
+        List<GridCell> safeDistCells = [];
+        while (safeDistCells.isEmpty && safeDist > 0) {
+          safeDistCells = impLvl.map.cells.values.where((c) => okCell(c)).toList();
           safeDist--;
-        } while (safeDistCells.isEmpty);
-        safeDistCells.shuffle(fm.rnd);
-        targetCell = safeDistCells.first;
+        };
+        if (safeDistCells.isNotEmpty) {
+          safeDistCells.shuffle(fm.rnd);
+          targetCell = safeDistCells.first;
+        }
       }
-      ship.move(targetCell, impLevel: impLvl);
-      fm.audioController.newTrack(newMood: MusicalMood.danger);
     } //fm.pilotController.action(ship.pilot, ActionType.movement);
+    ship.move(targetCell, impLevel: impLvl);
+    fm.audioController.newTrack(newMood: MusicalMood.danger);
   }
 
   void enterSublight(Ship? ship) {

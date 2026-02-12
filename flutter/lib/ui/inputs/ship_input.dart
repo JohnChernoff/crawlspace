@@ -211,16 +211,15 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ...generalActions,
         DirectionIntent: CallbackAction<DirectionIntent>(
           onInvoke: (intent) { //print("Moving ship");
-            fm.movementController.vectorShip(
-              fm.playerShip,
-              Coord3D(intent.dx, intent.dy, intent.dz),
-            );
+            if (fm.playerShip != null) {
+              fm.pilotController.move(fm.playerShip!, Coord3D(intent.dx, intent.dy, intent.dz), vector: true);
+            }
             return null;
           },
         ),
         OpenPlanetMenuIntent: CallbackAction(
           onInvoke: (_) {
-            fm.layerTransitController.planetFall();
+            fm.planetsideController.planetFall();
             return null;
           },
         ),

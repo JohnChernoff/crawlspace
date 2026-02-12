@@ -6,7 +6,7 @@ import 'main.dart';
 const Color shipColor = Colors.blue;
 const Color depthColor = Colors.blue;
 const Color scanColor = Colors.white;
-const Color scanDepthColor = Colors.cyan;
+const Color scanDepthColor = Colors.white;
 const Color farColor = Colors.black;
 const Color nearColor = Colors.yellowAccent;
 

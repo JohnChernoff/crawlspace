@@ -1,19 +1,22 @@
 import 'dart:math';
+import 'color.dart';
 import 'grid.dart';
 import 'impulse.dart';
 import 'ship.dart';
 import 'systems/weapons.dart';
 
 enum Hazard {
-  nebula("Nebula","~",[Domain.system]),
-  ion("Ion Storm","#",[Domain.system,Domain.impulse]),
-  roid("Asteroids","+",[Domain.system,Domain.impulse]),
-  gamma("Gamma Radiation","%",[Domain.impulse]),
-  wake("Relativeistic Wake Turbulence","^",[Domain.impulse]);
+  nebula("Nebula","Neb","~",[Domain.system],GameColors.purple),
+  ion("Ion Storm","Ion","#",[Domain.system,Domain.impulse],GameColors.coral),
+  roid("Asteroids","Roid","+",[Domain.system,Domain.impulse],GameColors.gray),
+  gamma("Gamma Radiation","Rad","%",[Domain.impulse],GameColors.orange),
+  wake("Relativeistic Wake Turbulence","Turb","^",[Domain.impulse],GameColors.green);
   final String name;
+  final String shortName;
   final String glyph;
   final List<Domain> domains;
-  const Hazard(this.name,this.glyph,this.domains);
+  final GameColor color;
+  const Hazard(this.name,this.shortName,this.glyph,this.domains,this.color);
 
   String? effectPerTurn(Ship ship, int turns, Random rnd) {
     final cell = ship.loc.cell;

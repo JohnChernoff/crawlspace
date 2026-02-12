@@ -1,48 +1,44 @@
+import 'dart:math';
+import 'package:crawlspace_engine/path_generator.dart';
 import 'controllers/scanner_controller.dart';
+import 'coord_3d.dart';
 import 'grid.dart';
+import 'hazards.dart';
 import 'item.dart';
-import 'ship.dart';
 import 'system.dart';
 
 class ImpulseCell extends GridCell {
-  double nebula, ionStorm, asteroids, gammaRad, wakeTurb;
   List<Item> items = [];
 
-  ImpulseCell(super.coord, {
-    this.nebula = 0,
-    this.ionStorm = 0,
-    this.asteroids = 0,
-    this.gammaRad = 0,
-    this.wakeTurb = 0,
-  });
+  ImpulseCell(super.coord, super.hazMap);
 
   @override
   bool scannable(Grid grid, ScannerMode mode) {
-    return true;
+    if (mode == ScannerMode.all) return true;
+    if (mode.scaningShips && hasShips(grid)) return true;
+    if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
+    if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
+    if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;
+    return false;
   }
 
   @override
   bool empty(Grid<GridCell> grid, {countPlayer = true}) {
     if (super.hasShips(grid,countPlayer: countPlayer)) return false;
-    if (nebula > 0 || ionStorm > 0 || asteroids > 0 || gammaRad > 0) return false;
+    if (hazLevel > 0) return false;
     if (items.isNotEmpty) return false;
     return true;
   }
 
   @override
-  String toScannerString(Grid<GridCell> grid) {
-    StringBuffer sb = StringBuffer(toString());
-    for (Ship ship in grid.shipMap[this] ?? {}) {
-      sb.write("\n$ship");
-    }
+  String toString() {
+    StringBuffer sb = StringBuffer(super.toString());
     for (Item item in items) {
       sb.write("\n${item.name}");
     }
     return sb.toString();
   }
 
-  @override
-  double get hazLevel => ionStorm + asteroids + nebula + wakeTurb + gammaRad;
 }
 
 class ImpulseLevel extends Level {
@@ -58,4 +54,20 @@ class ImpulseLevel extends Level {
 
 class ImpulseMap extends Grid<ImpulseCell> {
   ImpulseMap(super.size, super.cells);
+  factory ImpulseMap.withPath(int size, Map<Coord3D, ImpulseCell> cells, Random rnd, {
+    paths = 2, rooms = 1, roomRad = 1, pwMax = 1}) {
+    final imp = ImpulseMap(size, cells);
+    // Advanced approach: more structured paths
+    AdvancedPathGenerator.generateWithControl(
+      imp,
+      rooms,
+      paths,
+      rnd,
+      roomRadius: roomRad,
+      minPathLength: 5,
+      pathWidthMin: 1,
+      pathWidthMax: pwMax,
+    );
+    return imp;
+  }
 }

@@ -6,6 +6,7 @@ import '../foosham/throws.dart';
 import '../pilot.dart';
 import '../planet.dart';
 import '../player.dart';
+import '../ship.dart';
 import '../shop.dart';
 import '../system.dart';
 import 'fugue_controller.dart';
@@ -13,6 +14,35 @@ import 'pilot_controller.dart';
 
 class PlanetsideController extends FugueController {
   PlanetsideController(super.fm);
+
+  void planetFall() {
+    Ship? ship = fm.playerShip; if (ship == null) {
+      fm.msgController.addMsg("No ship!"); return;
+    }
+    final cell = ship.loc.cell; if (cell is! SectorCell) {
+      fm.msgController.addMsg("Wrong layer!"); return;
+    }
+    final planet = fm.player.planet = cell.planet; if (planet == null) {
+      fm.msgController.addMsg("No planet!"); return;
+    }
+
+    if (planet == fm.galaxy.homeWorld) {
+      fm.endGame("You complete your mission!",home: true);
+    } else {
+      fm.menuController.showPlanetMenu(planet);
+      fm.audioController.newTrack(newMood: MusicalMood.planet);
+      fm.pilotController.action(fm.player,ActionType.planetLand);
+      fm.msgController.addMsg("Landing on ${planet.name}");
+      fm.msgController.addMsg(planet.description);
+      if (fm.player.tradeTarget?.planet == planet) {
+        fm.msgController.addMsg(
+            "You deliver your cargo.  Reward: ${fm.player.tradeTarget
+                ?.reward}");
+        fm.player.credits += fm.player.tradeTarget?.reward ?? 0;
+        fm.player.tradeTarget = null;
+      }
+    }
+  }
 
   void launch() {
     fm.player.planet = null;

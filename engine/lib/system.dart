@@ -38,16 +38,9 @@ class SectorCell extends GridCell {
   //double nebula,ionStorm,asteroids;
   int impulseSeed;
 
-  SectorCell(super.coord, this.impulseSeed, {
+  SectorCell(super.coord, super.hazMap, this.impulseSeed, {
     this.planet,this.starClass, this.starOne = false, this.blackHole = false,
-    double nebula = 0, double ionStorm = 0, double asteroids = 0
-  }) {
-    hazMap.addAll({
-      Hazard.nebula: nebula,
-      Hazard.ion: ionStorm,
-      Hazard.roid: asteroids,
-    });
-  }
+  });
 
   @override
   bool empty(Grid grid, {countPlayer = true}) { //print("Chceking enpty");
@@ -60,23 +53,10 @@ class SectorCell extends GridCell {
   }
 
   @override
-  String toScannerString(Grid grid) {
-    StringBuffer sb = StringBuffer(toString());
-    for (Ship ship in grid.shipMap[this] ?? {}) {
-      sb.write("\n$ship");
-    }
-    return sb.toString();
-  }
-
-  @override
   String toString() {
     StringBuffer sb = StringBuffer(super.toString());
     if (starClass != null) sb.write(", $starClass");
     if (planet != null) sb.write(", ${planet!.shortString()}");
-    for (final haz in hazMap.entries) {
-      if (haz.value > 0) sb.write(", ${haz.key.name}: ${haz.value.toStringAsFixed(2)}");
-      //else sb.write("?");
-    }
     return sb.toString();
   }
 
@@ -167,11 +147,13 @@ class System extends Level {
     for (int x=0;x<size;x++) {
       for (int y=0;y<size;y++) {
         for (int z=0;z<size;z++) {
-          double neb = (nebulaFactor > rnd.nextDouble() ? 1 : 0);
-          double ion = (ionFactor > rnd.nextDouble() ? 1 : 0);
-          double roid = (ionFactor > rnd.nextDouble() ? 1 : 0);
+          Map<Hazard, double> hazMap = {
+            Hazard.nebula : (nebulaFactor > rnd.nextDouble() ? 1 : 0),
+            Hazard.ion : (ionFactor > rnd.nextDouble() ? 1 : 0),
+            Hazard.roid : (ionFactor > rnd.nextDouble() ? 1 : 0)
+          };
           final c = Coord3D(x, y, z); //if (neb == 1) print("System: $name, neb: $neb -> $c");
-          cells.putIfAbsent(c, () => SectorCell(c,rnd.nextInt(999999),nebula: neb, ionStorm: ion, asteroids: roid));
+          cells.putIfAbsent(c, () => SectorCell(c,hazMap, rnd.nextInt(999999)));
         }
       }
     }

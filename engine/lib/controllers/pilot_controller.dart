@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/coord_3d.dart';
 import '../grid.dart';
 import '../location.dart';
 import '../pilot.dart';
@@ -30,6 +31,20 @@ enum ActionType {
 
 class PilotController extends FugueController {
   PilotController(super.fm);
+
+  void move(Ship ship, Coord3D c, { required bool vector }) {
+    final goto = vector ? ship.loc.cell.coord.add(c) : c;
+    final result = fm.movementController.moveShip(ship, goto);
+    if (ship.playship) {
+      if (result == MoveResult.unsafeDestination) {
+        fm.msgController.addMsg("Can't move to $goto (unsafe)");
+      } else if (result == MoveResult.outOfEnergy) {
+        fm.msgController.addMsg("Out of energy");
+      } else if (result == MoveResult.noEngine) {
+        fm.msgController.addMsg("Error: no engine");
+      }
+    }
+  }
 
   ResultMessage uninstallSystem(ShipSystem system, Ship ship) {
     if (ship.uninstallSystem(system)) {
@@ -130,7 +145,8 @@ class PilotController extends FugueController {
               ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.rnd);
             }
         } else if (loc is SystemLocation) {
-          ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell,ship.targetShip!.loc.cell,3,fm.rnd);
+          ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell,ship.targetShip!.loc.cell,3,fm.rnd, forceHaz: true);
+          print(ship.currentPath);
         }
       }
       if (ship.currentPath.isNotEmpty) {
