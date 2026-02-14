@@ -59,7 +59,7 @@ class LayerTransitController extends FugueController {
 
   void warp(Ship ship) {
     System system = fm.galaxy.getRandomLinkableSystem(
-        fm.player.system, ignoreTraffic: true) ?? fm.galaxy.getRandomSystem(fm.player.system);
+        fm.player.system, ignoreTraffic: true) ?? fm.galaxy.getRandomSystem(excludeSystems: [fm.player.system]);
     if (newSystem(fm.player,system)) {
       //ship.warps.value--;
       fm.msgController.addMsg("*** EMERGENCY WARP ACTIVATED ***");
@@ -82,6 +82,7 @@ class LayerTransitController extends FugueController {
           final stars = system.map.cells.values.where((c) => c is SectorCell && c.starClass != null);
           ship.loc = SystemLocation(system, stars.first);
           pilot.system = system;
+          system.visit(fm);
           fm.pilotController.action(pilot,ActionType.sector);
           return true;
         }

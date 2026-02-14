@@ -22,7 +22,7 @@ class Player extends Pilot {
   int piratesVanquished = 0;
   Set<Ship> fleet = {};
 
-  Player(super.name,super.system, {super.hostile = false});
+  Player(super.name,super.system,super.rnd, {super.hostile = false});
 
   int fedLevel() => planet?.fedLvl ?? system.fedLvl;
   int techLevel() => planet?.techLvl ?? system.techLvl;

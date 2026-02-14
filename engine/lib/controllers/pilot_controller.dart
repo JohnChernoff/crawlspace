@@ -173,5 +173,16 @@ class PilotController extends FugueController {
   void headTowards(GridCell cell) {
 
   }
+
+  energyScoop() {
+    Ship? ship = fm.playerShip;
+    if (ship == null) {
+      fm.msgController.addMsg("You're not in a ship."); return;
+    }
+    double amount = 50;
+    //((ship.energyConvertor.value/(Rng.biasedRndInt(rnd,mean: 50, min: 25, max: 80))) * player.system.starClass.power).floor();
+    fm.msgController.addMsg("Scooping class ${fm.player.system.starClass.name} star... gained ${ship.recharge(amount)} energy");
+    fm.pilotController.action(fm.player,ActionType.energyScoop);
+  }
 }
 

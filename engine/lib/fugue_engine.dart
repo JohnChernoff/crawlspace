@@ -1,5 +1,11 @@
-import 'package:directed_graph/directed_graph.dart';
 import 'dart:math';
+import 'package:crawlspace_engine/stock_items/stock_engines.dart';
+import 'package:crawlspace_engine/stock_items/stock_power.dart';
+import 'package:crawlspace_engine/systems/engines.dart';
+import 'package:crawlspace_engine/systems/power.dart';
+import 'package:crawlspace_engine/systems/shields.dart';
+import 'package:crawlspace_engine/systems/ship_system.dart';
+
 import 'agent.dart';
 import 'audio_service.dart';
 import 'color.dart';
@@ -13,6 +19,7 @@ import 'controllers/pilot_controller.dart';
 import 'controllers/planetside_controller.dart';
 import 'controllers/scanner_controller.dart';
 import 'galaxy.dart';
+import 'grid.dart';
 import 'location.dart';
 import 'pilot.dart';
 import 'planet.dart';
@@ -48,13 +55,12 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1g";
+  final String version = "0.1h";
   Galaxy galaxy;
-  DirectedGraph<System> systemGraph = DirectedGraph({});
   late Player player;
   int numAgents = 3;
   List<Agent> agents = [];
-  Random rnd = Random();
+  late Random rnd,mapRng,speciesRng,aiRng,itemRng; //TODO: remove rnd
   int auTick = 0;
   String? result;
   bool gameOver = false;
@@ -76,7 +82,12 @@ class FugueEngine {
   late AudioController audioController;
   ShopOptions shopOptions = ShopOptions();
 
-  FugueEngine(this.galaxy,String playerName) {
+  FugueEngine(this.galaxy,String playerName,{seed = 0}) {
+    rnd = Random();
+    mapRng = Random(seed);
+    speciesRng = Random(seed ^ 0xC0FFEE);
+    aiRng = Random(seed ^ 0xBADC0DE);
+    itemRng = Random(seed ^ 0xC0BFEED);
     msgController = MessageController(this);
     movementController = MovementController(this);
     layerTransitController = LayerTransitController(this);
@@ -86,40 +97,51 @@ class FugueEngine {
     planetsideController = PlanetsideController(this);
     scannerController = ScannerController(this);
     audioController = AudioController(NullAudioService(),rnd);
-    for (final sys in galaxy.systems) {
-      systemGraph.addEdges(sys, sys.links);
-    }
-    List<System>? maxPath; System farthestSystem = galaxy.homeSystem;
-    for (System sys in galaxy.systems) {
-      List<System> path = systemGraph.shortestPath(sys, galaxy.homeSystem);
-      //galaxyGraph.shortestPath(sys,galaxy.homeSystem);
-      if (path.length > (maxPath?.length ?? 0)) {
-        maxPath = path; farthestSystem = sys;
-      }
-    } //print("Max Path: $maxPath");
-
-    player = Player(playerName,farthestSystem);
+    player = Player(playerName,galaxy.farthestSystem(galaxy.homeSystem),mapRng);
     player.system.visited = true;
     for (int i=0;i<numAgents;i++) {
-      agents.add(Agent("Agent ${Rng.generateName(rnd: rnd)}", galaxy.homeSystem, 25));
+      agents.add(Agent("Agent ${Rng.generateName(rnd: rnd)}", galaxy.homeSystem, mapRng, 25));
     }
     final playCell = player.system.map.rndCell(rnd);
     Ship playShip = Ship("HMS Sebastian",
-        player,shipClass: ShipClass.hermes,loc: SystemLocation(player.system, playCell),
+        player,shipClass: ShipClassType.hermes.shipclass,loc: SystemLocation(player.system, playCell),
+        generator: PowerGenerator.fromStock(StockSystem.basicNuclear),
+        impEngine: Engine.fromStock(StockSystem.basicFedImpulse),
+        subEngine: Engine.fromStock(StockSystem.basicFedSublight),
+        hyperEngine: Engine.fromStock(StockSystem.basicFedHyperdrive),
+        shield: Shield.fromStock(StockSystem.basicEnergon),
         weapons: [Weapon.fromStock(StockSystem.fedLaser3),Weapon.fromStock(StockSystem.plasmaCannon)],
         ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 8});
     pilotMap[player] = playShip;
-    for (System sys in galaxy.systems) {
-      for (int i=0;i<rnd.nextInt(3);i++) {
-        addShip(Ship("${Rng.rndColorName(rnd)}${Rng.rndAnimalName(rnd)}",
-            Pilot(Rng.generateName(rnd: rnd),sys),
-            shipClass: ShipClass.mentok,
-            loc: SystemLocation(sys, sys.map.rndCell(rnd))));
-      }
-    }
     msgController.addMsg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
     update(); //galaxy.rndTest();
   }
+
+  void populateSystem(System system) {
+    print("Populating System");
+    for (int i = 0; i < mapRng.nextInt(3); i++) {
+      final pilot = Pilot(Rng.generateName(rnd: rnd),system,mapRng,hostile: true);
+      print("Populating System, Pilot: ${pilot.faction.name}");
+      final level =  (galaxy.systems.length - galaxy.graphDistance(system, galaxy.findHomeworld(pilot.faction.species))) / galaxy.systems.length;
+      final techLvl = (level * 10).round();
+      final loc = SystemLocation(system, system.map.rndCell(mapRng));
+      final shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,mapRng);
+      final shipClassType = ShipClassType.values.firstWhere((t) => t.shipclass.type == shipType);
+      Ship ship = Ship("${Rng.rndColorName(rnd)}${Rng.rndAnimalName(rnd)}",pilot,
+          loc: loc,
+          shipClass: shipClassType.shipclass
+      );
+      ship.installRndPower(techLvl, itemRng);
+      ship.installRndEngine(Domain.impulse, techLvl, itemRng);
+      ship.installRndEngine(Domain.system, techLvl, itemRng);
+      ship.installRndEngine(Domain.hyperspace, techLvl, itemRng);
+      ship.installRndShield(techLvl, itemRng);
+      ship.installRndWeapon(techLvl, itemRng);
+      addShip(ship);
+    }
+  }
+
+
 
   void addShip(Ship ship) {
     if (ship.pilot != nobody) {
@@ -218,42 +240,6 @@ class FugueEngine {
   }
 
   int jumps(List<System>? path) => (path?.length ?? 0) - 1;
-
-  void explore(System system,int depth) { //msgController.addMsg("Exploring: ${system.name} , depth: $depth");
-    system.scout();
-    if (depth == 0) return;
-    for (System link in system.links) {
-      if (!link.scouted) explore(link,depth-1);
-    }
-  }
-
-  Planet? createTradePlanet(List<System> path,int steps) {
-    if (steps < 1 && path.last.planets.isNotEmpty) {
-      return path.last.planets.elementAt(rnd.nextInt(path.last.planets.length));
-    } else {
-      Set<System> links = path.last.links;
-      List<System> unvisitedLinks = links.where((link) => !path.contains(link)).toList();
-      if (unvisitedLinks.isNotEmpty) {
-        unvisitedLinks.shuffle();
-        path.add(unvisitedLinks.first);
-        return createTradePlanet(path, steps-1);
-      } else { //print("Trade error, steps: $steps, path: $path");
-        return null;
-      }
-    }
-  }
-
-  energyScoop() {
-    Ship? ship = playerShip;
-    if (ship == null) {
-      msgController.addMsg("You're not in a ship."); return;
-    }
-    //if (player.lastAct == ActionType.energyScoop && !pirateCheck(numPirates: 2)) return;
-    double amount = 50;
-    //((ship.energyConvertor.value/(Rng.biasedRndInt(rnd,mean: 50, min: 25, max: 80))) * player.system.starClass.power).floor();
-    msgController.addMsg("Scooping class ${player.system.starClass.name} star... gained ${ship.recharge(amount)} energy");
-    pilotController.action(player,ActionType.energyScoop);
-  }
 
   void heat(int v, {System? sighted}) {
     for (Agent agent in agents) {

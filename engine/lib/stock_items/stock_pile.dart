@@ -67,7 +67,7 @@ enum StockSystem {
 }
 
 List<Item> generateInventory(int n, List<ShipSystemType> types, int techLvl, Random rnd) {
-  final systems = StockSystem.values.where((s) => types.contains(s.type) && s.techLvl >= techLvl); //.map((e) => e.createSystem()).asList();
+  final systems = getSystemsByTech(types, techLvl); //.map((e) => e.createSystem()).asList();
   final maxItems = min(n,systems.length);
   List<Item> items = [];
   Set<StockSystem> sysList = {};
@@ -81,3 +81,8 @@ List<Item> generateInventory(int n, List<ShipSystemType> types, int techLvl, Ran
   } while (items.length < maxItems);
   return items;
 }
+
+Iterable<StockSystem> getSystemsByTech(List<ShipSystemType> types, int techLvl) =>
+    StockSystem.values.where((s) => types.contains(s.type) && s.techLvl >= techLvl);
+
+//Iterable<T> getSystemsByT<T extends ShipSystem>(int techLvl) => StockSystem.values.where((s) => types.contains(T.type) && s.techLvl >= techLvl);

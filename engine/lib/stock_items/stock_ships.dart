@@ -5,7 +5,7 @@ import '../systems/weapons.dart';
 enum HullType {
   basic([],1),
   ablative([HullResistance(DamageType.kinetic,.5)],2),
-  refractive([HullResistance(DamageType.light,.33)],2.5),
+  refractive([HullResistance(DamageType.photonic,.33)],2.5),
   crystalline([
     HullResistance(DamageType.kinetic,.66),
     HullResistance(DamageType.plasma,.25),
@@ -20,41 +20,9 @@ enum HullType {
   const HullType(this.resistances,this.baseRepairCost);
 }
 
-enum ShipClass {
-  mentok("Mentok",ShipType.scout,
-      [ShipClassSlot(SystemSlot(SystemSlotType.generic,1),8)],
-      500
-  ),
-  hermes("Hermes",ShipType.skiff,
-      [
-        ShipClassSlot(SystemSlot(SystemSlotType.generic,1),6),
-        ShipClassSlot(SystemSlot(SystemSlotType.tanaka,1),1),
-        ShipClassSlot(SystemSlot(SystemSlotType.sinclair,1),1),
-      ],
-      750),
-  orion("Orion",ShipType.cruiser,
-      [
-        ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
-        ShipClassSlot(SystemSlot(SystemSlotType.nimrod,1),3),
-        ShipClassSlot(SystemSlot(SystemSlotType.tanaka,1),1),
-      ],
-      5000),
-  balrog("Balrog",ShipType.battleship,
-      [
-        ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
-        ShipClassSlot(SystemSlot(SystemSlotType.nimrod,1),3),
-        ShipClassSlot(SystemSlot(SystemSlotType.tanaka,2),1),
-        ShipClassSlot(SystemSlot(SystemSlotType.gregoriev,1),1),
-      ],
-      7500),
-  galaxy("Galaxy",ShipType.flagship,
-      [
-        ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
-        ShipClassSlot(SystemSlot(SystemSlotType.bauchmann,4),4),
-        ShipClassSlot(SystemSlot(SystemSlotType.sinclair,2),4),
-      ],
-      10000
-  );
+//TODO: create Alien/Family class, strength based on prox. to their assigned homeworld
+
+class ShipClass {
   final String name;
   final ShipType type;
   final List<ShipClassSlot> slots;
@@ -64,4 +32,43 @@ enum ShipClass {
 
 enum ShipType { //TODO: ascii/color codes
   scout,skiff,cruiser,destroyer,interceptor,battleship,flagship,unknown
+}
+
+enum ShipClassType {
+  mentok(ShipClass("Mentok",ShipType.scout,
+      [ShipClassSlot(SystemSlot(SystemSlotType.generic,1),8)],
+      500
+  )),
+  hermes(ShipClass("Hermes",ShipType.skiff,
+      [
+        ShipClassSlot(SystemSlot(SystemSlotType.generic,1),6),
+        ShipClassSlot(SystemSlot(SystemSlotType.tanaka,1),1),
+        ShipClassSlot(SystemSlot(SystemSlotType.sinclair,1),1),
+      ],
+      750)),
+  orion(ShipClass("Orion",ShipType.cruiser,
+      [
+        ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
+        ShipClassSlot(SystemSlot(SystemSlotType.nimrod,1),3),
+        ShipClassSlot(SystemSlot(SystemSlotType.tanaka,1),1),
+      ],
+      5000)),
+  balrog(ShipClass("Balrog",ShipType.battleship,
+      [
+        ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
+        ShipClassSlot(SystemSlot(SystemSlotType.nimrod,1),3),
+        ShipClassSlot(SystemSlot(SystemSlotType.tanaka,2),1),
+        ShipClassSlot(SystemSlot(SystemSlotType.gregoriev,1),1),
+      ],
+      7500)),
+  galaxy(ShipClass("Galaxy",ShipType.flagship,
+      [
+        ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
+        ShipClassSlot(SystemSlot(SystemSlotType.bauchmann,4),4),
+        ShipClassSlot(SystemSlot(SystemSlotType.sinclair,2),4),
+      ],
+      10000
+  ));
+  final ShipClass shipclass;
+  const ShipClassType(this.shipclass);
 }

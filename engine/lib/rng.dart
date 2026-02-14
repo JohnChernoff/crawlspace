@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:crawlspace_engine/stock_items/species.dart';
+
 import 'coord_3d.dart';
 
 enum ColorName {
@@ -111,5 +113,67 @@ class Rng {
   }
 
   static T _pick<T>(List<T> list, Random rnd) => list[rnd.nextInt(list.length)];
+
+  static T weightedRandom<T>(Map<T, double> weights, Random rnd, {T? fallback}) { //print("Weighted Random: ${weights.toString()}");
+    double total = 0.0;
+    for (final w in weights.values) {
+      if (w > 0) total += w;
+    }
+
+    if (total <= 0) {
+      if (fallback != null) return fallback;
+      throw StateError("No positive weights");
+    }
+
+    double roll = rnd.nextDouble() * total;
+    double cumulative = 0.0;
+
+    for (final entry in weights.entries) {
+      final w = entry.value;
+      if (w <= 0) continue;
+      cumulative += w;
+      if (roll <= cumulative) return entry.key;
+    }
+
+    // FP fallback
+    return fallback ?? weights.keys.first;
+  }
 }
+
+class WeightedPicker<T> {
+  final List<T> values;
+  final List<double> cumulative;
+  final double total;
+
+  WeightedPicker._(this.values, this.cumulative, this.total);
+
+  factory WeightedPicker(Map<T,double> weights) {
+    final values = <T>[];
+    final cumulative = <double>[];
+    double sum = 0;
+
+    for (final e in weights.entries) {
+      if (e.value <= 0) continue;
+      sum += e.value;
+      values.add(e.key);
+      cumulative.add(sum);
+    }
+
+    return WeightedPicker._(values, cumulative, sum);
+  }
+
+  T pick(Random rnd) {
+    final roll = rnd.nextDouble() * total;
+
+    // Binary search
+    int low = 0, high = cumulative.length - 1;
+    while (low < high) {
+      final mid = (low + high) >> 1;
+      if (roll <= cumulative[mid]) high = mid;
+      else low = mid + 1;
+    }
+    return values[low];
+  }
+}
+
 

@@ -56,20 +56,21 @@ class SystemSlot {
   final int generation; //mark
   const SystemSlot(this.type,this.generation);
 
-  bool supports(ShipSystem s, {ignoreGenerations = false}) {
-    if (s.slot.type == type) {
-      if (ignoreGenerations || (generation >= s.slot.generation)) {
-        return type.supportedTypes.contains(s.type);
+  bool supports(SystemSlot slot, ShipSystemType type, {ignoreGenerations = false}) {
+    if (slot.type == type) {
+      if (ignoreGenerations || (generation >= slot.generation)) {
+        return this.type.supportedTypes.contains(type);
       }
     }
     else { // Inherited compatibility: generation doesn't matter
-      final slot = type.supports(s.slot.type);
-      if (slot != null) {
-        return slot.supportedTypes.contains(s.type);
+      final s = this.type.supports(slot.type);
+      if (s != null) {
+        return s.supportedTypes.contains(type);
       }
     }
     return false;
   }
+  bool supportsSystem(ShipSystem s, {ignoreGenerations = false}) => supports(s.slot,s.type);
 
   @override
   String toString() {

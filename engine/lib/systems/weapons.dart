@@ -10,11 +10,19 @@ import '../stock_items/stock_weapons.dart';
 import 'ship_system.dart';
 
 enum DamageType {
-  light, plasma, fire, kinetic, sonic, gravitron, neutrino, etherial
+  kinetic, //*** earth/material
+  photonic, //shield centric damage *** elemental
+  plasma, //great against shields, fire against hull *** elec
+  fire, //damage over time to hull *** poison
+  sonic, //effective against reduced (50% or less) shields and hull *** vorpal
+  ion, //some % of the damage dealt affects ship systems directly *** vampiric
+  gravitron, //pulls ship towards/away when damage is dealt
+  neutrino, //ignores shields
+  etherial, //random damage
 }
 
 enum WeaponEgo {
-  none, antiFed, hyperFire, shieldBoost, scrambler, detector, tunneller, disruptor, efficient, extended
+  none, corrosive, antiFed, hyperFire, shieldBoost, scrambler, detector, tunneller, disruptor, efficient, extended
 }
 
 //enum RangeAttenuation {  linear,exponential }
@@ -216,11 +224,11 @@ enum AmmoType {
 }
 
 enum AmmoDamageType {
-  plasma,fire,nuclear,antimatter
+  kinetic,plasma,fire,nuclear,antimatter
 }
 
 enum AmmoEgo {
-  none, heatseeking,lightweight,fedbane
+  none,heatseeking,lightweight,fedbane
 }
 
 class Ammo extends Item {

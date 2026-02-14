@@ -1,5 +1,7 @@
 import 'dart:collection';
 import 'dart:math';
+import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/stock_items/species.dart';
 import 'color.dart';
 import 'controllers/scanner_controller.dart';
 import 'coord_3d.dart';
@@ -72,7 +74,6 @@ class SectorCell extends GridCell {
     if (mode.scaningBlackhole && blackHole) return true;
     return false;
   }
-
 }
 
 class System extends Level {
@@ -88,10 +89,12 @@ class System extends Level {
   bool visited = false;
   bool connected;
   StellarClass starClass;
+  Species? homeworld;
   Map<SectorCell,ImpulseLevel> impMapCache = {};
+  Map<Species,double>? population;
 
   System(this.name,this.starClass,this.fedLvl,this.techLvl,this.planets,Random rnd,
-      {this.blackHole = false,this.starOne = false, this.traffic = TrafficLvl.normal, this.connected = false,
+      {this.blackHole = false,this.starOne = false, this.traffic = TrafficLvl.normal, this.connected = false, this.homeworld,
       nebFact = .02, ionFact = .01, bhFact = .1, mapSize = 8}) {
     map = createSystemMap(mapSize,nebFact,ionFact,bhFact,rnd);
   }
@@ -112,6 +115,13 @@ class System extends Level {
           link.setConnection(true);
         }
       }
+    }
+  }
+
+  void visit(FugueEngine fm) {
+    if (!visited) {
+      visited = true;
+      fm.populateSystem(this);
     }
   }
 
@@ -189,6 +199,15 @@ class System extends Level {
     }
 
     return map;
+  }
+
+  void explore(int depth, {System? sys}) { //msgController.addMsg("Exploring: ${system.name} , depth: $depth");
+    final system = sys ?? this;
+    system.scout();
+    if (depth == 0) return;
+    for (System link in system.links) {
+      if (!link.scouted) explore(depth-1,sys: system);
+    }
   }
 
   String shortString({bool showVisit = false}) {

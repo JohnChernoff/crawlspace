@@ -1,5 +1,12 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/rng.dart';
+import 'package:crawlspace_engine/stock_items/stock_ammo.dart';
+import 'package:crawlspace_engine/stock_items/stock_engines.dart';
+import 'package:crawlspace_engine/stock_items/stock_lauchers.dart';
+import 'package:crawlspace_engine/stock_items/stock_power.dart';
+import 'package:crawlspace_engine/stock_items/stock_shields.dart';
+import 'package:crawlspace_engine/stock_items/stock_weapons.dart';
 
 import 'fugue_engine.dart';
 import 'color.dart';
@@ -89,40 +96,47 @@ class Ship {
         systemMap.add(InstalledSystem(classSlot.slot,null));
       }
     }
-    generator ??= PowerGenerator.fromStock(StockSystem.basicNuclear);
-    hyperEngine ??= Engine.fromStock(StockSystem.basicFedHyperdrive);
-    subEngine ??= Engine.fromStock(StockSystem.basicFedSublight);
-    impEngine ??= Engine.fromStock(StockSystem.basicFedImpulse);
-    shield ??= Shield.fromStock(StockSystem.basicEnergon);
-    weapons ??= [Weapon.fromStock(StockSystem.fedLaser1)];
-    ammo ??= {};
 
-    addToInventory(generator);
-    installSystem(generator);
+    if (generator != null) {
+      addToInventory(generator);
+      installSystem(generator);
+    }
 
-    addToInventory(hyperEngine);
-    installSystem(hyperEngine);
-    hyperEngine.active = false;
+    if (hyperEngine != null) {
+      addToInventory(hyperEngine);
+      installSystem(hyperEngine);
+      hyperEngine.active = false;
+    }
 
-    addToInventory(subEngine);
-    installSystem(subEngine);
+    if (subEngine != null) {
+      addToInventory(subEngine);
+      installSystem(subEngine);
+    }
 
-    addToInventory(impEngine);
-    installSystem(impEngine);
-    impEngine.active = false;
+    if (impEngine != null) {
+      addToInventory(impEngine);
+      installSystem(impEngine);
+      impEngine.active = false;
+    }
 
-    addToInventory(shield);
-    installSystem(shield);
+    if (shield != null) {
+      addToInventory(shield);
+      installSystem(shield);
+    }
 
-    for (final w in weapons) {
-      inventory.add(w);
-      if (installSystem(w) == null) {
-        print("Error installing: ${w.name}");
+    if (weapons != null) {
+      for (final w in weapons) {
+        inventory.add(w);
+        if (installSystem(w) == null) {
+          print("Error installing: ${w.name}");
+        }
       }
     }
 
-    for (final a in ammo.entries) { //print("Adding ammo: ${a.key.name}");
-      addAmmo(a.key, a.value, setWeapon: true);
+    if (ammo != null) {
+      for (final a in ammo.entries) { //print("Adding ammo: ${a.key.name}");
+        addAmmo(a.key, a.value, setWeapon: true);
+      }
     }
 
     loc.level.addShip(this,loc.cell);
@@ -146,19 +160,20 @@ class Ship {
   Iterable<ShipSystem> get uninstalledSystems => inventory.whereType<ShipSystem>().where((s) => !isInstalled(s));
 
   Iterable<InstalledSystem> get vacantSlots => systemMap.where((sys) => sys.system == null);
-  Iterable<InstalledSystem> availableSlots(ShipSystem s) => vacantSlots.where((i) => i.slot.supports(s));
+  Iterable<InstalledSystem> availableSlots(SystemSlot slot, ShipSystemType type) => vacantSlots.where((i) => i.slot.supports(slot,type));
+  Iterable<InstalledSystem> availableSlotsbySystem(ShipSystem s) => vacantSlots.where((i) => i.slot.supportsSystem(s));
   Iterable<InstalledSystem> exactSlots(SystemSlot s) => vacantSlots.where((as) => as.slot == s).toList();
 
   InstalledSystem? installSystem(ShipSystem system, {SystemSlot? slot}) {
     if (slot == null) {
-      final slots = availableSlots(system).toList();
+      final slots = availableSlotsbySystem(system).toList();
       if (slots.isNotEmpty) {
         slots.first.system = system;
         return slots.first;
       }
     } else {
       final slots = exactSlots(slot).toList();
-      if (slots.isNotEmpty && slots.first.slot.supports(system)) {
+      if (slots.isNotEmpty && slots.first.slot.supportsSystem(system)) {
         slots.first.system = system;
       }
       return slots.first;
@@ -171,6 +186,74 @@ class Ship {
     if (s != null) {
       s.system = null; return true;
     } return false;
+  }
+
+  //TODO: sort by techLvl
+  bool installRndEngine(Domain domain, int techLvl, Random rnd, {maxAttempts = 100}) {
+    int attempts = 0;
+    while (getEngine(domain) == null && attempts++ < maxAttempts) {
+      final engineType = Rng.weightedRandom(pilot.faction.engineWeights.normalized,rnd);
+      final engineList = stockEngines.entries.where((v) => v.value.engineType == engineType &&
+          v.key.techLvl >= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty &&
+          v.value.domain == domain);
+      if (engineList.isNotEmpty) {
+        installSystem(Engine.fromStock(engineList.elementAt(rnd.nextInt(engineList.length)).key));
+      }
+    }
+    return getEngine(domain) != null ? true : techLvl > 0 ? installRndEngine(domain, 0, rnd) : false;
+  }
+
+  bool installRndPower(int techLvl, Random rnd, {maxAttempts = 100}) {
+    int attempts = 0;
+    while (getInstalledSystems([ShipSystemType.power]).isEmpty && attempts++ < 100) {
+      final powerType = Rng.weightedRandom(pilot.faction.powerWeights.normalized,rnd);
+      final powerList = stockPPs.entries.where((v) => v.value.powerType == powerType &&
+          v.key.techLvl >= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
+      if (powerList.isNotEmpty) installSystem(PowerGenerator.fromStock(powerList.elementAt(rnd.nextInt(powerList.length)).key));
+    }
+    return getInstalledSystems([ShipSystemType.power]).isNotEmpty ? true : techLvl > 0 ? installRndPower(0, rnd) : false;
+  }
+
+  bool installRndShield(int techLvl, Random rnd, {maxAttempts = 100}) {
+    int attempts = 0;
+    while (getInstalledSystems([ShipSystemType.shield]).isEmpty && attempts++ < 100) {
+      final shieldType = Rng.weightedRandom(pilot.faction.shieldWeights.normalized,rnd);
+      final shieldList = stockShields.entries.where((v) => v.value.shieldType == shieldType &&
+          v.key.techLvl >= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
+      if (shieldList.isNotEmpty) installSystem(Shield.fromStock(shieldList.elementAt(rnd.nextInt(shieldList.length)).key));
+    }
+    return getInstalledSystems([ShipSystemType.shield]).isNotEmpty ? true : techLvl > 0 ? installRndShield(0, rnd) : false;
+  }
+
+  bool installRndWeapon(int techLvl, Random rnd, {maxAttempts = 100}) {
+    int attempts = 0;
+    while (getInstalledSystems([ShipSystemType.weapon]).isEmpty && attempts++ < 100) {
+      final dmgType = Rng.weightedRandom(pilot.faction.damageWeights.normalized,rnd);
+      final weaponList = stockWeapons.entries.where((v) => v.value.dmgType == dmgType &&
+          v.key.techLvl >= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
+      if (weaponList.isNotEmpty) installSystem(Weapon.fromStock(weaponList.elementAt(rnd.nextInt(weaponList.length)).key));
+    }
+    return getInstalledSystems([ShipSystemType.weapon]).isNotEmpty;
+  }
+
+  bool installRndLauncher(int techLvl, Random rnd, {maxAttempts = 100}) {
+    int attempts = 0;
+    while (getInstalledSystems([ShipSystemType.launcher]).isEmpty && attempts++ < 100) {
+      final dmgType = Rng.weightedRandom(pilot.faction.damageWeights.normalized,rnd);
+      final launchList = stockLaunchers.entries.where((v) => v.value.dmgType == dmgType &&
+          v.key.techLvl >= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
+      if (launchList.isNotEmpty) {
+        final s = installSystem(Weapon.fromStock(launchList.elementAt(rnd.nextInt(launchList.length)).key));
+        if (s != null) {
+          final ammoDmgType = Rng.weightedRandom(pilot.faction.ammoDamageWeights.normalized,rnd);
+          final ammoList = stockAmmo.entries.where((v) => v.value.damageType == ammoDmgType && v.key.techLvl >= techLvl);
+          if (ammoList.isNotEmpty) {
+            addAmmo(ammoList.elementAt(rnd.nextInt(ammoList.length)).value, 99,setWeapon: true);
+          }
+        }
+      }
+    }
+    return getInstalledSystems([ShipSystemType.launcher]).isNotEmpty;
   }
 
   double get scrapVal => scrapHeap.fold<double>(0.0, (sum, i) => sum + i.baseCost);
@@ -277,6 +360,11 @@ class Ship {
     return e;
   }
 
+  Engine? getEngine(Domain domain) => switch(domain) {
+    Domain.hyperspace => hyperEngine,
+    Domain.system => subEngine,
+    Domain.impulse => impEngine,
+  };
   Engine? get impEngine => getInstalledSystems([ShipSystemType.engine]).whereType<Engine>().where((w) => w.domain == Domain.impulse).firstOrNull;
   Engine? get subEngine => getInstalledSystems([ShipSystemType.engine]).whereType<Engine>().where((w) => w.domain == Domain.system).firstOrNull;
   Engine? get hyperEngine => getInstalledSystems([ShipSystemType.engine]).whereType<Engine>().where((w) => w.domain == Domain.hyperspace).firstOrNull;

@@ -12,19 +12,19 @@ class Agent extends Pilot {
   int speed = 1;
   int tracked = 0;
 
-  Agent(super.name,super.system,this.clueLvl);
+  Agent(super.name,super.system,super.rnd,this.clueLvl);
 
   System pickLink(FugueEngine game) {
     if (sighted != null) {
       if (system == sighted) {
         sighted = null;
       } else {
-        List<System> path = game.systemGraph.shortestPath(system,sighted!);
+        List<System> path = game.galaxy.systemGraph.shortestPath(system,sighted!);
         if (path.length > 1) return path.elementAt(1);
       }
     }
     if (game.rnd.nextInt(100) < clueLvl) {
-      List<System> path = game.systemGraph.shortestPath(system,game.player.system);
+      List<System> path = game.galaxy.systemGraph.shortestPath(system,game.player.system);
       if (path.length > 1) return path.elementAt(1);
     }
     return system.links.elementAt(game.rnd.nextInt(system.links.length));

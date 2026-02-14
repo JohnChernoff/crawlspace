@@ -192,7 +192,7 @@ class MenuController extends FugueController {
   }
 
   List<MenuEntry> createInstallSlotMenu(Ship ship, ShipSystem system) {
-    final slots = ship.availableSlots(system).map((s) => s.slot).toList();
+    final slots = ship.availableSlotsbySystem(system).map((s) => s.slot).toList();
     return <MenuEntry> [
       for (int i = 0; i < slots.length; i++)
         ValueEntry(letter(i),"${slots[i]}", slots[i],

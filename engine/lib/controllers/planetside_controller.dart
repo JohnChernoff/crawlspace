@@ -92,7 +92,7 @@ class PlanetsideController extends FugueController {
       Planet? planet; int tries = 0;
       while (planet == null && tries++ < 100) {
         path = [fm.player.system];
-        planet = fm.createTradePlanet(path, steps);
+        planet = createTradePlanet(path, steps);
       }
       if (planet != null) {
         fm.player.tradeTarget = TradeTarget(planet, fm.player.planet, reward);
@@ -109,7 +109,7 @@ class PlanetsideController extends FugueController {
     for (Agent agent in fm.agents) {
       if (agent.tracked == 0) {
         agent.track((fm.player.techLevel() / 8).floor() * (fm.techCheck(1) ? 2 : 1));
-        List<System> path = fm.systemGraph.shortestPath(fm.player.system, agent.system);
+        List<System> path = fm.galaxy.systemGraph.shortestPath(fm.player.system, agent.system);
         fm.msgController.addMsg("${agent.name} is ${fm.jumps(path)} jumps away (tracking for ${agent.tracked} jumps)");
       }
     }
@@ -117,7 +117,7 @@ class PlanetsideController extends FugueController {
   }
 
   void hack() { //find starOne
-    List<System> path = fm.systemGraph.shortestPath(fm.player.system, fm.starOne());
+    List<System> path = fm.galaxy.systemGraph.shortestPath(fm.player.system, fm.starOne());
     fm.msgController.addMsg("Star One is ${fm.jumps(path)} jumps away");
     fm.msgController.addMsg("Next step: ${fm.nextSystemInPath(path)?.name}");
     fm.pilotController.action(fm.player,ActionType.planet,mod: 1.5);
@@ -126,7 +126,7 @@ class PlanetsideController extends FugueController {
   void scout() {
     int depth = (fm.player.techLevel() / 16).ceil();
     fm.msgController.addMsg("Scouting nearby systems (depth: $depth)...");
-    fm.explore(fm.player.system, depth);
+    fm.player.system.explore(depth);
     fm.pilotController.action(fm.player,ActionType.planet);
   }
 
@@ -159,6 +159,22 @@ class PlanetsideController extends FugueController {
     if (pilot != null) {
       final fooShamGame = FooShamGame(ThrowList.rndList(fm.rnd),fm.rnd, difficulty: FooShamDifficulty.medium);
       fm.menuController.showMenu(fm.menuController.createThrowMenu(pilot, fooShamGame));
+    }
+  }
+
+  Planet? createTradePlanet(List<System> path,int steps) {
+    if (steps < 1 && path.last.planets.isNotEmpty) {
+      return path.last.planets.elementAt(fm.mapRng.nextInt(path.last.planets.length));
+    } else {
+      Set<System> links = path.last.links;
+      List<System> unvisitedLinks = links.where((link) => !path.contains(link)).toList();
+      if (unvisitedLinks.isNotEmpty) {
+        unvisitedLinks.shuffle();
+        path.add(unvisitedLinks.first);
+        return createTradePlanet(path, steps-1);
+      } else { //print("Trade error, steps: $steps, path: $path");
+        return null;
+      }
     }
   }
 
