@@ -129,14 +129,17 @@ class FugueEngine {
     for (int i = 0; i < numShips; i++) {
       final pilot = Pilot(Rng.generateName(rnd: rnd),system,mapRng,hostile: true);
       print("Populating System, Pilot: ${pilot.faction.name}");
-      final level =  (galaxy.systems.length - galaxy.graphDistance(system, galaxy.findHomeworld(pilot.faction.species))) / galaxy.systems.length;
+      final level = 1 - (galaxy.graphDistance(system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps);
       final techLvl = (level * 10).round();
-      final loc = SystemLocation(system, system.map.rndCell(mapRng));
-      final shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,mapRng);
-      print("Ship Type: $shipType");
+      print("Tech lvl: $techLvl, $level");
+      ShipType shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,mapRng);
+      while (level < shipType.dangerLvl) {
+        shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,mapRng);
+      }
       final shipClassType = ShipClassType.values.firstWhereOrNull((t) => t.shipclass.type == shipType) ?? ShipClassType.mentok;
+      print("Ship Type: $shipType, $shipClassType");
       Ship ship = Ship("${Rng.rndColorName(rnd)}${Rng.rndAnimalName(rnd)}",pilot,
-          loc: loc,
+          loc: SystemLocation(system, system.map.rndCell(mapRng)),
           shipClass: shipClassType.shipclass
       );
       ship.installRndPower(techLvl, itemRng);
@@ -148,8 +151,6 @@ class FugueEngine {
       addShip(ship);
     }
   }
-
-
 
   void addShip(Ship ship) {
     if (ship.pilot != nobody) {

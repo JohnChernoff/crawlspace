@@ -31,7 +31,7 @@ class ShipClass {
 }
 
 enum ShipType { //TODO: shipshapes
-  scout(.1),skiff(.3),cruiser(.5),destroyer(.66),interceptor(.75),battleship(.9),flagship(1),unknown(0);
+  scout(0),skiff(.3),cruiser(.5),destroyer(.66),interceptor(.75),battleship(.9),flagship(1);
   final double dangerLvl;
   const ShipType(this.dangerLvl);
 }

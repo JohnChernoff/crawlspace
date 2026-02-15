@@ -21,6 +21,7 @@ class Galaxy {
   NameGenerator nameGenerator;
   Planet homeWorld = Planet("Xaxle", 100, 100, DistrictLvl.heavy, DistrictLvl.heavy, DistrictLvl.heavy, PlanetAge.established, EnvType.earthlike, Goods.soylentPuce);
   late System homeSystem;
+  late int maxJumps;
 
   Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
     homeSystem = System("Mentos", StellarClass.K, 100, 100, [homeWorld], rnd, connected: true, homeworld: StockSpecies.humanoid.species);
@@ -31,6 +32,7 @@ class Galaxy {
     }
     getRandomLinkableSystem(homeSystem)?.starOne = true;
     getRandomLinkableSystem(homeSystem)?.blackHole = true;
+    maxJumps = graphDistance(farthestSystem(homeSystem), homeSystem);
   }
 
   void createMap() {
