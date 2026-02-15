@@ -104,11 +104,15 @@ class GridCellWidgetState extends State<GridCellWidget> {
       if (cell.blackHole) stack.add(Text("-", style: style));
     }
 
-    if (widget.ships.isNotEmpty) {
-      if (widget.ships.first.playship) {
-        stack.add(Text("@", style: style.copyWith(color: shipColor)));
+    for (final ship in widget.ships) {
+      if (ship.npc) {
+        final l = widget.playShip.lastKnown[ship];
+        //print("${ship.name} last known loc: $l");
+        if (l != null) { //TODO: draw last known elsewhere if not here
+          stack.add(Text(ship.pilot.faction.species.glyph, style: style.copyWith(color: Color(ship.pilot.faction.color.argb))));
+        }
       } else {
-        stack.add(Text("h", style: style));
+        stack.add(Text("@", style: style.copyWith(color: shipColor)));
       }
     }
 

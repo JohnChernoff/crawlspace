@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/stock_items/stock_engines.dart';
 import 'package:crawlspace_engine/stock_items/stock_power.dart';
 import 'package:crawlspace_engine/systems/engines.dart';
@@ -67,9 +68,9 @@ class FugueEngine {
   bool gameOver = false;
   bool victory = false;
   Map<Pilot,Ship> pilotMap = {};
-  Set<Pilot> pilots = {};
+  Set<Pilot> npcPilots = {};
   Ship? get playerShip => pilotMap[player];
-  Iterable<Pilot> get activePilots => pilots.where((p) => pilotMap[p] != null);
+  Iterable<Pilot> get activePilots => npcPilots.where((p) => pilotMap[p] != null);
   Iterable<Pilot> get availablePilots => activePilots.where((p) => p.auCooldown == 0);
 
   late MessageController msgController;
@@ -118,9 +119,14 @@ class FugueEngine {
     update(); //galaxy.rndTest();
   }
 
-  void populateSystem(System system) {
+  void populateSystem(System system, {int? numShips}) {
     print("Populating System");
-    for (int i = 0; i < mapRng.nextInt(3); i++) {
+    system.population = {
+      for (final sp in galaxy.allSpecies)
+        sp: 100 / galaxy.graphDistance(system, galaxy.findHomeworld(sp)),
+    };
+    numShips ??= rnd.nextInt(3);
+    for (int i = 0; i < numShips; i++) {
       final pilot = Pilot(Rng.generateName(rnd: rnd),system,mapRng,hostile: true);
       print("Populating System, Pilot: ${pilot.faction.name}");
       final level =  (galaxy.systems.length - galaxy.graphDistance(system, galaxy.findHomeworld(pilot.faction.species))) / galaxy.systems.length;
@@ -148,7 +154,7 @@ class FugueEngine {
   void addShip(Ship ship) {
     if (ship.pilot != nobody) {
       pilotMap[ship.pilot] = ship;
-      pilots.add(ship.pilot);
+      npcPilots.add(ship.pilot);
     }
   }
 
@@ -273,8 +279,11 @@ class FugueEngine {
     }
   }
 
-  void glog(String msg) {
+  static void glog(String msg, {bool error = false}) {
     print(msg);
+    assert(() {
+      if (error) throw AssertionError(msg);
+      return true;
+    }());
   }
-
 }

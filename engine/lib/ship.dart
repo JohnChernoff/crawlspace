@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/rng.dart';
 import 'package:crawlspace_engine/stock_items/stock_ammo.dart';
 import 'package:crawlspace_engine/stock_items/stock_engines.dart';
@@ -76,6 +77,7 @@ class Ship {
   Coord3D? interceptCoord;
   List<GridCell> currentPath = [];
   List<Scrap> scrapHeap = [];
+  Map<Ship,ShipLocation> lastKnown = {};
 
   Ship(this.name, this.owner, {
     required this.shipClass,
@@ -148,6 +150,16 @@ class Ship {
     return true;
   }
 
+  ShipLocation? detect(Ship ship) {
+    if (canScan(ship)) {
+      lastKnown[ship] = ship.loc;
+      return ship.loc;
+    } else {
+      return lastKnown[ship];
+    }
+  }
+  bool canScan(Ship ship) => !(loc.cell.hasHaz(Hazard.nebula) || ship.loc.cell.hasHaz(Hazard.nebula));
+
   Iterable<ShipSystem> get getAllSystems {
     return systemMap.where((s) => (s.system != null)).map((i) => i.system!);
   }
@@ -165,20 +177,22 @@ class Ship {
   Iterable<InstalledSystem> exactSlots(SystemSlot s) => vacantSlots.where((as) => as.slot == s).toList();
 
   InstalledSystem? installSystem(ShipSystem system, {SystemSlot? slot}) {
+    InstalledSystem? sys;
     if (slot == null) {
       final slots = availableSlotsbySystem(system).toList();
       if (slots.isNotEmpty) {
         slots.first.system = system;
-        return slots.first;
+        sys = slots.first;
       }
     } else {
       final slots = exactSlots(slot).toList();
       if (slots.isNotEmpty && slots.first.slot.supportsSystem(system)) {
         slots.first.system = system;
       }
-      return slots.first;
+      sys = slots.first;
     }
-    return null;
+    if (sys != null) FugueEngine.glog("Installed: ${sys.system}");
+    return sys;
   }
 
   bool uninstallSystem(ShipSystem system) {
@@ -201,42 +215,40 @@ class Ship {
         installSystem(Engine.fromStock(engineList.elementAt(rnd.nextInt(engineList.length)).key));
       }
     }
-    final engine = getEngine(domain);
-    if (engine != null) {
-      print("Installed: $engine"); return true;
-    } else if (techLvl > 0) {
-      return installRndEngine(domain, 0, rnd);
-    } else return false;
+    return getEngine(domain) != null ? true : techLvl > 0 ? installRndPower(0, rnd) : false;
   }
 
   bool installRndPower(int techLvl, Random rnd, {maxAttempts = 10}) {
+    print("Attempting to install power generator <= techlvl $techLvl...");
     int attempts = 0;
     while (getInstalledSystems([ShipSystemType.power]).isEmpty && attempts++ < 100) {
       final powerType = Rng.weightedRandom(pilot.faction.powerWeights.normalized,rnd);
       final powerList = stockPPs.entries.where((v) => v.value.powerType == powerType &&
-          v.key.techLvl >= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
+          v.key.techLvl <= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
       if (powerList.isNotEmpty) installSystem(PowerGenerator.fromStock(powerList.elementAt(rnd.nextInt(powerList.length)).key));
     }
     return getInstalledSystems([ShipSystemType.power]).isNotEmpty ? true : techLvl > 0 ? installRndPower(0, rnd) : false;
   }
 
   bool installRndShield(int techLvl, Random rnd, {maxAttempts = 10}) {
+    print("Attempting to install shield <= techlvl $techLvl...");
     int attempts = 0;
     while (getInstalledSystems([ShipSystemType.shield]).isEmpty && attempts++ < 100) {
       final shieldType = Rng.weightedRandom(pilot.faction.shieldWeights.normalized,rnd);
       final shieldList = stockShields.entries.where((v) => v.value.shieldType == shieldType &&
-          v.key.techLvl >= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
+          v.key.techLvl <= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
       if (shieldList.isNotEmpty) installSystem(Shield.fromStock(shieldList.elementAt(rnd.nextInt(shieldList.length)).key));
     }
     return getInstalledSystems([ShipSystemType.shield]).isNotEmpty ? true : techLvl > 0 ? installRndShield(0, rnd) : false;
   }
 
   bool installRndWeapon(int techLvl, Random rnd, {maxAttempts = 10}) {
+    print("Attempting to install weapon <= techlvl $techLvl...");
     int attempts = 0;
     while (getInstalledSystems([ShipSystemType.weapon]).isEmpty && attempts++ < 100) {
       final dmgType = Rng.weightedRandom(pilot.faction.damageWeights.normalized,rnd);
       final weaponList = stockWeapons.entries.where((v) => v.value.dmgType == dmgType &&
-          v.key.techLvl >= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
+          v.key.techLvl <= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
       if (weaponList.isNotEmpty) installSystem(Weapon.fromStock(weaponList.elementAt(rnd.nextInt(weaponList.length)).key));
     }
     return getInstalledSystems([ShipSystemType.weapon]).isNotEmpty;
@@ -247,7 +259,7 @@ class Ship {
     while (getInstalledSystems([ShipSystemType.launcher]).isEmpty && attempts++ < 100) {
       final dmgType = Rng.weightedRandom(pilot.faction.damageWeights.normalized,rnd);
       final launchList = stockLaunchers.entries.where((v) => v.value.dmgType == dmgType &&
-          v.key.techLvl >= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
+          v.key.techLvl <= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
       if (launchList.isNotEmpty) {
         final s = installSystem(Weapon.fromStock(launchList.elementAt(rnd.nextInt(launchList.length)).key));
         if (s != null) {
@@ -288,7 +300,15 @@ class Ship {
     }
   }
 
+  double distance({Ship? ship, ShipLocation? l, Coord3D? c}) {
+    if (ship != null) return ship.loc.cell.coord.distance(loc.cell.coord);
+    if (l != null) return l.cell.coord.distance(loc.cell.coord);
+    if (c != null) return c.distance(loc.cell.coord);
+    FugueEngine.glog("Warning: distance called with 0 arguments",error: true);
+    return double.infinity;
+  }
   double distanceFrom(Ship ship) => ship.loc.cell.coord.distance(loc.cell.coord);
+  double distanceFromLocation(ShipLocation l) => l.cell.coord.distance(loc.cell.coord);
   double distanceFromCoord(Coord3D c) => c.distance(loc.cell.coord);
 
   double get hullRemaining  => (hullStrength-hullDamage);

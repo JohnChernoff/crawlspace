@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import '../foosham/foosham.dart';
 import '../foosham/throws.dart';
+import '../fugue_engine.dart';
 import '../pilot.dart';
 import '../planet.dart';
 import '../ship.dart';
@@ -119,7 +120,7 @@ class MenuController extends FugueController {
 
   InputMode? exitInputMode() {
     final previousMode = (inputStack.length > 1) ? inputStack.removeLast() : null;
-    fm.glog("Exited from  ${previousMode?.name} ->  ${inputMode.name}");
+    FugueEngine.glog("Exited from  ${previousMode?.name} ->  ${inputMode.name}");
     if (previousMode != inputMode) {
       if (inputMode == InputMode.planet && fm.player.planet != null) showPlanetMenu(fm.player.planet!);
     }

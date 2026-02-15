@@ -46,14 +46,17 @@ class ScannerController extends FugueController {
   TargetPathMode targetPathMode = TargetPathMode.direct;
 
   List<GridCell> get targetPath {
-    final tLoc = fm.playerShip?.targetShip?.loc;
-    if (tLoc != null) {
-      return switch(targetPathMode) {
-        TargetPathMode.safe => tLoc.level.map.greedyPath(fm.playerShip!.loc.cell, tLoc.cell, tLoc.level.map.size, fm.rnd, jitter: 0, minHaz: 0),
-        TargetPathMode.safest => tLoc.level.map.greedyPath(fm.playerShip!.loc.cell, tLoc.cell, tLoc.level.map.size, fm.rnd, jitter: 0, forceHaz: true),
-        TargetPathMode.direct => tLoc.level.map.greedyPath(fm.playerShip!.loc.cell, tLoc.cell, tLoc.level.map.size, fm.rnd, jitter: 0,  ignoreHaz: true),
-      };
-    } else return [];
+    final playShip = fm.playerShip; if (playShip != null) {
+      final tLoc = playShip.targetShip?.loc;
+      if (tLoc != null && tLoc.domain == playShip.loc.domain) {
+        return switch(targetPathMode) {
+          TargetPathMode.safe => tLoc.level.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.level.map.size, fm.rnd, jitter: 0, minHaz: 0),
+          TargetPathMode.safest => tLoc.level.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.level.map.size, fm.rnd, jitter: 0, forceHaz: true),
+          TargetPathMode.direct => tLoc.level.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.level.map.size, fm.rnd, jitter: 0,  ignoreHaz: true),
+        };
+      }
+    }
+    return [];
   }
 
   List<TextBlock> statusText() {

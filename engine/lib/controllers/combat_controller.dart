@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/fugue_engine.dart';
 
 import '../coord_3d.dart';
 import '../impulse.dart';
@@ -24,7 +25,7 @@ class CombatController extends FugueController {
     }
   }
 
-  void fire(Ship? ship) {
+  void fire(Ship? ship) { //FugueEngine.glog("${ship?.name} fires...");
     if (ship != null) {
       Coord3D? target = ship.targetShip?.loc.cell.coord ?? ship.targetCoord;
       if (target == null) {

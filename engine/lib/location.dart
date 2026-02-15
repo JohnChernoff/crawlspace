@@ -1,3 +1,5 @@
+import 'package:crawlspace_engine/fugue_engine.dart';
+
 import 'grid.dart';
 import 'impulse.dart';
 import 'ship.dart';
@@ -14,6 +16,23 @@ sealed class ShipLocation {
   Level get level => _level;
   GridCell get cell => _cell;
   Set<Ship> get ships => level.shipsAt(cell);
+
+  double dist({ShipLocation? l, GridCell? c}) {
+    if (l != null) {
+      if (l.domain == domain) {
+        return cell.coord.distance(l.cell.coord);
+      } else {
+        FugueEngine.glog("Error: invalid ship location comparison", error: true);
+        return double.infinity;
+      }
+    } else if (c != null) {
+      return cell.coord.distance(c.coord);
+    } else {
+      FugueEngine.glog("Error: missing distance argument", error: true);
+      return double.infinity;
+    }
+  }
+
   @override
   bool operator ==(Object other) {
     return other is ShipLocation && other.domain == domain && other.cell.coord == cell.coord;

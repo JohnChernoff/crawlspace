@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/stock_items/stock_ships.dart';
 import 'package:crawlspace_engine/stock_items/xeno.dart';
 import 'package:crawlspace_engine/systems/engines.dart';
@@ -52,6 +53,7 @@ class WeightedTrait<T extends Enum> {
 class Species {
   final String name;
   final String desc;
+  final String glyph;
   final double propagation;
   final double range;
   final double courage;
@@ -65,7 +67,7 @@ class Species {
   final WeightedTrait<DamageType>? damageWeights; //null = all
   final WeightedTrait<AmmoDamageType>? ammoDamageWeights; //null = all
   final double rangedProb;
-  const Species(this.name,this.propagation, {
+  const Species(this.name,this.propagation,this.glyph, {
       this.desc = "Mostly Harmless",
       this.range = .5,
       this.courage = .5,
@@ -86,6 +88,7 @@ class Faction {
   final Species species;
   final String name;
   final String desc;
+  final GameColor color;
   final double relativeFreq;
   final double courage;
   final double flexibility;
@@ -103,6 +106,7 @@ class Faction {
   Faction(this.species,this.name,{
     required this.relativeFreq,
     this.desc = "Mostly Harmless",
+    this.color = GameColors.white,
     double? crg,
     double? flex,
     double? xeno,
@@ -133,21 +137,21 @@ class Faction {
 
 enum StockSpecies {
   humanoid(
-      Species("Humanoid",.87,
+      Species("Humanoid",.87,"H",
         xenoWeights: WeightedTrait({XenomancySchool.elemental: .9,},
             defWeight: .2, allValues: XenomancySchool.values),
         damageWeights: WeightedTrait({DamageType.etherial: .01},
             defWeight: .5, allValues: DamageType.values)
       )
   ),
-  vorlon(Species("Vorlon", .33,
+  vorlon(Species("Vorlon", .33,"V",
         xenoWeights: WeightedTrait({XenomancySchool.dark: .9,},
           defWeight: .1, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.etherial: .08},
           defWeight: .5, allValues: DamageType.values)
       )
   ),
-  gersh(Species("Greshplerglesnortz", .25, xenomancy: .1,
+  gersh(Species("Greshplerglesnortz", .25, xenomancy: .1,"G",
       xenoWeights: WeightedTrait({XenomancySchool.gravimancy: .7,XenomancySchool.dark: .1},
           defWeight: .3, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.kinetic: .08, DamageType.etherial: 0},
@@ -160,18 +164,25 @@ enum StockSpecies {
   const StockSpecies(this.species);
 }
 
-pirateFaction(Species species, {String? name,double freq = .1}) => Faction(species, name ?? "${species.name} Pirate",desc: "A dastardly ${species.name} pirate",
+pirateFaction(Species species, {String? name,double freq = .1}) =>
+    Faction(species, name ?? "${species.name} Pirate",desc: "A dastardly ${species.name} pirate",color: GameColors.coral,
     relativeFreq: freq, shpWeights: WeightedTrait({ShipType.interceptor : .9},defWeight: .01,allValues: ShipType.values));
 
 final List<Faction> factions = [
-  Faction(StockSpecies.humanoid.species,"Federation", relativeFreq: .8, desc: "An ICORP officer or citizen"),
-  Faction(StockSpecies.humanoid.species,"Fed Rebel", relativeFreq: .2, desc: "An insurrectionist dedicated to their fight against ICORP"),
+  Faction(StockSpecies.humanoid.species,"Federation", relativeFreq: .8,
+      desc: "An ICORP officer or citizen",color: GameColors.white),
+  Faction(StockSpecies.humanoid.species,"Fed Rebel", relativeFreq: .2,
+      desc: "An insurrectionist dedicated to their fight against ICORP",color: GameColors.lightBlue),
   pirateFaction(StockSpecies.humanoid.species),
-  Faction(StockSpecies.vorlon.species,"Vorlornian", relativeFreq: .67, desc: "A sneaky Vorlornian"),
-  Faction(StockSpecies.vorlon.species,"Vorlox Mystic", relativeFreq: .25, desc: "A Vorlornian specialist in the manipulation of dark energy"),
+  Faction(StockSpecies.vorlon.species,"Vorlornian", relativeFreq: .67,
+      desc: "A sneaky Vorlornian", color: GameColors.gray),
+  Faction(StockSpecies.vorlon.species,"Vorlox Mystic", relativeFreq: .25,
+      desc: "A Vorlornian specialist in the manipulation of dark energy",color: GameColors.darkGreen),
   pirateFaction(StockSpecies.vorlon.species, name: "Sorojbian"),
-  Faction(StockSpecies.gersh.species,"Greshplergian", relativeFreq: .9, desc: "A strange cross between an earth wooly mamooth, pig, and hippo.  Fearsome when angered."),
-  Faction(StockSpecies.gersh.species,"Hagyorny", relativeFreq: .1, xeno: .5, desc: "A more dolice Gershplergian with a penchant for xenomancy"),
+  Faction(StockSpecies.gersh.species,"Greshplergian", relativeFreq: .9,
+      desc: "A strange cross between an earth wooly mamooth, pig, and hippo.  Fearsome when angered.", color: GameColors.green),
+  Faction(StockSpecies.gersh.species,"Hagyorny", relativeFreq: .1, xeno: .5,
+      desc: "A more dolice Gershplergian with a penchant for xenomancy", color: GameColors.gold),
 ];
 
 Map<T,double> normalize<T>(Map<T,double> m) {

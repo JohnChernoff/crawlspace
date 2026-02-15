@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/coord_3d.dart';
+import 'package:crawlspace_engine/hazards.dart';
+import '../fugue_engine.dart';
 import '../grid.dart';
 import '../location.dart';
 import '../pilot.dart';
@@ -103,23 +105,25 @@ class PilotController extends FugueController {
   }
 
   void runUntilNextPlayerTurn() { //fm.glog("Running until next turn...");
+    final playShip = fm.playerShip;
     final pilots = List.of(fm.activePilots); // ← Copy the list
     do {
-      for (Pilot p in pilots) {
+      for (Pilot p in pilots) { //print("${p.name}'s turn");
         try {
           p.tick();
           Ship? ship = fm.pilotMap[p];
-          if (ship != null && ship.loc.level == fm.playerShip?.loc.level) {
-            npcShipAct(ship);
-          }
+          if (ship != null && ship.loc.level == fm.playerShip?.loc.level) npcShipAct(ship);
         } on ConcurrentModificationError {
-          fm.glog("Skipping: ${p.name}");
+          FugueEngine.glog("Skipping: ${p.name}",error: true);
         }
       }
       fm.auTick++;
       fm.player.tick();
-      fm.playerShip?.tick(rnd: fm.rnd);
+      playShip?.tick(rnd: fm.rnd);
     } while (!fm.player.ready);
+    if (playShip != null) {
+      for (final s in playShip.loc.level.getAllShips().where((s) => s.npc)) playShip.detect(s);
+    }
     fm.update();
   }
 
@@ -127,36 +131,41 @@ class PilotController extends FugueController {
     if (ship == fm.playerShip) return;
     ship.tick(rnd: fm.rnd);
     Pilot pilot = ship.pilot; if (pilot == nobody) return;
-    if (pilot.ready) {
-      final playShip = fm.playerShip;
-      //TODO: detect when systems are critical and flee
-      if (playShip != null && pilot.hostile && ship.loc.level.getAllShips().contains(playShip)) {
-        ship.targetShip = playShip;
+    if (pilot.ready) { //print("${ship.name}'s turn...");
+      final playLoc = fm.playerShip != null ? ship.detect(fm.playerShip!) : null;
+      if (playLoc != null &&
+          pilot.hostile &&
+          ship.loc.level.getAllShips().contains(fm.playerShip)) {
+        ship.targetShip = fm.playerShip;
         final loc = ship.loc; if (loc is ImpulseLocation) {
-            Weapon? w = ship.primaryWeapon; if (w != null && ship.currentShieldPercentage > 50) {
-              //print("NPC combat...${w.accuracyRangeConfig.idealRange}, ${ship.distanceFrom(playShip)}");
-              if ((w.accuracyRangeConfig.idealRange - ship.distanceFrom(playShip)).abs() > 1) {
+            Weapon? w = ship.primaryWeapon;
+            if (w != null && ship.currentHullPercentage > (ship.pilot.faction.courage * 100)) {
+              final r = w.accuracyRangeConfig.idealRange, d = ship.distance(l: playLoc); //print("${ship.name} combat...$r, $d");
+              if ((r -d).abs() > 1) { //print("${ship.name} maneuvering...");
                 final idealCells = ship.loc.level.map.cells.values
-                    .where((c) => playShip.distanceFromCoord(c.coord) < 1)
-                    .sorted((c1,c2) => ship.distanceFromCoord(c2.coord).compareTo(ship.distanceFromCoord(c1.coord)));
+                    .where((c) => (playLoc.dist(c: c) - r).abs() < 1.5) //TODO: tweak acceptable range
+                    .sorted((c1,c2) => ship.distance(c: c1.coord).compareTo(ship.distance(c: c2.coord)));
                 ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.rnd);
               } else {
-                if (w.cooldown == 0) {
-                  fm.combatController.fire(ship);
-                } else {
-                  fm.pilotController.action(pilot, ActionType.combat, actionAuts: 1);
+                if (playLoc != fm.playerShip!.loc) {
+                  print("${ship.name} cannot find ${fm.playerShip!.name}"); //TODO: fallback strategy
                 }
-                return;
+                else if (w.cooldown == 0) {  //print("${ship.name} firing...");
+                  fm.combatController.fire(ship);
+                  return;
+                } else { //print("${ship.name} waiting...");
+                  fm.pilotController.action(pilot, ActionType.combat, actionAuts: 1);
+                  return;
+                }
               }
             } else {
               fm.msgController.addMsg("${ship.name} flees!");
               final idealCells = ship.loc.level.map.cells.values
-                  .sorted((c1,c2) => playShip.distanceFromCoord(c2.coord).compareTo(playShip.distanceFromCoord(c1.coord)));
+                  .sorted((c1,c2) => playLoc.dist(c: c2).compareTo(playLoc.dist(c: c1)));
               ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.rnd);
             }
         } else if (loc is SystemLocation) {
-          ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell,ship.targetShip!.loc.cell,3,fm.rnd, forceHaz: true);
-          //print(ship.currentPath);
+          ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell,ship.targetShip!.loc.cell,3,fm.rnd, forceHaz: true); //print(ship.currentPath);
         }
       }
       if (ship.currentPath.isNotEmpty) {
@@ -164,23 +173,20 @@ class PilotController extends FugueController {
         if (result == MoveResult.impCollision) { //fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.rnd));
           action(pilot, ActionType.movement, actionAuts: 10);
         }
-      } else {
+      } else { //TODO: avoid hazards (if possible)
         fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.rnd));
       }
     }
   }
 
-  void headTowards(GridCell cell) {
-
-  }
+  void headTowards(GridCell cell) {}
 
   energyScoop() {
     Ship? ship = fm.playerShip;
     if (ship == null) {
       fm.msgController.addMsg("You're not in a ship."); return;
     }
-    double amount = 50;
-    //((ship.energyConvertor.value/(Rng.biasedRndInt(rnd,mean: 50, min: 25, max: 80))) * player.system.starClass.power).floor();
+    double amount = 50; //((ship.energyConvertor.value/(Rng.biasedRndInt(rnd,mean: 50, min: 25, max: 80))) * player.system.starClass.power).floor();
     fm.msgController.addMsg("Scooping class ${fm.player.system.starClass.name} star... gained ${ship.recharge(amount)} energy");
     fm.pilotController.action(fm.player,ActionType.energyScoop);
   }

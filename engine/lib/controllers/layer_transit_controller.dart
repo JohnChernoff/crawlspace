@@ -1,3 +1,4 @@
+import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/path_gen2.dart';
 import '../agent.dart';
 import '../audio_service.dart';
@@ -100,7 +101,7 @@ class LayerTransitController extends FugueController {
     if (playShip.loc is! SystemLocation) {
       fm.msgController.addMsg("Error: ship not at system level"); return;
     }
-    fm.glog("Creating impulse map..."); //Entering")
+    FugueEngine.glog("Creating impulse map..."); //Entering")
     int size = gridSize; //ship gridsize?
     ImpulseLevel impLevel;
     ShipLocation sysLoc = playShip.loc;
@@ -138,7 +139,7 @@ class LayerTransitController extends FugueController {
           if (ship != playShip) _enterImpulse(impLevel,ship);
         }
       } on ConcurrentModificationError {
-        fm.glog("fark");
+        FugueEngine.glog("fark");
       }
     }
   }
