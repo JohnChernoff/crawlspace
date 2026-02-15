@@ -171,8 +171,6 @@ class Galaxy {
     return normalize(raw);
   }
 
-
-
 }
 
 

@@ -30,8 +30,25 @@ class ShipClass {
   const ShipClass(this.name,this.type,this.slots,this.maxMass);
 }
 
-enum ShipType { //TODO: ascii/color codes
-  scout,skiff,cruiser,destroyer,interceptor,battleship,flagship,unknown
+enum ShipType { //TODO: shipshapes
+  scout(.1),skiff(.3),cruiser(.5),destroyer(.66),interceptor(.75),battleship(.9),flagship(1),unknown(0);
+  final double dangerLvl;
+  const ShipType(this.dangerLvl);
+}
+
+enum ShipPrefs {
+  all({}),
+  standard({
+    ShipType.scout: 1,
+    ShipType.skiff: .8,
+    ShipType.cruiser: .6,
+    ShipType.destroyer: .4,
+    ShipType.interceptor: .3,
+    ShipType.battleship: .2,
+    ShipType.flagship: .1
+  });
+  final Map<ShipType,double> shipWeights;
+  const ShipPrefs(this.shipWeights);
 }
 
 enum ShipClassType {

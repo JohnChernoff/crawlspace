@@ -169,20 +169,20 @@ pirateFaction(Species species, {String? name,double freq = .1}) =>
     relativeFreq: freq, shpWeights: WeightedTrait({ShipType.interceptor : .9},defWeight: .01,allValues: ShipType.values));
 
 final List<Faction> factions = [
-  Faction(StockSpecies.humanoid.species,"Federation", relativeFreq: .8,
-      desc: "An ICORP officer or citizen",color: GameColors.white),
-  Faction(StockSpecies.humanoid.species,"Fed Rebel", relativeFreq: .2,
+  Faction(StockSpecies.humanoid.species,"Federation", relativeFreq: .8, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      desc: "An ICORP officer",color: GameColors.white),
+  Faction(StockSpecies.humanoid.species,"Fed Rebel", relativeFreq: .2, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       desc: "An insurrectionist dedicated to their fight against ICORP",color: GameColors.lightBlue),
   pirateFaction(StockSpecies.humanoid.species),
-  Faction(StockSpecies.vorlon.species,"Vorlornian", relativeFreq: .67,
+  Faction(StockSpecies.vorlon.species,"Vorlornian", relativeFreq: .67, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       desc: "A sneaky Vorlornian", color: GameColors.gray),
-  Faction(StockSpecies.vorlon.species,"Vorlox Mystic", relativeFreq: .25,
+  Faction(StockSpecies.vorlon.species,"Vorlox Mystic", relativeFreq: .25, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       desc: "A Vorlornian specialist in the manipulation of dark energy",color: GameColors.darkGreen),
   pirateFaction(StockSpecies.vorlon.species, name: "Sorojbian"),
-  Faction(StockSpecies.gersh.species,"Greshplergian", relativeFreq: .9,
+  Faction(StockSpecies.gersh.species,"Greshplergian", relativeFreq: .9, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       desc: "A strange cross between an earth wooly mamooth, pig, and hippo.  Fearsome when angered.", color: GameColors.green),
-  Faction(StockSpecies.gersh.species,"Hagyorny", relativeFreq: .1, xeno: .5,
-      desc: "A more dolice Gershplergian with a penchant for xenomancy", color: GameColors.gold),
+  Faction(StockSpecies.gersh.species,"Hagyorny", relativeFreq: .1, xeno: .5, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      desc: "A more docile Gershplergian with a penchant for xenomancy", color: GameColors.gold),
 ];
 
 Map<T,double> normalize<T>(Map<T,double> m) {
