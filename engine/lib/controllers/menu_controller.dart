@@ -1,5 +1,4 @@
-import 'dart:async';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+import 'dart:math';
 import '../foosham/foosham.dart';
 import '../foosham/throws.dart';
 import '../fugue_engine.dart';
@@ -10,6 +9,22 @@ import '../shop.dart';
 import '../system.dart';
 import '../systems/ship_system.dart';
 import 'fugue_controller.dart';
+
+typedef VoidCallback = void Function();
+
+class MenuContext {
+  final InputMode mode;
+  final List<MenuEntry> entries;
+  final String title;
+  final bool noExit;
+
+  MenuContext({
+    required this.mode,
+    required this.entries,
+    required this.title,
+    this.noExit = false,
+  });
+}
 
 enum InputMode {
   main(false),
@@ -37,12 +52,12 @@ class ActionEntry extends MenuEntry {
 
   @override
   void activate(MenuController menu) {
+    action(menu);
     if (exitMenu) {
       menu.exitInputMode();
     } else {
       menu.fm.update();
     }
-    action(menu);
   }
 }
 
@@ -54,21 +69,21 @@ class ValueEntry<T> extends MenuEntry {
 
   @override
   void activate(MenuController menu) {
+    onSelect(value);
     if (exitMenu) {
       menu.exitInputMode();
     } else {
       menu.fm.update();
     }
-    onSelect(value);
   }
 }
 
-class ShopItemEntry<T> extends ValueEntry {
+class ShopItemEntry<T> extends ValueEntry<T> {
   Pilot shopper;
 
   @override
   // TODO: use shop to determine actual cost
-  bool get enabled => shopper.credits > ((value as ShopSlot).items.firstOrNull?.baseCost ?? 0);
+  bool get enabled => value == null ? false : shopper.credits > ((value as ShopSlot).items.firstOrNull?.baseCost ?? 0);
 
   ShopItemEntry(super.letter, super.label, super.value, super.onSelect, {
     required this.shopper, super.exitMenu});
@@ -79,29 +94,6 @@ class ResultMessage {
   final bool success;
   final String msg;
   const ResultMessage(this.msg, this.success);
-}
-
-class ActionCompleter<T> {
-  final Completer<T> _completer = Completer<T>();
-  final Function() _onComplete;
-
-  ActionCompleter(this._onComplete);
-
-  Future<T> get future => _completer.future;
-
-  void trigger() {
-    _onComplete();
-  }
-
-  void complete([T? value]) {
-    _onComplete();
-    _completer.complete(value);
-  }
-
-  void completeError(Object error, [StackTrace? stackTrace]) {
-    _onComplete();
-    _completer.completeError(error, stackTrace);
-  }
 }
 
 class MenuController extends FugueController {
@@ -209,27 +201,42 @@ class MenuController extends FugueController {
     return entries;
   }
 
-  ShopItemEntry slotEntry(ShopSlot slot, String ltr, Shop shop, Ship ship) {
+  void createAndShowShopMenu(Shop shop, Ship ship) {
+    showMenu(createShopMenu(shop, ship),headerTxt: shop.name, maxListLength: 12);
+  }
+
+  ShopItemEntry slotEntry(ShopSlot itemSlot, String ltr, Shop shop, Ship ship) {
+    final slot = itemSlot;
     if (slot.items.isNotEmpty) {
       return ShopItemEntry(ltr,"${slot.items.first.name} , ${slot.items.first.baseCost}, ${slot.items.length}", slot,
-              (shopSlot) {
-            fm.msgController.addMsg(shop.transactionSell(slot, ship));
-            showMenu(createShopMenu(shop, ship),headerTxt: shop.name); //refresh shop
-          }, shopper: ship.pilot);
+              (shopSlot) => confirm("Purchse?", () {
+                 fm.msgController.addMsg(shop.transactionSell(slot, ship)); //fm.msgController.addMsg(shop.transactionSell(slot, ship));
+                 createAndShowShopMenu(shop, ship); //refresh shop
+          }), shopper: ship.pilot);
     }
     return ShopItemEntry(ltr, "empty inventory slot", null, (e) => {}, shopper: ship.pilot);
+  }
+
+  void confirm(String query, VoidCallback action, {VoidCallback? noAction}) {
+    showMenu([
+      ActionEntry("y", "(y)es", (m) => action(), exitMenu: true),
+      ActionEntry("n", "(n)o", (m) => noAction?.call(), exitMenu: true),
+    ],headerTxt: query);
   }
 
   //TODO: make player inventory like shops?
   List<MenuEntry> createShopSellMenu(Ship ship, Shop shop) { //TODO: filter by shop type
     final installed = ship.getAllSystems;
-    final items = ship.inventory.toList().where((i) => !installed.contains(i)).asList();
+    final items = [
+      ...ship.inventory.where((i) => !installed.contains(i)),
+      ...ship.scrapHeap,
+    ];
     return <MenuEntry> [
       for (int i = 0; i < items.length; i++)
         ValueEntry(letter(i),"${items[i].name} , ${items[i].baseCost}", items[i], //TODO: show cost modifier?
                 (item) {
-                  fm.msgController.addMsg(shop.transactionBuy(item, ship));
-                  showMenu(createShopMenu(shop, ship),headerTxt: shop.name); //refresh shop
+                   fm.msgController.addMsg(shop.transactionBuy(item, ship));
+                  createAndShowShopMenu(shop, ship); //refresh shop
       },exitMenu: false)
     ];
   }
@@ -238,11 +245,22 @@ class MenuController extends FugueController {
     InputMode mode = InputMode.menu,
     bool noExit = false,
     String headerTxt = "Please select:",
-    String nothingTxt = "Nothing found"}) {
+    String nothingTxt = "Nothing found",
+    int maxListLength = 12,
+    int firstItem = 0
+  }) {
     if (menuMap.isEmpty) {
       fm.msgController.addMsg(nothingTxt); return;
     } else {
-      final entries = List<MenuEntry>.from(menuMap);
+      final listLen = menuMap.length - firstItem;
+      bool moreItems = listLen > maxListLength;
+      final numItems = moreItems ? maxListLength : listLen;  //print("Num items: $numItems, max: $maxListLength");
+      final entries = List<MenuEntry>.from(menuMap.getRange(firstItem,firstItem + numItems));
+      if (firstItem > 0) entries.add(ActionEntry("<", "back", (m) => showMenu(menuMap,mode: mode,headerTxt: headerTxt,nothingTxt: nothingTxt, maxListLength: maxListLength, noExit: noExit,
+          firstItem: max(firstItem - maxListLength,0))));
+      if (moreItems) entries.add(ActionEntry(">", "more", (m) =>
+          showMenu(menuMap,mode: mode,headerTxt: headerTxt,nothingTxt: nothingTxt, maxListLength: maxListLength, noExit: noExit,
+              firstItem: firstItem + maxListLength)));
       if (!noExit) entries.add(ActionEntry("x", "e(x)it", (m) => {}, exitMenu: true));
       selectionList = entries;
       currentMenuTitle = headerTxt;

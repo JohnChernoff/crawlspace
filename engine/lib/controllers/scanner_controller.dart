@@ -24,6 +24,7 @@ enum ScannerMode {
   bool get scaningShips => this == ScannerMode.ships || this == ScannerMode.objects;
   bool get scaningPlanets => this == ScannerMode.planets || this == ScannerMode.objects;
   bool get scaningStars => this == ScannerMode.stars || this == ScannerMode.objects;
+  bool get scaningItems => this == ScannerMode.objects;
   bool get scaningIons => this == ScannerMode.ion || this == ScannerMode.storms || this == ScannerMode.field;
   bool get scaningNeb => this == ScannerMode.neb || this == ScannerMode.field;
   bool get scaningRoids => this == ScannerMode.roid || this == ScannerMode.field;

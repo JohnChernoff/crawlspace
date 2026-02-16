@@ -19,6 +19,7 @@ class ImpulseCell extends GridCell {
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
     if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;
+    if (mode.scaningItems && items.isNotEmpty) return true;
     return false;
   }
 

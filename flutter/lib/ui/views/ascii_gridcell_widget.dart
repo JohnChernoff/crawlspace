@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/grid.dart';
 import 'package:crawlspace_engine/hazards.dart';
+import 'package:crawlspace_engine/impulse.dart';
 import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/system.dart';
 import 'package:flutter/material.dart';
@@ -102,6 +103,8 @@ class GridCellWidgetState extends State<GridCellWidget> {
       if (cell.planet != null) stack.add(Text("O", style: style));
       if (cell.starClass != null) stack.add(Text("✦", style: style));
       if (cell.blackHole) stack.add(Text("-", style: style));
+    } else if (cell is ImpulseCell) {
+      if (cell.items.isNotEmpty) stack.add(Text("\$", style: style));
     }
 
     //if (widget.ships.isNotEmpty) print(widget.ships);

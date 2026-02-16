@@ -277,10 +277,11 @@ class Ship {
 
   double get scrapVal => scrapHeap.fold<double>(0.0, (sum, i) => sum + i.baseCost);
 
-  bool addScrap(ShipSystem s) {
-    double m = s.mass/ 20; //TODO: some ship system to improve this?
+  //TODO: some ship system to improve this?
+  bool addScrap(ShipSystem s, {double scrapFact = 20, double scrapVal = 20}) {
+    double m = s.mass/scrapFact;
       if (availableMass > m) {
-        scrapHeap.add(Scrap("scrapped ${s.name}", mass: m, baseCost: (s.baseCost / 100).round()));
+        scrapHeap.add(Scrap("scrapped ${s.name}", mass: m, baseCost: (s.baseCost / scrapVal).round()));
         return true;
       } return false;
   }

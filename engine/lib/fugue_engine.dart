@@ -19,7 +19,6 @@ import 'galaxy.dart';
 import 'grid.dart';
 import 'location.dart';
 import 'pilot.dart';
-import 'planet.dart';
 import 'player.dart';
 import 'rng.dart';
 import 'ship.dart';
@@ -40,7 +39,7 @@ class TextBlock {
 
 //cargo systems?  passengers, smuggling? cloaking systems?
 //hyperspace landing spot?   Graph not detecting player location?
-//TODO: show scrap, optimize viewports, add music, add launchers, increase scrap value, sell scrap bug
+//TODO: optimize viewports, add music, add launchers, increase scrap value, sell scrap bug
 class FugueEngine {
   final _listeners = <void Function()>[];
 
