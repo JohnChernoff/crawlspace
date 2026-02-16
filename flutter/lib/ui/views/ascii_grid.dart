@@ -88,7 +88,7 @@ class _AsciiGridState extends State<AsciiGrid> {
     final targetPath = widget.fugueModel.scannerController.targetPath;
     for (int z = 0; z < map.size; z++) {
       final cell = map.cells[Coord3D(x,y,z)]!;
-      final scanned = scannedCell?.coord == cell.coord;
+      final scanned = scannedCell?.coord == cell.coord && playship.canScan(cell);
       final inTargetPath = targetPath.contains(cell);
       if (showAllCellsOnZPlane) {
         cellWidgets.add(GridCellWidget(cell,size,playship.loc.level.shipsAt(cell), playship, scanned: scanned, invert: invert,inTargetPath: inTargetPath));

@@ -1,13 +1,8 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/stock_items/species.dart';
-import 'package:crawlspace_engine/stock_items/stock_engines.dart';
-import 'package:crawlspace_engine/stock_items/stock_power.dart';
 import 'package:crawlspace_engine/systems/engines.dart';
 import 'package:crawlspace_engine/systems/power.dart';
 import 'package:crawlspace_engine/systems/shields.dart';
-import 'package:crawlspace_engine/systems/ship_system.dart';
-
 import 'agent.dart';
 import 'audio_service.dart';
 import 'color.dart';
@@ -45,6 +40,7 @@ class TextBlock {
 
 //cargo systems?  passengers, smuggling? cloaking systems?
 //hyperspace landing spot?   Graph not detecting player location?
+//TODO: show scrap, optimize viewports, add music, add launchers, increase scrap value, sell scrap bug
 class FugueEngine {
   final _listeners = <void Function()>[];
 
@@ -113,7 +109,7 @@ class FugueEngine {
         hyperEngine: Engine.fromStock(StockSystem.basicFedHyperdrive),
         shield: Shield.fromStock(StockSystem.basicEnergon),
         weapons: [Weapon.fromStock(StockSystem.fedLaser3),Weapon.fromStock(StockSystem.plasmaCannon)],
-        ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 8});
+        ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 50});
     pilotMap[player] = playShip;
     msgController.addMsg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
     update(); //galaxy.rndTest();

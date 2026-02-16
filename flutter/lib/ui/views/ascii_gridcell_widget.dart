@@ -91,7 +91,7 @@ class GridCellWidgetState extends State<GridCellWidget> {
       if (hazards.isEmpty) {
         stack.add(Text(".", style: style.copyWith(color: widget.sameDepth ? Colors.white : Colors.cyan)));
       } else {
-        stack.add(Text("#", style: widget.special ? style : style.copyWith(color: Color(hazards.first.color.argb)))); //□
+        stack.add(Text("#", style: widget.special ? style : style.copyWith(color: Color(hazards.first.color.argb))));
       }
     } else if (hazards.isNotEmpty) {
         final hazardGlyph = _getHazardGlyph(hazards);
@@ -104,11 +104,10 @@ class GridCellWidgetState extends State<GridCellWidget> {
       if (cell.blackHole) stack.add(Text("-", style: style));
     }
 
+    //if (widget.ships.isNotEmpty) print(widget.ships);
     for (final ship in widget.ships) {
-      if (ship.npc) {
-        final l = widget.playShip.lastKnown[ship];
-        //print("${ship.name} last known loc: $l");
-        if (l != null) { //TODO: draw last known elsewhere if not here
+      if (ship.npc) { //final l = widget.playShip.lastKnown[ship]; //print("${ship.name} last known loc: $l");
+        if (widget.playShip.canScan(cell)) { //TODO: draw last known elsewhere if not here
           stack.add(Text(ship.pilot.faction.species.glyph, style: style.copyWith(color: Color(ship.pilot.faction.color.argb))));
         }
       } else {

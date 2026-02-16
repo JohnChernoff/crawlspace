@@ -8,6 +8,7 @@ import 'package:crawlspace_engine/stock_items/stock_lauchers.dart';
 import 'package:crawlspace_engine/stock_items/stock_power.dart';
 import 'package:crawlspace_engine/stock_items/stock_shields.dart';
 import 'package:crawlspace_engine/stock_items/stock_weapons.dart';
+import 'package:crawlspace_engine/system.dart';
 
 import 'fugue_engine.dart';
 import 'color.dart';
@@ -151,14 +152,14 @@ class Ship {
   }
 
   ShipLocation? detect(Ship ship) {
-    if (canScan(ship)) {
+    if (canScan(ship.loc.cell)) {
       lastKnown[ship] = ship.loc;
       return ship.loc;
     } else {
       return lastKnown[ship];
     }
   }
-  bool canScan(Ship ship) => !(loc.cell.hasHaz(Hazard.nebula) || ship.loc.cell.hasHaz(Hazard.nebula));
+  bool canScan(GridCell cell) => !(loc.cell.hasHaz(Hazard.nebula) || cell.hasHaz(Hazard.nebula));
 
   Iterable<ShipSystem> get getAllSystems {
     return systemMap.where((s) => (s.system != null)).map((i) => i.system!);
@@ -515,13 +516,13 @@ class Ship {
   double get availableMass => shipClass.maxMass - currentMass;
   bool okMass(double m) => availableMass < m;
 
-  void move(GridCell destination, {bool toSystem = false, ImpulseLevel? impLevel }) {
+  void move(GridCell destination, {System? toSystem, ImpulseLevel? impLevel }) {
 
     loc.level.removeShip(this);
 
     ShipLocation l = loc; loc = switch(l) {
-      SystemLocation() => impLevel != null ? ImpulseLocation(l,impLevel,destination) : SystemLocation(l.level,destination),
-      ImpulseLocation() => toSystem? l.systemLoc : ImpulseLocation(l.systemLoc,l.level,destination),
+      SystemLocation() => impLevel != null ? ImpulseLocation(l,impLevel,destination) : SystemLocation(toSystem ?? l.level,destination),
+      ImpulseLocation() => toSystem != null ? SystemLocation(toSystem,destination) : ImpulseLocation(l.systemLoc,l.level,destination),
     };
 
     loc.level.addShip(this, destination);

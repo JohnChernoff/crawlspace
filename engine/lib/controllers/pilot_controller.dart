@@ -148,7 +148,7 @@ class PilotController extends FugueController {
                 ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.rnd);
               } else {
                 if (playLoc != fm.playerShip!.loc) {
-                  print("${ship.name} cannot find ${fm.playerShip!.name}"); //TODO: fallback strategy
+                  //print("${ship.name} cannot find ${fm.playerShip!.name}"); //TODO: fallback strategy
                 }
                 else if (w.cooldown == 0) {  //print("${ship.name} firing...");
                   fm.combatController.fire(ship);

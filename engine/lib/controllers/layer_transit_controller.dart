@@ -58,7 +58,7 @@ class LayerTransitController extends FugueController {
     }
   }
 
-  void warp(Ship ship) {
+  void emergencyWarp(Ship ship) {
     System system = fm.galaxy.getRandomLinkableSystem(
         fm.player.system, ignoreTraffic: true) ?? fm.galaxy.getRandomSystem(excludeSystems: [fm.player.system]);
     if (newSystem(fm.player,system)) {
@@ -81,9 +81,9 @@ class LayerTransitController extends FugueController {
         if (sysLoc.cell.starClass != null) {
           sysLoc.level.removeShip(ship);
           final stars = system.map.cells.values.where((c) => c is SectorCell && c.starClass != null);
-          ship.loc = SystemLocation(system, stars.first);
+          ship.move(stars.first, toSystem: system); //ship.loc = SystemLocation(system, stars.first);
           pilot.system = system;
-          system.visit(fm);
+          system.visit(fm); //print("-> $system");
           fm.pilotController.action(pilot,ActionType.sector);
           return true;
         }
@@ -187,7 +187,7 @@ class LayerTransitController extends FugueController {
 
   void _exitImpulse(Ship ship, ImpulseLocation impLoc) {
     impLoc.level.removeShip(ship); //ship.loc = impLoc.systemLoc;
-    ship.move(impLoc.systemLoc.cell, toSystem: true);
+    ship.move(impLoc.systemLoc.cell, toSystem: impLoc.systemLoc.level);
   }
 
 }

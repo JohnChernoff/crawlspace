@@ -46,7 +46,7 @@ class ScannerController extends FugueController {
   TargetPathMode targetPathMode = TargetPathMode.direct;
 
   List<GridCell> get targetPath {
-    final playShip = fm.playerShip; if (playShip != null) {
+    final playShip = fm.playerShip; if (playShip != null && playShip.targetShip != null && playShip.canScan(playShip.targetShip!.loc.cell)) {
       final tLoc = playShip.targetShip?.loc;
       if (tLoc != null && tLoc.domain == playShip.loc.domain) {
         return switch(targetPathMode) {
