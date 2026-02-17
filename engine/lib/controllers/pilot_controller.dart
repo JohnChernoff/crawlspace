@@ -55,7 +55,7 @@ class PilotController extends FugueController {
         systems.elementAt(i).name,
         systems.elementAt(i),
         (s) => s.active = !s.active, exitMenu: true));
-    fm.menuController.showMenu(headerTxt: "Toggle System", menuEntries);
+    fm.menuController.showMenu(headerTxt: "Toggle System", () => menuEntries);
   }
 
   ResultMessage uninstallSystem(ShipSystem system, Ship ship) {
@@ -69,7 +69,7 @@ class PilotController extends FugueController {
   ResultMessage installSystem(Ship ship, ShipSystem system, {SystemSlot? slot}) {
     if (ship.inventory.contains(system)) {
       if (slot == null) {
-        fm.menuController.showMenu(fm.menuController.createInstallSlotMenu(ship,system),headerTxt: "Slot:");
+        fm.menuController.showMenu(() => fm.menuController.createInstallSlotMenu(ship,system),headerTxt: "Slot:");
         return const ResultMessage("Select a slot", true);
       } else {
         final installedSystem = ship.installSystem(system, slot: slot);

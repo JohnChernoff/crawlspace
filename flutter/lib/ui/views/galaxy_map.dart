@@ -64,12 +64,10 @@ class GalaxyMapState extends State<GalaxyMap> {
       } else {
         legend = GalaxyMapLegend.values.first;
       }
-    });
-    print("Legend: ${legend.name}");
+    }); //print("Legend: ${legend.name}");
   }
 
-  void _rebuildGraph() {
-    print("Building graph...");
+  void _rebuildGraph() { //print("Building graph...");
     graphWidget = ForceDirectedGraphWidget(
       controller: _controller,
       nodesBuilder: (context, data) =>

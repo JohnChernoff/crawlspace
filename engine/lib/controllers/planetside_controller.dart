@@ -46,7 +46,7 @@ class PlanetsideController extends FugueController {
 
   void launch() {
     fm.player.planet = null;
-    fm.menuController.exitInputMode();
+    fm.menuController.exitMenu();
     fm.msgController.addMsg("Launching...");
     fm.audioController.newTrack(newMood: MusicalMood.space);
     fm.pilotController.action(fm.player,ActionType.planetLaunch);
@@ -148,8 +148,8 @@ class PlanetsideController extends FugueController {
   void shop() {
     Planet? planet = fm.player.planet; if (planet != null) { // && planet.commLvl.atOrAbove(DistrictLvl.medium)) {
       planet.shop ??= Shop.random(1,fm.rnd);
-      if (fm.playerShip != null) {
-        fm.menuController.createAndShowShopMenu(planet.shop!, fm.playerShip!);
+      if (fm.playerShip != null) { //fm.menuController.createAndShowShopMenu(planet.shop!, fm.playerShip!, false);
+        fm.menuController.showMenu(() => fm.menuController.createShopMenu(planet.shop!, fm.playerShip!));
       }
     }
   }
@@ -158,7 +158,7 @@ class PlanetsideController extends FugueController {
     Pilot? pilot = fm.playerShip?.pilot;
     if (pilot != null) {
       final fooShamGame = FooShamGame(ThrowList.rndList(fm.rnd),fm.rnd, difficulty: FooShamDifficulty.medium);
-      fm.menuController.showMenu(fm.menuController.createThrowMenu(pilot, fooShamGame));
+      fm.menuController.showMenu(() => fm.menuController.createThrowMenu(pilot, fooShamGame));
     }
   }
 

@@ -48,12 +48,12 @@ class LayerTransitController extends FugueController {
             system.links.elementAt(i).toString(),
                 (m) => newSystem(fm.player, system.links.elementAt(i)),exitMenu: true)
     );
-    fm.menuController.showMenu(links, headerTxt: "Hyperspace");
+    fm.menuController.showMenu(() => links, headerTxt: "Hyperspace");
   }
 
   void hyperSpace(String letter) {
     if (currentLinkMap.containsKey(letter)) {
-      fm.menuController.fm.menuController.exitInputMode();
+      fm.menuController.fm.menuController.exitMenu();
       newSystem(fm.player, currentLinkMap[letter]!);
     }
   }

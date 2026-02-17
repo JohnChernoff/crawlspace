@@ -1,8 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/rng.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-
 import 'controllers/pilot_controller.dart';
 import 'hazards.dart';
 import 'system.dart';
