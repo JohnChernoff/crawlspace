@@ -115,7 +115,7 @@ class FugueEngine {
   }
 
   void populateSystem(System system, {int? numShips}) {
-    print("Populating System");
+    glog("Populating System, $system");
     system.population = {
       for (final sp in galaxy.allSpecies)
         sp: 100 / galaxy.graphDistance(system, galaxy.findHomeworld(sp)),
@@ -123,27 +123,25 @@ class FugueEngine {
     numShips ??= rnd.nextInt(3);
     for (int i = 0; i < numShips; i++) {
       final pilot = Pilot(Rng.generateName(rnd: rnd),system,mapRng,hostile: true);
-      print("Populating System, Pilot: ${pilot.faction.name}");
-      final level = 1 - (galaxy.graphDistance(system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps);
-      final techLvl = (level * 10).round();
-      print("Tech lvl: $techLvl, $level");
+      final level = max(0,1 - (galaxy.graphDistance(system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps));
+      final techLvl = max(1,(level * 10).round());
+      glog("Faction: ${pilot.faction.name}, tech: $level, $techLvl");
       ShipType shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,mapRng);
       while (level < shipType.dangerLvl) {
         shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,mapRng);
       }
       final shipClassType = ShipClassType.values.firstWhereOrNull((t) => t.shipclass.type == shipType) ?? ShipClassType.mentok;
-      print("Ship Type: $shipType, $shipClassType");
       Ship ship = Ship("${Rng.rndColorName(rnd)}${Rng.rndAnimalName(rnd)}",pilot,
           loc: SystemLocation(system, system.map.rndCell(mapRng)),
           shipClass: shipClassType.shipclass
       );
       ship.installRndPower(techLvl, itemRng);
       ship.installRndEngine(Domain.impulse, techLvl, itemRng);
-      ship.installRndEngine(Domain.system, techLvl, itemRng);
-      ship.installRndEngine(Domain.hyperspace, techLvl, itemRng);
+      ship.installRndEngine(Domain.system, techLvl, itemRng); //no hyperspace
       ship.installRndShield(techLvl, itemRng);
       ship.installRndWeapon(techLvl, itemRng);
-      addShip(ship);
+      addShip(ship); //print("Ship created: $ship, ${ship.loc.cell.coord}");
+      glog(ship.dump());
     }
   }
 
@@ -265,8 +263,8 @@ class FugueEngine {
 
   int score() => auTick + (player.starOne ? 500 : 0) + (galaxy.discoveredSystems() * 2) + (player.piratesVanquished * 3) + (victory ? 1000 : 0);
 
-  Future<void> update() async {
-    if (!msgController.msgWorker.isProcessing || msgController.msgWorker.processNotifier.isCompleted) { //print("Updating...");
+  Future<void> update({bool noWait = false}) async {
+    if (noWait || !msgController.msgWorker.isProcessing || msgController.msgWorker.processNotifier.isCompleted) { //print("Updating...");
       _notify();
     } else { //print("Waiting on message queue...");
       msgController.msgWorker.processNotifier.future.then((v) { //print("Message queue clear, updating...");
@@ -274,12 +272,20 @@ class FugueEngine {
       });
     }
   }
+}
 
-  static void glog(String msg, {bool error = false}) {
-    print(msg);
-    assert(() {
-      if (error) throw AssertionError(msg);
-      return true;
-    }());
-  }
+enum DebugLevel {
+  Highest(100), Warning(90), Info(80), Fine(50), Finer(25), Debug(10), Lowest(0);
+  final int level;
+  const DebugLevel(this.level);
+}
+
+DebugLevel debugLevel = DebugLevel.Info;
+
+void glog(String msg, {bool error = false, DebugLevel level = DebugLevel.Debug}) {
+  if (level.level >= debugLevel.level) print(msg);
+  assert(() {
+    if (error) throw AssertionError(msg);
+    return true;
+  }());
 }

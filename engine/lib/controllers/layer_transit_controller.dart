@@ -7,11 +7,11 @@ import '../grid.dart';
 import '../hazards.dart';
 import '../impulse.dart';
 import '../location.dart';
+import '../menu.dart';
 import '../pilot.dart';
 import '../ship.dart';
 import '../system.dart';
 import 'fugue_controller.dart';
-import 'menu_controller.dart';
 import 'pilot_controller.dart';
 
 class LayerTransitController extends FugueController {
@@ -46,7 +46,7 @@ class LayerTransitController extends FugueController {
     List<ActionEntry> links = List.generate(system.links.length, (i) =>
         ActionEntry(fm.menuController.letter(i),
             system.links.elementAt(i).toString(),
-                (m) => newSystem(fm.player, system.links.elementAt(i)),exitMenu: true)
+                (m) => newSystem(fm.player, system.links.elementAt(i)),exitAfter: true)
     );
     fm.menuController.showMenu(() => links, headerTxt: "Hyperspace");
   }
@@ -73,19 +73,20 @@ class LayerTransitController extends FugueController {
     fm.pilotController.action(ship.pilot,ActionType.warp);
   }
 
-  bool newSystem(Pilot pilot, System system) {
+  bool newSystem(Pilot pilot, System system, {action = true}) {
     if (fm.pilotMap.containsKey(pilot)) {
       Ship ship = fm.pilotMap[pilot]!;
       final sysLoc = ship.loc;
       if (sysLoc is SystemLocation) {
-        if (sysLoc.cell.starClass != null) {
-          sysLoc.level.removeShip(ship);
-          final stars = system.map.cells.values.where((c) => c is SectorCell && c.starClass != null);
-          ship.move(stars.first, toSystem: system); //ship.loc = SystemLocation(system, stars.first);
-          pilot.system = system;
-          system.visit(fm); //print("-> $system");
-          fm.pilotController.action(pilot,ActionType.sector);
-          return true;
+        if (sysLoc.cell.starClass != null) { //sysLoc.level.removeShip(ship);
+          if (action) fm.pilotController.action(pilot,ActionType.sector);
+          if (sysLoc == ship.loc) {
+            final stars = system.map.cells.values.where((c) => c is SectorCell && c.starClass != null);
+            ship.move(stars.first, toSystem: system); //ship.loc = SystemLocation(system, stars.first);
+            system.visit(fm);
+            fm.update();
+            return true;
+          }
         }
       }
       if (ship.playship) fm.scannerController.reset();
@@ -101,7 +102,7 @@ class LayerTransitController extends FugueController {
     if (playShip.loc is! SystemLocation) {
       fm.msgController.addMsg("Error: ship not at system level"); return;
     }
-    FugueEngine.glog("Creating impulse map..."); //Entering")
+    glog("Creating impulse map..."); //Entering")
     int size = gridSize; //ship gridsize?
     ImpulseLevel impLevel;
     ShipLocation sysLoc = playShip.loc;
@@ -139,7 +140,7 @@ class LayerTransitController extends FugueController {
           if (ship != playShip) _enterImpulse(impLevel,ship);
         }
       } on ConcurrentModificationError {
-        FugueEngine.glog("fark");
+        glog("fark");
       }
     }
   }

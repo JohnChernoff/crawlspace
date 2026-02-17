@@ -1,6 +1,6 @@
 import 'dart:ui';
-import 'package:crawlspace_engine/controllers/menu_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_flutter/main.dart';
 import 'package:flutter/material.dart';
 import '../inputs/menu_input.dart';
@@ -58,13 +58,13 @@ class AsciiViewState extends State<AsciiView> {
   Widget asciiView() {
     return ColoredBox(color: Colors.black,child: Column(children: [
         Expanded(child: Row(children: [
-          Expanded(flex: 3, child:
+          Expanded(flex: 2, child:
             MessageLog(key: const ValueKey("main-log"), messageStream: widget.fugueModel.msgController.msgWorker.stream)
           ),
           if (currentView == ViewType.normal) Expanded(child: TextBlockWidget(widget.fugueModel.scannerController.scannerText())),
           if (currentView == ViewType.normal) Expanded(child: TextBlockWidget(widget.fugueModel.scannerController.statusText()))
         ])),
-        if (currentView == ViewType.normal) Expanded(child: Row(children: [ //const ColoredBox(color: Colors.grey),
+        if (currentView == ViewType.normal) Expanded(child: Row(children: [
           Expanded(child: AspectRatio(aspectRatio: 2, child: AsciiGrid(widget.fugueModel)))
         ]))
       ]));

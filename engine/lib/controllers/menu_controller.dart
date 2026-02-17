@@ -2,6 +2,7 @@ import 'dart:math';
 import '../foosham/foosham.dart';
 import '../foosham/throws.dart';
 import '../fugue_engine.dart';
+import '../menu.dart';
 import '../pilot.dart';
 import '../planet.dart';
 import '../ship.dart';
@@ -10,100 +11,8 @@ import '../system.dart';
 import '../systems/ship_system.dart';
 import 'fugue_controller.dart';
 
-typedef VoidCallback = void Function();
-typedef MenuBuilder = List<MenuEntry> Function();
-
-class MenuContext {
-  MenuBuilder builder;
-  final InputMode mode;
-  final String headerTxt;
-  final String nothingTxt;
-  final int maxEntries;
-  final bool noExit;
-  int firstEntry;
-
-  MenuContext({
-    required this.builder,
-    required this.mode,
-    required this.headerTxt,
-    required this.nothingTxt,
-    required this.maxEntries,
-    required this.noExit,
-    this.firstEntry = 0,
-  });
-}
-
-enum InputMode {
-  main(false),
-  menu(true),
-  planet(true);
-  final bool showMenu;
-  const InputMode(this.showMenu);
-}
-
-abstract class MenuEntry {
-  final String letter;
-  final String label;
-  final bool exitMenu;
-  bool get enabled => true;
-
-  MenuEntry(this.letter,this.label,{this.exitMenu = false});
-
-  void activate(MenuController mc);
-}
-
-class ActionEntry extends MenuEntry {
-  final void Function(MenuController) action;
-
-  ActionEntry(super.letter, super.label, this.action, {super.exitMenu});
-
-  @override
-  void activate(MenuController mc) {
-    action(mc); // run first
-    if (exitMenu) mc.exitMenu();
-    else mc.fm.update();
-  }
-}
-
-class ValueEntry<T> extends MenuEntry {
-  final T value;
-  final void Function(T) onSelect;
-
-  ValueEntry(super.letter, super.label, this.value, this.onSelect, {super.exitMenu});
-
-  @override
-  void activate(MenuController mc) {
-    onSelect(value);
-    if (exitMenu) mc.exitMenu();
-    else mc.fm.update();
-  }
-}
-
-class ShopItemEntry<T> extends ValueEntry<T> {
-  Pilot shopper;
-
-  @override
-  bool get enabled {   // TODO: use shop to determine actual cost
-    final v = value; if (v is ShopSlot) {
-      final cost = v.items.firstOrNull?.baseCost ?? 0;
-      return shopper.credits >= cost;
-    }
-    return false;
-   }
-
-  ShopItemEntry(super.letter, super.label, super.value, super.onSelect, {
-    required this.shopper, super.exitMenu});
-
-}
-
-class ResultMessage {
-  final bool success;
-  final String msg;
-  const ResultMessage(this.msg, this.success);
-}
-
 class MenuController extends FugueController {
-  final rootMenu = MenuContext(mode: InputMode.main, builder: () => [], headerTxt: "Main", noExit: true, nothingTxt: "", maxEntries: 0, firstEntry: 0);
+  final rootMenu = MenuContext(mode: InputMode.main, builder: () => []);
   late final List<MenuContext> menuStack = [rootMenu];
   MenuContext get currentMenu => menuStack.last;
   InputMode get inputMode => currentMenu.mode;
@@ -113,15 +22,12 @@ class MenuController extends FugueController {
 
   MenuController(super.fm);
 
-  void exitMenu() {
-    print("Exit Menu called");
-    if (menuStack.length > 1) {
-      print("Exiting...");
+  void exitMenu() { //print("Exit Menu called");
+    if (menuStack.length > 1) { //print("Exiting...");
       menuStack.removeLast();
       _rebuildMenu();
-    } else {
-      fm.update();
     }
+    fm.update(noWait: true);
   }
 
   //TODO: fix
@@ -138,17 +44,17 @@ class MenuController extends FugueController {
 
   void showPlanetMenu(Planet planet) {
     List<MenuEntry> activities = [
-      ActionEntry("s", "(s)cout the system", (m) => fm.planetsideController.scout(), exitMenu: false),
-      ActionEntry("h", "(h)ack the network for clues about Star One", (m) => fm.planetsideController.hack(), exitMenu: false),
-      ActionEntry("a", "reveal (a)gent locations", (m) => fm.planetsideController.spy(), exitMenu: false),
-      ActionEntry("v", "(v)isit the tavern", (m) => fm.planetsideController.newFooShamGame(ThrowList.quantum), exitMenu: false),
-      ActionEntry("t", "(t)rade mission", (m) => fm.planetsideController.getTradeMission(), exitMenu: false),
-      ActionEntry("i", "broadcast (i)nformation about Star One", (m) => fm.planetsideController.broadcast(), exitMenu: false),
-      ActionEntry("r", "(r)epair ship", (m) => fm.planetsideController.spy(), exitMenu: false),
-      ActionEntry("u", "(u)pgrade ship", (m) => fm.planetsideController.spy(), exitMenu: false),
-      ActionEntry("g", "(g)enetic engineering", (m) => fm.planetsideController.bioHack(), exitMenu: false),
-      ActionEntry("b", "(b)rowse shop", (m) => fm.planetsideController.shop(), exitMenu: false),
-      ActionEntry("l", "(l)aunch", (m) => fm.msgController.addMsg("Launching..."), exitMenu: true),
+      ActionEntry("s", "(s)cout the system", (m) => fm.planetsideController.scout(), exitAfter: false),
+      ActionEntry("h", "(h)ack the network for clues about Star One", (m) => fm.planetsideController.hack(), exitAfter: false),
+      ActionEntry("a", "reveal (a)gent locations", (m) => fm.planetsideController.spy(), exitAfter: false),
+      ActionEntry("v", "(v)isit the tavern", (m) => fm.planetsideController.newFooShamGame(ThrowList.quantum), exitAfter: false),
+      ActionEntry("t", "(t)rade mission", (m) => fm.planetsideController.getTradeMission(), exitAfter: false),
+      ActionEntry("i", "broadcast (i)nformation about Star One", (m) => fm.planetsideController.broadcast(), exitAfter: false),
+      ActionEntry("r", "(r)epair ship", (m) => fm.planetsideController.spy(), exitAfter: false),
+      ActionEntry("u", "(u)pgrade ship", (m) => fm.planetsideController.spy(), exitAfter: false),
+      ActionEntry("g", "(g)enetic engineering", (m) => fm.planetsideController.bioHack(), exitAfter: false),
+      ActionEntry("b", "(b)rowse shop", (m) => fm.planetsideController.shop(), exitAfter: false),
+      ActionEntry("l", "(l)aunch", (m) => fm.msgController.addMsg("Launching..."), exitAfter: true),
     ];
     showMenu(() => activities,headerTxt: planet.name, noExit: true, mode: InputMode.planet);
   }
@@ -161,13 +67,9 @@ class MenuController extends FugueController {
           ValueEntry(letter(i),game.throwList.list[i],game.throwList.list[i],
                 (t) {
                   final result = game.playThrow(t);
-                  fm.msgController.addMsg(result.toString());
-                  if (game.winner == null) {
-                    showMenu(() => createThrowMenu(pilot, game));
-                  } else {
-                    exitMenu();
-                  }
-          })
+                  fm.msgController.addMsg(result.toString()); //TODO: exit on game completion
+                  //if (game.winner == null) { showMenu(() => createThrowMenu(pilot, game)); } else { exitMenu(); }
+          },exitAfter: game.winner != null)
     ];
   }
 
@@ -176,7 +78,7 @@ class MenuController extends FugueController {
     return <MenuEntry> [
       for (int i = 0; i < systems.length; i++)
         ValueEntry(letter(i),"${systems[i].name} , ${systems[i].slot}", systems[i],
-                (system) => fm.msgController.addResultMsg(fm.pilotController.uninstallSystem(system, ship)),exitMenu: true)
+                (system) => fm.msgController.addResultMsg(fm.pilotController.uninstallSystem(system, ship)),exitAfter: true)
     ];
   }
 
@@ -185,7 +87,8 @@ class MenuController extends FugueController {
     return <MenuEntry> [
       for (int i = 0; i < systems.length; i++)
         ValueEntry(letter(i),"${systems[i].name} , ${systems[i].slot}", systems[i],
-                (system) => fm.pilotController.installSystem(ship, system),exitMenu: true)
+                (system) => fm.pilotController.installSystem(ship, system),
+            exitAfter: false, disabledReason: () => (ship.availableSlotsbySystem(systems[i]).isEmpty ? "No available slot" : null))
     ];
   }
 
@@ -194,39 +97,16 @@ class MenuController extends FugueController {
     return <MenuEntry> [
       for (int i = 0; i < slots.length; i++)
         ValueEntry(letter(i),"${slots[i]}", slots[i],
-                (slot) => fm.msgController.addResultMsg(fm.pilotController.installSystem(ship, system, slot: slot)),exitMenu: true)
+                (slot) => fm.msgController.addResultMsg(fm.pilotController.installSystem(ship, system, slot: slot)), exitAfter: true)
     ];
   }
 
-  List<MenuEntry> createShopMenu(Shop shop, Ship ship) {
+  List<MenuEntry> createShopBuyMenu(Shop shop, Ship ship) {
     final entries = <MenuEntry> [
       for (int i = 0; i < shop.itemSlots.length; i++) slotEntry(shop.itemSlots.elementAt(i), letter(i), shop, ship)
     ];
     entries.add(ActionEntry("s","(s)ell", (m) => showMenu(() => createShopSellMenu(ship, shop))));
     return entries;
-  }
-
-  void createAndShowShopMenu(Shop shop, Ship ship, bool refresh) {
-    if (refresh) replaceTopMenuFull(() => createShopMenu(shop, ship));  // maxListLength: 12);
-    else showMenu(() => createShopMenu(shop, ship));
-  }
-
-  ShopItemEntry slotEntry(ShopSlot itemSlot, String ltr, Shop shop, Ship ship) {
-    final slot = itemSlot;
-    if (slot.items.isNotEmpty) {
-      return ShopItemEntry(ltr,"${slot.items.first.name} , ${slot.items.first.baseCost}, ${slot.items.length}", slot,
-              (shopSlot) => confirm("Purchse?", () {
-                 fm.msgController.addMsg(shop.transactionSell(shopSlot, ship)); //fm.msgController.addMsg(shop.transactionSell(slot, ship));
-          }), shopper: ship.pilot, exitMenu: false);
-    }
-    return ShopItemEntry(ltr, "empty inventory slot", null, (e) => {}, shopper: ship.pilot);
-  }
-
-  void confirm(String query, VoidCallback action, {VoidCallback? noAction}) {
-    showMenu(() => [
-      ActionEntry("y", "(y)es", (m) => action(), exitMenu: true),
-      ActionEntry("n", "(n)o", (m) { noAction?.call(); }, exitMenu: true),
-    ],headerTxt: query, noExit: true);
   }
 
   //TODO: make player inventory like shops?
@@ -240,30 +120,38 @@ class MenuController extends FugueController {
       for (int i = 0; i < items.length; i++)
         ValueEntry(letter(i),"${items[i].name} , ${items[i].baseCost}", items[i], //TODO: show cost modifier?
                 (item) {
-                   fm.msgController.addMsg(shop.transactionBuy(item, ship)); //createAndShowShopMenu(shop, ship, true); //refresh shop
-      },exitMenu: true)
+              fm.msgController.addMsg(shop.transactionBuy(item, ship)); //createAndShowShopMenu(shop, ship, true); //refresh shop
+            },exitAfter: true)
     ];
   }
 
-  void showMenu(
-      MenuBuilder builder, {
-        InputMode mode = InputMode.menu,
-        String headerTxt = "Select:",
-        String nothingTxt = "Nothing found",
-        int maxEntries = 26,
-        bool noExit = false,
-        int firstEntry = 0,
-      }) {
-    menuStack.add(MenuContext(
-      builder: builder,
-      mode: mode,
-      headerTxt: headerTxt,
-      nothingTxt: nothingTxt,
-      maxEntries: maxEntries,
-      noExit: noExit,
-      firstEntry: firstEntry,
-    ));
+  //unused
+  /*
+  void createAndShowShopMenu(Shop shop, Ship ship, bool refresh) {
+    if (refresh) replaceTopMenuFull(() => createShopMenu(shop, ship));  // maxListLength: 12);
+    else showMenu(() => createShopMenu(shop, ship));
+  } */
 
+  ShopItemEntry slotEntry(ShopSlot itemSlot, String ltr, Shop shop, Ship ship) {
+    final slot = itemSlot;
+    if (slot.items.isNotEmpty) {
+      return ShopItemEntry(ltr,"${slot.items.first.name} , ${slot.items.first.baseCost}, ${slot.items.length}", slot,
+              (shopSlot) => confirm("Purchse?", () {
+                 fm.msgController.addMsg(shop.transactionSell(shopSlot, ship)); //fm.msgController.addMsg(shop.transactionSell(slot, ship));
+          }), shopper: ship.pilot, exitAfter: false);
+    }
+    return ShopItemEntry(ltr, "empty inventory slot", null, (e) => {}, shopper: ship.pilot);
+  }
+
+  void confirm(String query, VoidCallback action, {VoidCallback? noAction}) {
+    showMenu(() => [
+      ActionEntry("y", "(y)es", (m) => action(), exitAfter: true),
+      ActionEntry("n", "(n)o", (m) { noAction?.call(); }, exitAfter: true),
+    ],headerTxt: query, noExit: true);
+  }
+
+  void showMenu(MenuBuilder builder, { InputMode? mode, String? headerTxt, String? nothingTxt, int? maxEntries, bool? noExit, int? firstEntry}) {
+    menuStack.add(MenuContext.fromBuilder(builder, m: mode, ht: headerTxt, nt: nothingTxt, me: maxEntries, ne: noExit, fe: firstEntry));
     _rebuildMenu();
   }
 
@@ -281,16 +169,17 @@ class MenuController extends FugueController {
     _rebuildMenu();
   }
 
-  void _rebuildMenu() {
+  void _rebuildMenu({emptyExit = true}) {
     if (menuStack.isEmpty) return;
 
     final ctx = currentMenu;
     final full = ctx.builder();
 
-    if (full.isEmpty) {
-      fm.msgController.addMsg(ctx.nothingTxt);
-      exitMenu();
-      return;
+    if (full.isEmpty) { //fm.msgController.addMsg(ctx.nothingTxt);
+      if (emptyExit || ctx.noExit) {
+        exitMenu();
+        return;
+      }
     }
 
     final start = ctx.firstEntry;
@@ -319,7 +208,7 @@ class MenuController extends FugueController {
     _currentPage = page; //assert(page.every((e) => e is MenuEntry));
 
     fm.update();
-    FugueEngine.glog(menuStack.map((m)=>m.headerTxt).join(" > "));
+    glog(menuStack.map((m)=>m.headerTxt).join(" > "),level: DebugLevel.Info);
   }
 
   //void refreshMenu() { if (_lastBuilder != null) replaceTopMenuFull(_lastBuilder!); }

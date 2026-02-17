@@ -9,7 +9,6 @@ import 'package:crawlspace_engine/stock_items/stock_power.dart';
 import 'package:crawlspace_engine/stock_items/stock_shields.dart';
 import 'package:crawlspace_engine/stock_items/stock_weapons.dart';
 import 'package:crawlspace_engine/system.dart';
-
 import 'fugue_engine.dart';
 import 'color.dart';
 import 'coord_3d.dart';
@@ -19,7 +18,6 @@ import 'item.dart';
 import 'location.dart';
 import 'pilot.dart';
 import 'player.dart';
-import 'stock_items/stock_pile.dart';
 import 'stock_items/stock_ships.dart';
 import 'systems/engines.dart';
 import 'systems/power.dart';
@@ -191,8 +189,7 @@ class Ship {
         slots.first.system = system;
       }
       sys = slots.first;
-    }
-    if (sys != null) FugueEngine.glog("Installed: ${sys.system}");
+    } //if (sys != null) FugueEngine.glog("Installed: ${sys.system}");
     return sys;
   }
 
@@ -204,8 +201,7 @@ class Ship {
   }
 
   //TODO: sort by techLvl
-  bool installRndEngine(Domain domain, int techLvl, Random rnd, {maxAttempts = 10}) {
-    print("Attempting to install $domain engine <= techlvl $techLvl...");
+  bool installRndEngine(Domain domain, int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install $domain engine <= techlvl $techLvl...");
     int attempts = 0;
     while (getEngine(domain) == null && attempts++ < maxAttempts) { //print("Engine weights: ${pilot.faction.engineWeights.normalized}");
       final engineType = Rng.weightedRandom(pilot.faction.engineWeights.normalized,rnd); //print("Engine Type: $engineType");
@@ -219,8 +215,7 @@ class Ship {
     return getEngine(domain) != null ? true : techLvl > 0 ? installRndPower(0, rnd) : false;
   }
 
-  bool installRndPower(int techLvl, Random rnd, {maxAttempts = 10}) {
-    print("Attempting to install power generator <= techlvl $techLvl...");
+  bool installRndPower(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install power generator <= techlvl $techLvl...");
     int attempts = 0;
     while (getInstalledSystems([ShipSystemType.power]).isEmpty && attempts++ < 100) {
       final powerType = Rng.weightedRandom(pilot.faction.powerWeights.normalized,rnd);
@@ -231,8 +226,7 @@ class Ship {
     return getInstalledSystems([ShipSystemType.power]).isNotEmpty ? true : techLvl > 0 ? installRndPower(0, rnd) : false;
   }
 
-  bool installRndShield(int techLvl, Random rnd, {maxAttempts = 10}) {
-    print("Attempting to install shield <= techlvl $techLvl...");
+  bool installRndShield(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install shield <= techlvl $techLvl...");
     int attempts = 0;
     while (getInstalledSystems([ShipSystemType.shield]).isEmpty && attempts++ < 100) {
       final shieldType = Rng.weightedRandom(pilot.faction.shieldWeights.normalized,rnd);
@@ -243,8 +237,7 @@ class Ship {
     return getInstalledSystems([ShipSystemType.shield]).isNotEmpty ? true : techLvl > 0 ? installRndShield(0, rnd) : false;
   }
 
-  bool installRndWeapon(int techLvl, Random rnd, {maxAttempts = 10}) {
-    print("Attempting to install weapon <= techlvl $techLvl...");
+  bool installRndWeapon(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install weapon <= techlvl $techLvl...");
     int attempts = 0;
     while (getInstalledSystems([ShipSystemType.weapon]).isEmpty && attempts++ < 100) {
       final dmgType = Rng.weightedRandom(pilot.faction.damageWeights.normalized,rnd);
@@ -306,7 +299,7 @@ class Ship {
     if (ship != null) return ship.loc.cell.coord.distance(loc.cell.coord);
     if (l != null) return l.cell.coord.distance(loc.cell.coord);
     if (c != null) return c.distance(loc.cell.coord);
-    FugueEngine.glog("Warning: distance called with 0 arguments",error: true);
+    glog("Warning: distance called with 0 arguments",error: true);
     return double.infinity;
   }
   double distanceFrom(Ship ship) => ship.loc.cell.coord.distance(loc.cell.coord);
@@ -475,8 +468,7 @@ class Ship {
 
   bool addAmmo(Ammo ammo, int n, {setWeapon = false}) {
     if (okMass(ammo.mass * n)) return false;
-    ammoMap[ammo] = ammoMap.containsKey(ammo) ? ammoMap[ammo]! + n : n;
-    //print("Setting weapon...");
+    ammoMap[ammo] = ammoMap.containsKey(ammo) ? ammoMap[ammo]! + n : n; //print("Setting weapon...");
     if (setWeapon) {
       final weapons = getInstalledSystems([ShipSystemType.launcher]);
       if (weapons.isNotEmpty) {
@@ -526,6 +518,7 @@ class Ship {
       ImpulseLocation() => toSystem != null ? SystemLocation(toSystem,destination) : ImpulseLocation(l.systemLoc,l.level,destination),
     };
 
+    if (toSystem != null) pilot.system = toSystem;
     loc.level.addShip(this, destination);
   }
 
@@ -533,8 +526,7 @@ class Ship {
   double tick({Random? rnd, dryRun = false}) { //print("Tick... $dryRun");
     double totalRecharge = 0, totalBurn = 0;
     for (final rss in getInstalledSystems([ShipSystemType.power,ShipSystemType.shield])) {
-      if (rss is RechargableShipSystem && rss.active && rss.currentEnergy < rss.currentMaxEnergy) {
-        //print(rss.name); print(rss.rechargeRate);
+      if (rss is RechargableShipSystem && rss.active && rss.currentEnergy < rss.currentMaxEnergy) { //print(rss.name); print(rss.rechargeRate);
         double recharge = rss.currentMaxEnergy * rss.rechargeRate * (1-rss.damage);
         if (!dryRun) {
           if (rnd != null && rss.currentEnergy < 1) {
@@ -550,8 +542,7 @@ class Ship {
       if (s.system != null && s.system!.active) {
         double e = s.system!.powerDraw; //print("Burning: $e");
         if (!dryRun) {
-          burnEnergy(e);
-          //if (getCurrentEnergy() < 1 && s.system!.type != ShipSystemType.power) s.system!.active = false;
+          burnEnergy(e); //if (getCurrentEnergy() < 1 && s.system!.type != ShipSystemType.power) s.system!.active = false;
         }
         totalBurn += e;
       }
@@ -571,9 +562,11 @@ class Ship {
     blocks.add(TextBlock("%: ${currentHullPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
     blocks.add(TextBlock("Shields: ${currentShieldStrength.toStringAsFixed(2)}, ",GameColors.green,false));
     blocks.add(TextBlock("%: ${currentShieldPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
-    blocks.add(TextBlock("Energy: ${getCurrentEnergy().toStringAsFixed(2)}, ",GameColors.green,false));
-    blocks.add(TextBlock("%: ${currentEnergyPercentage.round().toStringAsFixed(2)}",GameColors.lightBlue,true));
-    blocks.add(TextBlock("Energy Rate: ${tick(dryRun: true).round().toStringAsFixed(2)}",GameColors.green,true));
+    if (!tactical) {
+      blocks.add(TextBlock("Energy: ${getCurrentEnergy().toStringAsFixed(2)}, ",GameColors.green,false));
+      blocks.add(TextBlock("%: ${currentEnergyPercentage.round().toStringAsFixed(2)}",GameColors.lightBlue,true));
+      blocks.add(TextBlock("Energy Rate: ${tick(dryRun: true).round().toStringAsFixed(2)}",GameColors.green,true));
+    }
     for (final system in systemMap) { ShipSystem? s = system.system;
       if (s != null) {
         bool cooldown = s is Weapon && s.cooldown > 0;
@@ -595,6 +588,24 @@ class Ship {
     }
 
     return blocks;
+  }
+
+  String dump() {
+    StringBuffer sb = StringBuffer();
+    sb.writeln(name);
+    sb.writeln(shipClass.name);
+    for (final system in systemMap) {
+      ShipSystem? s = system.system; if (s != null) {
+        sb.write("${s.name} ${s.active ? '+' : '-'}");
+        if (s is Weapon && s.ammo != null) {
+          sb.write(", ${s.ammo!.name}: ${ammoMap[s.ammo]}");
+        }
+      } else {
+        sb.write("Empty");
+      }
+      sb.writeln(", Slot: ${system.slot}");
+    }
+    return sb.toString();
   }
 
   @override

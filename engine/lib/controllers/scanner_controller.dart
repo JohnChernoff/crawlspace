@@ -62,10 +62,11 @@ class ScannerController extends FugueController {
 
   List<TextBlock> statusText() {
     List<TextBlock> blocks = []; //blocks.add(const TextBlock("Status: ",Colors.white,true));
-    blocks.add(TextBlock("Mode: ${fm.menuController.inputMode.name}",GameColors.white,true));
-    blocks.add(TextBlock("Tick: ${fm.auTick / 100}",GameColors.brown,true));
+    if (debugLevel.level < DebugLevel.Info.level ) {
+      blocks.add(TextBlock("Mode: ${fm.menuController.inputMode.name}",GameColors.white,true));
+      blocks.add(TextBlock("Tick: ${fm.auTick / 100}",GameColors.brown,true));
+    }
     blocks.add(TextBlock("Credits: ${fm.player.credits}",GameColors.khaki,true));
-
     Ship? ship = fm.playerShip; if (ship == null) {
       blocks.add(const TextBlock("No ship!",GameColors.red,true));
     } else {

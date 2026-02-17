@@ -22,13 +22,13 @@ sealed class ShipLocation {
       if (l.domain == domain) {
         return cell.coord.distance(l.cell.coord);
       } else {
-        FugueEngine.glog("Error: invalid ship location comparison", error: true);
+        glog("Error: invalid ship location comparison", error: true);
         return double.infinity;
       }
     } else if (c != null) {
       return cell.coord.distance(c.coord);
     } else {
-      FugueEngine.glog("Error: missing distance argument", error: true);
+      glog("Error: missing distance argument", error: true);
       return double.infinity;
     }
   }

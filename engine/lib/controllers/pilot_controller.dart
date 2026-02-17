@@ -1,17 +1,16 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/coord_3d.dart';
-import 'package:crawlspace_engine/hazards.dart';
 import '../fugue_engine.dart';
 import '../grid.dart';
 import '../location.dart';
+import '../menu.dart';
 import '../pilot.dart';
 import '../rng.dart';
 import '../ship.dart';
 import '../systems/ship_system.dart';
 import '../systems/weapons.dart';
 import 'fugue_controller.dart';
-import 'menu_controller.dart';
 import 'movement_controller.dart';
 
 enum ActionType {
@@ -50,11 +49,11 @@ class PilotController extends FugueController {
 
   void toggleSystem(Ship ship) {
     final systems = ship.getAllSystems;
-    final menuEntries = List.generate(systems.length, (i) => ValueEntry(
+    final menuEntries = List<MenuEntry>.generate(systems.length, (i) => ValueEntry(
         fm.menuController.letter(i),
         systems.elementAt(i).name,
         systems.elementAt(i),
-        (s) => s.active = !s.active, exitMenu: true));
+        (s) => s.active = !s.active, exitAfter: true));
     fm.menuController.showMenu(headerTxt: "Toggle System", () => menuEntries);
   }
 
@@ -68,10 +67,10 @@ class PilotController extends FugueController {
 
   ResultMessage installSystem(Ship ship, ShipSystem system, {SystemSlot? slot}) {
     if (ship.inventory.contains(system)) {
-      if (slot == null) {
-        fm.menuController.showMenu(() => fm.menuController.createInstallSlotMenu(ship,system),headerTxt: "Slot:");
+      if (slot == null) { //print("Ergh");
+        fm.menuController.showMenu(() => fm.menuController.createInstallSlotMenu(ship,system),headerTxt: "Select Slot:");
         return const ResultMessage("Select a slot", true);
-      } else {
+      } else { //print("hmm");
         final installedSystem = ship.installSystem(system, slot: slot);
         if (installedSystem != null) {
           return ResultMessage("Installed at slot: $slot",true);
@@ -114,7 +113,7 @@ class PilotController extends FugueController {
           Ship? ship = fm.pilotMap[p];
           if (ship != null && ship.loc.level == fm.playerShip?.loc.level) npcShipAct(ship);
         } on ConcurrentModificationError {
-          FugueEngine.glog("Skipping: ${p.name}",error: true);
+          glog("Skipping: ${p.name}",error: true);
         }
       }
       fm.auTick++;

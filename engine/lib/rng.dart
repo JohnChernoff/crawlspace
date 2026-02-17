@@ -1,6 +1,4 @@
 import 'dart:math';
-import 'package:crawlspace_engine/stock_items/species.dart';
-
 import 'coord_3d.dart';
 
 enum ColorName {

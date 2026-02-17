@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
@@ -184,7 +185,7 @@ class _FugueHomeState extends State<FugueHome> {
   }
 
   void _initGame() { //_updateSound();
-    model = FugueModel(FugueEngine(Galaxy("FooBar"), "Zug"));
+    model = FugueModel(FugueEngine(Galaxy("FooBar"), "Zug", seed: Random().nextInt(999)));
     model!.engine.addListener(model!.notify);
     setState(() {
       view = ViewState.game;

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:collection';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import '../color.dart';
+import '../menu.dart';
 import 'fugue_controller.dart';
-import 'menu_controller.dart';
 
 class MessageController extends FugueController {
   final msgWorker = MessageQueueWorker();

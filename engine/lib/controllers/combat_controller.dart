@@ -1,6 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/fugue_engine.dart';
-
 import '../coord_3d.dart';
 import '../impulse.dart';
 import '../ship.dart';
