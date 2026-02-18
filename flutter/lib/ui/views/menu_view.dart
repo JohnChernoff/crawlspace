@@ -66,10 +66,13 @@ class MenuWidgetState extends State<MenuWidget> {
                 itemBuilder: (context, i) {
                   final isEnabled = list[i].enabled;
                   final disabledString =  isEnabled ? '' : "(${list[i].disabledReason()})";
+                  final txtString = list[i].letter.isNotEmpty
+                      ? "${list[i].letter}: ${list[i].label} $disabledString"
+                      : list[i].label;
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
                     child: Text(
-                      "${list[i].letter}: ${list[i].label} $disabledString",
+                      txtString,
                       style: TextStyle(
                         color: isEnabled ? Colors.white : Colors.grey,
                         fontSize: textStyle.fontSize,

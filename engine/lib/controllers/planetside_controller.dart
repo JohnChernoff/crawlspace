@@ -149,7 +149,7 @@ class PlanetsideController extends FugueController {
     Planet? planet = fm.player.planet; if (planet != null) { // && planet.commLvl.atOrAbove(DistrictLvl.medium)) {
       planet.shop ??= Shop.random(1,fm.rnd);
       if (fm.playerShip != null) { //fm.menuController.createAndShowShopMenu(planet.shop!, fm.playerShip!, false);
-        fm.menuController.showMenu(() => fm.menuController.createShopBuyMenu(planet.shop!, fm.playerShip!),headerTxt: "${planet.shop!.name}, credits: ${fm.player.credits}");
+        fm.menuController.showMenu(() => fm.menuController.createShopBuyMenu(planet.shop!, fm.playerShip!),headerTxt: "${planet.shop!.name}");
       }
     }
   }

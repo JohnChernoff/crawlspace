@@ -69,6 +69,12 @@ abstract class MenuEntry {
   void activate(MenuController mc);
 }
 
+class TextEntry extends MenuEntry {
+  TextEntry(String label) : super("", label);
+  @override
+  void activate(MenuController mc) {}
+}
+
 class ActionEntry extends MenuEntry {
   final void Function(MenuController) action;
 

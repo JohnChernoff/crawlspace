@@ -8,19 +8,20 @@ import '../ship.dart';
 import 'fugue_controller.dart';
 
 enum ScannerMode {
-  all(GameColors.white),
-  objects(GameColors.cyan),
-  ships(GameColors.green),
-  planets(GameColors.blue),
-  stars(GameColors.yellow),
-  ion(GameColors.orange),
-  neb(GameColors.purple),
-  roid(GameColors.gray),
-  oddities(GameColors.neonPink),
-  storms(GameColors.red),
-  field(GameColors.brown); //,
+  all(GameColors.white,true),
+  objects(GameColors.cyan,true),
+  ships(GameColors.green,false),
+  planets(GameColors.blue,false),
+  stars(GameColors.yellow,false),
+  ion(GameColors.orange,true),
+  neb(GameColors.coral,true),
+  roid(GameColors.gray,true),
+  oddities(GameColors.neonPink,false),
+  storms(GameColors.red,false),
+  field(GameColors.brown,false);
   final GameColor color;
-  const ScannerMode(this.color);
+  final bool accessable;
+  const ScannerMode(this.color, this.accessable);
   bool get scaningShips => this == ScannerMode.ships || this == ScannerMode.objects;
   bool get scaningPlanets => this == ScannerMode.planets || this == ScannerMode.objects;
   bool get scaningStars => this == ScannerMode.stars || this == ScannerMode.objects;
@@ -98,6 +99,7 @@ class ScannerController extends FugueController {
           .sorted((c1,c2) => c1.coord.distance(ship.loc.cell.coord).compareTo(c2.coord.distance(ship.loc.cell.coord)));
       for (GridCell cell in cells) {
         if (!cell.empty(ship.loc.level.map)) {
+
           blocks.add(TextBlock(cell.toScannerString(ship.loc.level.map), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
           currentScan.add(cell);
         }
@@ -123,23 +125,24 @@ class ScannerController extends FugueController {
     fm.update();
   }
 
-  void targetScannedObject(Ship? ship, GridCell? cell) {
-    if (ship != null && cell != null) ship.targetCoord = cell.coord;
-    fm.update();
-  }
-
-  void targetShipFromScannedCell({GridCell? currCell}) {
-    final scannedCell = currCell ?? currentScanSelection;
+  void targetScannedObject(GridCell? cell) {
+    final scannedCell = cell ?? currentScanSelection;
     if (scannedCell == null || !currentScan.contains(scannedCell)) return;
     Ship? playShip = fm.playerShip; if (playShip != null) {
       final ships = playShip.loc.level.shipsAt(scannedCell);
       if (ships.length > 1) {
         currentScannedShipIndex++;
         if (currentScannedShipIndex >= ships.length) currentScannedShipIndex = 0;
+        playShip.targetCoord = null;
         playShip.targetShip = ships.elementAt(currentScannedShipIndex);
       }
+      else if (ships.length == 1) {
+        playShip.targetCoord = null;
+        playShip.targetShip = ships.first;
+      }
       else {
-        playShip.targetShip = ships.firstOrNull;
+        playShip.targetShip = null;
+        playShip.targetCoord = scannedCell.coord;
       }
     }
     fm.update();
@@ -159,6 +162,7 @@ class ScannerController extends FugueController {
         scannerMode = ScannerMode.values.elementAt(ScannerMode.values.length - 1);
       }
     }
+    if (!scannerMode.accessable) toggleScannerMode(forwards: forwards);
     reset();
     fm.update();
   }

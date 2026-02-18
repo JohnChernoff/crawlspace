@@ -1,6 +1,8 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:crawlspace_engine/audio_service.dart';
+import 'package:crawlspace_engine/controllers/audio_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy.dart';
 import 'package:crawlspace_flutter/ui/views/ascii_view.dart';
@@ -187,6 +189,7 @@ class _FugueHomeState extends State<FugueHome> {
   void _initGame() { //_updateSound();
     model = FugueModel(FugueEngine(Galaxy("FooBar"), "Zug", seed: Random().nextInt(999)));
     model!.engine.addListener(model!.notify);
+    model!.engine.audioController.service = FlutterAudioService(model!.engine.audioController);
     setState(() {
       view = ViewState.game;
     });
@@ -199,4 +202,20 @@ class CustomScrollBehavior extends MaterialScrollBehavior {
     PointerDeviceKind.touch,
     PointerDeviceKind.mouse,
   };
+}
+
+class FlutterAudioService extends AudioService {
+  AudioController controller;
+  FlutterAudioService(this.controller);
+
+  @override
+  void playNewTrack() {
+    fuguePlayer.play(AssetSource(controller.getTrack()));
+  }
+
+  @override
+  void setMood(MusicalMood mood) {
+    // TODO: implement setMood
+  }
+
 }

@@ -46,8 +46,7 @@ class ScannerSelectionIntent extends Intent {
 }
 
 class ScannerTargetIntent extends Intent {
-  final bool ship;
-  const ScannerTargetIntent(this.ship);
+  const ScannerTargetIntent();
 }
 
 class ScannerTargetModeIntent extends Intent {
@@ -185,10 +184,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         const ScannerSelectionIntent(false),
 
         LogicalKeySet(LogicalKeyboardKey.keyT):
-        const ScannerTargetIntent(false),
-
-        LogicalKeySet(LogicalKeyboardKey.keyT, LogicalKeyboardKey.shift):
-        const ScannerTargetIntent(true),
+        const ScannerTargetIntent(),
 
         LogicalKeySet(LogicalKeyboardKey.minus):
         const ScannerTargetModeIntent(),
@@ -276,11 +272,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ),
         ScannerTargetIntent: CallbackAction<ScannerTargetIntent>(
             onInvoke: (intent) {
-              if (intent.ship) {
-                fm.scannerController.targetShipFromScannedCell();
-              } else {
-                fm.scannerController.targetScannedObject(fm.playerShip,fm.scannerController.currentScanSelection);
-              }
+              fm.scannerController.targetScannedObject(fm.scannerController.currentScanSelection);
               return null;
             }
         ),

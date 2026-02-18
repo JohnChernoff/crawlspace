@@ -103,6 +103,7 @@ class MenuController extends FugueController {
 
   List<MenuEntry> createShopBuyMenu(Shop shop, Ship ship) {
     final entries = <MenuEntry> [
+      TextEntry("Credits: ${fm.player.credits}"),
       for (int i = 0; i < shop.itemSlots.length; i++) slotEntry(shop.itemSlots.elementAt(i), letter(i), shop, ship)
     ];
     entries.add(ActionEntry("s","(s)ell", (m) => showMenu(() => createShopSellMenu(ship, shop))));

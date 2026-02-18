@@ -33,7 +33,7 @@ class Shop {
   ShopType type;
 
   Shop(this.type,this.techLvl,Random rnd, {this.buysScrap = false}) {
-    name = "${type.name} Shop";
+    name = ShopNameGen.generate(type, rnd);
     generateItems(rnd);
   }
 
@@ -134,6 +134,60 @@ class Shop {
     itemSlots.add(ShopSlot(itemList: [i]));
   }
 
+}
 
+class ShopNameGen {
+  static const List<String> alienPrefixes = [
+    "Xar", "Qel", "Vor", "Zyn", "Tal", "Ixo", "Prax", "Khe", "Ulm", "Syr", "Nok",
+    "Gor", "Leth", "Oon", "Trek", "Vash", "Zor", "Hyl", "Mek", "Thra"
+  ];
 
+  static const List<String> alienSuffixes = [
+    "tek", "kor", "dyn", "plex", "zon", "ium", "rax", "mar", "shi", "tor", "vox",
+    "bel", "tar", "nok", "thal", "vek", "lo", "zar"
+  ];
+
+  static const Map<ShopType, List<String>> shopFlavors = {
+    ShopType.power:   ["Reactors", "Powerworks", "Fusion Emporium", "Core Depot"],
+    ShopType.engine:  ["Engines", "Driveworks", "Propulsion Guild", "Thrust Hall"],
+    ShopType.shield:  ["Shieldworks", "Deflector Forge", "Barrier Bazaar", "Wardens"],
+    ShopType.weapon:  ["Arsenal", "Armory", "Killmart", "Gun Cathedral"],
+    ShopType.launcher:["Launch Systems", "Missile Bay", "Tube Syndicate"],
+    ShopType.misc:    ["Bazaar", "Emporium", "Tech Curios", "Oddities"]
+  };
+
+  static const List<String> megacorps = [
+    "OmniDyne", "Hyperion", "CryoCore", "VoidStar", "Zenith Union", "NovaCorp"
+  ];
+
+  static const List<String> shopPatterns = [
+    "{alien} {flavor}",
+    "{alien}'s {flavor}",
+    "The {alien} {flavor}",
+    "{alien}-{alien} {flavor}",
+    "{flavor} of {alien}",
+    "{alien} & Sons {flavor}",
+  ];
+
+  static String randomAlienName(Random rnd) {
+    String p = alienPrefixes[rnd.nextInt(alienPrefixes.length)];
+    String s = alienSuffixes[rnd.nextInt(alienSuffixes.length)];
+
+    // Occasionally mash two prefixes for more chaos
+    if (rnd.nextDouble() < 0.15) {
+      p += alienPrefixes[rnd.nextInt(alienPrefixes.length)].toLowerCase();
+    }
+
+    return p + s;
+  }
+
+  static String generate(ShopType type, Random rnd) {
+    String alien = randomAlienName(rnd);
+    String flavor = shopFlavors[type]![rnd.nextInt(shopFlavors[type]!.length)];
+    String pattern = shopPatterns[rnd.nextInt(shopPatterns.length)];
+
+    return pattern
+        .replaceAll("{alien}", alien)
+        .replaceAll("{flavor}", flavor);
+  }
 }

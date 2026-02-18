@@ -3,7 +3,7 @@ import '../audio_service.dart';
 
 class AudioController {
   final Random rnd;
-  final AudioService service;
+  AudioService service;
   MusicalMood mood = MusicalMood.intro;
 
   AudioController(this.service, this.rnd);

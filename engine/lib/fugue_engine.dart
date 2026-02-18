@@ -39,7 +39,9 @@ class TextBlock {
 
 //cargo systems?  passengers, smuggling? cloaking systems?
 //hyperspace landing spot?   Graph not detecting player location?
-//TODO: optimize viewports, add music, add launchers, increase scrap value, sell scrap bug
+//TODO: add music, add launchers, one shield/generator per ship, Galaxy menu/refresh log, themed tavern games/activities
+//Show ship class somehow
+//hostility calc, pacification/bribes, swap , and . keys, more intuitive key commands, etc.
 class FugueEngine {
   final _listeners = <void Function()>[];
 
@@ -52,7 +54,7 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1h";
+  final String version = "0.1j";
   Galaxy galaxy;
   late Player player;
   int numAgents = 3;

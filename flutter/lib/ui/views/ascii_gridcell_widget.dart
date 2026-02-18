@@ -58,11 +58,15 @@ class GridCellWidgetState extends State<GridCellWidget> {
     final baseFontSize = widget.size * 0.8; // tweak 0.7–0.9
     final fontSize = max(baseFontSize * depthFactor, widget.size * 0.45);
 
+    final borderWidth = widget.ships.isNotEmpty
+        ? (widget.ships.first.shipClass.type.dangerLvl * 8).ceilToDouble()
+        : 1.0;
+
     return Container(
         width: widget.size,
         height: widget.size,
         decoration: BoxDecoration( //color: Colors.black,
-        border: widget.inTargetPath ? Border.all(color: Colors.white, width: 1) : null
+        border: widget.inTargetPath ? Border.all(color: Colors.white, width: borderWidth) : null
     ), child:  Center(
       child: Opacity(
         opacity: widget.special || widget.invert ? 1 : opacity,
