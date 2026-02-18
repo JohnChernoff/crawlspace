@@ -1,7 +1,5 @@
 import 'dart:math';
 import 'package:crawlspace_engine/object.dart';
-import 'package:crawlspace_engine/planet.dart';
-
 import 'item.dart';
 import 'pilot.dart';
 import 'rng.dart';

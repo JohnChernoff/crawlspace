@@ -31,7 +31,7 @@ class PlanetsideController extends FugueController {
     }
     if (fm.pilotController.action(fm.player,ActionType.planetLand)) {
       if (planet == fm.galaxy.homeWorld) {
-        fm.endGame("You complete your mission!",home: true);
+        fm.homecoming(home: true);
       } else {
         fm.menuController.showPlanetMenu(planet);
         fm.audioController.newTrack(newMood: MusicalMood.planet);

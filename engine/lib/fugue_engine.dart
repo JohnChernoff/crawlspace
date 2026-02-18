@@ -52,20 +52,25 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1j";
+  final String version = "0.1k";
   Galaxy galaxy;
   late Player player;
   int numAgents = 3;
   List<Agent> agents = [];
-  late Random rnd,mapRng,speciesRng,aiRng,itemRng; //TODO: remove rnd
+  late Random rnd,combatRng,mapRng,speciesRng,aiRng,itemRng; //TODO: remove rnd
   int auTick = 0;
-  String? result;
-  bool gameOver = false;
-  bool victory = false;
-  Map<Pilot,Ship> shipMap = {};
+  String get result => blownUp ? "blown up" : isVictorious ? "victorious" : "vanquished";
+  bool get blownUp => (getShip(player)?.hullRemaining ?? 1) <= 0;
+  bool? victory;
+  bool get isVictorious => victory ??= true;
+  bool get gameOver => victory != null || blownUp;
+  int get score => auTick + (player.starOne ? 500 : 0) +
+      (galaxy.discoveredSystems() * 2) + (player.piratesVanquished * 3) + (isVictorious ? 1000 : 0);
+  Map<Pilot,Ship> _shipMap = {};
   Set<Pilot> npcPilots = {};
-  Ship? get playerShip => shipMap[player];
-  Iterable<Pilot> get activePilots => npcPilots.where((p) => shipMap[p] != null);
+  Ship? getShip(Pilot pilot) => _shipMap[pilot];
+  Ship? get playerShip => getShip(player);
+  Iterable<Pilot> get activePilots => npcPilots.where((p) => getShip(p) != null);
   Iterable<Pilot> get availablePilots => activePilots.where((p) => p.auCooldown == 0);
 
   late MessageController msgController;
@@ -85,6 +90,7 @@ class FugueEngine {
     speciesRng = Random(seed ^ 0xC0FFEE);
     aiRng = Random(seed ^ 0xBADC0DE);
     itemRng = Random(seed ^ 0xC0BFEED);
+    combatRng = Random(seed ^ 0xABCDEF00);
     msgController = MessageController(this);
     movementController = MovementController(this);
     layerTransitController = LayerTransitController(this);
@@ -129,14 +135,14 @@ class FugueEngine {
   void addShip(Ship ship, {Pilot? pilot}) {
     if (pilot != null) ship.pilot = pilot;
     if (ship.pilot != nobody) {
-      shipMap[ship.pilot] = ship;
+      _shipMap[ship.pilot] = ship;
       if (ship.pilot != player) npcPilots.add(ship.pilot);
       ship.loc.level.addShip(ship,ship.loc.cell);
     }
   }
 
   void newShip(Pilot pilot, Ship ship) {
-    final formerShip = shipMap[pilot];
+    final formerShip = _shipMap[pilot];
     pilot.location?.hangar.remove(ship);
     if (formerShip != null) {
       ship.loc = formerShip.loc;
@@ -148,8 +154,8 @@ class FugueEngine {
 
   void removeShip(Ship ship) {
     ship.pilot = nobody;
-    for (final s in shipMap.values) if (s.targetShip == ship) s.targetShip = null;
-    shipMap.remove(ship.pilot);
+    for (final s in _shipMap.values) if (s.targetShip == ship) s.targetShip = null;
+    _shipMap.remove(ship.pilot);
     ship.loc.level.map.shipMap[ship.loc.cell]?.remove(ship);
   }
 
@@ -174,11 +180,12 @@ class FugueEngine {
     msgController.addMsg("Insufficient energy!");
   }
 
-  void endGame(String reason, {bool home = false}) {
+  void homecoming({bool home = false}) {
     if (home) {
       if (!player.starOne || player.broadcasts == 0) {
         msgController.addMsg("You arrive on ${galaxy.homeWorld.name} and are immediately taken into custody and shortly thereafter executed for treason. "
             "Perhaps you should have broadcasted your information to the galaxy first.");
+        victory = false;
       }
       else if (Rng.biasedRndInt(rnd,mean: 1, min: 0, max: 5) <= player.broadcasts) {
         msgController.addMsg("You arrive on ${galaxy.homeWorld.name} admist a media firestorm and are taken into custody, but before your case can be "
@@ -189,10 +196,9 @@ class FugueEngine {
         msgController.addMsg("You arrive only to be immediately taken into custody as planet-wide protests echo in the distance.  Unfortunately your arrival also "
         "corresponds with the Intergalactic Foosball Cup and the public's interest in your case wanes.  You eventually wind up exiled on the distant ice planet "
         "Winnipegiax where you helplessly witness the antimatter-annihilation of roughly half the galaxy.");
+        victory = false;
       }
     }
-    result = reason;
-    gameOver = true;
     msgController.addMsg("*** GAME OVER ***");
     update();
   }
@@ -253,8 +259,6 @@ class FugueEngine {
   int currentHeat() {
     return (agents.fold(0, (pv,e) => pv + e.clueLvl) / agents.length).floor();
   }
-
-  int score() => auTick + (player.starOne ? 500 : 0) + (galaxy.discoveredSystems() * 2) + (player.piratesVanquished * 3) + (victory ? 1000 : 0);
 
   Future<void> update({bool noWait = false}) async {
     if (noWait || !msgController.msgWorker.isProcessing || msgController.msgWorker.processNotifier.isCompleted) { //print("Updating...");

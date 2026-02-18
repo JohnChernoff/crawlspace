@@ -5,8 +5,6 @@ import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'package:crawlspace_engine/stock_items/stock_ships.dart';
 import 'package:crawlspace_engine/system.dart';
-import 'package:fast_immutable_collections/fast_immutable_collections.dart';
-
 import 'coord_3d.dart';
 import 'fugue_engine.dart';
 import 'galaxy.dart';

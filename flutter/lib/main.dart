@@ -97,9 +97,9 @@ class _FugueHomeState extends State<FugueHome> {
       Expanded(child: ListenableBuilder(
         listenable: model!,
         builder: (BuildContext context, Widget? child) => Column(children: [
-          if (model!.engine.gameOver) gameOver(),
-          //Expanded(child: GalaxyView(fugueModel!,key: ValueKey(fugueModel))),
-          Expanded(child: AsciiView(model!.engine,key: ValueKey(model!.engine))),
+          model!.engine.gameOver
+            ? gameOver() //Expanded(child: GalaxyView(fugueModel!,key: ValueKey(fugueModel))),
+            : Expanded(child: AsciiView(model!.engine,key: ValueKey(model!.engine))),
         ]),
       )),
     ];
@@ -154,7 +154,7 @@ class _FugueHomeState extends State<FugueHome> {
               style: const TextStyle(color: Colors.orange)),
           Text("Victory (1000 pts): ${model?.engine.victory}",
               style: const TextStyle(color: Colors.purpleAccent),),
-          Text("Score: ${model?.engine.score()}"
+          Text("Score: ${model?.engine.score}"
               ,style: const TextStyle(color: Colors.white)),
           newGameButton(),
       ]));

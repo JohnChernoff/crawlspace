@@ -1,6 +1,5 @@
 import 'dart:math';
 import '../item.dart';
-import '../ship.dart';
 import '../systems/engines.dart';
 import '../systems/power.dart';
 import '../systems/shields.dart';

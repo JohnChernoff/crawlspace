@@ -94,7 +94,7 @@ class PilotController extends FugueController {
     final auts = ((actionAuts ?? actionType.baseAuts) * mod).round();
     pilot.auCooldown += auts;
     pilot.lastAct = actionType;
-    Ship? ship = fm.shipMap[pilot]; if (ship != null) {
+    Ship? ship = fm.getShip(pilot); if (ship != null) {
       for (final h in ship.loc.cell.hazMap.entries) {
         final msg = h.key.effectPerTurn(ship, auts, fm.rnd);
         if (msg != null) fm.msgController.addMsg(msg);
@@ -114,7 +114,7 @@ class PilotController extends FugueController {
       for (Pilot p in pilots) { //print("${p.name}'s turn");
         try {
           p.tick();
-          Ship? ship = fm.shipMap[p];
+          Ship? ship = fm.getShip(p);
           if (ship != null && ship.loc.level == fm.playerShip?.loc.level && fm.player.location == null) npcShipAct(ship);
         } on ConcurrentModificationError {
           glog("Skipping: ${p.name}",error: true);

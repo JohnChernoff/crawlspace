@@ -3,6 +3,7 @@ import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:directed_graph/directed_graph.dart';
 
 import 'descriptors.dart';
+import 'fugue_engine.dart';
 import 'name_generator.dart';
 import 'planet.dart';
 import 'rng.dart';
@@ -22,11 +23,15 @@ class Galaxy {
   Planet homeWorld = Planet("Xaxle", 100, 100, DistrictLvl.heavy, DistrictLvl.heavy, DistrictLvl.heavy, PlanetAge.established, EnvType.earthlike, Goods.soylentPuce);
   late System homeSystem;
   late int maxJumps;
+  late Map<System, Map<System, int>> _distCache;
 
   Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
     homeSystem = System("Mentos", StellarClass.K, 100, 100, [homeWorld], rnd, connected: true, homeworld: StockSpecies.humanoid.species);
     systems.add(homeSystem);
+    final t0 = DateTime.now();
     createMap();
+    final t1 = DateTime.now();
+    glog("Galaxy gen took ${t1.difference(t0).inMilliseconds} ms",level: DebugLevel.Highest);
     for (System system in systems) {
       system.updateLevels(rnd);
     }
@@ -59,20 +64,13 @@ class Galaxy {
     for (final sys in systems) {
       systemGraph.addEdges(sys, sys.links);
     }
-
+    buildDistanceCache();
     assignHomeworlds();
   }
 
-  System farthestSystem(System system) {
-    System farthestSystem = system;
-    List<System>? maxPath;
-    for (System sys in systems) {
-      List<System> path = systemGraph.shortestPath(sys, system);
-      if (path.length > (maxPath?.length ?? 0)) {
-        maxPath = path; farthestSystem = sys;
-      }
-    }
-    return farthestSystem;
+  System farthestSystem(System s) {
+    return systems.reduce((a, b) =>
+    (_distCache[s]![a]! > _distCache[s]![b]!) ? a : b);
   }
 
   int discoveredSystems() => systems.where((s) => s.visited).length;
@@ -136,7 +134,7 @@ class Galaxy {
   }
 
   int graphDistance(System a, System b) {
-    final path = systemGraph.shortestPath(a, b);
+    final path = systemGraph.shortestPath(a, b); //TODO: use cache
     return path.isEmpty ? 999999 : path.length;
   }
 
@@ -146,16 +144,34 @@ class Galaxy {
     for (final species in allSpecies.skip(1)) {
       final candidates = systems.where((s) => s.homeworld == null).toList();
 
-      candidates.sort((a, b) =>
-          minDist(homeSystems, b).compareTo(minDist(homeSystems, a)));
+      // Store (system, minDistance)
+      final best = <(System, int)>[];
 
-      final top = candidates.take(5).toList();
-      final chosen = top[rnd.nextInt(top.length)];
+      for (final c in candidates) {
+        final d = homeSystems
+            .map((h) => _distCache[h]?[c] ?? 999999)
+            .reduce(min);
 
-      chosen.homeworld = species;
-      print("Adding home system: ${species.name} -> ${chosen.name}");
-      homeSystems.add(chosen);
-      chosen.homeworld = species;
+        if (best.length < 5) {
+          best.add((c, d));
+          best.sort((a, b) => a.$2.compareTo(b.$2));
+        } else {
+          final worst = best.last;
+          final worstDist = worst.$2;
+
+          if (d < worstDist) {
+            best.removeLast();
+            best.add((c, d));
+            best.sort((a, b) => a.$2.compareTo(b.$2));
+          }
+        }
+      }
+
+      final chosen = best[rnd.nextInt(best.length)];
+      chosen.$1.homeworld = species;
+      homeSystems.add(chosen.$1);
+
+      glog("Adding home system: ${species.name} -> ${chosen.$1.name}");
     }
   }
 
@@ -171,6 +187,31 @@ class Galaxy {
       raw[sp] = exp(-graphDistance(findHomeworld(sp), s) / sp.range) * sp.propagation;
     }
     return normalize(raw);
+  }
+
+  void buildDistanceCache() {
+    _distCache = {};
+    for (final s in systems) {
+      _distCache[s] = _bfsDistances(s);
+    }
+  }
+
+  Map<System, int> _bfsDistances(System start) {
+    final dist = <System, int>{start: 0};
+    final queue = <System>[start];
+
+    while (queue.isNotEmpty) {
+      final cur = queue.removeLast();
+      final d = dist[cur]! + 1;
+
+      for (final n in cur.links) {
+        if (!dist.containsKey(n)) {
+          dist[n] = d;
+          queue.add(n);
+        }
+      }
+    }
+    return dist;
   }
 
 }

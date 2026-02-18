@@ -21,12 +21,8 @@ class LayerTransitController extends FugueController {
 
   ImpulseLocation? get playerImpulseLoc => pilotImpulseLoc(fm.player);
   ImpulseLocation? pilotImpulseLoc(Pilot p) {
-    final l = fm.shipMap[p]?.loc;
-    if (l is ImpulseLocation) {
-      return l;
-    } else {
-      return null;
-    }
+    final l = fm.getShip(p)?.loc;
+    if (l is ImpulseLocation) return l; else return null;
   }
 
   void selectHyperSpaceLink() {
@@ -74,8 +70,7 @@ class LayerTransitController extends FugueController {
   }
 
   bool newSystem(Pilot pilot, System system, {action = true}) {
-    if (fm.shipMap.containsKey(pilot)) {
-      Ship ship = fm.shipMap[pilot]!;
+    Ship? ship = fm.getShip(pilot); if (ship != null) {
       final sysLoc = ship.loc;
       if (sysLoc is SystemLocation) {
         if (sysLoc.cell.starClass != null) { //sysLoc.level.removeShip(ship);
