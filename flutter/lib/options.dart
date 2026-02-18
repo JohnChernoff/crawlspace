@@ -1,7 +1,6 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'main.dart';
 
 const Color shipColor = Colors.blue;
 const Color depthColor = Colors.blue;
@@ -9,6 +8,8 @@ const Color scanColor = Colors.white;
 const Color scanDepthColor = Colors.white;
 const Color farColor = Colors.black;
 const Color nearColor = Colors.yellowAccent;
+
+PlayerOptions fugueOptions = PlayerOptions();
 
 enum FugueOption {
   sound(true),fastCombat(false),autoScoop(false),fancyGraph(false),verbose(false);
@@ -45,6 +46,24 @@ class PlayerOptions {
     final prefs = await SharedPreferences.getInstance();
     for (FugueOption o in FugueOption.values) {
       map[o] = prefs.getBool(optKey(o)) ?? o.defVal;
+    }
+  }
+
+  static void updateSound(AudioPlayer player) { //print("Updating sound... ${fugueOptions.getBool(FugueOption.sound)}");
+    if (fugueOptions.getBool(FugueOption.sound)) {
+      if (player.state != PlayerState.playing) player.resume();
+    } else {
+      player.stop();
+    }
+  }
+
+  static void editPlayerOptions(BuildContext context, AudioPlayer player) async {
+    if (!context.mounted) return; // Check if widget is still in the tree
+    final updated = await showPlayerOptionsDialog(context, fugueOptions);
+    if (updated != null) {
+      await updated.save();
+      fugueOptions = updated; //check context.mounted?
+      updateSound(player);
     }
   }
 }

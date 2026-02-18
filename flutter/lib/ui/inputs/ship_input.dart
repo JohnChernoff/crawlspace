@@ -97,7 +97,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
     return FocusableActionDetector(
       autofocus: true,
       shortcuts: {
-        ...generalShortcuts,
+        ...getGeneralShortcuts(context),
         LogicalKeySet(LogicalKeyboardKey.arrowUp):
         const DirectionIntent(0, -1, 0),
         LogicalKeySet(LogicalKeyboardKey.arrowDown):

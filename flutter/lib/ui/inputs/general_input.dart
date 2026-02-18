@@ -1,5 +1,6 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_flutter/options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../main.dart';
@@ -27,10 +28,18 @@ class AudioIntent extends Intent {
   const AudioIntent(this.choice);
 }
 
+class OptionIntent extends Intent {
+  final BuildContext ctx;
+  const OptionIntent(this.ctx);
+}
+
 mixin GeneralInputMixin {
   FugueEngine get fm;
 
-  Map<LogicalKeySet, Intent> get generalShortcuts => {
+  Map<LogicalKeySet, Intent> getGeneralShortcuts(BuildContext ctx) => {
+    LogicalKeySet(LogicalKeyboardKey.keyO, LogicalKeyboardKey.shift):
+    OptionIntent(ctx),
+
     LogicalKeySet(LogicalKeyboardKey.keyM):
     const AudioIntent(AudioChoice.togglePause),
 
@@ -85,6 +94,11 @@ mixin GeneralInputMixin {
           return null;
         }
     ),
-
+    OptionIntent: CallbackAction<OptionIntent>(
+      onInvoke: (intent) {
+        PlayerOptions.editPlayerOptions(intent.ctx,fuguePlayer);
+        return null;
+      }
+    ),
   };
 }

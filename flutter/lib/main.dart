@@ -12,11 +12,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'options.dart';
 
 /*
-TODO: savefiles, autoscroll tweaks, mobile imgs, organize costs/etc.,
-!trade mission generation rnd bug (also investigate amounts)
-!missing plugin error for url_launcher
-~fix scrolling
-~victory handling
+TODO: savefiles, autoscroll tweaks, mobile imgs
 distance to homeworld influence,
 special planets (all - => lower heat, all +++ => higher heat)
 find system feature, center system when clicked?
@@ -29,7 +25,6 @@ enum ViewType {normal,textOnly,galaxy}
 ViewType currentView = ViewType.normal;
 
 final AudioPlayer fuguePlayer = AudioPlayer();
-PlayerOptions fugueOptions = PlayerOptions();
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -124,39 +119,18 @@ class _FugueHomeState extends State<FugueHome> {
     );
   }
 
+  Widget optionButton(BuildContext ctx) {
+    return ElevatedButton(
+      onPressed: () => PlayerOptions.editPlayerOptions(ctx,fuguePlayer),
+      child: kIsWeb ? const Text('Options') : const Icon(Icons.settings),
+    );
+  }
+
   Widget helpButton({isNewTab = true}) {
     return ElevatedButton(
         onPressed: () => launchUrl(Uri.parse('https://spacefugue.online/help/overview.html'),webOnlyWindowName: isNewTab ? '_blank' : '_self',),
         child: kIsWeb ? const Text('Help') : const Icon(Icons.help)
     );
-  }
-
-  Widget optionButton() {
-    return ElevatedButton(
-      onPressed: _editPlayerOptions,
-      child: kIsWeb ? const Text('Options') : const Icon(Icons.settings),
-    );
-  }
-
-  void _updateSound() { //print("Updating sound... ${fugueOptions.getBool(FugueOption.sound)}");
-    if (fugueOptions.getBool(FugueOption.sound)) {
-      if (fuguePlayer.state != PlayerState.playing) fuguePlayer.play(AssetSource("audio/tracks/intro1.mp3"));
-    } else {
-      fuguePlayer.stop();
-    }
-  }
-
-  void _editPlayerOptions() async {
-    if (!context.mounted) return; // Check if widget is still in the tree
-    final updated = await showPlayerOptionsDialog(context, fugueOptions);
-    if (updated != null) {
-      await updated.save();
-      if (!context.mounted) return;
-      setState(() {
-        fugueOptions = updated;
-      }); //print("Saved: ${fugueOptions.map}");
-      _updateSound();
-    }
   }
 
   void _loadOptions() async {
@@ -210,7 +184,7 @@ class FlutterAudioService extends AudioService {
 
   @override
   void playNewTrack() {
-    fuguePlayer.play(AssetSource(controller.getTrack()));
+    if (fugueOptions.getBool(FugueOption.sound)) fuguePlayer.play(AssetSource(controller.getTrack()),volume: .33);
   }
 
   @override
