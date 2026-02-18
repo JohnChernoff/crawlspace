@@ -82,8 +82,9 @@ class PilotController extends FugueController {
     return ResultMessage("System not found: $system",false);
   }
 
-  void action(Pilot pilot, ActionType actionType, { mod = 1.0, int? actionAuts }) {
-    if (pilot == nobody) return;
+  //returns false if location domain changes
+  bool action(Pilot pilot, ActionType actionType, { mod = 1.0, int? actionAuts }) {
+    if (pilot == nobody) return true;
     if (pilot == fm.player && actionType.risk > 0 && fm.rnd.nextInt(255) < fm.player.fedLevel()) {
       //msgController.addMsg("You have a bad feeling about this...");
       if (fm.rnd.nextInt(128) < (max(actionType.risk - (actionType.dna ? fm.player.dnaScram : 0),1))) {
@@ -93,25 +94,28 @@ class PilotController extends FugueController {
     final auts = ((actionAuts ?? actionType.baseAuts) * mod).round();
     pilot.auCooldown += auts;
     pilot.lastAct = actionType;
-    Ship? ship = fm.pilotMap[pilot]; if (ship != null) {
+    Ship? ship = fm.shipMap[pilot]; if (ship != null) {
       for (final h in ship.loc.cell.hazMap.entries) {
         final msg = h.key.effectPerTurn(ship, auts, fm.rnd);
         if (msg != null) fm.msgController.addMsg(msg);
       }
     }
     fm.update();
-    if (pilot == fm.player) runUntilNextPlayerTurn();
+    if (pilot == fm.player) return runUntilNextPlayerTurn();
+    return true;
   }
 
-  void runUntilNextPlayerTurn() { //fm.glog("Running until next turn...");
+  //returns false if player location domain changes
+  bool runUntilNextPlayerTurn() { //fm.glog("Running until next turn...");
     final playShip = fm.playerShip;
+    final domain = playShip?.loc.domain;
     final pilots = List.of(fm.activePilots); // ← Copy the list
     do {
       for (Pilot p in pilots) { //print("${p.name}'s turn");
         try {
           p.tick();
-          Ship? ship = fm.pilotMap[p];
-          if (ship != null && ship.loc.level == fm.playerShip?.loc.level) npcShipAct(ship);
+          Ship? ship = fm.shipMap[p];
+          if (ship != null && ship.loc.level == fm.playerShip?.loc.level && fm.player.location == null) npcShipAct(ship);
         } on ConcurrentModificationError {
           glog("Skipping: ${p.name}",error: true);
         }
@@ -124,6 +128,7 @@ class PilotController extends FugueController {
       for (final s in playShip.loc.level.getAllShips().where((s) => s.npc)) playShip.detect(s);
     }
     fm.update();
+    return fm.playerShip?.loc.domain == domain;
   }
 
   void npcShipAct(Ship ship) {

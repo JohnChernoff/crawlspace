@@ -179,7 +179,7 @@ class GalaxyMapState extends State<GalaxyMap> {
       GalaxyMapLegend.tech => Color.fromRGBO(0,((system.techLvl / 100) * 222).floor() + 32, 0,1), //green
       GalaxyMapLegend.all => Color.fromRGBO(planV,((system.techLvl / 100) * 222).floor() + 32, ((system.fedLvl / 100) * 222).floor() + 32, 1),
       GalaxyMapLegend.history => switch(fm.agentAt(system)) {
-        AgentSystemReport.none => fm.player.tradeTarget != null && system.planets.contains(fm.player.tradeTarget?.planet)
+        AgentSystemReport.none => fm.player.tradeTarget != null && system.planets.contains(fm.player.tradeTarget?.location)
             ? Colors.green : system.visited ? Colors.blue : Colors.purple,
         AgentSystemReport.lastKnown => Colors.grey,
         AgentSystemReport.current => Colors.red,

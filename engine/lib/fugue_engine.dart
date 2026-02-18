@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/systems/engines.dart';
 import 'package:crawlspace_engine/systems/power.dart';
 import 'package:crawlspace_engine/systems/shields.dart';
@@ -16,7 +15,6 @@ import 'controllers/pilot_controller.dart';
 import 'controllers/planetside_controller.dart';
 import 'controllers/scanner_controller.dart';
 import 'galaxy.dart';
-import 'grid.dart';
 import 'location.dart';
 import 'pilot.dart';
 import 'player.dart';
@@ -64,10 +62,10 @@ class FugueEngine {
   String? result;
   bool gameOver = false;
   bool victory = false;
-  Map<Pilot,Ship> pilotMap = {};
+  Map<Pilot,Ship> shipMap = {};
   Set<Pilot> npcPilots = {};
-  Ship? get playerShip => pilotMap[player];
-  Iterable<Pilot> get activePilots => npcPilots.where((p) => pilotMap[p] != null);
+  Ship? get playerShip => shipMap[player];
+  Iterable<Pilot> get activePilots => npcPilots.where((p) => shipMap[p] != null);
   Iterable<Pilot> get availablePilots => activePilots.where((p) => p.auCooldown == 0);
 
   late MessageController msgController;
@@ -101,9 +99,8 @@ class FugueEngine {
     for (int i=0;i<numAgents;i++) {
       agents.add(Agent("Agent ${Rng.generateName(rnd: rnd)}", galaxy.homeSystem, mapRng, 25));
     }
-    final playCell = player.system.map.rndCell(rnd);
     Ship playShip = Ship("HMS Sebastian",
-        player,shipClass: ShipClassType.hermes.shipclass,loc: SystemLocation(player.system, playCell),
+        player,shipClass: ShipClassType.hermes.shipclass,loc: SystemLocation(player.system, player.system.map.rndCell(rnd)),
         generator: PowerGenerator.fromStock(StockSystem.basicNuclear),
         impEngine: Engine.fromStock(StockSystem.basicFedImpulse),
         subEngine: Engine.fromStock(StockSystem.basicFedSublight),
@@ -111,7 +108,7 @@ class FugueEngine {
         shield: Shield.fromStock(StockSystem.basicEnergon),
         weapons: [Weapon.fromStock(StockSystem.fedLaser3),Weapon.fromStock(StockSystem.plasmaCannon)],
         ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 50});
-    pilotMap[player] = playShip;
+    addShip(playShip);
     msgController.addMsg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
     update(); //galaxy.rndTest();
   }
@@ -124,41 +121,35 @@ class FugueEngine {
     };
     numShips ??= rnd.nextInt(3);
     for (int i = 0; i < numShips; i++) {
-      final pilot = Pilot(Rng.generateName(rnd: rnd),system,mapRng,hostile: true);
-      final level = max(0,1 - (galaxy.graphDistance(system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps));
-      final techLvl = max(1,(level * 10).round());
-      glog("Faction: ${pilot.faction.name}, tech: $level, $techLvl");
-      ShipType shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,mapRng);
-      while (level < shipType.dangerLvl) {
-        shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,mapRng);
-      }
-      final shipClassType = ShipClassType.values.firstWhereOrNull((t) => t.shipclass.type == shipType) ?? ShipClassType.mentok;
-      Ship ship = Ship("${Rng.rndColorName(rnd)}${Rng.rndAnimalName(rnd)}",pilot,
-          loc: SystemLocation(system, system.map.rndCell(mapRng)),
-          shipClass: shipClassType.shipclass
-      );
-      ship.installRndPower(techLvl, itemRng);
-      ship.installRndEngine(Domain.impulse, techLvl, itemRng);
-      ship.installRndEngine(Domain.system, techLvl, itemRng); //no hyperspace
-      ship.installRndShield(techLvl, itemRng);
-      ship.installRndWeapon(techLvl, itemRng);
-      addShip(ship); //print("Ship created: $ship, ${ship.loc.cell.coord}");
-      glog(ship.dump());
+      final ship = Rng.generateShip(system, galaxy, itemRng);
+      addShip(ship);
     }
   }
 
-  void addShip(Ship ship) {
+  void addShip(Ship ship, {Pilot? pilot}) {
+    if (pilot != null) ship.pilot = pilot;
     if (ship.pilot != nobody) {
-      pilotMap[ship.pilot] = ship;
-      npcPilots.add(ship.pilot);
+      shipMap[ship.pilot] = ship;
+      if (ship.pilot != player) npcPilots.add(ship.pilot);
+      ship.loc.level.addShip(ship,ship.loc.cell);
     }
+  }
+
+  void newShip(Pilot pilot, Ship ship) {
+    final formerShip = shipMap[pilot];
+    pilot.location?.hangar.remove(ship);
+    if (formerShip != null) {
+      ship.loc = formerShip.loc;
+      pilot.location?.hangar.add(formerShip);
+      removeShip(formerShip);
+    }
+    addShip(ship,pilot: pilot);
   }
 
   void removeShip(Ship ship) {
-    for (final s in pilotMap.values) {
-      if (s.targetShip == ship) s.targetShip = null;
-    }
-    pilotMap.remove(ship.pilot);
+    ship.pilot = nobody;
+    for (final s in shipMap.values) if (s.targetShip == ship) s.targetShip = null;
+    shipMap.remove(ship.pilot);
     ship.loc.level.map.shipMap[ship.loc.cell]?.remove(ship);
   }
 

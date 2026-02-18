@@ -1,19 +1,18 @@
+import 'object.dart';
 import 'pilot.dart';
-import 'planet.dart';
 import 'ship.dart';
 
 class TradeTarget {
-  Planet planet;
-  Planet? source;
+  SpaceObject source;
+  SpaceObject location;
   int reward;
-  TradeTarget(this.planet,this.source,this.reward);
+  TradeTarget(this.location,this.source,this.reward);
 }
 
 enum OrbitResult {newOrbit,sameOrbit,insufficientEnergy,noShip}
 
 class Player extends Pilot {
   static const maxDna = 36;
-  Planet? planet;
   int dnaScram = 5;
   TradeTarget? tradeTarget;
   bool starOne = false;
@@ -22,9 +21,9 @@ class Player extends Pilot {
   int piratesVanquished = 0;
   Set<Ship> fleet = {};
 
-  Player(super.name,super.system,super.rnd, {super.hostile = false});
+  Player(super.name,super.system,super.rnd, {super.location, super.hostile = false});
 
-  int fedLevel() => planet?.fedLvl ?? system.fedLvl;
-  int techLevel() => planet?.techLvl ?? system.techLvl;
+  int fedLevel() => location?.fedLvl ?? system.fedLvl;
+  int techLevel() => location?.techLvl ?? system.techLvl;
 
 }

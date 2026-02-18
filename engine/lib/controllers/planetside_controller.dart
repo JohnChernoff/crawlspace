@@ -1,3 +1,6 @@
+import 'package:crawlspace_engine/menu.dart';
+import 'package:crawlspace_engine/object.dart';
+
 import '../agent.dart';
 import '../audio_service.dart';
 import '../descriptors.dart';
@@ -6,6 +9,7 @@ import '../foosham/throws.dart';
 import '../pilot.dart';
 import '../planet.dart';
 import '../player.dart';
+import '../rng.dart';
 import '../ship.dart';
 import '../shop.dart';
 import '../system.dart';
@@ -22,31 +26,30 @@ class PlanetsideController extends FugueController {
     final cell = ship.loc.cell; if (cell is! SectorCell) {
       fm.msgController.addMsg("Wrong layer!"); return;
     }
-    final planet = fm.player.planet = cell.planet; if (planet == null) {
+    final planet = fm.player.location = cell.planet; if (planet == null) {
       fm.msgController.addMsg("No planet!"); return;
     }
-
-    if (planet == fm.galaxy.homeWorld) {
-      fm.endGame("You complete your mission!",home: true);
-    } else {
-      fm.menuController.showPlanetMenu(planet);
-      fm.audioController.newTrack(newMood: MusicalMood.planet);
-      fm.pilotController.action(fm.player,ActionType.planetLand);
-      fm.msgController.addMsg("Landing on ${planet.name}");
-      fm.msgController.addMsg(planet.description);
-      if (fm.player.tradeTarget?.planet == planet) {
-        fm.msgController.addMsg(
-            "You deliver your cargo.  Reward: ${fm.player.tradeTarget
-                ?.reward}");
-        fm.player.credits += fm.player.tradeTarget?.reward ?? 0;
-        fm.player.tradeTarget = null;
+    if (fm.pilotController.action(fm.player,ActionType.planetLand)) {
+      if (planet == fm.galaxy.homeWorld) {
+        fm.endGame("You complete your mission!",home: true);
+      } else {
+        fm.menuController.showPlanetMenu(planet);
+        fm.audioController.newTrack(newMood: MusicalMood.planet);
+        fm.msgController.addMsg("Landing on ${planet.name}");
+        fm.msgController.addMsg(planet.description);
+        if (fm.player.tradeTarget?.location == planet) {
+          fm.msgController.addMsg(
+              "You deliver your cargo.  Reward: ${fm.player.tradeTarget
+                  ?.reward}");
+          fm.player.credits += fm.player.tradeTarget?.reward ?? 0;
+          fm.player.tradeTarget = null;
+        }
       }
     }
   }
 
   void launch() {
-    fm.player.planet = null;
-    fm.menuController.exitMenu();
+    fm.player.location = null; //fm.menuController.exitMenu();
     fm.msgController.addMsg("Launching...");
     fm.audioController.newTrack(newMood: MusicalMood.space);
     fm.pilotController.action(fm.player,ActionType.planetLaunch);
@@ -82,7 +85,7 @@ class PlanetsideController extends FugueController {
   void getTradeMission() {
     if (fm.playerShip == null) {
       fm.msgController.addMsg("You're not in a ship!");
-    } else if (fm.player.tradeTarget?.source == fm.player.planet) {
+    } else if (fm.player.tradeTarget?.source == fm.player.location) {
       fm.msgController.addMsg("You already have a mission from this planet.");
     } else {
       List<System> path = [];
@@ -94,8 +97,8 @@ class PlanetsideController extends FugueController {
         path = [fm.player.system];
         planet = createTradePlanet(path, steps);
       }
-      if (planet != null) {
-        fm.player.tradeTarget = TradeTarget(planet, fm.player.planet, reward);
+      if (planet != null && fm.player.location != null) {
+        fm.player.tradeTarget = TradeTarget(planet, fm.player.location!, reward);
         fm.msgController.addMsg("${planet.name} is in desperate need of ${rndEnum(Goods.values.where((g) => g != planet?.export))}, "
             "reward: $reward. Route: ${fm.pathList(path)}");
       } else {
@@ -145,12 +148,14 @@ class PlanetsideController extends FugueController {
     }
   }
 
-  void shop() {
-    Planet? planet = fm.player.planet; if (planet != null) { // && planet.commLvl.atOrAbove(DistrictLvl.medium)) {
-      planet.shop ??= Shop.random(1,fm.rnd);
-      if (fm.playerShip != null) { //fm.menuController.createAndShowShopMenu(planet.shop!, fm.playerShip!, false);
-        fm.menuController.showMenu(() => fm.menuController.createShopBuyMenu(planet.shop!, fm.playerShip!),headerTxt: "${planet.shop!.name}");
+  void shop({ShopType? type, List<Ship>? shiplist}) {
+    SpaceObject? location = fm.player.location; if (location != null) {
+      if (type != null) {
+          location.shop ??= Shop(location,type,1,fm.rnd);
+      } else {
+        location.shop ??= Shop.random(location,1,fm.rnd);
       }
+      fm.menuController.showMenu(() => fm.menuController.createShopBuyMenu(location.shop!, ship: fm.playerShip),headerTxt: "${location.shop!.name}");
     }
   }
 
@@ -175,6 +180,40 @@ class PlanetsideController extends FugueController {
       } else { //print("Trade error, steps: $steps, path: $path");
         return null;
       }
+    }
+  }
+
+  void enterShipyard() {
+    SpaceObject? loc = fm.player.location; if (loc != null) {
+      loc.yard ??= Shop(loc, ShopType.shipyard, 1, fm.rnd,
+          shiplist: List.generate(fm.itemRng.nextInt(5) + 1, (i) =>
+              Rng.generateShip(fm.player.system, fm.galaxy, fm.itemRng)));
+      fm.menuController.showMenu(() =>
+          fm.menuController.createShopBuyMenu(loc.yard!, ship: fm.playerShip), headerTxt: "${loc.yard!.name}");
+    }
+  }
+
+  void enterRepairShop() {
+    Ship? ship = fm.playerShip; if (ship == null) return;
+    fm.menuController.showMenu(() => [
+      TextEntry("Credits: ${fm.player.credits}"),
+      ActionEntry("1", "repair 1% of hull", (m) => tryRepair(ship,.01)),
+      ActionEntry("5", "repair 5% of hull", (m) => tryRepair(ship,.05)),
+      ActionEntry("t", "repair 10% of hull", (m) => tryRepair(ship,.1)),
+      ActionEntry("q", "repair 25% of hull", (m) => tryRepair(ship,.25)),
+      ActionEntry("h", "repair 50% of hull", (m) => tryRepair(ship,.5)),
+      ActionEntry("a", "repair 100% of hull", (m) => tryRepair(ship,1)),
+    ],headerTxt: "Repair Shop");
+  }
+
+  void tryRepair(Ship ship, double percent, {double discount = 1}) {
+    int repairing = (ship.hullDamage * percent).round();
+    int cost = (repairing * ship.hullType.baseRepairCost).round();
+    if (fm.player.transaction(TransactionType.repair, -cost)) {
+      ship.hullDamage -= repairing;
+      fm.msgController.addMsg("Repaired $repairing damage ($cost credits)");
+    } else {
+      fm.msgController.addMsg("Sorry, you can't afford that.");
     }
   }
 

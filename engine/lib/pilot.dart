@@ -3,6 +3,7 @@ import 'package:crawlspace_engine/rng.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'controllers/pilot_controller.dart';
 import 'hazards.dart';
+import 'object.dart';
 import 'system.dart';
 
 enum AttribType {
@@ -13,7 +14,7 @@ enum SkillType {
   engineering,piloting,medicine,communications,combat
 }
 
-enum TransactionType {  shopBuy,shopSell,rollback }
+enum TransactionType {  shopBuy,shopSell,repair,fooshamWin,fooshamLose,rollback }
 
 class TransactionRecord {
   final TransactionType type;
@@ -25,6 +26,7 @@ Pilot nobody = Pilot("nobody",System("nowhere",StellarClass.A,0,0,[],Random()),R
 
 class Pilot {
   String name;
+  SpaceObject? location; //null = on ship in space
   int credits = 10000;
   List<TransactionRecord> transRec = [];
   System system;
@@ -41,7 +43,7 @@ class Pilot {
   bool get ready => auCooldown == 0;
   void tick() => auCooldown = max(0,auCooldown - 1);
 
-  Pilot(this.name,this.system,Random rnd,{Faction? f, this.hp = 32, this.hostile = true}) {
+  Pilot(this.name,this.system,Random rnd,{this.location, Faction? f, this.hp = 32, this.hostile = true}) {
     final species = Rng.weightedRandom(system.population ?? {StockSpecies.humanoid.species : 1},rnd);
     final factionMap = Map.fromEntries(factions.where((fa) => fa.species == species).map((f2) => MapEntry(f2, f2.relativeFreq)));
     faction = f ?? Rng.weightedRandom(factionMap, rnd);

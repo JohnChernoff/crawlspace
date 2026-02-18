@@ -1,4 +1,7 @@
 import 'dart:math';
+import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/planet.dart';
+
 import 'item.dart';
 import 'pilot.dart';
 import 'rng.dart';
@@ -7,7 +10,7 @@ import 'stock_items/stock_pile.dart';
 import 'systems/ship_system.dart';
 
 enum ShopType {
-  power,engine,shield,weapon,launcher,misc
+  power,engine,shield,weapon,launcher,misc,shipyard
 }
 
 enum TransactionResult { ok, insufficientFunds, inventoryError, refusal, wtf}
@@ -23,7 +26,6 @@ class ShopSlot {
   }
 }
 
-
 class Shop {
   late String name;
   bool buysScrap;
@@ -31,24 +33,26 @@ class Shop {
   int credits = 10000;
   int techLvl;
   ShopType type;
+  SpaceObject location;
 
-  Shop(this.type,this.techLvl,Random rnd, {this.buysScrap = false}) {
+  Shop(this.location,this.type,this.techLvl,Random rnd, {this.buysScrap = false, double avgQuantity = 12, List<Ship>? shiplist}) {
     name = ShopNameGen.generate(type, rnd);
-    generateItems(rnd);
+    generateItems(rnd, avgQuantity: avgQuantity, shiplist: shiplist);
   }
 
-  factory Shop.random(int tech, Random rnd, {bool scrap = false}) {
+  factory Shop.random(SpaceObject loc,int tech, Random rnd, {bool scrap = false}) {
     final t = ShopType.values.elementAt(rnd.nextInt(ShopType.values.length));
-    return Shop(t,tech,rnd,buysScrap: scrap);
+    return Shop(loc,t == ShopType.shipyard ? ShopType.misc : t,tech,rnd,buysScrap: scrap);
   }
 
-  TransactionResult buyItem(Item item, Ship ship) {
-    final pilot = ship.pilot; if (pilot == nobody) return TransactionResult.wtf;
+  TransactionResult buyItem(Item item, {Ship? ship, Pilot? shiplessPilot}) {
+    final pilot = ship?.pilot ?? shiplessPilot;
+    if (pilot == null || pilot == nobody) return TransactionResult.wtf;
     final price = (item.baseCost / 2).round(); //TODO: some variable?
     if (credits > price) {
       if (pilot.transaction(TransactionType.shopSell,price)) {
         credits -= price;
-        ship.jettisonItem(item);
+        ship?.jettisonItem(item); //pilot inventory?
         if (item is ShipSystem) addItem(item); //TODO: generalize
         return TransactionResult.ok;
       }
@@ -60,26 +64,30 @@ class Shop {
     }
   }
 
-  TransactionResult sellItem(ShopSlot slot, Ship ship) {
+  TransactionResult sellItem(ShopSlot slot, {Ship? ship, Pilot? shiplessPilot}) {
     if (slot.items.isEmpty) return TransactionResult.inventoryError;
+    final pilot = ship?.pilot ?? shiplessPilot;
+    if (pilot == null || pilot == nobody) return TransactionResult.wtf;
     final i = slot.items.first;
     int price = i.baseCost;
-    if (!ship.pilot.transaction(TransactionType.shopBuy,-price)) {
+    if (!pilot.transaction(TransactionType.shopBuy,-price)) {
       return TransactionResult.insufficientFunds;
-    } else if (ship.addToInventory(i)) {
+    } else {
+      if (i is Ship) {
+        location.hangar.add(i); //TODO: message?
+      } else if (ship == null || !ship.addToInventory(i)) {
+        return TransactionResult.inventoryError;
+      }
       removeItem(slot);
       credits += price;
       return TransactionResult.ok;
-    } else {
-      ship.pilot.rollBack();
-      return TransactionResult.inventoryError;
     }
   }
 
-  String transactionSell(ShopSlot slot,Ship ship) {
+  String transactionSell(ShopSlot slot, {Ship? ship, Pilot? shiplessPilot}) {
     if (slot.items.isEmpty) return "Error: empty slot";
     Item item = slot.items.first;
-    TransactionResult result = sellItem(slot,ship);
+    TransactionResult result = sellItem(slot,ship: ship, shiplessPilot: shiplessPilot);
     return switch (result) {
       TransactionResult.ok => "Purchased: $item",
       TransactionResult.insufficientFunds => "You don't have enough credits",
@@ -89,8 +97,8 @@ class Shop {
     };
   }
 
-  String transactionBuy(Item item,Ship ship) {
-    TransactionResult result = buyItem(item,ship);
+  String transactionBuy(Item item, {Ship? ship, Pilot? shiplessPilot}) {
+    TransactionResult result = buyItem(item,ship: ship, shiplessPilot: shiplessPilot);
     return (switch (result) {
       TransactionResult.ok => "Sold: $item",
       TransactionResult.insufficientFunds => "The shopkeeper can't afford that!",
@@ -100,7 +108,7 @@ class Shop {
     });
   }
 
-  void generateItems(Random rnd, {double avgQuantity = 12}) {
+  void generateItems(Random rnd, {double avgQuantity = 12, List<Ship>? shiplist}) {
     itemSlots.clear();
     int quantity = Rng.poissonRandom(avgQuantity);
     final itemSelection = switch(type) {
@@ -110,6 +118,7 @@ class Shop {
       ShopType.weapon => generateInventory(quantity,[ShipSystemType.weapon],techLvl,rnd),
       ShopType.launcher => generateInventory(quantity,[ShipSystemType.launcher],techLvl,rnd),
       ShopType.misc => generateInventory(quantity,[ShipSystemType.power,ShipSystemType.engine],techLvl,rnd),
+      ShopType.shipyard => shiplist ?? [],
     };
     for (final i in itemSelection) {
       final slot = ShopSlot();
@@ -136,58 +145,4 @@ class Shop {
 
 }
 
-class ShopNameGen {
-  static const List<String> alienPrefixes = [
-    "Xar", "Qel", "Vor", "Zyn", "Tal", "Ixo", "Prax", "Khe", "Ulm", "Syr", "Nok",
-    "Gor", "Leth", "Oon", "Trek", "Vash", "Zor", "Hyl", "Mek", "Thra"
-  ];
 
-  static const List<String> alienSuffixes = [
-    "tek", "kor", "dyn", "plex", "zon", "ium", "rax", "mar", "shi", "tor", "vox",
-    "bel", "tar", "nok", "thal", "vek", "lo", "zar"
-  ];
-
-  static const Map<ShopType, List<String>> shopFlavors = {
-    ShopType.power:   ["Reactors", "Powerworks", "Fusion Emporium", "Core Depot"],
-    ShopType.engine:  ["Engines", "Driveworks", "Propulsion Guild", "Thrust Hall"],
-    ShopType.shield:  ["Shieldworks", "Deflector Forge", "Barrier Bazaar", "Wardens"],
-    ShopType.weapon:  ["Arsenal", "Armory", "Killmart", "Gun Cathedral"],
-    ShopType.launcher:["Launch Systems", "Missile Bay", "Tube Syndicate"],
-    ShopType.misc:    ["Bazaar", "Emporium", "Tech Curios", "Oddities"]
-  };
-
-  static const List<String> megacorps = [
-    "OmniDyne", "Hyperion", "CryoCore", "VoidStar", "Zenith Union", "NovaCorp"
-  ];
-
-  static const List<String> shopPatterns = [
-    "{alien} {flavor}",
-    "{alien}'s {flavor}",
-    "The {alien} {flavor}",
-    "{alien}-{alien} {flavor}",
-    "{flavor} of {alien}",
-    "{alien} & Sons {flavor}",
-  ];
-
-  static String randomAlienName(Random rnd) {
-    String p = alienPrefixes[rnd.nextInt(alienPrefixes.length)];
-    String s = alienSuffixes[rnd.nextInt(alienSuffixes.length)];
-
-    // Occasionally mash two prefixes for more chaos
-    if (rnd.nextDouble() < 0.15) {
-      p += alienPrefixes[rnd.nextInt(alienPrefixes.length)].toLowerCase();
-    }
-
-    return p + s;
-  }
-
-  static String generate(ShopType type, Random rnd) {
-    String alien = randomAlienName(rnd);
-    String flavor = shopFlavors[type]![rnd.nextInt(shopFlavors[type]!.length)];
-    String pattern = shopPatterns[rnd.nextInt(shopPatterns.length)];
-
-    return pattern
-        .replaceAll("{alien}", alien)
-        .replaceAll("{flavor}", flavor);
-  }
-}

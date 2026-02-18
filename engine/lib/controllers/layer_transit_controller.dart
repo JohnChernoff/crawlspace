@@ -21,7 +21,7 @@ class LayerTransitController extends FugueController {
 
   ImpulseLocation? get playerImpulseLoc => pilotImpulseLoc(fm.player);
   ImpulseLocation? pilotImpulseLoc(Pilot p) {
-    final l = fm.pilotMap[p]?.loc;
+    final l = fm.shipMap[p]?.loc;
     if (l is ImpulseLocation) {
       return l;
     } else {
@@ -74,8 +74,8 @@ class LayerTransitController extends FugueController {
   }
 
   bool newSystem(Pilot pilot, System system, {action = true}) {
-    if (fm.pilotMap.containsKey(pilot)) {
-      Ship ship = fm.pilotMap[pilot]!;
+    if (fm.shipMap.containsKey(pilot)) {
+      Ship ship = fm.shipMap[pilot]!;
       final sysLoc = ship.loc;
       if (sysLoc is SystemLocation) {
         if (sysLoc.cell.starClass != null) { //sysLoc.level.removeShip(ship);
@@ -125,13 +125,13 @@ class LayerTransitController extends FugueController {
             }
           }
         }
-        //impLevel = ImpulseLevel(ImpulseMap(size,cells),sysLoc.cell);
         final impMap = ImpulseMap(size,cells);
         if (sysLoc.cell.hazLevel > 0) PathGenerator2.generate(impMap,4,0,fm.rnd);
         impLevel = ImpulseLevel(impMap,sysLoc.cell);
         sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel);
       }
       _enterImpulse(impLevel,playShip,cell: impLevel.map.cells.entries.firstWhere((c) => c.value.hazLevel == 0).value as ImpulseCell);
+      fm.update();
       final ships = List.of(sysLoc.ships); //avoids ConcurrentModificationError (hopefully)
       try {
         fm.msgController.addMsg("Entering impulse...");

@@ -1,6 +1,6 @@
+import 'package:crawlspace_engine/object.dart';
 import 'color.dart';
 import 'descriptors.dart';
-import 'shop.dart';
 
 enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   const DistrictLvl(this.shortString);
@@ -10,20 +10,13 @@ enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   final String shortString;
 }
 
-class Planet {
-  String name;
+class Planet extends SpaceObject {
   DistrictLvl dustLvl, commLvl, resLvl;
-  int fedLvl;
-  int techLvl;
   PlanetAge age;
   EnvType environment;
   Goods export;
-  int distance = 50; //TODO: calculate relative distances?
-  bool known = false;
-  String description = "";
-  Shop? shop;
 
-  Planet(this.name,this.fedLvl,this.techLvl,this.dustLvl,this.commLvl,this.resLvl,this.age, this.environment, this.export);
+  Planet(super.name,super.fedLvl,super.techLvl,this.dustLvl,this.commLvl,this.resLvl,this.age, this.environment, this.export);
 
   void updateDescription() { //print("Updating: ${toString()}");
     description = "$name is ${article(age.toString())} "

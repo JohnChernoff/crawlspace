@@ -56,9 +56,12 @@ class Scrap extends Item {
   double get costEffectiveness => baseCost / mass;
 }
 
-class Ship {
+class Ship extends Item {
+  @override
+  int get baseCost => shipClass.slots.map((s) => s.slot.type.baseCost).sum + shipClass.maxMass.round();
+  @override
+  String get shopDesc => dump(shop: true);
   ShipClass shipClass;
-  String name;
   late Pilot pilot;
   Pilot owner;
   List<InstalledSystem> systemMap = []; //rename to shipSlots?
@@ -77,8 +80,11 @@ class Ship {
   List<GridCell> currentPath = [];
   List<Scrap> scrapHeap = [];
   Map<Ship,ShipLocation> lastKnown = {};
+  HullType hullType;
 
-  Ship(this.name, this.owner, {
+  Ship(super.name, this.owner, {
+    super.baseCost = 0,
+    super.rarity = 1,
     required this.shipClass,
     required this.loc,
     Pilot? altPilot,
@@ -89,6 +95,7 @@ class Ship {
     Engine? impEngine,
     Engine? subEngine,
     Engine? hyperEngine,
+    this.hullType = HullType.basic
     }) {
 
     pilot = altPilot ?? owner;
@@ -139,8 +146,6 @@ class Ship {
         addAmmo(a.key, a.value, setWeapon: true);
       }
     }
-
-    loc.level.addShip(this,loc.cell);
   }
 
   bool addToInventory(Item i) {
@@ -590,20 +595,27 @@ class Ship {
     return blocks;
   }
 
-  String dump() {
+  String dump({shop = false}) {
     StringBuffer sb = StringBuffer();
-    sb.writeln(name);
-    sb.writeln(shipClass.name);
+    if (!shop) {
+      sb.writeln(name);
+      sb.writeln(shipClass.name);
+    }
+    else {
+      sb.writeln("${shipClass.name} Class Starship");
+    }
     for (final system in systemMap) {
       ShipSystem? s = system.system; if (s != null) {
-        sb.write("${s.name} ${s.active ? '+' : '-'}");
+        sb.write("${s.name} ");
+        if (!shop) sb.write(s.active ? '+' : '-');
         if (s is Weapon && s.ammo != null) {
           sb.write(", ${s.ammo!.name}: ${ammoMap[s.ammo]}");
         }
-      } else {
+        if (shop) sb.writeln();
+      } else if (!shop) {
         sb.write("Empty");
       }
-      sb.writeln(", Slot: ${system.slot}");
+     if (!shop) sb.writeln(", Slot: ${system.slot}");
     }
     return sb.toString();
   }

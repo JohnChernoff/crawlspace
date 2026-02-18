@@ -13,30 +13,31 @@ enum ShipSystemType {
 }
 
 enum SystemSlotType {
-  unknown([],[]),
-  generic([],ShipSystemType.values),
+  unknown([],[],0),
+  generic([],ShipSystemType.values,100),
   //engine,pow,conv
-  rimbaud([],[ShipSystemType.engine,ShipSystemType.power,ShipSystemType.powerConverter]),
+  rimbaud([],[ShipSystemType.engine,ShipSystemType.power,ShipSystemType.powerConverter],250),
   //weapon,pow,conv
-  salazar([],[ShipSystemType.weapon,ShipSystemType.power,ShipSystemType.powerConverter]),
+  salazar([],[ShipSystemType.weapon,ShipSystemType.power,ShipSystemType.powerConverter],300),
   //weapon,shield,pow,conv
-  bauchmann([],[ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.shield,ShipSystemType.power,ShipSystemType.powerConverter]),
+  bauchmann([],[ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.shield,ShipSystemType.power,ShipSystemType.powerConverter],500),
   //rimbaud * weapon,shield
-  nimrod([SystemSlotType.rimbaud],[ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.shield]),
+  nimrod([SystemSlotType.rimbaud],[ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.shield],650),
   //salazar * power
-  lopez([SystemSlotType.salazar],[ShipSystemType.power]),
+  lopez([SystemSlotType.salazar],[ShipSystemType.power],750),
   //generic * weapon,shield
-  smythe([SystemSlotType.generic],[ShipSystemType.weapon,ShipSystemType.shield]),
+  smythe([SystemSlotType.generic],[ShipSystemType.weapon,ShipSystemType.shield],1000),
   //bauchman,smythe
-  sinclair([SystemSlotType.bauchmann,SystemSlotType.smythe],ShipSystemType.values),
+  sinclair([SystemSlotType.bauchmann,SystemSlotType.smythe],ShipSystemType.values,2000),
   //generic * engine
-  tanaka([SystemSlotType.generic, SystemSlotType.rimbaud],[ShipSystemType.engine]),
+  tanaka([SystemSlotType.generic, SystemSlotType.rimbaud],[ShipSystemType.engine],5000),
   //shield
-  gregoriev([],[ShipSystemType.shield]);
+  gregoriev([],[ShipSystemType.shield],9000);
 
   final List<SystemSlotType> supportedSlots;
   final List<ShipSystemType> supportedTypes;
-  const SystemSlotType(this.supportedSlots, this.supportedTypes);
+  final int baseCost;
+  const SystemSlotType(this.supportedSlots, this.supportedTypes, this.baseCost);
 
   SystemSlotType? supports(SystemSlotType type, [Set<SystemSlotType>? visited]) {
     visited ??= {};

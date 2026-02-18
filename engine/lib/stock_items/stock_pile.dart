@@ -1,5 +1,6 @@
 import 'dart:math';
 import '../item.dart';
+import '../ship.dart';
 import '../systems/engines.dart';
 import '../systems/power.dart';
 import '../systems/shields.dart';
@@ -84,5 +85,3 @@ List<Item> generateInventory(int n, List<ShipSystemType> types, int techLvl, Ran
 
 Iterable<StockSystem> getSystemsByTech(List<ShipSystemType> types, int techLvl) =>
     StockSystem.values.where((s) => types.contains(s.type) && s.techLvl >= techLvl);
-
-//Iterable<T> getSystemsByT<T extends ShipSystem>(int techLvl) => StockSystem.values.where((s) => types.contains(T.type) && s.techLvl >= techLvl);

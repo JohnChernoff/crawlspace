@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:crawlspace_engine/object.dart';
+
 import '../foosham/foosham.dart';
 import '../foosham/throws.dart';
 import '../fugue_engine.dart';
@@ -50,11 +52,11 @@ class MenuController extends FugueController {
       ActionEntry("v", "(v)isit the tavern", (m) => fm.planetsideController.newFooShamGame(ThrowList.quantum), exitAfter: false),
       ActionEntry("t", "(t)rade mission", (m) => fm.planetsideController.getTradeMission(), exitAfter: false),
       ActionEntry("i", "broadcast (i)nformation about Star One", (m) => fm.planetsideController.broadcast(), exitAfter: false),
-      ActionEntry("r", "(r)epair ship", (m) => fm.planetsideController.spy(), exitAfter: false),
-      ActionEntry("u", "(u)pgrade ship", (m) => fm.planetsideController.spy(), exitAfter: false),
+      ActionEntry("r", "(r)epair ship", (m) => fm.planetsideController.enterRepairShop(), exitAfter: false),
+      ActionEntry("y", "visit the ship(y)ard", (m) => fm.planetsideController.enterShipyard(), exitAfter: false),
       ActionEntry("g", "(g)enetic engineering", (m) => fm.planetsideController.bioHack(), exitAfter: false),
       ActionEntry("b", "(b)rowse shop", (m) => fm.planetsideController.shop(), exitAfter: false),
-      ActionEntry("l", "(l)aunch", (m) => fm.msgController.addMsg("Launching..."), exitAfter: true),
+      ActionEntry("l", "(l)aunch", (m) => fm.planetsideController.launch(), exitAfter: true),
     ];
     showMenu(() => activities,headerTxt: planet.name, noExit: true, mode: InputMode.planet);
   }
@@ -101,27 +103,41 @@ class MenuController extends FugueController {
     ];
   }
 
-  List<MenuEntry> createShopBuyMenu(Shop shop, Ship ship) {
+  List<MenuEntry> createShopBuyMenu(Shop shop, {Ship? ship}) {
     final entries = <MenuEntry> [
       TextEntry("Credits: ${fm.player.credits}"),
       for (int i = 0; i < shop.itemSlots.length; i++) slotEntry(shop.itemSlots.elementAt(i), letter(i), shop, ship)
     ];
-    entries.add(ActionEntry("s","(s)ell", (m) => showMenu(() => createShopSellMenu(ship, shop))));
+    if (shop.type == ShopType.shipyard) {
+      entries.add(ActionEntry("z","enter hangar", (m) => showMenu(() => createHangarMenu(shop.location))));
+    } else {
+      entries.add(ActionEntry("s","(s)ell", (m) => showMenu(() => createShopSellMenu(shop, ship: ship))));
+    }
     return entries;
   }
 
+  List<MenuEntry> createHangarMenu(SpaceObject shop) {
+    return <MenuEntry> [
+    for (int i = 0; i < shop.hangar.length; i++) ValueEntry(
+      letter(i),
+      shop.hangar.elementAt(i).shopDesc,
+      shop.hangar.elementAt(i),
+    (m) => fm.newShip(fm.player, shop.hangar.elementAt(i)),exitAfter: true)
+    ];
+  }
+
   //TODO: make player inventory like shops?
-  List<MenuEntry> createShopSellMenu(Ship ship, Shop shop) { //TODO: filter by shop type
-    final installed = ship.getAllSystems;
+  List<MenuEntry> createShopSellMenu(Shop shop, {Ship? ship}) { //TODO: filter by shop type
+    final installed = ship?.getAllSystems ?? [];
     final items = [
-      ...ship.inventory.where((i) => !installed.contains(i)),
-      ...ship.scrapHeap,
+      ...ship?.inventory.where((i) => !installed.contains(i)) ?? [],
+      ...ship?.scrapHeap ?? [],
     ];
     return <MenuEntry> [
       for (int i = 0; i < items.length; i++)
         ValueEntry(letter(i),"${items[i].name} , ${items[i].baseCost}", items[i], //TODO: show cost modifier?
                 (item) {
-              fm.msgController.addMsg(shop.transactionBuy(item, ship)); //createAndShowShopMenu(shop, ship, true); //refresh shop
+              fm.msgController.addMsg(shop.transactionBuy(item, ship: ship)); //createAndShowShopMenu(shop, ship, true); //refresh shop
             },exitAfter: true)
     ];
   }
@@ -133,15 +149,18 @@ class MenuController extends FugueController {
     else showMenu(() => createShopMenu(shop, ship));
   } */
 
-  ShopItemEntry slotEntry(ShopSlot itemSlot, String ltr, Shop shop, Ship ship) {
+  ShopItemEntry slotEntry(ShopSlot itemSlot, String ltr, Shop shop, Ship? ship) {
     final slot = itemSlot;
     if (slot.items.isNotEmpty) {
-      return ShopItemEntry(ltr,"${slot.items.first.name} , ${slot.items.first.baseCost}, ${slot.items.length}", slot,
-              (shopSlot) => confirm("Purchse?", () {
-                 fm.msgController.addMsg(shop.transactionSell(shopSlot, ship)); //fm.msgController.addMsg(shop.transactionSell(slot, ship));
-          }), shopper: ship.pilot, exitAfter: false);
+      final count = slot.items.length > 1 ? ", quantity: ${slot.items.length}" : '';
+      final desc =  slot.items.first.shopDesc;
+      final credits = "${slot.items.first.baseCost} credits";
+      final label = (slot.items.first.shopDesc.endsWith("\n")) ? "$desc$credits$count" : "$desc ($credits$count)";
+      return ShopItemEntry(ltr,label, slot, (shopSlot) => confirm("Purchse?", () {
+                 fm.msgController.addMsg(shop.transactionSell(shopSlot, ship: ship));
+          }), shopper: ship?.pilot ?? fm.player, exitAfter: false);
     }
-    return ShopItemEntry(ltr, "empty inventory slot", null, (e) => {}, shopper: ship.pilot);
+    return ShopItemEntry(ltr, "empty inventory slot", null, (e) => {}, shopper: ship?.pilot ?? fm.player); //shouldn't occur
   }
 
   void confirm(String query, VoidCallback action, {VoidCallback? noAction}) {

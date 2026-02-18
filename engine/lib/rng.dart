@@ -1,17 +1,53 @@
 import 'dart:math';
+import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/pilot.dart';
+import 'package:crawlspace_engine/ship.dart';
+import 'package:crawlspace_engine/shop.dart';
+import 'package:crawlspace_engine/stock_items/stock_ships.dart';
+import 'package:crawlspace_engine/system.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
+
 import 'coord_3d.dart';
+import 'fugue_engine.dart';
+import 'galaxy.dart';
+import 'grid.dart';
+import 'location.dart';
 
 enum ColorName {
   white,black,blue,red,green,orange,yellow,lavender,peach,vanilla,cream,
-  peppermint,olive,puce,teal,taupe,vermillion,brown,silver,gold,bronze
+  peppermint,olive,puce,teal,taupe,vermillion,brown,silver,gold,bronze;
+  String random(Random rnd) => ColorName.values.elementAt(rnd.nextInt(ColorName.values.length)).name;
 }
 
 enum AnimalName {
   viper, falcon, shark, raven, wolf, bear, eagle, cobra, mantis, wasp,
-  lynx, pike, hornet, badger, jackal, vulture, orca, panther, reaper, basilisk,
+  lynx, pike, hornet, badger, jackal, vulture, orca, panther, reaper, basilisk;
+  String random(Random rnd) => AnimalName.values.elementAt(rnd.nextInt(ColorName.values.length)).name;
 }
 
 class Rng {
+
+  static const List<String> alienPrefixes = [
+    "Xar", "Qel", "Vor", "Zyn", "Tal", "Ixo", "Prax", "Khe", "Ulm", "Syr", "Nok",
+    "Gor", "Leth", "Oon", "Trek", "Vash", "Zor", "Hyl", "Mek", "Thra"
+  ];
+
+  static const List<String> alienSuffixes = [
+    "tek", "kor", "dyn", "plex", "zon", "ium", "rax", "mar", "shi", "tor", "vox",
+    "bel", "tar", "nok", "thal", "vek", "lo", "zar"
+  ];
+
+  static String randomAlienName(Random rnd) {
+    String p = alienPrefixes[rnd.nextInt(alienPrefixes.length)];
+    String s = alienSuffixes[rnd.nextInt(alienSuffixes.length)];
+
+    // Occasionally mash two prefixes for more chaos
+    if (rnd.nextDouble() < 0.15) {
+      p += alienPrefixes[rnd.nextInt(alienPrefixes.length)].toLowerCase();
+    }
+
+    return p + s;
+  }
 
   static const _consonants = [
     'b','c','d','f','g','h','j','k','l','m','n','p','r','s','t','v','w','x','z',
@@ -21,14 +57,6 @@ class Rng {
   static const _vowels = [
     'a','e','i','o','u','ae','ai','oa','ou','ei','ia'
   ];
-
-  static String rndColorName(Random rnd) {
-    return ColorName.values.elementAt(rnd.nextInt(ColorName.values.length)).name;
-  }
-
-  static String rndAnimalName(Random rnd) {
-    return AnimalName.values.elementAt(rnd.nextInt(AnimalName.values.length)).name;
-  }
 
   static int rollDice(int count, int sides, Random rnd) {
     int total = 0;
@@ -136,6 +164,27 @@ class Rng {
     // FP fallback
     return fallback ?? weights.keys.first;
   }
+
+  static Ship generateShip(System system, Galaxy galaxy, Random rnd) {
+    final pilot = Pilot(Rng.generateName(rnd: rnd),system,rnd,hostile: true);
+    final level = max(0,1 - (galaxy.graphDistance(system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps));
+    final techLvl = max(1,(level * 10).round());
+    glog("Faction: ${pilot.faction.name}, tech: $level, $techLvl");
+    ShipType shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,rnd);
+    while (level < shipType.dangerLvl) {
+      shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,rnd);
+    }
+    final shipClassType = ShipClassType.values.firstWhereOrNull((t) => t.shipclass.type == shipType) ?? ShipClassType.mentok;
+    Ship ship = Ship("HMS ${randomAlienName(rnd)}",pilot, loc: SystemLocation(system, system.map.rndCell(rnd)),
+        shipClass: shipClassType.shipclass
+    );
+    ship.installRndPower(techLvl, rnd);
+    ship.installRndEngine(Domain.impulse, techLvl, rnd);
+    ship.installRndEngine(Domain.system, techLvl, rnd); //no hyperspace
+    ship.installRndShield(techLvl, rnd);
+    ship.installRndWeapon(techLvl, rnd);
+    return ship;
+  }
 }
 
 class WeightedPicker<T> {
@@ -174,4 +223,37 @@ class WeightedPicker<T> {
   }
 }
 
+class ShopNameGen {
+  static const Map<ShopType, List<String>> shopFlavors = {
+    ShopType.power:   ["Reactors", "Powerworks", "Fusion Emporium", "Core Depot"],
+    ShopType.engine:  ["Engines", "Driveworks", "Propulsion Guild", "Thrust Hall"],
+    ShopType.shield:  ["Shieldworks", "Deflector Forge", "Barrier Bazaar", "Wardens"],
+    ShopType.weapon:  ["Arsenal", "Armory", "Killmart", "Gun Cathedral"],
+    ShopType.launcher:["Launch Systems", "Missile Bay", "Tube Syndicate"],
+    ShopType.misc:    ["Bazaar", "Emporium", "Tech Curios", "Oddities"],
+    ShopType.shipyard: ["Shipyard"]
+  };
 
+  static const List<String> megacorps = [
+    "OmniDyne", "Hyperion", "CryoCore", "VoidStar", "Zenith Union", "NovaCorp"
+  ];
+
+  static const List<String> shopPatterns = [
+    "{alien} {flavor}",
+    "{alien}'s {flavor}",
+    "The {alien} {flavor}",
+    "{alien}-{alien} {flavor}",
+    "{flavor} of {alien}",
+    "{alien} & Sons {flavor}",
+  ];
+
+  static String generate(ShopType type, Random rnd) {
+    String alien = Rng.randomAlienName(rnd);
+    String flavor = shopFlavors[type]![rnd.nextInt(shopFlavors[type]!.length)];
+    String pattern = shopPatterns[rnd.nextInt(shopPatterns.length)];
+
+    return pattern
+        .replaceAll("{alien}", alien)
+        .replaceAll("{flavor}", flavor);
+  }
+}
