@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/rng.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'controllers/pilot_controller.dart';
+import 'galaxy.dart';
 import 'hazards.dart';
 import 'object.dart';
 import 'system.dart';
@@ -22,7 +23,8 @@ class TransactionRecord {
   const TransactionRecord(this.type,this.credits);
 }
 
-Pilot nobody = Pilot("nobody",System("nowhere",StellarClass.A,0,0,[],Random()),Random());
+Pilot nobody = Pilot("nobody",Random());
+System nowhere = System("nowhere",StellarClass.A,Random());
 
 class Pilot {
   String name;
@@ -43,10 +45,13 @@ class Pilot {
   bool get ready => auCooldown == 0;
   void tick() => auCooldown = max(0,auCooldown - 1);
 
-  Pilot(this.name,this.system,Random rnd,{this.location, Faction? f, this.hp = 32, this.hostile = true}) {
-    final species = Rng.weightedRandom(system.population ?? {StockSpecies.humanoid.species : 1},rnd);
+  Pilot(this.name,Random rnd,{this.location, System? sys, Galaxy? galaxy, Faction? f, this.hp = 32, this.hostile = true})
+      : this.system = sys ?? nowhere {
+    final species = galaxy != null
+        ? Rng.weightedRandom(galaxy.civ.civIntensity[system]!,rnd, fallback: StockSpecies.humanoid.species)
+        : StockSpecies.humanoid.species;  //print("Species: ${species.name}");
     final factionMap = Map.fromEntries(factions.where((fa) => fa.species == species).map((f2) => MapEntry(f2, f2.relativeFreq)));
-    faction = f ?? Rng.weightedRandom(factionMap, rnd);
+    faction = f ?? Rng.weightedRandom(factionMap, rnd, fallback: factions.first);
   }
 
   bool transaction(TransactionType type, int c) {

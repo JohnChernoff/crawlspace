@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/object.dart';
+import 'fugue_engine.dart';
 import 'item.dart';
 import 'pilot.dart';
 import 'rng.dart';

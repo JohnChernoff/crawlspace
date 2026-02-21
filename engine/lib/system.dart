@@ -1,17 +1,18 @@
 import 'dart:collection';
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'color.dart';
-import 'controllers/scanner_controller.dart';
 import 'coord_3d.dart';
+import 'galaxy.dart';
 import 'grid.dart';
 import 'hazards.dart';
 import 'impulse.dart';
 import 'planet.dart';
 import 'rng.dart';
 
-enum TrafficLvl { normal, culDeSac, hub }
+enum TrafficGenHint { normal, culDeSac, hub }
 
 enum StellarClass {
   O(GameColor(0xFF3456EE),100,4),
@@ -31,71 +32,26 @@ class SystemMap extends Grid<SectorCell> {
   SystemMap(super.size, super.cells);
 }
 
-class SectorCell extends GridCell {
-  Planet? planet;
-  StellarClass? starClass;
-  bool starOne,blackHole;
-
-  //double nebula,ionStorm,asteroids;
-  int impulseSeed;
-
-  SectorCell(super.coord, super.hazMap, this.impulseSeed, {
-    this.planet,this.starClass, this.starOne = false, this.blackHole = false,
-  });
-
-  @override
-  bool empty(Grid grid, {countPlayer = true}) { //print("Chceking enpty");
-    if (super.hasShips(grid,countPlayer: countPlayer)) return false;
-    if (planet != null) return false;
-    if (starClass != null) return false;
-    if (starOne || blackHole) return false;
-    if (hazLevel > 0) return false;
-    return true;
-  }
-
-  @override
-  String toString() {
-    StringBuffer sb = StringBuffer(super.toString());
-    if (starClass != null) sb.write(", Class ${starClass?.name} Star");
-    if (planet != null) sb.write(", ${planet!.shortString()}");
-    return sb.toString();
-  }
-
-  @override //TODO: Nebula Effects
-  bool scannable(Grid grid,ScannerMode mode) {
-    if (mode == ScannerMode.all) return true;
-    if (mode.scaningShips && hasShips(grid)) return true;
-    if (mode.scaningPlanets && planet != null) return true;
-    if (mode.scaningStars && starClass != null) return true;
-    if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
-    if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
-    if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;
-    if (mode.scaningStarOne && starOne) return true;
-    if (mode.scaningBlackhole && blackHole) return true;
-    return false;
-  }
-}
-
 class System extends Level {
   @override
   Domain get domain => Domain.system;
   String name;
   Set<System> links = HashSet();
-  List<Planet> planets;
-  int fedLvl, techLvl;
+  List<Planet> planets = []; //TODO: change to SpaceObject
   bool starOne, blackHole;
-  TrafficLvl traffic;
+  TrafficGenHint trafficGenHint;
   bool scouted = false;
   bool visited = false;
   bool connected;
   StellarClass starClass;
   Species? homeworld;
   Map<SectorCell,ImpulseLevel> impMapCache = {};
-  Map<Species,double>? population;
+  double anomaly;
+  Map <Hazard,double> hazMap = {};
 
-  System(this.name,this.starClass,this.fedLvl,this.techLvl,this.planets,Random rnd,
-      {this.blackHole = false,this.starOne = false, this.traffic = TrafficLvl.normal, this.connected = false, this.homeworld,
-      nebFact = .02, ionFact = .01, bhFact = .1, mapSize = 8}) {
+  System(this.name,this.starClass,Random rnd,
+      {this.blackHole = false,this.starOne = false, this.trafficGenHint = TrafficGenHint.normal, this.connected = false, this.homeworld,
+      nebFact = .02, ionFact = .01, bhFact = .1, mapSize = 8}) : anomaly = 0.7 + rnd.nextDouble() * 0.6 {
     map = createSystemMap(mapSize,nebFact,ionFact,bhFact,rnd);
   }
 
@@ -132,25 +88,21 @@ class System extends Level {
     }
   }
 
-  void updateLevels(Random rnd) {
-    int techSum = techLvl, fedSum = fedLvl; //print("Updating Fed: $fedLvl");
-    for (System system in links) {
-      techSum += system.techLvl;
-      fedSum += system.fedLvl;
-    }
-    int tl = (techSum / (links.length)).round();
-    int fl =  (fedSum / (links.length)).round();
-    techLvl = min(Rng.biasedRndInt(rnd,mean: tl,min: 0, max: max(tl * 1,100)),100);
-    fedLvl = min(Rng.biasedRndInt(rnd,mean: fl ,min: 0, max: max(fl * 1,100)),100);
-    //print("$name -> $fedLvl -> $fl -> ${links.length}");
-    for (Planet planet in planets) {
-      planet.techLvl = Rng.biasedRndInt(rnd,mean: techLvl,min: 0, max: 100);
-      planet.fedLvl = Rng.biasedRndInt(rnd,mean: fedLvl,min: 0, max: 100);
-      planet.export = planet.getRndExport();
-      planet.updateDescription();
+  void addPlanets(Galaxy g, Random rnd) {
+    final n = Rng.biasedRndInt(rnd, mean: Galaxy.avgPlanets, min: 0, max: Galaxy.maxPlanets);
+    for (int i = 0; i < n; i++) {
+      planets.add(Planet(
+          g.nameGenerator.generatePlanetName(),
+          Rng.biasedRndDouble(rnd, mean: g.fedAuthority.val(this), min: 0, max: 1),
+          Rng.biasedRndDouble(rnd, mean: g.techKernel.val(this), min: 0, max: 1),
+          rnd,
+          population: Rng.biasedRndDouble(rnd, mean: g.commerceKernel.val(this), min: 0, max: 1),
+          commerce: Rng.biasedRndDouble(rnd, mean: g.commerceKernel.val(this), min: 0, max: 1),
+          industry: Rng.biasedRndDouble(rnd, mean: g.commerceKernel.val(this), min: 0, max: 1)));
     }
   }
 
+  //assumes planets have been already created
   SystemMap createSystemMap(int size, double nebulaFactor, double ionFactor, double blackFactor, Random rnd) {
     Map<Coord3D,SectorCell> cells = {};
     for (int x=0;x<size;x++) {
@@ -210,8 +162,8 @@ class System extends Level {
     }
   }
 
-  String shortString({bool showVisit = false}) {
-    return "$name (🛡$fedLvl,⚙$techLvl)${(showVisit && visited) ? '*' : ''}";
+  String shortString(Galaxy g, {bool showVisit = false}) {
+    return "$name (🛡${g.fedAuthority.val(this) * 100},⚙${g.techKernel.val(this) * 100})${(showVisit && visited) ? '*' : ''}";
   }
 
   @override String toString() {
@@ -223,7 +175,8 @@ class System extends Level {
     for (int i=0;i<planets.length;i++) {
       planetsStr.write(" ${planets.elementAt(i).name} ");
     }
-    return "$name fed: $fedLvl tech: $techLvl (${links.length} links,${traffic.name}): $linksStr planets: $planetsStr \n";
+
+    return "$name (${links.length} links,${trafficGenHint.name}): $linksStr planets: $planetsStr \n";
   }
 
   @override

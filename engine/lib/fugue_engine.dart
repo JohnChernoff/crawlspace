@@ -100,10 +100,10 @@ class FugueEngine {
     planetsideController = PlanetsideController(this);
     scannerController = ScannerController(this);
     audioController = AudioController(NullAudioService(),rnd);
-    player = Player(playerName,galaxy.farthestSystem(galaxy.homeSystem),mapRng);
+    player = Player(playerName,mapRng, sys: galaxy.farthestSystem(galaxy.fedHomeSystem), galaxy: galaxy);
     player.system.visited = true;
     for (int i=0;i<numAgents;i++) {
-      agents.add(Agent("Agent ${Rng.generateName(rnd: rnd)}", galaxy.homeSystem, mapRng, 25));
+      agents.add(Agent("Agent ${Rng.generateName(rnd: rnd)}", mapRng, 25, sys: galaxy.fedHomeSystem, galaxy: galaxy));
     }
     Ship playShip = Ship("HMS Sebastian",
         player,shipClass: ShipClassType.hermes.shipclass,loc: SystemLocation(player.system, player.system.map.rndCell(rnd)),
@@ -119,12 +119,9 @@ class FugueEngine {
     update(); //galaxy.rndTest();
   }
 
+  //system.population = { for (final sp in galaxy.allSpecies) sp: 100 / galaxy.topo.distance(system, galaxy.findHomeworld(sp)),};
   void populateSystem(System system, {int? numShips}) {
     glog("Populating System, $system");
-    system.population = {
-      for (final sp in galaxy.allSpecies)
-        sp: 100 / galaxy.graphDistance(system, galaxy.findHomeworld(sp)),
-    };
     numShips ??= rnd.nextInt(3);
     for (int i = 0; i < numShips; i++) {
       final ship = Rng.generateShip(system, galaxy, itemRng);
@@ -183,12 +180,12 @@ class FugueEngine {
   void homecoming({bool home = false}) {
     if (home) {
       if (!player.starOne || player.broadcasts == 0) {
-        msgController.addMsg("You arrive on ${galaxy.homeWorld.name} and are immediately taken into custody and shortly thereafter executed for treason. "
+        msgController.addMsg("You arrive on ${galaxy.fedHomeWorld.name} and are immediately taken into custody and shortly thereafter executed for treason. "
             "Perhaps you should have broadcasted your information to the galaxy first.");
         victory = false;
       }
       else if (Rng.biasedRndInt(rnd,mean: 1, min: 0, max: 5) <= player.broadcasts) {
-        msgController.addMsg("You arrive on ${galaxy.homeWorld.name} admist a media firestorm and are taken into custody, but before your case can be "
+        msgController.addMsg("You arrive on ${galaxy.fedHomeWorld.name} admist a media firestorm and are taken into custody, but before your case can be "
             "heard the Federation Government collapses and you are reappointed and promoted to the rank of Intergalactic Commodore ${player.name}. "
             "Congratulations!");
         victory = true;
@@ -214,14 +211,14 @@ class FugueEngine {
   //normal: true if repeatedly below level, inverted: true if repeatedly above level (less likely)
   bool techCheck(int passes, {bool invert = false}) {
     for (int i=0;i<passes;i++) {
-      if (rnd.nextInt(100) > (invert ? 100 - player.techLevel() : player.techLevel())) return false;
+      if (rnd.nextInt(100) > (invert ? 100 - player.techLevel(galaxy) : player.techLevel(galaxy))) return false;
     }
     return true;
   }
 
   bool fedCheck(int passes, {bool invert = false}) {
     for (int i=0;i<passes;i++) {
-      if (rnd.nextInt(100) > (invert ? 100 - player.fedLevel() : player.fedLevel())) return false;
+      if (rnd.nextInt(100) > (invert ? 100 - player.fedLevel(galaxy) : player.fedLevel(galaxy))) return false;
     }
     return true;
   }
@@ -260,6 +257,15 @@ class FugueEngine {
     return (agents.fold(0, (pv,e) => pv + e.clueLvl) / agents.length).floor();
   }
 
+  void reportSighting(System s) {
+    for (var agent in agents) {
+      if (agent.clueLvl > rnd.nextInt(10)) {
+        agent.sighted = s;
+        agent.track(5); // 5 turns of confident pursuit
+      }
+    }
+  }
+
   Future<void> update({bool noWait = false}) async {
     if (noWait || !msgController.msgWorker.isProcessing || msgController.msgWorker.processNotifier.isCompleted) { //print("Updating...");
       _notify();
@@ -268,6 +274,34 @@ class FugueEngine {
         _notify();
       });
     }
+  }
+
+  //returns false if player location domain changes
+  bool runUntilNextPlayerTurn() { //fm.glog("Running until next turn...");
+    final playShip = playerShip;
+    final domain = playShip?.loc.domain;
+    final pilots = List.of(activePilots); // ← Copy the list
+    do {
+      for (Pilot p in pilots) { //print("${p.name}'s turn");
+        try {
+          p.tick();
+          Ship? ship = getShip(p);
+          if (ship != null && ship.loc.level == playerShip?.loc.level && player.location == null) {
+            pilotController.npcShipAct(ship);
+          }
+        } on ConcurrentModificationError {
+          glog("Skipping: ${p.name}",error: true);
+        }
+      }
+      auTick++;
+      player.tick();
+      playShip?.tick(rnd: rnd);
+    } while (!player.ready);
+    if (playShip != null) {
+      for (final s in playShip.loc.level.getAllShips().where((s) => s.npc)) playShip.detect(s);
+    }
+    update();
+    return playerShip?.loc.domain == domain;
   }
 }
 

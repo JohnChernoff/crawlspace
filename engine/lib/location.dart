@@ -1,4 +1,5 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/sector.dart';
 
 import 'grid.dart';
 import 'impulse.dart';

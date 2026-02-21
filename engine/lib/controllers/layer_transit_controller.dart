@@ -9,6 +9,7 @@ import '../impulse.dart';
 import '../location.dart';
 import '../menu.dart';
 import '../pilot.dart';
+import '../sector.dart';
 import '../ship.dart';
 import '../system.dart';
 import 'fugue_controller.dart';

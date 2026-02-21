@@ -1,3 +1,4 @@
+import 'galaxy.dart';
 import 'object.dart';
 import 'pilot.dart';
 import 'ship.dart';
@@ -20,10 +21,11 @@ class Player extends Pilot {
   int piratesEncountered = 0;
   int piratesVanquished = 0;
   Set<Ship> fleet = {};
+  double heat = 0;
 
-  Player(super.name,super.system,super.rnd, {super.location, super.hostile = false});
+  Player(super.name,super.rnd, {super.location, super.sys, super.galaxy, super.hostile = false});
 
-  int fedLevel() => location?.fedLvl ?? system.fedLvl;
-  int techLevel() => location?.techLvl ?? system.techLvl;
+  double fedLevel(Galaxy g) => location?.fedLvl ?? g.fedAuthority.val(system);
+  double techLevel(Galaxy g) => location?.techLvl ?? g.techKernel.val(system);
 
 }

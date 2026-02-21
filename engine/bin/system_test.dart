@@ -8,7 +8,7 @@ void main() {
   for (int i=0; i< 100; i++) {
     print("***");
     final rndSys = engine.galaxy.systems.elementAt(engine.rnd.nextInt(engine.galaxy.systems.length));
-    print("${engine.galaxy.graphDistance(rndSys, engine.galaxy.homeSystem)}");
+    print("${engine.galaxy.topo.distance(rndSys, engine.galaxy.fedHomeSystem)}");
     engine.populateSystem(rndSys,numShips: 3);
   }
 

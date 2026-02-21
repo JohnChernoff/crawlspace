@@ -167,17 +167,18 @@ class GalaxyMapState extends State<GalaxyMap> {
 
   Color systemColor(System system) {
     FugueEngine fm = widget.fugueModel;
+    Galaxy g = fm.galaxy;
     int planV = 0;
     if (legend == GalaxyMapLegend.planets || legend == GalaxyMapLegend.all) {
       planV = ((system.planets.length / Galaxy.maxPlanets) * 222).floor() + 32;
     }
     return fm.player.system == system ? Colors.yellow :
-    fm.galaxy.homeSystem == system ? Colors.white : switch(legend) {
+    fm.galaxy.fedHomeSystem == system ? Colors.white : switch(legend) {
       GalaxyMapLegend.star => Color(system.starClass.color.argb),
       GalaxyMapLegend.planets => Color.fromRGBO(planV, planV, planV, 1),
-      GalaxyMapLegend.fed => Color.fromRGBO(0,0,((system.fedLvl / 100) * 222).floor() + 32, 1), //blue
-      GalaxyMapLegend.tech => Color.fromRGBO(0,((system.techLvl / 100) * 222).floor() + 32, 0,1), //green
-      GalaxyMapLegend.all => Color.fromRGBO(planV,((system.techLvl / 100) * 222).floor() + 32, ((system.fedLvl / 100) * 222).floor() + 32, 1),
+      GalaxyMapLegend.fed => Color.fromRGBO(0,0,((g.fedAuthority.val(system)) * 222).floor() + 32, 1), //blue
+      GalaxyMapLegend.tech => Color.fromRGBO(0,((g.techKernel.val(system)) * 222).floor() + 32, 0,1), //green
+      GalaxyMapLegend.all => Color.fromRGBO(planV,((g.techKernel.val(system)) * 222).floor() + 32, ((g.fedAuthority.val(system)) * 222).floor() + 32, 1),
       GalaxyMapLegend.history => switch(fm.agentAt(system)) {
         AgentSystemReport.none => fm.player.tradeTarget != null && system.planets.contains(fm.player.tradeTarget?.location)
             ? Colors.green : system.visited ? Colors.blue : Colors.purple,

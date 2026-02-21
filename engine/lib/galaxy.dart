@@ -1,57 +1,97 @@
 import 'dart:math';
+import 'package:crawlspace_engine/galaxy/fed_model.dart';
+import 'package:crawlspace_engine/galaxy/flow_model.dart';
+import 'package:crawlspace_engine/galaxy/topology.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
-import 'package:directed_graph/directed_graph.dart';
-
-import 'descriptors.dart';
+import 'flow_field.dart';
 import 'fugue_engine.dart';
+import 'galaxy/auth_kern.dart';
+import 'galaxy/civ_kern.dart';
+import 'galaxy/civ_model.dart';
+import 'galaxy/comm_kern.dart';
+import 'galaxy/heat_model.dart';
+import 'galaxy/tech_kern.dart';
 import 'name_generator.dart';
 import 'planet.dart';
-import 'rng.dart';
 import 'system.dart';
+
+enum LawLevel { core, regulated, frontier, lawless }
 
 class Galaxy {
   static const int density = 25;
   static const int maxSystems = 250;
   static const int avgPlanets = 3, maxPlanets = 6;
   static const int avgLinks = 3, maxLinks = 9;
-  DirectedGraph<System> systemGraph = DirectedGraph({});
   final allSpecies = StockSpecies.values.map((s) => s.species).toList();
   Random rnd;
   String name;
   List<System> systems = [];
   NameGenerator nameGenerator;
-  Planet homeWorld = Planet("Xaxle", 100, 100, DistrictLvl.heavy, DistrictLvl.heavy, DistrictLvl.heavy, PlanetAge.established, EnvType.earthlike, Goods.soylentPuce);
-  late System homeSystem;
+  late Planet fedHomeWorld;
+  late System fedHomeSystem, fed1,fed2,fed3;
   late int maxJumps;
-  late Map<System, Map<System, int>> _distCache;
+  Map<System,double> hazardField = {};
+  final Map<String, FlowField> flowFields = {};
+  FlowField<T> field<T>(String name) => flowFields[name] as FlowField<T>;
+  final flowScheduler = FlowScheduler();
+  double fedDecay(System s, double v) => v * 0.999;
+  double tradeDecay(System s, double v) => v * 0.995;
+  double rumorDecay(System s, double v) => v * 0.97;
+  late FlowField<List<double>> civField;
+  late GalaxyTopology topo;
+  late CivModel civ;
+  late HeatModel heat;
+  late FederationModel fedMod;
+  late FlowManager flow;
+  late CivKernelField civKernel;
+  late TechKernelField techKernel;
+  late CommerceKernelField commerceKernel;
+  late AuthorityKernelField fedAuthority;
+  double fedKernel(int d) => exp(-d / 6.0);      // soft control gradient
+  double harshFed(int d) => 1 / (1 + d * d);     // sharp jurisdiction zones
+  double imperial(int d) => exp(-d / 12.0);      // huge empires
+  //final SpeciesRegistry speciesiRegistry = SpeciesRegistry(StockSpecies.values.map((s) => s.species).toList());
 
   Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
-    homeSystem = System("Mentos", StellarClass.K, 100, 100, [homeWorld], rnd, connected: true, homeworld: StockSpecies.humanoid.species);
-    systems.add(homeSystem);
-    final t0 = DateTime.now();
-    createMap();
-    final t1 = DateTime.now();
+    fedHomeWorld = Planet("Xaxle", 1, 1, rnd, population: 1, industry: 1, commerce: 1);
+    fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
+        trafficGenHint: TrafficGenHint.hub);
+    fedHomeSystem.planets.add(fedHomeWorld);
+    fed1 = System("Movelia", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
+        trafficGenHint: TrafficGenHint.hub);
+    fed2 = System("Sargon", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
+        trafficGenHint: TrafficGenHint.normal);
+    fed3 = System("Javalix", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
+        trafficGenHint: TrafficGenHint.culDeSac);
+    systems.add(fedHomeSystem);
+    systems.addAll([fed1,fed2,fed3]);
+
+    final t0 = DateTime.now(); createMap(); final t1 = DateTime.now();
     glog("Galaxy gen took ${t1.difference(t0).inMilliseconds} ms",level: DebugLevel.Highest);
-    for (System system in systems) {
-      system.updateLevels(rnd);
-    }
-    getRandomLinkableSystem(homeSystem)?.starOne = true;
-    getRandomLinkableSystem(homeSystem)?.blackHole = true;
-    maxJumps = graphDistance(farthestSystem(homeSystem), homeSystem);
+
+    topo = GalaxyTopology(systems);
+
+    assignHomeworlds();
+    civ = CivModel(this, allSpecies);
+    civ.computeCivFields(); //civ.calcMacro();
+    computeKernels();
+    initFlowFields();
+
+    //for (System system in systems) system.updateLevels(this,rnd);
+    getRandomLinkableSystem(fedHomeSystem)?.starOne = true;
+    getRandomLinkableSystem(fedHomeSystem)?.blackHole = true;
+    maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
   }
 
   void createMap() {
     while (systems.length < maxSystems) {
-      int n = Rng.biasedRndInt(rnd,mean: avgPlanets, min: 0, max: maxPlanets);
       String name;
       do { name = nameGenerator.generateSystemName(); }
       while (systems.where((sys) => sys.name == name).isNotEmpty);
-      int fedLvl = rnd.nextInt(100);
-      int techLvl = rnd.nextInt(100);
-      System system = System(name,getRndStellarClass(),fedLvl,techLvl,
-          generatePlanets(n,fedLvl, techLvl),rnd,traffic: getRndTrafficLvl());
+      System system = System(name,getRndStellarClass(),rnd);
       systems.add(system);
     }
+
     for (System system in systems) {
       while (!system.addLink(getRandomSystem(excludeSystems: [system]),update: false)) {}
     }
@@ -60,17 +100,91 @@ class Galaxy {
         system.addLink(getRandomSystem(excludeSystems:[system],connected: true),update: true);
       }
     }
+    //for (final sys in systems) { topo.graph.addEdges(sys, sys.links); }
+  }
 
-    for (final sys in systems) {
-      systemGraph.addEdges(sys, sys.links);
+  void tickFlow() {
+    for (final name in flowFields.keys) {
+      if (flowScheduler.shouldTick(name)) {
+        flowFields[name]!.tick();
+      }
     }
-    buildDistanceCache();
-    assignHomeworlds();
+  }
+
+  void registerFlowField(String name, FlowField field) {
+    flowFields[name] = field;
+  }
+
+  void initFlowFields() { ////registerFlowField("trade", FlowField(this,DoubleOps(),null));
+    final rumorPreset = FlowPreset<double>(
+      edgeWeight: (a,b) => a.trafficGenHint == TrafficGenHint.hub ? 2.0 : 1.0, //TODO: use links directly or trafficAt
+      decay: (s,v) => v * 0.97,
+      source: (_) => 0.0,
+    );
+
+    final fedPreset = FlowPreset<double>(
+      edgeWeight: (a,b) => 1.0,
+      decay: (s,v) => v * 0.999,
+      source: (s) => fedMod.fedPressure[s]! * 0.01,
+    );
+
+    registerFlowField("rumors", FlowField(this,DoubleOps(),rumorPreset));
+    registerFlowField("fedSurveillance", FlowField(this,DoubleOps(),fedPreset));
+    //registerFlowField("civFlow", CivFlowField(this, speciesiRegistry));
+
+    flowScheduler.register("rumors", 1, rnd);     // every turn
+    flowScheduler.register("fedSurveillance", 10, rnd); // slower
+    //flowScheduler.register("trade", 100, rnd);   // very slow
+    //flowScheduler.register("civFlow", 50, rnd); // VERY slow
+
+  }
+
+  void computeKernels() {
+    civKernel = CivKernelField(this, kernel: (d) => exp(-d / 4.0));
+    civKernel.recompute(allSpecies.map(findHomeworld));
+
+    techKernel = TechKernelField(this, kernel: (d) => exp(-d / 6.0));
+    techKernel.recompute(buildTechSources());
+
+    commerceKernel = CommerceKernelField(
+      this,
+      civ: civKernel,
+      tech: techKernel,
+      kernel: (d) => exp(-d / 5.0),
+    );
+    commerceKernel.recompute(civ.civIntensity);
+
+    fedAuthority = AuthorityKernelField(
+      this,
+      faction: factions.first,
+      kernel: fedKernel,
+    );
+
+    fedAuthority.recompute({
+      fedHomeSystem: 1.0,
+      fed1: 1.0,
+      fed2: 0.4,
+      fed3: 0.2,
+    });
+  }
+
+  double trafficFor(System s) {
+    final c = commerceKernel.val(s);
+    final cent = topo.centrality[s]!;
+    return pow(c * cent, 0.7).toDouble();
+  }
+
+  String trafficGlyph(System s) {
+    final t = trafficFor(s);
+    if (t > 0.8) return "█";
+    if (t > 0.5) return "▓";
+    if (t > 0.2) return "▒";
+    return "░";
   }
 
   System farthestSystem(System s) {
     return systems.reduce((a, b) =>
-    (_distCache[s]![a]! > _distCache[s]![b]!) ? a : b);
+    ((topo.distance(s,a) > topo.distance(s, b)) ? a : b));
   }
 
   int discoveredSystems() => systems.where((s) => s.visited).length;
@@ -83,25 +197,36 @@ class Galaxy {
   }
 
   System? getRandomLinkableSystem(System sys, {bool ignoreTraffic = false}) {
-    Iterable<System> linkableSystems = systems.where((s) => s != sys && !s.links.contains(sys) && s.links.length < maxLinks && s.traffic == TrafficLvl.hub);
+    Iterable<System> linkableSystems = systems
+        .where((s) => s != sys && !s.links.contains(sys) && s.links.length < maxLinks &&
+        s.trafficGenHint == TrafficGenHint.hub);
     if (linkableSystems.isEmpty || rnd.nextInt(100) < 33 || ignoreTraffic) {
-      linkableSystems = systems.where((s) => s != sys && !s.links.contains(sys) && s.links.length < maxLinks && s.traffic != TrafficLvl.culDeSac);
+      linkableSystems = systems.where((s) => s != sys && !s.links.contains(sys) && s.links.length < maxLinks
+          && s.trafficGenHint != TrafficGenHint.culDeSac);
     }
     if (linkableSystems.isEmpty) return null;
     return linkableSystems.elementAt(rnd.nextInt(linkableSystems.length));
   }
 
-  TrafficLvl getRndTrafficLvl() {
+  TrafficGenHint getRndTrafficLvl() {
     return switch(rnd.nextInt(100)) {
-      > 95 => TrafficLvl.culDeSac,
-      < 10 => TrafficLvl.hub,
-      int() => TrafficLvl.normal,
+      > 95 => TrafficGenHint.culDeSac,
+      < 10 => TrafficGenHint.hub,
+      int() => TrafficGenHint.normal,
     };
   }
 
   DistrictLvl getRndDistrictLvl() {
     int n = rnd.nextInt(DistrictLvl.values.length);
     return DistrictLvl.values.elementAt(n);
+  }
+
+  LawLevel law(System s) {
+    final a = fedAuthority.val(s);
+    if (a > 0.75) return LawLevel.core;
+    if (a > 0.4) return LawLevel.regulated;
+    if (a > 0.15) return LawLevel.frontier;
+    return LawLevel.lawless;
   }
 
   StellarClass getRndStellarClass() {
@@ -115,31 +240,8 @@ class Galaxy {
     return StellarClass.values.last; // Fallback (should never happen)
   }
 
-  Planet createPlanet(int sysFed, int sysTech) {
-    return Planet(nameGenerator.generatePlanetName(),
-        Rng.biasedRndInt(rnd,mean: sysFed, min: 0, max: 100),
-        Rng.biasedRndInt(rnd,mean: sysTech, min: 0, max: 100),
-        getRndDistrictLvl(),getRndDistrictLvl(),getRndDistrictLvl(),
-        PlanetAge.values.elementAt(rnd.nextInt(PlanetAge.values.length)),
-        EnvType.values.elementAt(rnd.nextInt(EnvType.values.length)),
-        Goods.values.elementAt(rnd.nextInt(Goods.values.length)));
-  }
-
-  List<Planet> generatePlanets(int numPlanets, int sysFed, int sysTech) {
-    List<Planet> planList = [];
-    for (int i=0;i<numPlanets;i++) {
-      planList.add(createPlanet(sysFed,sysTech));
-    }
-    return planList;
-  }
-
-  int graphDistance(System a, System b) {
-    final path = systemGraph.shortestPath(a, b); //TODO: use cache
-    return path.isEmpty ? 999999 : path.length;
-  }
-
   void assignHomeworlds() {
-    final homeSystems = <System>[homeSystem];
+    final homeSystems = <System>[fedHomeSystem];
 
     for (final species in allSpecies.skip(1)) {
       final candidates = systems.where((s) => s.homeworld == null).toList();
@@ -149,7 +251,7 @@ class Galaxy {
 
       for (final c in candidates) {
         final d = homeSystems
-            .map((h) => _distCache[h]?[c] ?? 999999)
+            .map((h) => topo.distance(h,c))
             .reduce(min);
 
         if (best.length < 5) {
@@ -176,46 +278,87 @@ class Galaxy {
   }
 
   int minDist(Iterable<System> systems, System system) => systems
-      .map((h) => graphDistance(h, system))
+      .map((h) => topo.distance(h, system))
       .reduce(min);
 
   System findHomeworld(Species s) => systems.firstWhere((system) => system.homeworld == s);
 
+  void playerCrime(System s, double loudness) {
+    flowFields["rumors"]!.value[s] =
+        flowFields["rumors"]!.val(s) + loudness;
+  }
+
+  void dumpField(String name, {int top = 10}) {
+    final field = flowFields[name]!;
+    systems
+        .toList()
+      ..sort((a,b)=>field.value[b]!.compareTo(field.value[a]!))
+      ..take(top)
+          .forEach((s)=>print("$name ${s.name}: ${field.val(s).toStringAsFixed(2)}"));
+  }
+
+  void tickSim() {
+    flow.tick();
+    heat.decayHeat();
+  }
+
+  void tickCentury() {
+    civ.computeCivFields();
+    fedMod.computeFedPressure();
+  }
+
+  Map<System, double> buildTechSources() {
+    final sources = <System, double>{};
+
+    for (final sp in allSpecies) {
+      final home = findHomeworld(sp);
+      sources[home] = sp.tech;
+    }
+
+    return sources;
+  }
+
+  //crimeEvent(system) { authorityShockSources[system] += 10.0; }
+
+  double patrolChance(System s) {
+    return fedAuthority.val(s) * techKernel.val(s);
+  }
+
+  double pursuitIntensity(System s) {
+    return fedAuthority.val(s) * commerceKernel.val(s);
+  }
+
+  double rumorSpread(System s) {
+    return commerceKernel.val(s) * (1 + fedAuthority.val(s));
+  }
+
+  void dumpCommerce() {
+    systems
+        .toList()
+      ..sort((a,b)=> commerceKernel.val(b).compareTo(commerceKernel.val(a)))
+      ..take(10)
+          .forEach((s)=> print("${s.name}: ${commerceKernel.val(s).toStringAsFixed(2)}"));
+  }
+
+  double marketSize(System s) =>
+      commerceKernel.val(s) * civKernel.val(s);
+
+  double localSecurity(System s) =>
+      fedAuthority.val(s) * commerceKernel.val(s);
+}
+
+/*
   Map<Species,double> populationMix(System s) {
     final raw = <Species,double>{};
     for (final sp in allSpecies) {
-      raw[sp] = exp(-graphDistance(findHomeworld(sp), s) / sp.range) * sp.propagation;
+      raw[sp] = exp(-topo.distance(findHomeworld(sp), s) / sp.range) * sp.propagation;
     }
     return normalize(raw);
   }
 
-  void buildDistanceCache() {
-    _distCache = {};
-    for (final s in systems) {
-      _distCache[s] = _bfsDistances(s);
-    }
+  List<double> speciesOneHot(Species sp) {
+    final v = List<double>.filled(allSpecies.length, 0.0);
+    v[allSpecies.indexOf(sp)] = 1.0;
+    return v;
   }
-
-  Map<System, int> _bfsDistances(System start) {
-    final dist = <System, int>{start: 0};
-    final queue = <System>[start];
-
-    while (queue.isNotEmpty) {
-      final cur = queue.removeLast();
-      final d = dist[cur]! + 1;
-
-      for (final n in cur.links) {
-        if (!dist.containsKey(n)) {
-          dist[n] = d;
-          queue.add(n);
-        }
-      }
-    }
-    return dist;
-  }
-
-}
-
-
-
-
+ */

@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'fugue_engine.dart';
+import 'galaxy.dart';
 import 'pilot.dart';
 import 'system.dart';
 
@@ -9,40 +10,63 @@ class Agent extends Pilot {
   System? sighted;
   System? lastKnown;
   int clueLvl;
-  int speed = 1;
+  double speed = 1;
   int tracked = 0;
+  Map<System,double> beliefHeat = {};
 
-  Agent(super.name,super.system,super.rnd,this.clueLvl);
+  Agent(super.name,super.rnd,this.clueLvl, {super.sys,super.galaxy});
 
-  System pickLink(FugueEngine game) {
-    if (sighted != null) {
-      if (system == sighted) {
-        sighted = null;
-      } else {
-        List<System> path = game.galaxy.systemGraph.shortestPath(system,sighted!);
-        if (path.length > 1) return path.elementAt(1);
+  System pickLink(FugueEngine fm, Random rnd) {
+    System best = system.links.first;
+    double bestScore = score(best,fm);
+
+    for (final n in system.links) {
+      final s = score(n,fm);
+      if (s > bestScore) {
+        best = n;
+        bestScore = s;
       }
     }
-    if (game.rnd.nextInt(100) < clueLvl) {
-      List<System> path = game.galaxy.systemGraph.shortestPath(system,game.player.system);
-      if (path.length > 1) return path.elementAt(1);
-    }
-    return system.links.elementAt(game.rnd.nextInt(system.links.length));
+
+    if (rnd.nextDouble() < 0.3) return system.links.elementAt(rnd.nextInt(system.links.length));
+    return best;
+  }
+
+  double score(System s, FugueEngine fm) {
+    final auth = fm.galaxy.fedAuthority.val(s);
+    final commerce = fm.galaxy.commerceKernel.val(s);
+    final bias = biasToLastKnown(s, fm);
+
+    return auth * 1.5 + bias * 2.0 + commerce * 0.2;
   }
 
   void track(int t) {
     tracked = t; lastKnown = system;
   }
 
-  void investigate(System sys) { //print("$name -> ${system.name}");
+  void investigate(System sys) {
     system = sys;
     if (tracked > 0) {
       lastKnown = system;
-      tracked = max(tracked - 1, 0);
+      tracked--;
+    } else {
+      sighted = null;
     }
   }
 
-  int movesPerTurn() {
-    return speed * (sighted != null ? 2 : 1);
+  void observe(System s, Galaxy g) {
+    //beliefHeat[s] = fm.galaxy.playerBeliefKernel.val(s);
+    beliefHeat[s] = g.heat.detectionRisk(s);
+  }
+
+  double movesPerTurn(Galaxy g) {
+    final traffic = g.commerceKernel.val(system);
+    return speed * (1 + log(1 + traffic));
+  }
+
+  double biasToLastKnown(System s, FugueEngine fm) {
+    if (lastKnown == null) return 0;
+    final d = fm.galaxy.topo.distance(s,lastKnown!);
+    return exp(-d / 4.0);
   }
 }

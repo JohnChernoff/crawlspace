@@ -10,6 +10,7 @@ import '../pilot.dart';
 import '../planet.dart';
 import '../player.dart';
 import '../rng.dart';
+import '../sector.dart';
 import '../ship.dart';
 import '../shop.dart';
 import '../system.dart';
@@ -30,7 +31,7 @@ class PlanetsideController extends FugueController {
       fm.msgController.addMsg("No planet!"); return;
     }
     if (fm.pilotController.action(fm.player,ActionType.planetLand)) {
-      if (planet == fm.galaxy.homeWorld) {
+      if (planet == fm.galaxy.fedHomeWorld) {
         fm.homecoming(home: true);
       } else {
         fm.menuController.showPlanetMenu(planet);
@@ -72,7 +73,7 @@ class PlanetsideController extends FugueController {
   void propaganda(System system, int level, int depth, Set<System> systems) {
     fm.msgController.addMsg("Undermining system: ${system.name}");
     if (level < depth) {
-      system.fedLvl = (system.fedLvl / (depth - level)).floor();
+      //system.fed = (system.fed / (depth - level)).floor(); TODO: update fed levels
       for (System link in system.links) {
         if (systems.add(link)) {
           propaganda(link, level + 1, depth, systems);
@@ -111,8 +112,8 @@ class PlanetsideController extends FugueController {
   void spy() {
     for (Agent agent in fm.agents) {
       if (agent.tracked == 0) {
-        agent.track((fm.player.techLevel() / 8).floor() * (fm.techCheck(1) ? 2 : 1));
-        List<System> path = fm.galaxy.systemGraph.shortestPath(fm.player.system, agent.system);
+        agent.track((fm.player.techLevel(fm.galaxy) / 8).floor() * (fm.techCheck(1) ? 2 : 1));
+        List<System> path = fm.galaxy.topo.graph.shortestPath(fm.player.system, agent.system);
         fm.msgController.addMsg("${agent.name} is ${fm.jumps(path)} jumps away (tracking for ${agent.tracked} jumps)");
       }
     }
@@ -120,14 +121,14 @@ class PlanetsideController extends FugueController {
   }
 
   void hack() { //find starOne
-    List<System> path = fm.galaxy.systemGraph.shortestPath(fm.player.system, fm.starOne());
+    List<System> path = fm.galaxy.topo.graph.shortestPath(fm.player.system, fm.starOne());
     fm.msgController.addMsg("Star One is ${fm.jumps(path)} jumps away");
     fm.msgController.addMsg("Next step: ${fm.nextSystemInPath(path)?.name}");
     fm.pilotController.action(fm.player,ActionType.planet,mod: 1.5);
   }
 
   void scout() {
-    int depth = (fm.player.techLevel() / 16).ceil();
+    int depth = (fm.player.techLevel(fm.galaxy) / 16).ceil();
     fm.msgController.addMsg("Scouting nearby systems (depth: $depth)...");
     fm.player.system.explore(depth);
     fm.pilotController.action(fm.player,ActionType.planet);

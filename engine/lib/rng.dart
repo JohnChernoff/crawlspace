@@ -86,6 +86,22 @@ class Rng {
     return k - 1;
   }
 
+  static double gaussianRnd(Random rnd, double mean, double stdDev) {
+    // Box-Muller
+    final u1 = rnd.nextDouble();
+    final u2 = rnd.nextDouble();
+    final z0 = sqrt(-2.0 * log(u1)) * cos(2 * pi * u2);
+    return mean + z0 * stdDev;
+  }
+
+  static double biasedRndDouble(Random rnd, {
+    required double mean,
+    required double min,
+    required double max,
+    double stdDev = 1.0,
+  }) {
+    return gaussianRnd(rnd, mean, stdDev).clamp(min, max);
+  }
 
   static int biasedRndInt(Random rnd, {
     required int mean,
@@ -164,8 +180,8 @@ class Rng {
   }
 
   static Ship generateShip(System system, Galaxy galaxy, Random rnd) {
-    final pilot = Pilot(Rng.generateName(rnd: rnd),system,rnd,hostile: true);
-    final level = max(0,1 - (galaxy.graphDistance(system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps));
+    final pilot = Pilot(Rng.generateName(rnd: rnd),rnd,hostile: true, sys: system, galaxy: galaxy);
+    final level = max(0,1 - (galaxy.topo.distance(system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps));
     final techLvl = max(1,(level * 10).round());
     glog("Faction: ${pilot.faction.name}, tech: $level, $techLvl");
     ShipType shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,rnd);

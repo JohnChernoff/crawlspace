@@ -49,15 +49,26 @@ class WeightedTrait<T extends Enum> {
           allValues: allValues, defWeight: defWeight);
 }
 
+class SpeciesRegistry {
+  final List<Species> all;
+  final Map<Species,int> index = {};
+  SpeciesRegistry(this.all) {
+    for (int i = 0; i < all.length; i++) index[all[i]] = i;
+  }
+}
 
 class Species {
   final String name;
   final String desc;
   final String glyph;
-  final double propagation;
-  final double range;
-  final double courage;
-  final double flexibility;
+  final double populationDensity;
+  final double propagation;// how fast civIntensity decays with distance
+  final double range; //max influence range
+  final double commerce; // boosts hubs/trade nodes
+  final double courage; // reduces hazard penalties, increases combat willpower
+  final double tech;
+  final double techFall; //tech influence modifier
+  final double flexibility; //alliance mutability
   final double xenomancy;
   final WeightedTrait<XenomancySchool>? xenoWeights; //null = all
   final WeightedTrait<ShipType>? shipWeights; //null = all
@@ -73,6 +84,10 @@ class Species {
       this.courage = .5,
       this.flexibility = .5,
       this.xenomancy = .5,
+      this.populationDensity = .5,
+      this.commerce = .5,
+      this.tech = .5,
+      this.techFall = .25,
       this.xenoWeights,
       this.shipWeights,
       this.powerWeights,
@@ -158,8 +173,41 @@ enum StockSpecies {
           defWeight: .1, allValues: DamageType.values)
       ),
   ),
-
-  ;
+  sklorpl(Species("Skorpl", .25, xenomancy: .4,"S",
+      xenoWeights: WeightedTrait({XenomancySchool.antimatter: .7},
+          defWeight: .2, allValues: XenomancySchool.values),
+      damageWeights: WeightedTrait({DamageType.neutrino: .08},
+          defWeight: .1, allValues: DamageType.values)
+      ),
+  ),
+  lael(Species("Lael", .25, xenomancy: .4,"L",
+      xenoWeights: WeightedTrait({XenomancySchool.chronomancy: .7},
+          defWeight: .2, allValues: XenomancySchool.values),
+      damageWeights: WeightedTrait({DamageType.sonic: .08},
+          defWeight: .1, allValues: DamageType.values)
+    ),
+  ),
+  orblix(Species("Orblix", .25, xenomancy: .4,"O",
+      xenoWeights: WeightedTrait({XenomancySchool.gravimancy: .7},
+          defWeight: .2, allValues: XenomancySchool.values),
+      damageWeights: WeightedTrait({DamageType.gravitron: .08},
+          defWeight: .1, allValues: DamageType.values)
+    ),
+  ),
+  moveliean(Species("Moveliean", .25, xenomancy: .4,"M",
+      xenoWeights: WeightedTrait({XenomancySchool.quantum: .7},
+          defWeight: .2, allValues: XenomancySchool.values),
+      damageWeights: WeightedTrait({DamageType.plasma: .08},
+          defWeight: .1, allValues: DamageType.values)
+    ),
+  ),
+  krakkar(Species("Krakkar", .25, xenomancy: .4,"K",
+      xenoWeights: WeightedTrait({XenomancySchool.astramancy: .7},
+          defWeight: .2, allValues: XenomancySchool.values),
+      damageWeights: WeightedTrait({DamageType.plasma: .08},
+          defWeight: .1, allValues: DamageType.values)
+    ),
+  );
   final Species species;
   const StockSpecies(this.species);
 }
@@ -169,20 +217,31 @@ pirateFaction(Species species, {String? name,double freq = .1}) =>
     relativeFreq: freq, shpWeights: WeightedTrait({ShipType.interceptor : .9},defWeight: .01,allValues: ShipType.values));
 
 final List<Faction> factions = [
-  Faction(StockSpecies.humanoid.species,"Federation", relativeFreq: .8, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+  Faction(StockSpecies.humanoid.species,"Federation",
+      relativeFreq: .8, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       desc: "An ICORP officer",color: GameColors.white),
-  Faction(StockSpecies.humanoid.species,"Fed Rebel", relativeFreq: .2, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+  Faction(StockSpecies.humanoid.species,"Fed Rebel",
+      relativeFreq: .2, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       desc: "An insurrectionist dedicated to their fight against ICORP",color: GameColors.lightBlue),
   pirateFaction(StockSpecies.humanoid.species),
-  Faction(StockSpecies.vorlon.species,"Vorlornian", relativeFreq: .67, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+  Faction(StockSpecies.vorlon.species,"Vorlornian",
+      relativeFreq: .67, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       desc: "A sneaky Vorlornian", color: GameColors.gray),
-  Faction(StockSpecies.vorlon.species,"Vorlox Mystic", relativeFreq: .25, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+  Faction(StockSpecies.vorlon.species,"Vorlox Mystic",
+      relativeFreq: .25, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       desc: "A Vorlornian specialist in the manipulation of dark energy",color: GameColors.darkGreen),
   pirateFaction(StockSpecies.vorlon.species, name: "Sorojbian"),
-  Faction(StockSpecies.gersh.species,"Greshplergian", relativeFreq: .9, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+  Faction(StockSpecies.gersh.species,"Greshplergian",
+      relativeFreq: .9, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       desc: "A strange cross between an earth wooly mamooth, pig, and hippo.  Fearsome when angered.", color: GameColors.green),
-  Faction(StockSpecies.gersh.species,"Hagyorny", relativeFreq: .1, xeno: .5, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+  Faction(StockSpecies.gersh.species,"Hagyorny",
+      relativeFreq: .1, xeno: .5, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       desc: "A more docile Gershplergian with a penchant for xenomancy", color: GameColors.gold),
+  pirateFaction(StockSpecies.sklorpl.species),
+  pirateFaction(StockSpecies.lael.species),
+  pirateFaction(StockSpecies.orblix.species),
+  pirateFaction(StockSpecies.moveliean.species),
+  pirateFaction(StockSpecies.krakkar.species),
 ];
 
 Map<T,double> normalize<T>(Map<T,double> m) {
