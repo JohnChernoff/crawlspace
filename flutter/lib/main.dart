@@ -4,7 +4,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:crawlspace_engine/audio_service.dart';
 import 'package:crawlspace_engine/controllers/audio_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/galaxy.dart';
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_flutter/ui/views/ascii_view.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';

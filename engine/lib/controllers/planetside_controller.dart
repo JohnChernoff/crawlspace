@@ -13,7 +13,7 @@ import '../rng.dart';
 import '../sector.dart';
 import '../ship.dart';
 import '../shop.dart';
-import '../system.dart';
+import '../galaxy/system.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 

@@ -4,18 +4,21 @@ import 'package:crawlspace_engine/galaxy/flow_model.dart';
 import 'package:crawlspace_engine/galaxy/topology.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'flow_field.dart';
-import 'fugue_engine.dart';
-import 'galaxy/auth_kern.dart';
-import 'galaxy/civ_kern.dart';
-import 'galaxy/civ_model.dart';
-import 'galaxy/comm_kern.dart';
-import 'galaxy/heat_model.dart';
-import 'galaxy/tech_kern.dart';
-import 'name_generator.dart';
-import 'planet.dart';
+import '../fugue_engine.dart';
+import 'auth_kern.dart';
+import 'civ_kern.dart';
+import 'civ_model.dart';
+import 'comm_kern.dart';
+import 'heat_model.dart';
+import 'tech_kern.dart';
+import '../name_generator.dart';
+import '../planet.dart';
 import 'system.dart';
 
 enum LawLevel { core, regulated, frontier, lawless }
+
+//PiracyKernelField
+//piracy = commerceLevel * (1 - fedLevel)
 
 class Galaxy {
   static const int density = 25;
@@ -37,53 +40,60 @@ class Galaxy {
   double fedDecay(System s, double v) => v * 0.999;
   double tradeDecay(System s, double v) => v * 0.995;
   double rumorDecay(System s, double v) => v * 0.97;
-  late FlowField<List<double>> civField;
+  late FlowManager flowMgr;
+  //final SpeciesRegistry speciesRegistry = SpeciesRegistry(StockSpecies.values.map((s) => s.species).toList());
+  //late FlowField<List<double>> civField;
   late GalaxyTopology topo;
-  late CivModel civ;
-  late HeatModel heat;
+  late CivModel civMod;
+  late HeatModel heatMod;
   late FederationModel fedMod;
-  late FlowManager flow;
-  late CivKernelField civKernel;
-  late TechKernelField techKernel;
-  late CommerceKernelField commerceKernel;
-  late AuthorityKernelField fedAuthority;
+  late CivKernelField civLevel;
+  late TechKernelField techLevel;
+  late CommerceKernelField commerceLevel;
+  late AuthorityKernelField fedLevel;
   double fedKernel(int d) => exp(-d / 6.0);      // soft control gradient
+  double fedFrontierKernel(int d) => 1 / (1 + pow(d / 20, 2));
   double harshFed(int d) => 1 / (1 + d * d);     // sharp jurisdiction zones
   double imperial(int d) => exp(-d / 12.0);      // huge empires
-  //final SpeciesRegistry speciesiRegistry = SpeciesRegistry(StockSpecies.values.map((s) => s.species).toList());
 
   Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
     fedHomeWorld = Planet("Xaxle", 1, 1, rnd, population: 1, industry: 1, commerce: 1);
     fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
         trafficGenHint: TrafficGenHint.hub);
     fedHomeSystem.planets.add(fedHomeWorld);
-    fed1 = System("Movelia", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
-        trafficGenHint: TrafficGenHint.hub);
-    fed2 = System("Sargon", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
-        trafficGenHint: TrafficGenHint.normal);
-    fed3 = System("Javalix", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
-        trafficGenHint: TrafficGenHint.culDeSac);
+    fed1 = System("Movelia", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub);
+    fed2 = System("Sargon", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.normal);
+    fed3 = System("Javalix", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.culDeSac);
     systems.add(fedHomeSystem);
     systems.addAll([fed1,fed2,fed3]);
 
-    final t0 = DateTime.now(); createMap(); final t1 = DateTime.now();
+    final t0 = DateTime.now(); _createMap(); final t1 = DateTime.now();
     glog("Galaxy gen took ${t1.difference(t0).inMilliseconds} ms",level: DebugLevel.Highest);
 
-    topo = GalaxyTopology(systems);
+    topo = GalaxyTopology(this);
 
     assignHomeworlds();
-    civ = CivModel(this, allSpecies);
-    civ.computeCivFields(); //civ.calcMacro();
+    civMod = CivModel(this, allSpecies);
+
     computeKernels();
     initFlowFields();
+
+    fedMod = FederationModel(this);
+    heatMod = HeatModel(this);
 
     //for (System system in systems) system.updateLevels(this,rnd);
     getRandomLinkableSystem(fedHomeSystem)?.starOne = true;
     getRandomLinkableSystem(fedHomeSystem)?.blackHole = true;
     maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
+
+    for (final s in systems) {
+      s.addPlanets(this, rnd);
+      s.map = s.createSystemMap(8,.02,.01,.001,rnd);
+    }
+
   }
 
-  void createMap() {
+  void _createMap() {
     while (systems.length < maxSystems) {
       String name;
       do { name = nameGenerator.generateSystemName(); }
@@ -91,7 +101,6 @@ class Galaxy {
       System system = System(name,getRndStellarClass(),rnd);
       systems.add(system);
     }
-
     for (System system in systems) {
       while (!system.addLink(getRandomSystem(excludeSystems: [system]),update: false)) {}
     }
@@ -140,36 +149,36 @@ class Galaxy {
   }
 
   void computeKernels() {
-    civKernel = CivKernelField(this, kernel: (d) => exp(-d / 4.0));
-    civKernel.recompute(allSpecies.map(findHomeworld));
+    civLevel = CivKernelField(this, kernel: (d) => exp(-d / 4.0));
+    civLevel.recompute(allSpecies.map(findHomeworld));
 
-    techKernel = TechKernelField(this, kernel: (d) => exp(-d / 6.0));
-    techKernel.recompute(buildTechSources());
+    techLevel = TechKernelField(this, kernel: (d) => exp(-d / 6.0));
+    techLevel.recompute(buildTechSources());
 
-    commerceKernel = CommerceKernelField(
+    commerceLevel = CommerceKernelField(
       this,
-      civ: civKernel,
-      tech: techKernel,
+      civ: civLevel,
+      tech: techLevel,
       kernel: (d) => exp(-d / 5.0),
     );
-    commerceKernel.recompute(civ.civIntensity);
+    commerceLevel.recompute(civMod.civIntensity);
 
-    fedAuthority = AuthorityKernelField(
+    fedLevel = AuthorityKernelField(
       this,
       faction: factions.first,
-      kernel: fedKernel,
+      kernel: fedFrontierKernel,
     );
 
-    fedAuthority.recompute({
+    fedLevel.recompute({
       fedHomeSystem: 1.0,
-      fed1: 1.0,
-      fed2: 0.4,
-      fed3: 0.2,
+      fed1: 0.7,
+      fed2: 0.35,
+      fed3: 0.16,
     });
   }
 
   double trafficFor(System s) {
-    final c = commerceKernel.val(s);
+    final c = commerceLevel.val(s);
     final cent = topo.centrality[s]!;
     return pow(c * cent, 0.7).toDouble();
   }
@@ -222,7 +231,7 @@ class Galaxy {
   }
 
   LawLevel law(System s) {
-    final a = fedAuthority.val(s);
+    final a = fedLevel.val(s);
     if (a > 0.75) return LawLevel.core;
     if (a > 0.4) return LawLevel.regulated;
     if (a > 0.15) return LawLevel.frontier;
@@ -246,34 +255,21 @@ class Galaxy {
     for (final species in allSpecies.skip(1)) {
       final candidates = systems.where((s) => s.homeworld == null).toList();
 
-      // Store (system, minDistance)
-      final best = <(System, int)>[];
+      (System, int)? best;
 
       for (final c in candidates) {
         final d = homeSystems
-            .map((h) => topo.distance(h,c))
+            .map((h) => topo.distance(h, c))
             .reduce(min);
 
-        if (best.length < 5) {
-          best.add((c, d));
-          best.sort((a, b) => a.$2.compareTo(b.$2));
-        } else {
-          final worst = best.last;
-          final worstDist = worst.$2;
-
-          if (d < worstDist) {
-            best.removeLast();
-            best.add((c, d));
-            best.sort((a, b) => a.$2.compareTo(b.$2));
-          }
+        if (best == null || d > best.$2) {
+          best = (c, d);
         }
       }
 
-      final chosen = best[rnd.nextInt(best.length)];
-      chosen.$1.homeworld = species;
-      homeSystems.add(chosen.$1);
-
-      glog("Adding home system: ${species.name} -> ${chosen.$1.name}");
+      best!.$1.homeworld = species;
+      homeSystems.add(best.$1);
+      glog("Adding home system: ${species.name} -> ${best.$1.name}");
     }
   }
 
@@ -298,12 +294,12 @@ class Galaxy {
   }
 
   void tickSim() {
-    flow.tick();
-    heat.decayHeat();
+    flowMgr.tick();
+    heatMod.decayHeat();
   }
 
   void tickCentury() {
-    civ.computeCivFields();
+    civMod.computeCivFields();
     fedMod.computeFedPressure();
   }
 
@@ -321,30 +317,30 @@ class Galaxy {
   //crimeEvent(system) { authorityShockSources[system] += 10.0; }
 
   double patrolChance(System s) {
-    return fedAuthority.val(s) * techKernel.val(s);
+    return fedLevel.val(s) * techLevel.val(s);
   }
 
   double pursuitIntensity(System s) {
-    return fedAuthority.val(s) * commerceKernel.val(s);
+    return fedLevel.val(s) * commerceLevel.val(s);
   }
 
   double rumorSpread(System s) {
-    return commerceKernel.val(s) * (1 + fedAuthority.val(s));
+    return commerceLevel.val(s) * (1 + fedLevel.val(s));
   }
 
   void dumpCommerce() {
     systems
         .toList()
-      ..sort((a,b)=> commerceKernel.val(b).compareTo(commerceKernel.val(a)))
+      ..sort((a,b)=> commerceLevel.val(b).compareTo(commerceLevel.val(a)))
       ..take(10)
-          .forEach((s)=> print("${s.name}: ${commerceKernel.val(s).toStringAsFixed(2)}"));
+          .forEach((s)=> print("${s.name}: ${commerceLevel.val(s).toStringAsFixed(2)}"));
   }
 
   double marketSize(System s) =>
-      commerceKernel.val(s) * civKernel.val(s);
+      commerceLevel.val(s) * civLevel.val(s);
 
   double localSecurity(System s) =>
-      fedAuthority.val(s) * commerceKernel.val(s);
+      fedLevel.val(s) * commerceLevel.val(s);
 }
 
 /*

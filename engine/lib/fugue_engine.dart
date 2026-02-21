@@ -14,7 +14,7 @@ import 'controllers/movement_controller.dart';
 import 'controllers/pilot_controller.dart';
 import 'controllers/planetside_controller.dart';
 import 'controllers/scanner_controller.dart';
-import 'galaxy.dart';
+import 'galaxy/galaxy.dart';
 import 'location.dart';
 import 'pilot.dart';
 import 'player.dart';
@@ -23,7 +23,7 @@ import 'ship.dart';
 import 'shop.dart';
 import 'stock_items/stock_pile.dart';
 import 'stock_items/stock_ships.dart';
-import 'system.dart';
+import 'galaxy/system.dart';
 import 'systems/weapons.dart';
 
 const blownUp = -1;

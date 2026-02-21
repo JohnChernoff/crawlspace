@@ -1,13 +1,15 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/sub_model.dart';
-import '../system.dart';
+import 'system.dart';
 
+//double fedEdgeWeight(System a, System b) => fedPressure[a]!;
 class FederationModel extends GalaxySubMod {
   late Map<System,double> fedPressure;
-  double fedEdgeWeight(System a, System b) => fedPressure[a]!;
   double fedSource(System s) => fedPressure[s]! * 0.01;
 
-  FederationModel(super.galaxy);
+  FederationModel(super.galaxy) {
+    computeFedPressure();
+  }
 
   void computeFedPressure() {
     fedPressure = {};

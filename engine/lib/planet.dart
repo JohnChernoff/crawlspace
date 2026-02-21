@@ -81,14 +81,14 @@ class Planet extends SpaceObject {
 
   String shortString() {
     if (known) {
-      return "$name (🛡$fedLvl,⚙$techLvl, "
+      return "$name (🛡$fedStr,⚙$techStr, "
           "RCI: ${tier(population).shortString} ${tier(commerce).shortString} ${tier(industry).shortString})";
     }
-    return "$name (🛡$fedLvl,⚙$techLvl)";
+    return "$name (🛡$fedStr,⚙$techStr)";
   }
 
   @override
   String toString() {
-    return "$name : Fed: $fedLvl, Tech: $techLvl, RCI: ${tier(population).name}/${tier(commerce).name}/${tier(industry).name}";
+    return "$name : Fed: $fedStr, Tech: $techStr, RCI: ${tier(population).name}/${tier(commerce).name}/${tier(industry).name}";
   }
 }

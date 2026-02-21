@@ -9,7 +9,7 @@ import '../pilot.dart';
 import '../planet.dart';
 import '../ship.dart';
 import '../shop.dart';
-import '../system.dart';
+import '../galaxy/system.dart';
 import '../systems/ship_system.dart';
 import 'fugue_controller.dart';
 

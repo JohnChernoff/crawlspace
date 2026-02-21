@@ -70,6 +70,7 @@ class Species {
   final double techFall; //tech influence modifier
   final double flexibility; //alliance mutability
   final double xenomancy;
+  final GameColor graphCol;
   final WeightedTrait<XenomancySchool>? xenoWeights; //null = all
   final WeightedTrait<ShipType>? shipWeights; //null = all
   final WeightedTrait<PowerType>? powerWeights; //null = all
@@ -79,6 +80,7 @@ class Species {
   final WeightedTrait<AmmoDamageType>? ammoDamageWeights; //null = all
   final double rangedProb;
   const Species(this.name,this.propagation,this.glyph, {
+      required this.graphCol,
       this.desc = "Mostly Harmless",
       this.range = .5,
       this.courage = .5,
@@ -152,56 +154,56 @@ class Faction {
 
 enum StockSpecies {
   humanoid(
-      Species("Humanoid",.87,"H",
+      Species("Humanoid",.87,"H",graphCol: GameColors.white,
         xenoWeights: WeightedTrait({XenomancySchool.elemental: .9,},
             defWeight: .2, allValues: XenomancySchool.values),
         damageWeights: WeightedTrait({DamageType.etherial: .01},
             defWeight: .5, allValues: DamageType.values)
       )
   ),
-  vorlon(Species("Vorlon", .33,"V",
+  vorlon(Species("Vorlon", .33,"V",graphCol: GameColors.purple,
         xenoWeights: WeightedTrait({XenomancySchool.dark: .9,},
           defWeight: .1, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.etherial: .08},
           defWeight: .5, allValues: DamageType.values)
       )
   ),
-  gersh(Species("Greshplerglesnortz", .25, xenomancy: .1,"G",
+  gersh(Species("Greshplerglesnortz", .25, xenomancy: .1,"G",graphCol: GameColors.green,
       xenoWeights: WeightedTrait({XenomancySchool.gravimancy: .7,XenomancySchool.dark: .1},
           defWeight: .3, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.kinetic: .08, DamageType.etherial: 0},
           defWeight: .1, allValues: DamageType.values)
       ),
   ),
-  sklorpl(Species("Skorpl", .25, xenomancy: .4,"S",
+  sklorpl(Species("Skorpl", .25, xenomancy: .4,"S",graphCol: GameColors.orange,
       xenoWeights: WeightedTrait({XenomancySchool.antimatter: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.neutrino: .08},
           defWeight: .1, allValues: DamageType.values)
       ),
   ),
-  lael(Species("Lael", .25, xenomancy: .4,"L",
+  lael(Species("Lael", .25, xenomancy: .4,"L",graphCol: GameColors.gold,
       xenoWeights: WeightedTrait({XenomancySchool.chronomancy: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.sonic: .08},
           defWeight: .1, allValues: DamageType.values)
     ),
   ),
-  orblix(Species("Orblix", .25, xenomancy: .4,"O",
+  orblix(Species("Orblix", .25, xenomancy: .4,"O",graphCol: GameColors.tan,
       xenoWeights: WeightedTrait({XenomancySchool.gravimancy: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.gravitron: .08},
           defWeight: .1, allValues: DamageType.values)
     ),
   ),
-  moveliean(Species("Moveliean", .25, xenomancy: .4,"M",
+  moveliean(Species("Moveliean", .25, xenomancy: .4,"M",graphCol: GameColors.brown,
       xenoWeights: WeightedTrait({XenomancySchool.quantum: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.plasma: .08},
           defWeight: .1, allValues: DamageType.values)
     ),
   ),
-  krakkar(Species("Krakkar", .25, xenomancy: .4,"K",
+  krakkar(Species("Krakkar", .25, xenomancy: .4,"K",graphCol: GameColors.coral,
       xenoWeights: WeightedTrait({XenomancySchool.astramancy: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.plasma: .08},

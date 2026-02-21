@@ -1,4 +1,4 @@
-import 'galaxy.dart';
+import 'galaxy/galaxy.dart';
 import 'object.dart';
 import 'pilot.dart';
 import 'ship.dart';
@@ -25,7 +25,7 @@ class Player extends Pilot {
 
   Player(super.name,super.rnd, {super.location, super.sys, super.galaxy, super.hostile = false});
 
-  double fedLevel(Galaxy g) => location?.fedLvl ?? g.fedAuthority.val(system);
-  double techLevel(Galaxy g) => location?.techLvl ?? g.techKernel.val(system);
+  double fedLevel(Galaxy g) => location?.fedLvl ?? g.fedLevel.val(system);
+  double techLevel(Galaxy g) => location?.techLvl ?? g.techLevel.val(system);
 
 }

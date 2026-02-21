@@ -2,10 +2,10 @@ import 'dart:math';
 import 'package:crawlspace_engine/rng.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'controllers/pilot_controller.dart';
-import 'galaxy.dart';
+import 'galaxy/galaxy.dart';
 import 'hazards.dart';
 import 'object.dart';
-import 'system.dart';
+import 'galaxy/system.dart';
 
 enum AttribType {
   int,wis,str,dex,cha,con
@@ -48,7 +48,7 @@ class Pilot {
   Pilot(this.name,Random rnd,{this.location, System? sys, Galaxy? galaxy, Faction? f, this.hp = 32, this.hostile = true})
       : this.system = sys ?? nowhere {
     final species = galaxy != null
-        ? Rng.weightedRandom(galaxy.civ.civIntensity[system]!,rnd, fallback: StockSpecies.humanoid.species)
+        ? Rng.weightedRandom(galaxy.civMod.civIntensity[system]!,rnd, fallback: StockSpecies.humanoid.species)
         : StockSpecies.humanoid.species;  //print("Species: ${species.name}");
     final factionMap = Map.fromEntries(factions.where((fa) => fa.species == species).map((f2) => MapEntry(f2, f2.relativeFreq)));
     faction = f ?? Rng.weightedRandom(factionMap, rnd, fallback: factions.first);

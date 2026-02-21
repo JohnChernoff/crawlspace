@@ -1,5 +1,5 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/galaxy.dart';
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/shop.dart';
 
 void main() {

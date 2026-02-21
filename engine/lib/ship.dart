@@ -8,7 +8,7 @@ import 'package:crawlspace_engine/stock_items/stock_lauchers.dart';
 import 'package:crawlspace_engine/stock_items/stock_power.dart';
 import 'package:crawlspace_engine/stock_items/stock_shields.dart';
 import 'package:crawlspace_engine/stock_items/stock_weapons.dart';
-import 'package:crawlspace_engine/system.dart';
+import 'package:crawlspace_engine/galaxy/system.dart';
 import 'fugue_engine.dart';
 import 'color.dart';
 import 'coord_3d.dart';

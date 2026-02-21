@@ -1,5 +1,5 @@
 import 'package:crawlspace_engine/planet.dart';
-import 'package:crawlspace_engine/system.dart';
+import 'package:crawlspace_engine/galaxy/system.dart';
 import 'controllers/scanner_controller.dart';
 import 'grid.dart';
 import 'hazards.dart';

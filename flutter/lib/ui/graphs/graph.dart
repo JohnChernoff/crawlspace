@@ -1,5 +1,5 @@
-import 'package:crawlspace_engine/galaxy.dart';
-import 'package:crawlspace_engine/system.dart';
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
+import 'package:crawlspace_engine/galaxy/system.dart';
 import 'package:flutter_force_directed_graph/model/config.dart';
 import 'package:flutter_force_directed_graph/model/edge.dart';
 import 'package:flutter_force_directed_graph/model/graph.dart';

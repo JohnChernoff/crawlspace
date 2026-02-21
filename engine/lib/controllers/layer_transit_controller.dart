@@ -1,5 +1,4 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/path_gen2.dart';
 import '../agent.dart';
 import '../audio_service.dart';
 import '../coord_3d.dart';
@@ -8,10 +7,11 @@ import '../hazards.dart';
 import '../impulse.dart';
 import '../location.dart';
 import '../menu.dart';
+import '../path_gen.dart';
 import '../pilot.dart';
 import '../sector.dart';
 import '../ship.dart';
-import '../system.dart';
+import '../galaxy/system.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 
@@ -122,7 +122,7 @@ class LayerTransitController extends FugueController {
           }
         }
         final impMap = ImpulseMap(size,cells);
-        if (sysLoc.cell.hazLevel > 0) PathGenerator2.generate(impMap,4,0,fm.rnd);
+        if (sysLoc.cell.hazLevel > 0) PathGenerator.generate(impMap,4,0,fm.rnd);
         impLevel = ImpulseLevel(impMap,sysLoc.cell);
         sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel);
       }

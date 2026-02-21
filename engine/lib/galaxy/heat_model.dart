@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/sub_model.dart';
-import '../system.dart';
+import 'system.dart';
 
 class HeatModel extends GalaxySubMod {
   late Map<System,double> physicalHeat;
@@ -8,7 +8,11 @@ class HeatModel extends GalaxySubMod {
   late Map<System,double> playerHeatMap;
   late Map<System,double> socialConductivity;
 
-  HeatModel(super.galaxy);
+  HeatModel(super.galaxy) {
+    resetPlayerHeatMap();
+    computeSocialHeat();
+    computeSocialConductivity();
+  }
 
   double detectionRisk(System s) {
     return (physicalHeat[s]! + socialHeat[s]! + playerHeatMap[s]!) * galaxy.fedMod.fedPressure[s]!;
@@ -59,11 +63,21 @@ class HeatModel extends GalaxySubMod {
     }
   }
 
-  void diffuseHeat() {
+  void attentuateSocialHeat() {
     for (var s in systems) {
       for (var n in s.links) {
         socialHeat[n] = socialHeat[n]! * .99;
-      } //s.playerHeat *= 0.99;
+      }//s.playerHeat *= 0.99;
+    }
+  }
+
+  //TODO: double-buffer?
+  void computeSocialHeat() {
+    for (var s in systems) {
+      for (final n in s.links) {
+        final w = rumorEdgeWeight(s, n);
+        socialHeat[n] = socialHeat[n]! + (socialHeat[s]! * 0.1 * w);
+      }
     }
   }
 
@@ -75,22 +89,9 @@ class HeatModel extends GalaxySubMod {
         > .25 => 1.0,
         _ => 0.2,
       };
-      for (final n in s.links) {
-        final w = rumorEdgeWeight(s, n);
-        socialHeat[n] = socialHeat[n]! + (socialHeat[s]! * 0.1 * w);
-      }
     }
   }
 
   double rumorEdgeWeight(System a, System b) => galaxy.trafficFor(a) / a.links.length;
 
 }
-
-/*
-  double infoEdgeWeight(System from, System to) {
-    double w = 1.0;
-    if (from.trafficGenHint == TrafficLvl.hub) w *= 2.0;
-    if (to.trafficGenHint == TrafficLvl.culDeSac) w *= 0.3;
-    return w;
-  }
- */

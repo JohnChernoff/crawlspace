@@ -1,7 +1,7 @@
 import 'package:crawlspace_engine/galaxy/tech_kern.dart';
 import '../stock_items/species.dart';
-import '../system.dart';
-import '../galaxy.dart';
+import 'system.dart';
+import 'galaxy.dart';
 import 'civ_kern.dart';
 import 'kern_field.dart';
 
@@ -43,11 +43,11 @@ class CommerceKernelField extends KernelField {
       final base = civStrength * techStrength * speciesCommerce * traffic;
 
       // Spread via kernel
-      final dist = bfsDistances(s);
+      final dist = galaxy.topo.distCache[s]!;
       for (final t in dist.keys) {
         final d = dist[t]!;
-        value[t] = value[t]! + base * kernel(d);
         if (d > 12) continue; //cap
+        value[t] = value[t]! + base * kernel(d);
       }
     }
   }

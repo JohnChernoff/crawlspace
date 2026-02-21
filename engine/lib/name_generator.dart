@@ -1,5 +1,6 @@
 import 'dart:math';
 
+//TODO: merge with Rng
 class NameGenerator {
   final Random _random;
   NameGenerator(int seed) : _random = Random(seed);

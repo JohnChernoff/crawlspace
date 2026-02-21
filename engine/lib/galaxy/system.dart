@@ -3,14 +3,14 @@ import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
-import 'color.dart';
-import 'coord_3d.dart';
+import '../color.dart';
+import '../coord_3d.dart';
 import 'galaxy.dart';
-import 'grid.dart';
-import 'hazards.dart';
-import 'impulse.dart';
-import 'planet.dart';
-import 'rng.dart';
+import '../grid.dart';
+import '../hazards.dart';
+import '../impulse.dart';
+import '../planet.dart';
+import '../rng.dart';
 
 enum TrafficGenHint { normal, culDeSac, hub }
 
@@ -50,10 +50,8 @@ class System extends Level {
   Map <Hazard,double> hazMap = {};
 
   System(this.name,this.starClass,Random rnd,
-      {this.blackHole = false,this.starOne = false, this.trafficGenHint = TrafficGenHint.normal, this.connected = false, this.homeworld,
-      nebFact = .02, ionFact = .01, bhFact = .1, mapSize = 8}) : anomaly = 0.7 + rnd.nextDouble() * 0.6 {
-    map = createSystemMap(mapSize,nebFact,ionFact,bhFact,rnd);
-  }
+      {this.blackHole = false,this.starOne = false, this.trafficGenHint = TrafficGenHint.normal, this.connected = false, this.homeworld})
+      : anomaly = 0.7 + rnd.nextDouble() * 0.6;
 
   bool addLink(System sys, {linkback = false, required bool update}) { //modify tech/fed levels?
     if (this != sys && links.add(sys)) { //use trafficLvl?
@@ -88,17 +86,22 @@ class System extends Level {
     }
   }
 
+  //which to use - g.fedLevel.val(this) or g.fedMod.fedPressure[this]
   void addPlanets(Galaxy g, Random rnd) {
     final n = Rng.biasedRndInt(rnd, mean: Galaxy.avgPlanets, min: 0, max: Galaxy.maxPlanets);
-    for (int i = 0; i < n; i++) {
+    for (int i = 0; i < n; i++) {//print("Adding planet to $name");
+      final fed = g.fedLevel.val(this);
+      final tech = g.techLevel.val(this);
+      final comm = g.commerceLevel.val(this);
       planets.add(Planet(
-          g.nameGenerator.generatePlanetName(),
-          Rng.biasedRndDouble(rnd, mean: g.fedAuthority.val(this), min: 0, max: 1),
-          Rng.biasedRndDouble(rnd, mean: g.techKernel.val(this), min: 0, max: 1),
-          rnd,
-          population: Rng.biasedRndDouble(rnd, mean: g.commerceKernel.val(this), min: 0, max: 1),
-          commerce: Rng.biasedRndDouble(rnd, mean: g.commerceKernel.val(this), min: 0, max: 1),
-          industry: Rng.biasedRndDouble(rnd, mean: g.commerceKernel.val(this), min: 0, max: 1)));
+        g.nameGenerator.generatePlanetName(),
+        Rng.betaRnd(rnd, fed, 15),
+        Rng.betaRnd(rnd, tech, 12),
+        rnd,
+        population: Rng.betaRnd(rnd, comm, 8),
+        commerce: Rng.betaRnd(rnd, comm, 10),
+        industry: Rng.betaRnd(rnd, comm, 6),
+      ));
     }
   }
 
@@ -163,7 +166,10 @@ class System extends Level {
   }
 
   String shortString(Galaxy g, {bool showVisit = false}) {
-    return "$name (🛡${g.fedAuthority.val(this) * 100},⚙${g.techKernel.val(this) * 100})${(showVisit && visited) ? '*' : ''}";
+    return "$name ("
+        "🛡${(g.fedLevel.valStr(this) * 100)},"
+        "⚙${g.techLevel.valStr(this) * 100})"
+        "${(showVisit && visited) ? '*' : ''}";
   }
 
   @override String toString() {

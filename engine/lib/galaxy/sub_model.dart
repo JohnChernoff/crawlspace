@@ -1,5 +1,5 @@
-import 'package:crawlspace_engine/galaxy.dart';
-import '../system.dart';
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
+import 'system.dart';
 
 class GalaxySubMod {
   Galaxy galaxy;

@@ -4,7 +4,7 @@ import 'package:crawlspace_engine/sector.dart';
 import 'grid.dart';
 import 'impulse.dart';
 import 'ship.dart';
-import 'system.dart';
+import 'galaxy/system.dart';
 
 sealed class ShipLocation {
   final Level _level;

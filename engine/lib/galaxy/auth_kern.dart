@@ -1,7 +1,7 @@
 import 'dart:math';
 import '../stock_items/species.dart';
 import 'kern_field.dart';
-import '../system.dart';
+import 'system.dart';
 
 class AuthorityKernelField extends KernelField {
   final Faction faction;
@@ -14,7 +14,7 @@ class AuthorityKernelField extends KernelField {
     for (final s in galaxy.systems) value[s] = 0.0;
   }
 
-  double frontierShape(double x) => pow(x, 0.65).toDouble();
+  double frontierShape(double x) => pow(x, 1.2).toDouble();
 
   double trafficPenalty(System s) {
     final t = galaxy.trafficFor(s);
@@ -33,24 +33,23 @@ class AuthorityKernelField extends KernelField {
     for (final entry in authoritySources.entries) {
       final src = entry.key;
       final strength = entry.value;
-      final dist = bfsDistances(src);
+      final dist = galaxy.topo.distCache[src]!;
 
       for (final s in dist.keys) {
         final d = dist[s]!;
-        final base = kernel(d) * strength;
+        final base = min(kernel(d) * strength, 1.0);
 
-        // frontier collapse
-        final shaped = frontierShape(base);
-
-        // traffic undermines control
+        final shaped = pow(base, 1.3).toDouble();
         final penalized = shaped * trafficPenalty(s);
-
-        // patchiness
         final finalValue = penalized * noise(s);
 
-        value[s] = (value[s] ?? 0.0) + finalValue;
+        // Soft saturation blend
+        value[s] = 1 - (1 - value[s]!) * (1 - finalValue);
       }
     }
   }
 }
 
+//enforcementKernel = exp(-d / 8)
+// sovereigntyKernel = 1 / (1 + (d/40)^2)
+//fedKernel(d) => exp(-d / 20.0); // galactic superpower

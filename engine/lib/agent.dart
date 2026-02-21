@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'fugue_engine.dart';
-import 'galaxy.dart';
+import 'galaxy/galaxy.dart';
 import 'pilot.dart';
-import 'system.dart';
+import 'galaxy/system.dart';
 
 enum AgentSystemReport {none,lastKnown,current}
 
@@ -33,8 +33,8 @@ class Agent extends Pilot {
   }
 
   double score(System s, FugueEngine fm) {
-    final auth = fm.galaxy.fedAuthority.val(s);
-    final commerce = fm.galaxy.commerceKernel.val(s);
+    final auth = fm.galaxy.fedLevel.val(s);
+    final commerce = fm.galaxy.commerceLevel.val(s);
     final bias = biasToLastKnown(s, fm);
 
     return auth * 1.5 + bias * 2.0 + commerce * 0.2;
@@ -56,11 +56,11 @@ class Agent extends Pilot {
 
   void observe(System s, Galaxy g) {
     //beliefHeat[s] = fm.galaxy.playerBeliefKernel.val(s);
-    beliefHeat[s] = g.heat.detectionRisk(s);
+    beliefHeat[s] = g.heatMod.detectionRisk(s);
   }
 
   double movesPerTurn(Galaxy g) {
-    final traffic = g.commerceKernel.val(system);
+    final traffic = g.commerceLevel.val(system);
     return speed * (1 + log(1 + traffic));
   }
 

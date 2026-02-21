@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:crawlspace_engine/system.dart';
+import 'package:crawlspace_engine/galaxy/system.dart';
 import 'galaxy.dart';
 
 abstract class Deterministic {}

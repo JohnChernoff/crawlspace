@@ -1,8 +1,8 @@
 import 'dart:math';
 import 'package:crawlspace_engine/agent.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/galaxy.dart';
-import 'package:crawlspace_engine/system.dart';
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
+import 'package:crawlspace_engine/galaxy/system.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -11,7 +11,8 @@ import 'package:flutter_force_directed_graph/widget/force_directed_graph_widget.
 import '../graphs/graph.dart';
 import '../../main.dart';
 import '../../options.dart';
-import 'galaxy_view.dart';
+
+enum GalaxyMapLegend {star,planets,fed,tech,species,history}
 
 class GalaxyMap extends StatefulWidget {
   final FugueEngine fugueModel;
@@ -22,7 +23,7 @@ class GalaxyMap extends StatefulWidget {
 }
 
 class GalaxyMapState extends State<GalaxyMap> {
-  GalaxyMapLegend legend = GalaxyMapLegend.all;
+  GalaxyMapLegend legend = GalaxyMapLegend.species;
   late final FugueGraph fugueGraph;
   late final ForceDirectedGraphController<System> _controller;
   late final FocusNode _focusNode; // Add this
@@ -169,16 +170,16 @@ class GalaxyMapState extends State<GalaxyMap> {
     FugueEngine fm = widget.fugueModel;
     Galaxy g = fm.galaxy;
     int planV = 0;
-    if (legend == GalaxyMapLegend.planets || legend == GalaxyMapLegend.all) {
+    if (legend == GalaxyMapLegend.planets || legend == GalaxyMapLegend.species) {
       planV = ((system.planets.length / Galaxy.maxPlanets) * 222).floor() + 32;
     }
     return fm.player.system == system ? Colors.yellow :
     fm.galaxy.fedHomeSystem == system ? Colors.white : switch(legend) {
       GalaxyMapLegend.star => Color(system.starClass.color.argb),
       GalaxyMapLegend.planets => Color.fromRGBO(planV, planV, planV, 1),
-      GalaxyMapLegend.fed => Color.fromRGBO(0,0,((g.fedAuthority.val(system)) * 222).floor() + 32, 1), //blue
-      GalaxyMapLegend.tech => Color.fromRGBO(0,((g.techKernel.val(system)) * 222).floor() + 32, 0,1), //green
-      GalaxyMapLegend.all => Color.fromRGBO(planV,((g.techKernel.val(system)) * 222).floor() + 32, ((g.fedAuthority.val(system)) * 222).floor() + 32, 1),
+      GalaxyMapLegend.fed => Color.fromRGBO(0,0,((g.fedLevel.val(system)) * 222).floor() + 32, 1), //blue
+      GalaxyMapLegend.tech => Color.fromRGBO(0,((g.techLevel.val(system)) * 222).floor() + 32, 0,1), //green
+      GalaxyMapLegend.species => Color(g.civMod.systemSpeciesColor(system).argb),
       GalaxyMapLegend.history => switch(fm.agentAt(system)) {
         AgentSystemReport.none => fm.player.tradeTarget != null && system.planets.contains(fm.player.tradeTarget?.location)
             ? Colors.green : system.visited ? Colors.blue : Colors.purple,

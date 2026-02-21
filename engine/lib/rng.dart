@@ -4,10 +4,10 @@ import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'package:crawlspace_engine/stock_items/stock_ships.dart';
-import 'package:crawlspace_engine/system.dart';
+import 'package:crawlspace_engine/galaxy/system.dart';
 import 'coord_3d.dart';
 import 'fugue_engine.dart';
-import 'galaxy.dart';
+import 'galaxy/galaxy.dart';
 import 'grid.dart';
 import 'location.dart';
 
@@ -86,6 +86,42 @@ class Rng {
     return k - 1;
   }
 
+  static double betaRnd(Random rnd, double mean, double strength) {
+    final eps = 1e-6;
+    final m = mean.clamp(eps, 1 - eps);
+    final a = m * strength;
+    final b = (1 - m) * strength;;
+
+    final ga = gammaRnd(rnd, a);
+    final gb = gammaRnd(rnd, b);
+
+    return ga / (ga + gb);
+  }
+
+  static double gammaRnd(Random rnd, double shape) {
+    if (shape < 1) {
+      // Use Johnk's generator
+      final u = rnd.nextDouble();
+      return gammaRnd(rnd, shape + 1) * pow(u, 1 / shape);
+    }
+
+    final d = shape - 1.0 / 3.0;
+    final c = 1.0 / sqrt(9.0 * d);
+
+    while (true) {
+      double x, v;
+      do {
+        x = gaussianRnd(rnd, 0, 1);
+        v = 1 + c * x;
+      } while (v <= 0);
+      v = v * v * v;
+
+      final u = rnd.nextDouble();
+      if (u < 1 - 0.331 * pow(x, 4)) return d * v;
+      if (log(u) < 0.5 * x * x + d * (1 - v + log(v))) return d * v;
+    }
+  }
+
   static double gaussianRnd(Random rnd, double mean, double stdDev) {
     // Box-Muller
     final u1 = rnd.nextDouble();
@@ -98,9 +134,10 @@ class Rng {
     required double mean,
     required double min,
     required double max,
-    double stdDev = 1.0,
+    double? stdDev,
   }) {
-    return gaussianRnd(rnd, mean, stdDev).clamp(min, max);
+    final standardDev = stdDev ?? (0.15 * (max - min));
+    return gaussianRnd(rnd, mean, standardDev).clamp(min, max);
   }
 
   static int biasedRndInt(Random rnd, {

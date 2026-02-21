@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'grid.dart';
 
-abstract class PathGenerator2<T extends GridCell> {
+abstract class PathGenerator<T extends GridCell> {
   static void generate<T extends GridCell>(
       Grid<T> grid,
       int numPaths,

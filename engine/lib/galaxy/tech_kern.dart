@@ -1,5 +1,5 @@
 import 'package:crawlspace_engine/galaxy/kern_field.dart';
-import '../system.dart';
+import 'system.dart';
 
 class TechKernelField extends KernelField {
 
@@ -19,7 +19,7 @@ class TechKernelField extends KernelField {
       final src = entry.key;
       final strength = entry.value;
 
-      final dist = bfsDistances(src);
+      final dist = galaxy.topo.distCache[src]!;
       for (final s in dist.keys) {
         final d = dist[s]!;
         value[s] = (value[s] ?? 0.0) + strength * kernel(d);

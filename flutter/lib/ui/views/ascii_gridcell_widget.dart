@@ -4,7 +4,6 @@ import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/impulse.dart';
 import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/ship.dart';
-import 'package:crawlspace_engine/system.dart';
 import 'package:flutter/material.dart';
 import '../../options.dart';
 

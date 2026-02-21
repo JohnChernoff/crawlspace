@@ -1,14 +1,15 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
 
-import '../flow_field.dart';
-import '../galaxy.dart';
-import '../system.dart';
+import 'flow_field.dart';
+import 'galaxy.dart';
+import 'system.dart';
 
 abstract class KernelOps<T> extends FlowOps<T> {}
 
 class KernelField {
   final Galaxy galaxy;
   final Map<System, double> value = {};
+  String valStr(System s) => val(s).toStringAsFixed(2);
   final double Function(int d) kernel;
 
   KernelField(this.galaxy, {required this.kernel});
@@ -23,6 +24,9 @@ class KernelField {
     }
   }
 
+}
+
+/*
   Map<System, int> bfsDistances(System start) {
     final dist = <System, int>{};
     final q = <System>[start];
@@ -39,4 +43,4 @@ class KernelField {
     }
     return dist;
   }
-}
+ */

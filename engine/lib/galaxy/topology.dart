@@ -1,15 +1,16 @@
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/galaxy/sub_model.dart';
 import 'package:directed_graph/directed_graph.dart';
-import '../system.dart';
+import 'system.dart';
 
-class GalaxyTopology {
-  final List<System> systems;
+class GalaxyTopology extends GalaxySubMod {
   final DirectedGraph<System> graph;
   late Map<System, Map<System, int>> distCache;
   late Map<System, double> centrality;
+  List<System> get systems => galaxy.systems;
 
-  GalaxyTopology(this.systems) : graph = DirectedGraph({}) {
+  GalaxyTopology(super.galaxy) : graph = DirectedGraph({}) {
     for (final s in systems) graph.addEdges(s, s.links);
     distCache = {};
     for (final s in systems) distCache[s] = _bfsDistances(s);

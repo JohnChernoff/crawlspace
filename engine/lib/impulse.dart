@@ -1,12 +1,8 @@
-import 'dart:math';
-import 'package:crawlspace_engine/path_generator.dart';
 import 'package:crawlspace_engine/sector.dart';
 import 'controllers/scanner_controller.dart';
-import 'coord_3d.dart';
 import 'grid.dart';
 import 'hazards.dart';
 import 'item.dart';
-import 'system.dart';
 
 class ImpulseCell extends GridCell {
   List<Item> items = [];
@@ -55,19 +51,4 @@ class ImpulseLevel extends Level {
 
 class ImpulseMap extends Grid<ImpulseCell> {
   ImpulseMap(super.size, super.cells);
-  factory ImpulseMap.withPath(int size, Map<Coord3D, ImpulseCell> cells, Random rnd, {
-    paths = 2, rooms = 1, roomRad = 1, pwMax = 1}) {
-    final imp = ImpulseMap(size, cells); // Advanced approach: more structured paths
-    AdvancedPathGenerator.generateWithControl(
-      imp,
-      rooms,
-      paths,
-      rnd,
-      roomRadius: roomRad,
-      minPathLength: 5,
-      pathWidthMin: 1,
-      pathWidthMax: pwMax,
-    );
-    return imp;
-  }
 }
