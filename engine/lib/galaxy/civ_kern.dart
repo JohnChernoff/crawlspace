@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:crawlspace_engine/galaxy/kern_field.dart';
 import 'system.dart';
 

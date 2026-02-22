@@ -4,13 +4,11 @@ import 'pilot.dart';
 import 'ship.dart';
 
 class TradeTarget {
-  SpaceObject source;
-  SpaceObject location;
+  SpaceEnvironment source;
+  SpaceEnvironment location;
   int reward;
   TradeTarget(this.location,this.source,this.reward);
 }
-
-enum OrbitResult {newOrbit,sameOrbit,insufficientEnergy,noShip}
 
 class Player extends Pilot {
   static const maxDna = 36;
@@ -23,9 +21,18 @@ class Player extends Pilot {
   Set<Ship> fleet = {};
   double heat = 0;
 
-  Player(super.name,super.rnd, {super.location, super.sys, super.galaxy, super.hostile = false});
+  Player(super.name,super.rnd, {required super.loc, super.galaxy, super.hostile = false});
 
-  double fedLevel(Galaxy g) => location?.fedLvl ?? g.fedKernel.val(system);
-  double techLevel(Galaxy g) => location?.techLvl ?? g.techKernel.val(system);
+  double fedLevel(Galaxy g) {
+    final env = locale;
+    if (env is SpaceEnvironment) return env.fedLvl;
+    return g.fedKernel.val(system);
+  }
+
+  double techLevel(Galaxy g) {
+    final env = locale;
+    if (env is SpaceEnvironment) return env.techLvl;
+    return g.techKernel.val(system);
+  }
 
 }

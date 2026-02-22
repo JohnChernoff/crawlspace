@@ -1,7 +1,5 @@
 import 'package:crawlspace_engine/galaxy/sub_model.dart';
 import 'flow_field.dart';
-import 'galaxy.dart';
-import 'system.dart';
 
 class FlowManager extends GalaxySubMod {
   final Map<String, FlowField> fields = {};

@@ -108,7 +108,7 @@ class Weapon extends ShipSystem {
     super.slot,
     super.rarity,
     super.stability,
-    super.repairDifficulty,
+    super.repairDifficulty
   });
 
   factory Weapon.fromStock(StockSystem stock) {

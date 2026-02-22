@@ -97,7 +97,7 @@ class LayerTransitController extends FugueController {
     glog("Creating impulse map..."); //Entering")
     int size = gridSize; //ship gridsize?
     ImpulseLevel impLevel;
-    ShipLocation sysLoc = playShip.loc;
+    SpaceLocation sysLoc = playShip.loc;
     if (sysLoc is SystemLocation) { //final rnd = Random(l.cell.impulseSeed);
       if (sysLoc.level.impMapCache.containsKey(sysLoc.cell)) {
         impLevel = sysLoc.level.impMapCache[sysLoc.cell]!;

@@ -1,5 +1,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/hazards.dart';
+import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/systems/engines.dart';
 import 'package:crawlspace_engine/systems/power.dart';
 import 'package:crawlspace_engine/systems/shields.dart';
@@ -54,7 +56,7 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1k";
+  final String version = "0.1l";
   Galaxy galaxy;
   late Player player;
   int numAgents = 3;
@@ -102,13 +104,15 @@ class FugueEngine {
     planetsideController = PlanetsideController(this);
     scannerController = ScannerController(this);
     audioController = AudioController(NullAudioService(),rnd);
-    player = Player(playerName,mapRng, sys: galaxy.farthestSystem(galaxy.fedHomeSystem), galaxy: galaxy);
-    player.system.visited = true;
+
+    final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
     for (int i=0;i<numAgents;i++) {
-      agents.add(Agent("Agent ${Rng.generateName(rnd: rnd)}", mapRng, 25, sys: galaxy.fedHomeSystem, galaxy: galaxy));
+      //agents.add(Agent("Agent ${Rng.generateName(rnd: rnd)}", mapRng, 25, sys: galaxy.fedHomeSystem, galaxy: galaxy));
+      //TODO: add ships, pilot locale
     }
     Ship playShip = Ship("HMS Sebastian",
-        player,shipClass: ShipClassType.hermes.shipclass,loc: SystemLocation(player.system, player.system.map.rndCell(rnd)),
+        shipClass: ShipClassType.hermes.shipclass,
+        location: SystemLocation(farSys, farSys.map.rndCell(rnd)),
         generator: PowerGenerator.fromStock(StockSystem.basicNuclear),
         impEngine: Engine.fromStock(StockSystem.basicFedImpulse),
         subEngine: Engine.fromStock(StockSystem.basicFedSublight),
@@ -116,12 +120,14 @@ class FugueEngine {
         shield: Shield.fromStock(StockSystem.basicEnergon),
         weapons: [Weapon.fromStock(StockSystem.fedLaser3),Weapon.fromStock(StockSystem.plasmaCannon)],
         ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 50});
+    player = Player(playerName,mapRng, loc: playShip);
+    player.system.visited = true;
     addShip(playShip);
+
     msgController.addMsg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
-    update(); //galaxy.rndTest();
+    update();
   }
 
-  //system.population = { for (final sp in galaxy.allSpecies) sp: 100 / galaxy.topo.distance(system, galaxy.findHomeworld(sp)),};
   void populateSystem(System system, {int? numShips}) {
     glog("Populating System, $system");
     numShips ??= rnd.nextInt(3);
@@ -142,10 +148,11 @@ class FugueEngine {
 
   void newShip(Pilot pilot, Ship ship) {
     final formerShip = _shipMap[pilot];
-    pilot.location?.hangar.remove(ship);
+    final hangar = (pilot.locale as SpaceEnvironment?)?.hangar;
+    hangar?.remove(ship);
     if (formerShip != null) {
       ship.loc = formerShip.loc;
-      pilot.location?.hangar.add(formerShip);
+      hangar?.add(formerShip);
       removeShip(formerShip);
     }
     addShip(ship,pilot: pilot);
@@ -180,14 +187,15 @@ class FugueEngine {
   }
 
   void homecoming({bool home = false}) {
+    final hw = galaxy.findHomeworld(StockSpecies.humanoid.species);
     if (home) {
       if (!player.starOne || player.broadcasts == 0) {
-        msgController.addMsg("You arrive on ${galaxy.fedHomeWorld.name} and are immediately taken into custody and shortly thereafter executed for treason. "
+        msgController.addMsg("You arrive on ${hw.name} and are immediately taken into custody and shortly thereafter executed for treason. "
             "Perhaps you should have broadcasted your information to the galaxy first.");
         victory = false;
       }
       else if (Rng.biasedRndInt(rnd,mean: 1, min: 0, max: 5) <= player.broadcasts) {
-        msgController.addMsg("You arrive on ${galaxy.fedHomeWorld.name} admist a media firestorm and are taken into custody, but before your case can be "
+        msgController.addMsg("You arrive on ${hw.name} admist a media firestorm and are taken into custody, but before your case can be "
             "heard the Federation Government collapses and you are reappointed and promoted to the rank of Intergalactic Commodore ${player.name}. "
             "Congratulations!");
         victory = true;
@@ -288,7 +296,7 @@ class FugueEngine {
         try {
           p.tick();
           Ship? ship = getShip(p);
-          if (ship != null && ship.loc.level == playerShip?.loc.level && player.location == null) {
+          if (ship != null && ship.loc.level == playerShip?.loc.level && player.locale is Ship) {
             pilotController.npcShipAct(ship);
           }
         } on ConcurrentModificationError {

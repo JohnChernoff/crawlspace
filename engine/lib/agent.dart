@@ -14,7 +14,7 @@ class Agent extends Pilot {
   int tracked = 0;
   Map<System,double> beliefHeat = {};
 
-  Agent(super.name,super.rnd,this.clueLvl, {super.sys,super.galaxy});
+  Agent(super.name,super.rnd,this.clueLvl, {required super.loc,super.galaxy});
 
   System pickLink(FugueEngine fm, Random rnd) {
     System best = system.links.first;
@@ -44,8 +44,7 @@ class Agent extends Pilot {
     tracked = t; lastKnown = system;
   }
 
-  void investigate(System sys) {
-    system = sys;
+  void investigate(System sys) { //system = sys;
     if (tracked > 0) {
       lastKnown = system;
       tracked--;

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/galaxy/sub_model.dart';
 import '../color.dart';
 import '../stock_items/species.dart';
@@ -23,6 +24,10 @@ class CivModel extends GalaxySubMod {
       }
       civIntensity[s] = normalize(civIntensity[s]!);
     }
+  }
+
+  Species? dominantSpecies(System s) {
+    return civIntensity[s]?.entries.sorted((a,b) => a.value.compareTo(b.value)).last.key;
   }
 
   GameColor systemSpeciesColor(System s) {

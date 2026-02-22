@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'color.dart';
 import 'descriptors.dart';
@@ -10,7 +11,7 @@ enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   final String shortString;
 }
 
-class Planet extends SpaceObject {
+class Planet extends SpaceEnvironment<SystemLocation> {
   late PlanetAge age;
   late EnvType environment;
   late Goods export;
@@ -28,6 +29,7 @@ class Planet extends SpaceObject {
   }
 
   Planet(super.name,super.fedLvl,super.techLvl,Random rnd,{
+    required super.locale,
     required this.industry,
     required this.commerce,
     required this.population}) {
@@ -36,9 +38,6 @@ class Planet extends SpaceObject {
     environment = EnvType.values.elementAt(rnd.nextInt(EnvType.values.length));
     export = Goods.values.elementAt(rnd.nextInt(Goods.values.length));
     known = true;
-  }
-
-  void updateDescription() { //print("Updating: ${toString()}");
     description = "$name is ${article(age.toString())} "
         "${getDescriptor(WordType.adj)} ${getDescriptor(WordType.noun)} "
         "with ${article(environment.toString())} climate.  Its chief exports include $export.";

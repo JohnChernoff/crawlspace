@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/galaxy/fed_model.dart';
 import 'package:crawlspace_engine/galaxy/flow_model.dart';
 import 'package:crawlspace_engine/galaxy/topology.dart';
+import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'flow_field.dart';
 import '../fugue_engine.dart';
@@ -30,7 +31,7 @@ class Galaxy {
   String name;
   List<System> systems = [];
   NameGenerator nameGenerator;
-  late Planet fedHomeWorld;
+  //late Planet fedHomeWorld;
   late System fedHomeSystem, fed1,fed2,fed3;
   late int maxJumps;
   Map<System,double> hazardField = {};
@@ -53,15 +54,15 @@ class Galaxy {
   late AuthorityKernelField fedKernel;
 
   Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
-    fedHomeWorld = Planet("Xaxle", 1, 1, rnd, population: 1, industry: 1, commerce: 1);
+
     fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
         trafficGenHint: TrafficGenHint.hub);
-    fedHomeSystem.planets.add(fedHomeWorld);
     fed1 = System("Movelia", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub);
     fed2 = System("Sargon", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.normal);
     fed3 = System("Javalix", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.culDeSac);
-    systems.add(fedHomeSystem);
-    systems.addAll([fed1,fed2,fed3]);
+    systems.addAll([fedHomeSystem,fed1,fed2,fed3]);
+
+
 
     final t0 = DateTime.now(); _createMap(); final t1 = DateTime.now();
     glog("Galaxy gen took ${t1.difference(t0).inMilliseconds} ms",level: DebugLevel.Highest);
@@ -83,8 +84,14 @@ class Galaxy {
     maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
 
     for (final s in systems) {
-      s.addPlanets(this, rnd);
       s.map = s.createSystemMap(8,.02,.01,.001,rnd);
+      if (s.homeworld != null) {
+        final homeWorld = Planet(s.homeworld!.homeWorld, 1, 1, rnd,
+            locale: SystemLocation(s, s.map.rndCell(rnd)), population: 1, industry: 1, commerce: 1);
+        s.addPlanets(this, rnd, pList: [homeWorld]);
+      } else {
+        s.addPlanets(this, rnd);
+      }
     }
 
   }

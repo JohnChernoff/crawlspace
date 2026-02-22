@@ -1,5 +1,6 @@
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/stock_items/species.dart';
 
 import '../agent.dart';
 import '../audio_service.dart';
@@ -27,17 +28,18 @@ class PlanetsideController extends FugueController {
     final cell = ship.loc.cell; if (cell is! SectorCell) {
       fm.msgController.addMsg("Wrong layer!"); return;
     }
-    final planet = fm.player.location = cell.planet; if (planet == null) {
+    final planet = cell.planet; if (planet == null) {
       fm.msgController.addMsg("No planet!"); return;
     }
+    fm.player.locale = planet;
     if (fm.pilotController.action(fm.player,ActionType.planetLand)) {
-      if (planet == fm.galaxy.fedHomeWorld) {
+      if (planet.loc.level.homeworld == StockSpecies.humanoid.species) {
         fm.homecoming(home: true);
       } else {
         fm.menuController.showPlanetMenu(planet);
         fm.audioController.newTrack(newMood: MusicalMood.planet);
         fm.msgController.addMsg("Landing on ${planet.name}");
-        fm.msgController.addMsg(planet.description);
+        fm.msgController.addMsg(planet.description ?? "What a dump");
         if (fm.player.tradeTarget?.location == planet) {
           fm.msgController.addMsg(
               "You deliver your cargo.  Reward: ${fm.player.tradeTarget
@@ -49,8 +51,8 @@ class PlanetsideController extends FugueController {
     }
   }
 
-  void launch() {
-    fm.player.location = null; //fm.menuController.exitMenu();
+  void launch() {  //fm.menuController.exitMenu();
+    if (fm.playerShip != null) fm.player.locale = fm.playerShip!;
     fm.msgController.addMsg("Launching...");
     fm.audioController.newTrack(newMood: MusicalMood.space);
     fm.pilotController.action(fm.player,ActionType.planetLaunch);
@@ -86,7 +88,7 @@ class PlanetsideController extends FugueController {
   void getTradeMission() {
     if (fm.playerShip == null) {
       fm.msgController.addMsg("You're not in a ship!");
-    } else if (fm.player.tradeTarget?.source == fm.player.location) {
+    } else if (fm.player.tradeTarget?.source == fm.player.locale) {
       fm.msgController.addMsg("You already have a mission from this planet.");
     } else {
       List<System> path = [];
@@ -98,8 +100,8 @@ class PlanetsideController extends FugueController {
         path = [fm.player.system];
         planet = createTradePlanet(path, steps);
       }
-      if (planet != null && fm.player.location != null) {
-        fm.player.tradeTarget = TradeTarget(planet, fm.player.location!, reward);
+      if (planet != null && fm.player.locale is SpaceEnvironment) {
+        fm.player.tradeTarget = TradeTarget(planet, fm.player.locale as SpaceEnvironment, reward);
         fm.msgController.addMsg("${planet.name} is in desperate need of ${rndEnum(Goods.values.where((g) => g != planet?.export))}, "
             "reward: $reward. Route: ${fm.pathList(path)}");
       } else {
@@ -150,13 +152,14 @@ class PlanetsideController extends FugueController {
   }
 
   void shop({ShopType? type, List<Ship>? shiplist}) {
-    SpaceObject? location = fm.player.location; if (location != null) {
+    final location = fm.player.locale; if (location is SpaceEnvironment) {
       if (type != null) {
-          location.shop ??= Shop(location,type,1,fm.rnd);
+        location.shop ??= Shop(location,type,1,fm.rnd);
       } else {
         location.shop ??= Shop.random(location,1,fm.rnd);
       }
-      fm.menuController.showMenu(() => fm.menuController.createShopBuyMenu(location.shop!, ship: fm.playerShip),headerTxt: "${location.shop!.name}");
+      fm.menuController.showMenu(() => fm.menuController.createShopBuyMenu(location.shop!, ship: fm.playerShip),
+          headerTxt: "${location.shop!.name}");
     }
   }
 
@@ -185,7 +188,7 @@ class PlanetsideController extends FugueController {
   }
 
   void enterShipyard() {
-    SpaceObject? loc = fm.player.location; if (loc != null) {
+    final loc = fm.player.locale; if (loc is SpaceEnvironment) {
       loc.yard ??= Shop(loc, ShopType.shipyard, 1, fm.rnd,
           shiplist: List.generate(fm.itemRng.nextInt(5) + 1, (i) =>
               Rng.generateShip(fm.player.system, fm.galaxy, fm.itemRng)));

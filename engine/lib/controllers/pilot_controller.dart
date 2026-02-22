@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/coord_3d.dart';
-import '../fugue_engine.dart';
 import '../grid.dart';
 import '../location.dart';
 import '../menu.dart';

@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:crawlspace_engine/object.dart';
-import 'fugue_engine.dart';
 import 'item.dart';
 import 'pilot.dart';
 import 'rng.dart';
@@ -32,14 +31,14 @@ class Shop {
   int credits = 10000;
   int techLvl;
   ShopType type;
-  SpaceObject location;
+  SpaceEnvironment location;
 
   Shop(this.location,this.type,this.techLvl,Random rnd, {this.buysScrap = false, double avgQuantity = 12, List<Ship>? shiplist}) {
     name = ShopNameGen.generate(type, rnd);
     generateItems(rnd, avgQuantity: avgQuantity, shiplist: shiplist);
   }
 
-  factory Shop.random(SpaceObject loc,int tech, Random rnd, {bool scrap = false}) {
+  factory Shop.random(SpaceEnvironment loc,int tech, Random rnd, {bool scrap = false}) {
     final t = ShopType.values.elementAt(rnd.nextInt(ShopType.values.length));
     return Shop(loc,t == ShopType.shipyard ? ShopType.misc : t,tech,rnd,buysScrap: scrap);
   }

@@ -4,10 +4,10 @@ import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'package:crawlspace_engine/stock_items/stock_ships.dart';
-import 'package:crawlspace_engine/galaxy/system.dart';
 import 'coord_3d.dart';
 import 'fugue_engine.dart';
 import 'galaxy/galaxy.dart';
+import 'galaxy/system.dart';
 import 'grid.dart';
 import 'location.dart';
 
@@ -217,8 +217,9 @@ class Rng {
   }
 
   static Ship generateShip(System system, Galaxy galaxy, Random rnd) {
-    final pilot = Pilot(Rng.generateName(rnd: rnd),rnd,hostile: true, sys: system, galaxy: galaxy);
-    final level = max(0,1 - (galaxy.topo.distance(system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps));
+    final location = SystemLocation(system,system.map.rndCell(rnd));
+    final pilot = Pilot(Rng.generateName(rnd: rnd),rnd,hostile: true, loc: location, galaxy: galaxy);
+    final level = max(0,1 - (galaxy.topo.distance(location.loc.system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps));
     final techLvl = max(1,(level * 10).round());
     glog("Faction: ${pilot.faction.name}, tech: $level, $techLvl");
     ShipType shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,rnd);
@@ -226,14 +227,13 @@ class Rng {
       shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,rnd);
     }
     final shipClassType = ShipClassType.values.firstWhereOrNull((t) => t.shipclass.type == shipType) ?? ShipClassType.mentok;
-    Ship ship = Ship("HMS ${randomAlienName(rnd)}",pilot, loc: SystemLocation(system, system.map.rndCell(rnd)),
-        shipClass: shipClassType.shipclass
-    );
+    Ship ship = Ship("HMS ${randomAlienName(rnd)}",pilot: pilot, location: location, shipClass: shipClassType.shipclass);
     ship.installRndPower(techLvl, rnd);
     ship.installRndEngine(Domain.impulse, techLvl, rnd);
     ship.installRndEngine(Domain.system, techLvl, rnd); //no hyperspace
     ship.installRndShield(techLvl, rnd);
     ship.installRndWeapon(techLvl, rnd);
+    pilot.locale = ship;
     return ship;
   }
 }

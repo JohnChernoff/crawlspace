@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/hazards.dart';
+import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/rng.dart';
 import 'package:crawlspace_engine/stock_items/stock_ammo.dart';
 import 'package:crawlspace_engine/stock_items/stock_engines.dart';
@@ -51,24 +52,27 @@ class Scrap extends Item {
     required this.mass,
     this.jettisonable = true,
     required super.baseCost,
-    super.rarity = .01
+    super.rarity = .01,
   });
   double get costEffectiveness => baseCost / mass;
 }
 
-class Ship extends Item {
+class Ship extends Item implements Locatable {
+  @override
+  SpaceLocation get loc => _loc;
+  void set loc(SpaceLocation l) => _loc = l;
   @override
   int get baseCost => shipClass.slots.map((s) => s.slot.type.baseCost).sum + shipClass.maxMass.round();
   @override
   String get shopDesc => dump(shop: true);
+  SpaceLocation _loc;
   ShipClass shipClass;
-  late Pilot pilot;
-  Pilot owner;
+  Pilot pilot;
+  Pilot? owner;
   List<InstalledSystem> systemMap = []; //rename to shipSlots?
   Map<Ammo,int> ammoMap = {};
   double hullDamage = 0;
   int minCool = 0;
-  ShipLocation loc;
   int impulseMapSize = 8;
   Set<Item> inventory = {};
   bool get playship => pilot is Player;
@@ -79,15 +83,16 @@ class Ship extends Item {
   Coord3D? interceptCoord;
   List<GridCell> currentPath = [];
   List<Scrap> scrapHeap = [];
-  Map<Ship,ShipLocation> lastKnown = {};
+  Map<Ship,SpaceLocation> lastKnown = {};
   HullType hullType;
 
-  Ship(super.name, this.owner, {
+  Ship(super.name, {
+    this.owner,
     super.baseCost = 0,
     super.rarity = 1,
     required this.shipClass,
-    required this.loc,
-    Pilot? altPilot,
+    required SpaceLocation location,
+    Pilot? pilot,
     PowerGenerator? generator,
     List<Weapon>? weapons,
     Map<Ammo,int>? ammo,
@@ -96,9 +101,7 @@ class Ship extends Item {
     Engine? subEngine,
     Engine? hyperEngine,
     this.hullType = HullType.basic
-    }) {
-
-    pilot = altPilot ?? owner;
+    }) : _loc = location, this.pilot = pilot ?? nobody {
     for (final classSlot in shipClass.slots) {
       for (int i=0;i<classSlot.num;i++) { //print("$name: Installing: ${classSlot.slot}");
         systemMap.add(InstalledSystem(classSlot.slot,null));
@@ -154,7 +157,7 @@ class Ship extends Item {
     return true;
   }
 
-  ShipLocation? detect(Ship ship) {
+  SpaceLocation? detect(Ship ship) {
     if (canScan(ship.loc.cell)) {
       lastKnown[ship] = ship.loc;
       return ship.loc;
@@ -300,7 +303,7 @@ class Ship extends Item {
     }
   }
 
-  double distance({Ship? ship, ShipLocation? l, Coord3D? c}) {
+  double distance({Ship? ship, SpaceLocation? l, Coord3D? c}) {
     if (ship != null) return ship.loc.cell.coord.distance(loc.cell.coord);
     if (l != null) return l.cell.coord.distance(loc.cell.coord);
     if (c != null) return c.distance(loc.cell.coord);
@@ -308,7 +311,7 @@ class Ship extends Item {
     return double.infinity;
   }
   double distanceFrom(Ship ship) => ship.loc.cell.coord.distance(loc.cell.coord);
-  double distanceFromLocation(ShipLocation l) => l.cell.coord.distance(loc.cell.coord);
+  double distanceFromLocation(SpaceLocation l) => l.cell.coord.distance(loc.cell.coord);
   double distanceFromCoord(Coord3D c) => c.distance(loc.cell.coord);
 
   double get hullRemaining  => (hullStrength-hullDamage);
@@ -518,13 +521,12 @@ class Ship extends Item {
 
     loc.level.removeShip(this);
 
-    ShipLocation l = loc; loc = switch(l) {
+    SpaceLocation l = loc; _loc = switch(l) {
       SystemLocation() => impLevel != null ? ImpulseLocation(l,impLevel,destination) : SystemLocation(toSystem ?? l.level,destination),
       ImpulseLocation() => toSystem != null ? SystemLocation(toSystem,destination) : ImpulseLocation(l.systemLoc,l.level,destination),
     };
 
-    if (toSystem != null) pilot.system = toSystem;
-    loc.level.addShip(this, destination);
+    loc.level.addShip(this, destination); //if (toSystem != null) pilot.system = toSystem;
   }
 
   //TODO: handle power outages?

@@ -1,6 +1,7 @@
 import 'dart:collection';
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../color.dart';
@@ -86,29 +87,6 @@ class System extends Level {
     }
   }
 
-  //which to use - g.fedLevel.val(this) or g.fedMod.fedPressure[this]
-  void addPlanets(Galaxy g, Random rnd) {
-    final n = Rng.biasedRndInt(rnd, mean: Galaxy.avgPlanets, min: 0, max: Galaxy.maxPlanets);
-    for (int i = 0; i < n; i++) {//print("Adding planet to $name");
-      final fed = g.fedKernel.val(this);
-      final tech = g.techKernel.val(this);
-      final comm = g.commerceKernel.val(this);
-      final res = g.civKernel.val(this);
-      final dust = min(1.0, comm * 0.7 + tech * 0.3);
-      //print("res: $res, comm: $comm, dust: $dust");
-      planets.add(Planet(
-        g.nameGenerator.generatePlanetName(),
-        Rng.betaRnd(rnd, fed, 15),
-        Rng.betaRnd(rnd, tech, 12),
-        rnd,
-        population: Rng.betaRnd(rnd, res, 20),
-        commerce: Rng.betaRnd(rnd, comm, 10),
-        industry: Rng.betaRnd(rnd, dust, 6),
-      ));
-    }
-  }
-
-  //assumes planets have been already created
   SystemMap createSystemMap(int size, double nebulaFactor, double ionFactor, double blackFactor, Random rnd) {
     Map<Coord3D,SectorCell> cells = {};
     for (int x=0;x<size;x++) {
@@ -141,22 +119,46 @@ class System extends Level {
       }
     }
 
-    if (blackFactor > rnd.nextDouble()) {
-      map.rndCell(rnd).blackHole = true;
-    }
-
-    final List<SectorCell> npCells = map.cells.values.where((c) => c.planet == null && c.blackHole == false).toList();
-    if (npCells.length > planets.length) {
-      npCells.shuffle(rnd);
-      for (int i = 0; i < planets.length; i++) {
-        npCells[i].clearHazards();
-        npCells[i].planet = planets[i];
-      }
-      npCells[planets.length].clearHazards();
-      npCells[planets.length].starClass = starClass;
-    }
+    if (blackFactor > rnd.nextDouble()) map.rndCell(rnd).blackHole = true;
+    final List<SectorCell> starCells = map.cells.values.where((c) => c.planet == null && c.blackHole == false).toList();
+    final starCell = map.rndCell(rnd, cellList:  starCells);
+    starCell.clearHazards();
+    starCell.starClass = starClass;
 
     return map;
+  }
+
+  //which to use - g.fedLevel.val(this) or g.fedMod.fedPressure[this]
+  void addPlanets(Galaxy g, Random rnd, {List<Planet> pList = const []}) {
+    List<Planet> planetList = pList.toList();
+    final n = Rng.biasedRndInt(rnd, mean: Galaxy.avgPlanets, min: 0, max: Galaxy.maxPlanets);
+    for (int i = 0; i < n; i++) {//print("Adding planet to $name");
+      final fed = g.fedKernel.val(this);
+      final tech = g.techKernel.val(this);
+      final comm = g.commerceKernel.val(this);
+      final res = g.civKernel.val(this);
+      final dust = min(1.0, comm * 0.7 + tech * 0.3);
+      //print("res: $res, comm: $comm, dust: $dust");
+      final cellList = map.cells.values.map((c) => c as SectorCell).where((
+          sc) => sc.planet == null && !sc.blackHole).toList();
+      final loc = SystemLocation(this, map.rndCell(rnd, cellList: cellList));
+      final planet = Planet(
+        g.nameGenerator.generatePlanetName(),
+        Rng.betaRnd(rnd, fed, 15),
+        Rng.betaRnd(rnd, tech, 12),
+        rnd,
+        locale: loc,
+        population: Rng.betaRnd(rnd, res, 20),
+        commerce: Rng.betaRnd(rnd, comm, 10),
+        industry: Rng.betaRnd(rnd, dust, 6),
+      );
+      planetList.add(planet);
+    }
+    for (final planet in planetList) {
+      planets.add(planet);
+      planet.loc.cell.planet = planet;
+      planet.loc.cell.clearHazards();
+    }
   }
 
   void explore(int depth, {System? sys}) { //msgController.addMsg("Exploring: ${system.name} , depth: $depth");

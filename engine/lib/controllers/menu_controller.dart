@@ -126,7 +126,7 @@ class MenuController extends FugueController {
     return entries;
   }
 
-  List<MenuEntry> createHangarMenu(SpaceObject shop) {
+  List<MenuEntry> createHangarMenu(SpaceEnvironment shop) {
     return <MenuEntry> [
     for (int i = 0; i < shop.hangar.length; i++) ValueEntry(
       letter(i),

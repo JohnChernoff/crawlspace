@@ -1,4 +1,5 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/sector.dart';
 
 import 'grid.dart';
@@ -6,7 +7,8 @@ import 'impulse.dart';
 import 'ship.dart';
 import 'galaxy/system.dart';
 
-sealed class ShipLocation {
+sealed class SpaceLocation implements Locatable {
+  SpaceLocation get loc => this;
   final Level _level;
   final GridCell _cell;
   Domain get domain {
@@ -17,8 +19,14 @@ sealed class ShipLocation {
   Level get level => _level;
   GridCell get cell => _cell;
   Set<Ship> get ships => level.shipsAt(cell);
+  System get system {
+    final loc = this; return switch(loc) {
+      SystemLocation() => loc.level,
+      ImpulseLocation() => loc.systemLoc.level,
+    };
+  }
 
-  double dist({ShipLocation? l, GridCell? c}) {
+  double dist({SpaceLocation? l, GridCell? c}) {
     if (l != null) {
       if (l.domain == domain) {
         return cell.coord.distance(l.cell.coord);
@@ -36,15 +44,15 @@ sealed class ShipLocation {
 
   @override
   bool operator ==(Object other) {
-    return other is ShipLocation && other.domain == domain && other.cell.coord == cell.coord;
+    return other is SpaceLocation && other.domain == domain && other.cell.coord == cell.coord;
   }
   @override
   int get hashCode => level.hashCode * cell.hashCode;
 
-  const ShipLocation(this._level,this._cell);
+  const SpaceLocation(this._level,this._cell);
 }
 
-class SystemLocation extends ShipLocation {
+class SystemLocation extends SpaceLocation {
 
   @override
   System get level => _level as System;
@@ -59,7 +67,7 @@ class SystemLocation extends ShipLocation {
   }
 }
 
-class ImpulseLocation extends ShipLocation {
+class ImpulseLocation extends SpaceLocation {
 
   final SystemLocation systemLoc;
   @override

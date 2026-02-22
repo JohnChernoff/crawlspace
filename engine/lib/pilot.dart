@@ -1,10 +1,14 @@
 import 'dart:math';
+import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/player.dart';
 import 'package:crawlspace_engine/rng.dart';
+import 'package:crawlspace_engine/sector.dart';
+import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'controllers/pilot_controller.dart';
 import 'galaxy/galaxy.dart';
 import 'hazards.dart';
+import 'location.dart';
 import 'object.dart';
 import 'galaxy/system.dart';
 
@@ -24,15 +28,23 @@ class TransactionRecord {
   const TransactionRecord(this.type,this.credits);
 }
 
-Pilot nobody = Pilot("nobody",Random());
 System nowhere = System("nowhere",StellarClass.A,Random());
+Pilot nobody = Pilot("nobody",Random(),loc: SpaceEnvironment("nowhere", 0, 0, locale: SystemLocation(nowhere,SectorCell(Coord3D(0,0,0),{},0))));
 
-class Pilot {
+class Pilot implements Locatable {
   String name;
-  SpaceObject? location; //null = on ship in space
+  SpaceLocation get loc => locale.loc;
+  Locatable get locale => _locale; //could be Planet, Ship, SpaceEnvironment, etc.
+  void set locale(Locatable l) {
+    _locale = l; //print("Setting locale: ${l.name}");
+    if (l is Ship && this != nobody) {
+      l.pilot = this;
+    }
+  }
+  late Locatable _locale;
+  System get system => locale.loc.system;
   int credits = 10000;
   List<TransactionRecord> transRec = [];
-  System system;
   late Faction faction;
   Map<AttribType,int> attributes = {};
   Map<SkillType,int> skills = {};
@@ -46,14 +58,13 @@ class Pilot {
   bool get ready => auCooldown == 0;
   void tick() => auCooldown = max(0,auCooldown - 1);
 
-  Pilot(this.name,Random rnd,{this.location, System? sys, Galaxy? galaxy, Faction? f, this.hp = 32, this.hostile = true})
-      : this.system = sys ?? nowhere {
-    if (this is Player) {
-      //FactionList.values.forEach((f) => print(f.factionName)); print(FactionList.values);
+  Pilot(this.name,Random rnd,{required Locatable loc, Galaxy? galaxy, Faction? f, this.hp = 32, this.hostile = true}) {
+    locale = loc;
+    if (this is Player) { //FactionList.values.forEach((f) => print(f.factionName)); print(FactionList.values);
       faction = getFaction(FactionList.fedReb)!;
     } else {
       final species = galaxy != null
-          ? Rng.weightedRandom(galaxy.civMod.civIntensity[system]!,rnd, fallback: StockSpecies.humanoid.species)
+          ? Rng.weightedRandom(galaxy.civMod.civIntensity[locale.loc.system]!,rnd, fallback: StockSpecies.humanoid.species)
           : StockSpecies.humanoid.species;  //print("Species: ${species.name}");
       final factionMap = Map.fromEntries(factions.where((fa) => fa.species == species).map((f2) => MapEntry(f2, f2.relativeFreq)));
       faction = f ?? Rng.weightedRandom(factionMap, rnd, fallback: factions.first);

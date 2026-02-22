@@ -68,6 +68,10 @@ class ScannerController extends FugueController {
       blocks.add(TextBlock("Tick: ${fm.auTick / 100}",GameColors.brown,true));
     }
     blocks.add(TextBlock("Credits: ${fm.player.credits}",GameColors.khaki,true));
+    final mainSpecies = fm.galaxy.civMod.dominantSpecies(fm.player.locale.loc.system)!;
+    int dist = fm.galaxy.topo.distance(fm.player.locale.loc.system, fm.galaxy.findHomeworld(mainSpecies));
+    blocks.add(TextBlock("${mainSpecies.name} Space ($dist)",GameColors.khaki,true));
+
     Ship? ship = fm.playerShip; if (ship == null) {
       blocks.add(const TextBlock("No ship",GameColors.red,true));
     } else {
@@ -99,7 +103,6 @@ class ScannerController extends FugueController {
           .sorted((c1,c2) => c1.coord.distance(ship.loc.cell.coord).compareTo(c2.coord.distance(ship.loc.cell.coord)));
       for (GridCell cell in cells) {
         if (!cell.empty(ship.loc.level.map)) {
-
           blocks.add(TextBlock(cell.toScannerString(ship.loc.level.map), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
           currentScan.add(cell);
         }
