@@ -60,10 +60,18 @@ class GalaxyMapState extends State<GalaxyMap> {
 
   void _cycleLegend(bool forwards) {
     setState(() {
-      if (legend.index < GalaxyMapLegend.values.length - 1) {
-        legend = GalaxyMapLegend.values.elementAt(legend.index + 1);
+      if (forwards) {
+        if (legend.index < GalaxyMapLegend.values.length - 1) {
+          legend = GalaxyMapLegend.values.elementAt(legend.index + 1);
+        } else {
+          legend = GalaxyMapLegend.values.first;
+        }
       } else {
-        legend = GalaxyMapLegend.values.first;
+        if (legend.index > 0) {
+          legend = GalaxyMapLegend.values.elementAt(legend.index - 1);
+        } else {
+          legend = GalaxyMapLegend.values.elementAt(GalaxyMapLegend.values.length - 1);
+        }
       }
     }); //print("Legend: ${legend.name}");
   }
@@ -98,8 +106,11 @@ class GalaxyMapState extends State<GalaxyMap> {
               widget.fugueModel.update();
             });
             return KeyEventResult.handled;
-          } else if (ev.logicalKey == LogicalKeyboardKey.keyC) {
+          } else if (ev.logicalKey == LogicalKeyboardKey.keyW) {
             _cycleLegend(true);
+            return KeyEventResult.handled;
+          } else if (ev.logicalKey == LogicalKeyboardKey.keyQ) {
+            _cycleLegend(false);
             return KeyEventResult.handled;
           }
           return KeyEventResult.ignored;
@@ -123,14 +134,13 @@ class GalaxyMapState extends State<GalaxyMap> {
             _controller.needUpdate();
           });
         },
-        child: Container(
-          decoration: const BoxDecoration(
+        child: Column(children: [
+          Text("Graph Legend: ${legend.name} (q/w to cycle, esc to exit)",style: TextStyle(color: Colors.white)),
+          Expanded(child: Container(decoration: const BoxDecoration(
               image: DecorationImage(image: AssetImage("img/galaxy.jpg"),fit: BoxFit.fill)
-          ),
-          //color: Colors.black,
-          child: graphWidget,
-        ),
-      ),
+          ), child: graphWidget,
+        )),
+        ])),
     ));
   }
 
@@ -177,8 +187,8 @@ class GalaxyMapState extends State<GalaxyMap> {
     fm.galaxy.fedHomeSystem == system ? Colors.white : switch(legend) {
       GalaxyMapLegend.star => Color(system.starClass.color.argb),
       GalaxyMapLegend.planets => Color.fromRGBO(planV, planV, planV, 1),
-      GalaxyMapLegend.fed => Color.fromRGBO(0,0,((g.fedLevel.val(system)) * 222).floor() + 32, 1), //blue
-      GalaxyMapLegend.tech => Color.fromRGBO(0,((g.techLevel.val(system)) * 222).floor() + 32, 0,1), //green
+      GalaxyMapLegend.fed => Color.fromRGBO(0,0,((g.fedKernel.val(system)) * 222).floor() + 32, 1), //blue
+      GalaxyMapLegend.tech => Color.fromRGBO(0,((g.techKernel.val(system)) * 222).floor() + 32, 0,1), //green
       GalaxyMapLegend.species => Color(g.civMod.systemSpeciesColor(system).argb),
       GalaxyMapLegend.history => switch(fm.agentAt(system)) {
         AgentSystemReport.none => fm.player.tradeTarget != null && system.planets.contains(fm.player.tradeTarget?.location)

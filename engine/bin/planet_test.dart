@@ -9,13 +9,13 @@ void main() {
     print("***");
     final rndSys = engine.galaxy.systems.elementAt(engine.rnd.nextInt(engine.galaxy.systems.length));
     print("Fed HW distance: ${engine.galaxy.topo.distance(rndSys, engine.galaxy.fedHomeSystem)}");
-    print("Fed Influence: ${engine.galaxy.fedLevel.val(rndSys)}");
+    print("Fed Influence: ${engine.galaxy.fedKernel.val(rndSys)}");
     print("Planets: ");
     for (final planet in rndSys.planets) {
         print(planet);
     }
   }
-  final vals = engine.galaxy.fedLevel.value.values.toList()..sort();
+  final vals = engine.galaxy.fedKernel.value.values.toList()..sort();
   print(vals);
   print("***");
   vals.sort();

@@ -46,16 +46,26 @@ class MenuController extends FugueController {
 
   void showPlanetMenu(Planet planet) {
     List<MenuEntry> activities = [
+      if (planet.tier(planet.population).atOrAbove(DistrictLvl.light))
       ActionEntry("s", "(s)cout the system", (m) => fm.planetsideController.scout(), exitAfter: false),
+      if (planet.tier(planet.population).atOrAbove(DistrictLvl.medium))
       ActionEntry("h", "(h)ack the network for clues about Star One", (m) => fm.planetsideController.hack(), exitAfter: false),
+      if (planet.tier(planet.population).atOrAbove(DistrictLvl.heavy))
       ActionEntry("a", "reveal (a)gent locations", (m) => fm.planetsideController.spy(), exitAfter: false),
+      if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.none))
       ActionEntry("v", "(v)isit the tavern", (m) => fm.planetsideController.newFooShamGame(ThrowList.quantum), exitAfter: false),
+      if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.light))
       ActionEntry("t", "(t)rade mission", (m) => fm.planetsideController.getTradeMission(), exitAfter: false),
-      ActionEntry("i", "broadcast (i)nformation about Star One", (m) => fm.planetsideController.broadcast(), exitAfter: false),
-      ActionEntry("r", "(r)epair ship", (m) => fm.planetsideController.enterRepairShop(), exitAfter: false),
-      ActionEntry("y", "visit the ship(y)ard", (m) => fm.planetsideController.enterShipyard(), exitAfter: false),
-      ActionEntry("g", "(g)enetic engineering", (m) => fm.planetsideController.bioHack(), exitAfter: false),
+      if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.medium)) //&& planet.tier(planet.industry).atOrAbove(DistrictLvl.medium))
       ActionEntry("b", "(b)rowse shop", (m) => fm.planetsideController.shop(), exitAfter: false),
+      if (planet.tier(planet.industry).atOrAbove(DistrictLvl.light))
+      ActionEntry("r", "(r)epair ship", (m) => fm.planetsideController.enterRepairShop(), exitAfter: false),
+      if (planet.tier(planet.industry).atOrAbove(DistrictLvl.medium))
+      ActionEntry("g", "(g)enetic engineering", (m) => fm.planetsideController.bioHack(), exitAfter: false),
+      if (planet.tier(planet.industry).atOrAbove(DistrictLvl.heavy))
+      ActionEntry("y", "visit the ship(y)ard", (m) => fm.planetsideController.enterShipyard(), exitAfter: false),
+      if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.heavy) && planet.tier(planet.population).atOrAbove(DistrictLvl.heavy))
+      ActionEntry("i", "broadcast (i)nformation about Star One", (m) => fm.planetsideController.broadcast(), exitAfter: false),
       ActionEntry("l", "(l)aunch", (m) => fm.planetsideController.launch(), exitAfter: true),
     ];
     showMenu(() => activities,headerTxt: planet.name, noExit: true, mode: InputMode.planet);

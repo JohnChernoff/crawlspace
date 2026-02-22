@@ -33,8 +33,8 @@ class Agent extends Pilot {
   }
 
   double score(System s, FugueEngine fm) {
-    final auth = fm.galaxy.fedLevel.val(s);
-    final commerce = fm.galaxy.commerceLevel.val(s);
+    final auth = fm.galaxy.fedKernel.val(s);
+    final commerce = fm.galaxy.commerceKernel.val(s);
     final bias = biasToLastKnown(s, fm);
 
     return auth * 1.5 + bias * 2.0 + commerce * 0.2;
@@ -60,7 +60,7 @@ class Agent extends Pilot {
   }
 
   double movesPerTurn(Galaxy g) {
-    final traffic = g.commerceLevel.val(system);
+    final traffic = g.commerceKernel.val(system);
     return speed * (1 + log(1 + traffic));
   }
 

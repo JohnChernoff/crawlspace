@@ -35,6 +35,7 @@ class Planet extends SpaceObject {
     age = PlanetAge.values.elementAt(rnd.nextInt(PlanetAge.values.length));
     environment = EnvType.values.elementAt(rnd.nextInt(EnvType.values.length));
     export = Goods.values.elementAt(rnd.nextInt(Goods.values.length));
+    known = true;
   }
 
   void updateDescription() { //print("Updating: ${toString()}");

@@ -47,14 +47,10 @@ class Galaxy {
   late CivModel civMod;
   late HeatModel heatMod;
   late FederationModel fedMod;
-  late CivKernelField civLevel;
-  late TechKernelField techLevel;
-  late CommerceKernelField commerceLevel;
-  late AuthorityKernelField fedLevel;
-  double fedKernel(int d) => exp(-d / 6.0);      // soft control gradient
-  double fedFrontierKernel(int d) => 1 / (1 + pow(d / 20, 2));
-  double harshFed(int d) => 1 / (1 + d * d);     // sharp jurisdiction zones
-  double imperial(int d) => exp(-d / 12.0);      // huge empires
+  late CivKernelField civKernel;
+  late TechKernelField techKernel;
+  late CommerceKernelField commerceKernel;
+  late AuthorityKernelField fedKernel;
 
   Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
     fedHomeWorld = Planet("Xaxle", 1, 1, rnd, population: 1, industry: 1, commerce: 1);
@@ -149,27 +145,32 @@ class Galaxy {
   }
 
   void computeKernels() {
-    civLevel = CivKernelField(this, kernel: (d) => exp(-d / 4.0));
-    civLevel.recompute(allSpecies.map(findHomeworld));
+    civKernel = CivKernelField(this, kernel: (d) => exp(-d / 4.0));
+    civKernel.recompute(allSpecies.map(findHomeworld));
 
-    techLevel = TechKernelField(this, kernel: (d) => exp(-d / 6.0));
-    techLevel.recompute(buildTechSources());
+    techKernel = TechKernelField(this, kernel: (d) => exp(-d / 6)); //6
+    techKernel.recompute(buildTechSources());
 
-    commerceLevel = CommerceKernelField(
+    commerceKernel = CommerceKernelField(
       this,
-      civ: civLevel,
-      tech: techLevel,
-      kernel: (d) => exp(-d / 5.0),
+      civ: civKernel,
+      tech: techKernel,
+      kernel: (d) => exp(-d / 5), //5
     );
-    commerceLevel.recompute(civMod.civIntensity);
+    commerceKernel.recompute(civMod.civIntensity);
 
-    fedLevel = AuthorityKernelField(
+    //double fedStdKernel(int d) => exp(-d / 6.0);      // soft control gradient
+    //double harshFed(int d) => 1 / (1 + d * d);     // sharp jurisdiction zones
+    //double imperial(int d) => exp(-d / 12.0);      // huge empires
+    double fedFrontierKernel(int d) => 1 / (1 + pow(d / 20, 2));
+
+    fedKernel = AuthorityKernelField(
       this,
       faction: factions.first,
       kernel: fedFrontierKernel,
     );
 
-    fedLevel.recompute({
+    fedKernel.recompute({
       fedHomeSystem: 1.0,
       fed1: 0.7,
       fed2: 0.35,
@@ -177,10 +178,16 @@ class Galaxy {
     });
   }
 
+  double structuralTraffic(System s) {
+    return pow(topo.centrality[s]!, 0.7) as double;
+  }
+
+  double economicTraffic(System s) {
+    return pow(commerceKernel.val(s), 0.7) as double;
+  }
+
   double trafficFor(System s) {
-    final c = commerceLevel.val(s);
-    final cent = topo.centrality[s]!;
-    return pow(c * cent, 0.7).toDouble();
+    return 0.4 * structuralTraffic(s) + 0.6 * economicTraffic(s);
   }
 
   String trafficGlyph(System s) {
@@ -231,7 +238,7 @@ class Galaxy {
   }
 
   LawLevel law(System s) {
-    final a = fedLevel.val(s);
+    final a = fedKernel.val(s);
     if (a > 0.75) return LawLevel.core;
     if (a > 0.4) return LawLevel.regulated;
     if (a > 0.15) return LawLevel.frontier;
@@ -317,30 +324,30 @@ class Galaxy {
   //crimeEvent(system) { authorityShockSources[system] += 10.0; }
 
   double patrolChance(System s) {
-    return fedLevel.val(s) * techLevel.val(s);
+    return fedKernel.val(s) * techKernel.val(s);
   }
 
   double pursuitIntensity(System s) {
-    return fedLevel.val(s) * commerceLevel.val(s);
+    return fedKernel.val(s) * commerceKernel.val(s);
   }
 
   double rumorSpread(System s) {
-    return commerceLevel.val(s) * (1 + fedLevel.val(s));
+    return commerceKernel.val(s) * (1 + fedKernel.val(s));
   }
 
   void dumpCommerce() {
     systems
         .toList()
-      ..sort((a,b)=> commerceLevel.val(b).compareTo(commerceLevel.val(a)))
+      ..sort((a,b)=> commerceKernel.val(b).compareTo(commerceKernel.val(a)))
       ..take(10)
-          .forEach((s)=> print("${s.name}: ${commerceLevel.val(s).toStringAsFixed(2)}"));
+          .forEach((s)=> print("${s.name}: ${commerceKernel.val(s).toStringAsFixed(2)}"));
   }
 
   double marketSize(System s) =>
-      commerceLevel.val(s) * civLevel.val(s);
+      commerceKernel.val(s) * civKernel.val(s);
 
   double localSecurity(System s) =>
-      fedLevel.val(s) * commerceLevel.val(s);
+      fedKernel.val(s) * commerceKernel.val(s);
 }
 
 /*

@@ -90,17 +90,20 @@ class System extends Level {
   void addPlanets(Galaxy g, Random rnd) {
     final n = Rng.biasedRndInt(rnd, mean: Galaxy.avgPlanets, min: 0, max: Galaxy.maxPlanets);
     for (int i = 0; i < n; i++) {//print("Adding planet to $name");
-      final fed = g.fedLevel.val(this);
-      final tech = g.techLevel.val(this);
-      final comm = g.commerceLevel.val(this);
+      final fed = g.fedKernel.val(this);
+      final tech = g.techKernel.val(this);
+      final comm = g.commerceKernel.val(this);
+      final res = g.civKernel.val(this);
+      final dust = min(1.0, comm * 0.7 + tech * 0.3);
+      //print("res: $res, comm: $comm, dust: $dust");
       planets.add(Planet(
         g.nameGenerator.generatePlanetName(),
         Rng.betaRnd(rnd, fed, 15),
         Rng.betaRnd(rnd, tech, 12),
         rnd,
-        population: Rng.betaRnd(rnd, comm, 8),
+        population: Rng.betaRnd(rnd, res, 20),
         commerce: Rng.betaRnd(rnd, comm, 10),
-        industry: Rng.betaRnd(rnd, comm, 6),
+        industry: Rng.betaRnd(rnd, dust, 6),
       ));
     }
   }
@@ -167,8 +170,8 @@ class System extends Level {
 
   String shortString(Galaxy g, {bool showVisit = false}) {
     return "$name ("
-        "🛡${(g.fedLevel.valStr(this) * 100)},"
-        "⚙${g.techLevel.valStr(this) * 100})"
+        "🛡${(g.fedKernel.valStr(this) * 100)},"
+        "⚙${g.techKernel.valStr(this) * 100})"
         "${(showVisit && visited) ? '*' : ''}";
   }
 
