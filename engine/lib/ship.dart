@@ -515,7 +515,7 @@ class Ship extends Item implements Locatable {
   }
 
   double get availableMass => shipClass.maxMass - currentMass;
-  bool okMass(double m) => availableMass < m;
+  bool okMass(double m) => availableMass > m;
 
   void move(GridCell destination, {System? toSystem, ImpulseLevel? impLevel }) {
 

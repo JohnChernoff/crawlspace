@@ -82,3 +82,22 @@ class ImpulseLocation extends SpaceLocation {
     return "System: ${systemLoc.toString()}\nImpulse: ${cell.coord}";
   }
 }
+
+//TODO: use this
+sealed class PilotLocale {
+  SpaceLocation get loc;
+}
+
+class AboardShip extends PilotLocale {
+  final Ship ship;
+  AboardShip(this.ship);
+  @override
+  SpaceLocation get loc => ship.loc; // dynamic — follows ship
+}
+
+class AtEnvironment extends PilotLocale {
+  final SpaceEnvironment env;
+  AtEnvironment(this.env);
+  @override
+  SpaceLocation get loc => env.loc; // stable — fixed point
+}

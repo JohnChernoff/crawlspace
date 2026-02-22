@@ -70,7 +70,7 @@ class ScannerController extends FugueController {
     blocks.add(TextBlock("Credits: ${fm.player.credits}",GameColors.khaki,true));
     final mainSpecies = fm.galaxy.civMod.dominantSpecies(fm.player.locale.loc.system)!;
     int dist = fm.galaxy.topo.distance(fm.player.locale.loc.system, fm.galaxy.findHomeworld(mainSpecies));
-    blocks.add(TextBlock("${mainSpecies.name} Space ($dist)",GameColors.khaki,true));
+    blocks.add(TextBlock("${mainSpecies.name} Space ($dist)",mainSpecies.graphCol,true));
 
     Ship? ship = fm.playerShip; if (ship == null) {
       blocks.add(const TextBlock("No ship",GameColors.red,true));

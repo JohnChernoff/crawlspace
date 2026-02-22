@@ -159,7 +159,7 @@ class FugueEngine {
   }
 
   void removeShip(Ship ship) {
-    ship.pilot = nobody;
+    //ship.pilot = nobody; //TODO: decouple pilot
     for (final s in _shipMap.values) if (s.targetShip == ship) s.targetShip = null;
     _shipMap.remove(ship.pilot);
     ship.loc.level.map.shipMap[ship.loc.cell]?.remove(ship);
