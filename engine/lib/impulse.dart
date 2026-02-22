@@ -1,3 +1,6 @@
+import 'dart:math';
+
+import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/sector.dart';
 import 'controllers/scanner_controller.dart';
 import 'grid.dart';
@@ -51,4 +54,21 @@ class ImpulseLevel extends Level {
 
 class ImpulseMap extends Grid<ImpulseCell> {
   ImpulseMap(super.size, super.cells);
+
+  void hodgeTick(Hazard haz, Random rnd, {jitter = .1}) {
+    final Map<Coord3D,double> tmpCells = {};
+    for (final entry in cells.entries) {
+      int count = getAdjacentCells(entry.value).where((n) => n.hasHaz(haz)).length; //print("${entry.key}: $count");
+      if (entry.value.hasHaz(haz)) {
+        if (count > 3 && count < 6) tmpCells[entry.key] = entry.value.hazMap[haz]!;
+        else tmpCells[entry.key] = 0;
+      } else {
+        if (count == 5 || (count == 0 && rnd.nextDouble() < jitter)) tmpCells[entry.key] = rnd.nextDouble();
+        else tmpCells[entry.key] = 0;
+      }
+    }
+    for (final entry in cells.entries) {
+      entry.value.hazMap[haz] = tmpCells[entry.key] ?? 0;
+    }
+  }
 }

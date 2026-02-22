@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/systems/engines.dart';
 import 'package:crawlspace_engine/systems/power.dart';
 import 'package:crawlspace_engine/systems/shields.dart';
@@ -15,6 +16,7 @@ import 'controllers/pilot_controller.dart';
 import 'controllers/planetside_controller.dart';
 import 'controllers/scanner_controller.dart';
 import 'galaxy/galaxy.dart';
+import 'impulse.dart';
 import 'location.dart';
 import 'pilot.dart';
 import 'player.dart';
@@ -298,6 +300,10 @@ class FugueEngine {
       playShip?.tick(rnd: rnd);
     } while (!player.ready);
     if (playShip != null) {
+      final playMap = playShip.loc.level.map; if (playMap is ImpulseMap) {
+        final playLevel = playShip.loc.level as ImpulseLevel;
+        if (playLevel.sector.hasHaz(Hazard.ion)) playMap.hodgeTick(Hazard.ion, rnd);
+      }
       for (final s in playShip.loc.level.getAllShips().where((s) => s.npc)) playShip.detect(s);
     }
     update();

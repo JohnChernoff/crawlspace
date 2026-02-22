@@ -39,9 +39,8 @@ abstract class GridCell {
     return false;
   }
 
-  void clearHazards() {
-    hazMap.clear();
-  }
+  void clearHazard(Hazard haz) => hazMap.remove(haz);
+  void clearHazards() => hazMap.clear();
 
   String toScannerString(Grid grid) {
     StringBuffer sb = StringBuffer(toString());
