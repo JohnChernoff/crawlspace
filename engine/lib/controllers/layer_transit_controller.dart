@@ -48,13 +48,6 @@ class LayerTransitController extends FugueController {
     fm.menuController.showMenu(() => links, headerTxt: "Hyperspace");
   }
 
-  void hyperSpace(String letter) {
-    if (currentLinkMap.containsKey(letter)) {
-      fm.menuController.fm.menuController.exitMenu();
-      newSystem(fm.player, currentLinkMap[letter]!);
-    }
-  }
-
   void emergencyWarp(Ship ship) {
     System system = fm.galaxy.getRandomLinkableSystem(
         fm.player.system, ignoreTraffic: true) ?? fm.galaxy.getRandomSystem(excludeSystems: [fm.player.system]);
@@ -81,11 +74,14 @@ class LayerTransitController extends FugueController {
             ship.move(stars.first, toSystem: system); //ship.loc = SystemLocation(system, stars.first);
             system.visit(fm);
             fm.update();
+            if (ship.playship) {
+              fm.msgController.addMsg("New System: ${system.name}");
+              fm.scannerController.reset();
+            }
             return true;
           }
         }
       }
-      if (ship.playship) fm.scannerController.reset();
     }
     return false;
   }

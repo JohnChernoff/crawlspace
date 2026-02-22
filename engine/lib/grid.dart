@@ -44,7 +44,7 @@ abstract class GridCell {
 
   String toScannerString(Grid grid) {
     StringBuffer sb = StringBuffer(toString());
-    for (final haz in hazMap.entries) {
+    for (final haz in hazMap.entries.where((h) => h.key != Hazard.wake)) {
       if (haz.value > 0) sb.write(", ${haz.key.shortName}: ${haz.value.toStringAsFixed(2)}"); //else sb.write("?");
     }
     for (Ship ship in grid.shipMap[this] ?? {}) {

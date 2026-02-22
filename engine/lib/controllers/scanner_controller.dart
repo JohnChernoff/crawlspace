@@ -69,7 +69,7 @@ class ScannerController extends FugueController {
     }
     blocks.add(TextBlock("Credits: ${fm.player.credits}",GameColors.khaki,true));
     Ship? ship = fm.playerShip; if (ship == null) {
-      blocks.add(const TextBlock("No ship!",GameColors.red,true));
+      blocks.add(const TextBlock("No ship",GameColors.red,true));
     } else {
       blocks.add(TextBlock(ship.loc.toString(),GameColors.cyan,true));
       blocks.addAll(ship.status());

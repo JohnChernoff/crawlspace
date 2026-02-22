@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/stock_items/stock_ships.dart';
 import 'package:crawlspace_engine/stock_items/xeno.dart';
@@ -112,13 +113,13 @@ class Faction {
   final double xenomancy;
   final double rangedProb;
   final Map<Faction,double> influence = {};
-  late final WeightedTrait<XenomancySchool> xenoWeights; //null = all
-  late final WeightedTrait<ShipType> shipWeights; //null = all
-  late final WeightedTrait<PowerType> powerWeights; //null = all
-  late final WeightedTrait<EngineType> engineWeights; //null = all
-  late final WeightedTrait<ShieldType> shieldWeights; //null = all
-  late final WeightedTrait<DamageType> damageWeights; //null = all
-  late final WeightedTrait<AmmoDamageType> ammoDamageWeights; //null = all
+  final WeightedTrait<XenomancySchool> xenoWeights; //null = all
+  final WeightedTrait<ShipType> shipWeights; //null = all
+  final WeightedTrait<PowerType> powerWeights; //null = all
+  final WeightedTrait<EngineType> engineWeights; //null = all
+  final WeightedTrait<ShieldType> shieldWeights; //null = all
+  final WeightedTrait<DamageType> damageWeights; //null = all
+  final WeightedTrait<AmmoDamageType> ammoDamageWeights; //null = all
 
   Faction(this.species,this.name,{
     required this.relativeFreq,
@@ -135,16 +136,17 @@ class Faction {
     WeightedTrait<ShieldType>? shldWeights,
     WeightedTrait<DamageType>? dWeights,
     WeightedTrait<AmmoDamageType>? aWeights,
-
-  }) : courage = crg ?? species.courage, flexibility = flex ?? species.flexibility, xenomancy = xeno ?? species.xenomancy, rangedProb = ranged ?? species.rangedProb {
-    xenoWeights = xWeights ?? species.xenoWeights ?? WeightedTrait<XenomancySchool>.all(allValues:XenomancySchool.values);
-    shipWeights = shpWeights ?? species.shipWeights ?? WeightedTrait<ShipType>.all(allValues: ShipType.values);
-    powerWeights = pWeights ?? species.powerWeights ?? WeightedTrait<PowerType>.all(allValues: PowerType.values);
-    engineWeights = eWeights ?? species.engineWeights ?? WeightedTrait<EngineType>.all(allValues: EngineType.values);
-    shieldWeights = shldWeights ?? species.shieldWeights ?? WeightedTrait<ShieldType>.all(allValues: ShieldType.values);
-    damageWeights = dWeights ?? species.damageWeights ?? WeightedTrait<DamageType>.all(allValues: DamageType.values);
-    ammoDamageWeights = aWeights ?? species.ammoDamageWeights ?? WeightedTrait<AmmoDamageType>.all(allValues: AmmoDamageType.values);
-  }
+  }) : courage = crg ?? species.courage,
+        flexibility = flex ?? species.flexibility,
+        xenomancy = xeno ?? species.xenomancy,
+        rangedProb = ranged ?? species.rangedProb,
+        xenoWeights = xWeights ?? species.xenoWeights ?? WeightedTrait<XenomancySchool>.all(allValues:XenomancySchool.values),
+        shipWeights = shpWeights ?? species.shipWeights ?? WeightedTrait<ShipType>.all(allValues: ShipType.values),
+        powerWeights = pWeights ?? species.powerWeights ?? WeightedTrait<PowerType>.all(allValues: PowerType.values),
+        engineWeights = eWeights ?? species.engineWeights ?? WeightedTrait<EngineType>.all(allValues: EngineType.values),
+        shieldWeights = shldWeights ?? species.shieldWeights ?? WeightedTrait<ShieldType>.all(allValues: ShieldType.values),
+        damageWeights = dWeights ?? species.damageWeights ?? WeightedTrait<DamageType>.all(allValues: DamageType.values),
+        ammoDamageWeights = aWeights ?? species.ammoDamageWeights ?? WeightedTrait<AmmoDamageType>.all(allValues: AmmoDamageType.values);
 
   void setInfluence(Faction f, double n, {bool mutual = true}) {
     influence[f] = n;
@@ -214,31 +216,59 @@ enum StockSpecies {
   const StockSpecies(this.species);
 }
 
-pirateFaction(Species species, {String? name,double freq = .1}) =>
-    Faction(species, name ?? "${species.name} Pirate",desc: "A dastardly ${species.name} pirate",color: GameColors.coral,
+enum FactionList {
+  fed("Federation","An ICORP officer"),
+  fedReb("Fed Rebel","An insurrectionist dedicated to their fight against ICORP"),
+  vor("Vorlornian","A Vorlornian soldier"),
+  vorMystic("Vorlox Mystic","A Vorlornian specialist in the manipulation of dark energy"),
+  soroj("Sorojbian","A rogue Vorlornian"),
+  gersh("Greshplergian","A strange cross between an earth wooly mamooth, pig, and hippo.  Fearsome when angered."),
+  hagy("Hagyorny","A more docile Gershplergian with a penchant for xenomancy"),
+  skorpl("",""),
+  lael("",""),
+  orblix("",""),
+  mov("",""),
+  krakkar("","");
+  final String factionName;
+  final String desc;
+  const FactionList(this.factionName,this.desc);
+}
+
+Faction? getFaction(FactionList factionEnum) => factions.firstWhereOrNull((f) => f.name == factionEnum.factionName);
+
+pirateFaction(Species species, {String? name,String? desc,double freq = .1}) =>
+    Faction(species, name ?? "${species.name} Pirate",desc: desc ?? "A dastardly ${species.name} pirate",color: species.graphCol, //darken?
     relativeFreq: freq, shpWeights: WeightedTrait({ShipType.interceptor : .9},defWeight: .01,allValues: ShipType.values));
 
 final List<Faction> factions = [
-  Faction(StockSpecies.humanoid.species,"Federation",
+  Faction(StockSpecies.humanoid.species, FactionList.fed.factionName, desc: FactionList.fed.desc,
       relativeFreq: .8, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
-      desc: "An ICORP officer",color: GameColors.white),
-  Faction(StockSpecies.humanoid.species,"Fed Rebel",
+      color: GameColors.white),
+
+  Faction(StockSpecies.humanoid.species, FactionList.fedReb.factionName, desc: FactionList.fedReb.desc,
       relativeFreq: .2, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
-      desc: "An insurrectionist dedicated to their fight against ICORP",color: GameColors.lightBlue),
+      color: GameColors.lightBlue),
+
   pirateFaction(StockSpecies.humanoid.species),
-  Faction(StockSpecies.vorlon.species,"Vorlornian",
+
+  Faction(StockSpecies.vorlon.species, FactionList.vor.factionName, desc: FactionList.vor.desc,
       relativeFreq: .67, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
-      desc: "A sneaky Vorlornian", color: GameColors.gray),
-  Faction(StockSpecies.vorlon.species,"Vorlox Mystic",
+      color: GameColors.gray),
+
+  Faction(StockSpecies.vorlon.species, FactionList.vorMystic.factionName, desc: FactionList.vorMystic.desc,
       relativeFreq: .25, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
-      desc: "A Vorlornian specialist in the manipulation of dark energy",color: GameColors.darkGreen),
-  pirateFaction(StockSpecies.vorlon.species, name: "Sorojbian"),
-  Faction(StockSpecies.gersh.species,"Greshplergian",
+      color: GameColors.darkGreen),
+
+  pirateFaction(StockSpecies.vorlon.species, name: FactionList.soroj.factionName, desc: FactionList.soroj.desc),
+
+  Faction(StockSpecies.gersh.species, FactionList.gersh.factionName, desc: FactionList.gersh.desc,
       relativeFreq: .9, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
-      desc: "A strange cross between an earth wooly mamooth, pig, and hippo.  Fearsome when angered.", color: GameColors.green),
-  Faction(StockSpecies.gersh.species,"Hagyorny",
+      color: GameColors.green),
+
+  Faction(StockSpecies.gersh.species,FactionList.hagy.factionName, desc: FactionList.hagy.desc,
       relativeFreq: .1, xeno: .5, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
-      desc: "A more docile Gershplergian with a penchant for xenomancy", color: GameColors.gold),
+      color: GameColors.gold),
+
   pirateFaction(StockSpecies.sklorpl.species),
   pirateFaction(StockSpecies.lael.species),
   pirateFaction(StockSpecies.orblix.species),

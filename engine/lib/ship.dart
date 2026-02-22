@@ -560,9 +560,11 @@ class Ship extends Item {
     return totalRecharge - totalBurn;
   }
 
-  List<TextBlock> status({bool tactical = false}) {
+  List<TextBlock> status({bool tactical = false, bool showScannedShip = false}) {
     List<TextBlock> blocks = [];
+
     blocks.add(TextBlock(name,GameColors.green,true));
+    blocks.add(TextBlock("${pilot.faction.name} ${shipClass.type.name}",pilot.faction.color,true));
     blocks.add(TextBlock("Hull: ${hullRemaining.toStringAsFixed(2)} ",GameColors.green,false));
     blocks.add(TextBlock("%: ${currentHullPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
     blocks.add(TextBlock("Shields: ${currentShieldStrength.toStringAsFixed(2)}, ",GameColors.green,false));
@@ -587,7 +589,7 @@ class Ship extends Item {
     }
     blocks.add(const TextBlock("",GameColors.black,true));
     if (targetCoord != null) blocks.add(TextBlock("Scanning Coord: $targetCoord", GameColors.orange, true));
-    if (!tactical && (targetShip != null && targetShip!.npc)) {
+    if (showScannedShip && !tactical && (targetShip != null && targetShip!.npc)) {
       blocks.add(const TextBlock("Scanning Ship: ", GameColors.orange, true));
       blocks.addAll(targetShip!.status(tactical: true));
     }
