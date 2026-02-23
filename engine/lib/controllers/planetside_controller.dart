@@ -1,7 +1,7 @@
+import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
-
 import '../agent.dart';
 import '../audio_service.dart';
 import '../descriptors.dart';
@@ -31,7 +31,7 @@ class PlanetsideController extends FugueController {
     final planet = cell.planet; if (planet == null) {
       fm.msgController.addMsg("No planet!"); return;
     }
-    fm.player.locale = planet;
+    fm.player.locale = AtEnvironment(planet);
     if (fm.pilotController.action(fm.player,ActionType.planetLand)) {
       if (planet.loc.level.homeworld == StockSpecies.humanoid.species) {
         fm.homecoming(home: true);
@@ -52,7 +52,7 @@ class PlanetsideController extends FugueController {
   }
 
   void launch() {  //fm.menuController.exitMenu();
-    if (fm.playerShip != null) fm.player.locale = fm.playerShip!;
+    if (fm.playerShip != null) fm.player.locale = AboardShip(fm.playerShip!);
     fm.msgController.addMsg("Launching...");
     fm.audioController.newTrack(newMood: MusicalMood.space);
     fm.pilotController.action(fm.player,ActionType.planetLaunch);
@@ -152,14 +152,14 @@ class PlanetsideController extends FugueController {
   }
 
   void shop({ShopType? type, List<Ship>? shiplist}) {
-    final location = fm.player.locale; if (location is SpaceEnvironment) {
+    final location = fm.player.locale; if (location is AtEnvironment) {
       if (type != null) {
-        location.shop ??= Shop(location,type,1,fm.rnd);
+        location.env.shop ??= Shop(location.env,type,1,fm.rnd);
       } else {
-        location.shop ??= Shop.random(location,1,fm.rnd);
+        location.env.shop ??= Shop.random(location.env,1,fm.rnd);
       }
-      fm.menuController.showMenu(() => fm.menuController.createShopBuyMenu(location.shop!, ship: fm.playerShip),
-          headerTxt: "${location.shop!.name}");
+      fm.menuController.showMenu(() => fm.menuController.createShopBuyMenu(location.env.shop!, ship: fm.playerShip),
+          headerTxt: "${location.env.shop!.name}");
     }
   }
 
@@ -188,12 +188,12 @@ class PlanetsideController extends FugueController {
   }
 
   void enterShipyard() {
-    final loc = fm.player.locale; if (loc is SpaceEnvironment) {
-      loc.yard ??= Shop(loc, ShopType.shipyard, 1, fm.rnd,
+    final loc = fm.player.locale; if (loc is AtEnvironment) {
+      loc.env.yard ??= Shop(loc.env, ShopType.shipyard, 1, fm.rnd,
           shiplist: List.generate(fm.itemRng.nextInt(5) + 1, (i) =>
               Rng.generateShip(fm.player.system, fm.galaxy, fm.itemRng)));
       fm.menuController.showMenu(() =>
-          fm.menuController.createShopBuyMenu(loc.yard!, ship: fm.playerShip), headerTxt: "${loc.yard!.name}");
+          fm.menuController.createShopBuyMenu(loc.env.yard!, ship: fm.playerShip), headerTxt: "${loc.env.yard!.name}");
     }
   }
 

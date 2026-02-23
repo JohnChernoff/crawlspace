@@ -1,3 +1,5 @@
+import 'package:crawlspace_engine/location.dart';
+
 import 'galaxy/galaxy.dart';
 import 'object.dart';
 import 'pilot.dart';
@@ -24,14 +26,14 @@ class Player extends Pilot {
   Player(super.name,super.rnd, {required super.loc, super.galaxy, super.hostile = false});
 
   double fedLevel(Galaxy g) {
-    final env = locale;
-    if (env is SpaceEnvironment) return env.fedLvl;
+    final loc = locale;
+    if (loc is AtEnvironment) return loc.env.fedLvl;
     return g.fedKernel.val(system);
   }
 
   double techLevel(Galaxy g) {
-    final env = locale;
-    if (env is SpaceEnvironment) return env.techLvl;
+    final loc = locale;
+    if (loc is AtEnvironment) return loc.env.techLvl;
     return g.techKernel.val(system);
   }
 

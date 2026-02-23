@@ -3,13 +3,13 @@ import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/rng.dart';
+import 'package:crawlspace_engine/ship_reg.dart';
 import 'package:crawlspace_engine/stock_items/stock_ammo.dart';
 import 'package:crawlspace_engine/stock_items/stock_engines.dart';
 import 'package:crawlspace_engine/stock_items/stock_lauchers.dart';
 import 'package:crawlspace_engine/stock_items/stock_power.dart';
 import 'package:crawlspace_engine/stock_items/stock_shields.dart';
 import 'package:crawlspace_engine/stock_items/stock_weapons.dart';
-import 'package:crawlspace_engine/galaxy/system.dart';
 import 'fugue_engine.dart';
 import 'color.dart';
 import 'coord_3d.dart';
@@ -60,15 +60,17 @@ class Scrap extends Item {
 class Ship extends Item implements Locatable {
   @override
   SpaceLocation get loc => _loc;
-  void set loc(SpaceLocation l) => _loc = l;
   @override
   int get baseCost => shipClass.slots.map((s) => s.slot.type.baseCost).sum + shipClass.maxMass.round();
   @override
   String get shopDesc => dump(shop: true);
   SpaceLocation _loc;
   ShipClass shipClass;
-  Pilot pilot;
   Pilot? owner;
+  Pilot? _pilot;
+  Pilot get pilot => _pilot ?? nobody;
+  set pilot(Pilot? p) => _pilot = (p == nobody) ? null : p;
+  bool get hasPilot => _pilot != null;
   List<InstalledSystem> systemMap = []; //rename to shipSlots?
   Map<Ammo,int> ammoMap = {};
   double hullDamage = 0;
@@ -78,9 +80,7 @@ class Ship extends Item implements Locatable {
   bool get playship => pilot is Player;
   bool get npc => !playship;
   Ship? targetShip;
-  Ship? interceptShip;
   Coord3D? targetCoord;
-  Coord3D? interceptCoord;
   List<GridCell> currentPath = [];
   List<Scrap> scrapHeap = [];
   Map<Ship,SpaceLocation> lastKnown = {};
@@ -101,7 +101,10 @@ class Ship extends Item implements Locatable {
     Engine? subEngine,
     Engine? hyperEngine,
     this.hullType = HullType.basic
-    }) : _loc = location, this.pilot = pilot ?? nobody {
+    }) : _loc = location, _pilot = pilot {
+
+    _pilot?.locale = AboardShip(this);
+
     for (final classSlot in shipClass.slots) {
       for (int i=0;i<classSlot.num;i++) { //print("$name: Installing: ${classSlot.slot}");
         systemMap.add(InstalledSystem(classSlot.slot,null));
@@ -149,6 +152,19 @@ class Ship extends Item implements Locatable {
         addAmmo(a.key, a.value, setWeapon: true);
       }
     }
+  }
+
+  void move(SpaceLocation newLoc, ShipRegistry registry) {
+    registry.reIndex(this, newLoc);
+    _loc = newLoc;
+  }
+
+  void dock(SpaceEnvironment env, ShipRegistry registry) {
+    registry.dock(this, env);
+  }
+
+  void undock(SpaceEnvironment env, SpaceLocation launchLoc, ShipRegistry registry) {
+    registry.undock(this, env);
   }
 
   bool addToInventory(Item i) {
@@ -475,7 +491,7 @@ class Ship extends Item implements Locatable {
   }
 
   bool addAmmo(Ammo ammo, int n, {setWeapon = false}) {
-    if (okMass(ammo.mass * n)) return false;
+    if (!okMass(ammo.mass * n)) return false;
     ammoMap[ammo] = ammoMap.containsKey(ammo) ? ammoMap[ammo]! + n : n; //print("Setting weapon...");
     if (setWeapon) {
       final weapons = getInstalledSystems([ShipSystemType.launcher]);
@@ -516,18 +532,6 @@ class Ship extends Item implements Locatable {
 
   double get availableMass => shipClass.maxMass - currentMass;
   bool okMass(double m) => availableMass > m;
-
-  void move(GridCell destination, {System? toSystem, ImpulseLevel? impLevel }) {
-
-    loc.level.removeShip(this);
-
-    SpaceLocation l = loc; _loc = switch(l) {
-      SystemLocation() => impLevel != null ? ImpulseLocation(l,impLevel,destination) : SystemLocation(toSystem ?? l.level,destination),
-      ImpulseLocation() => toSystem != null ? SystemLocation(toSystem,destination) : ImpulseLocation(l.systemLoc,l.level,destination),
-    };
-
-    loc.level.addShip(this, destination); //if (toSystem != null) pilot.system = toSystem;
-  }
 
   //TODO: handle power outages?
   double tick({Random? rnd, dryRun = false}) { //print("Tick... $dryRun");
@@ -628,5 +632,18 @@ class Ship extends Item implements Locatable {
   String toString() {
     return name;
   }
-
 }
+
+/*
+  void move_REMOVE(GridCell destination, {System? toSystem, ImpulseLevel? impLevel }) {
+
+    loc.level.removeShip(this);
+
+    SpaceLocation l = loc; _loc = switch(l) {
+      SystemLocation() => impLevel != null ? ImpulseLocation(l,impLevel,destination) : SystemLocation(toSystem ?? l.level,destination),
+      ImpulseLocation() => toSystem != null ? SystemLocation(toSystem,destination) : ImpulseLocation(l.systemLoc,l.level,destination),
+    };
+
+    loc.level.addShip(this, destination); //if (toSystem != null) pilot.system = toSystem;
+  }
+ */

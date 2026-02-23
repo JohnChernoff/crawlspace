@@ -81,7 +81,7 @@ class CombatController extends FugueController {
         }
       }
     }
-    fm.removeShip(ship);
+    fm.shipRegistry.remove(ship);
     fm.update();
   }
 

@@ -4,6 +4,7 @@ import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/impulse.dart';
 import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/ship.dart';
+import 'package:crawlspace_engine/ship_reg.dart';
 import 'package:flutter/material.dart';
 import '../../options.dart';
 
@@ -16,10 +17,12 @@ class GridCellWidget extends StatefulWidget {
   final Set<Ship> ships;
   final GridCell cell;
   final bool invert;
-  const GridCellWidget(this.cell,this.size,this.ships,this.playShip, {super.key, this.inTargetPath = false, this.targeted = false, this.scanned = false, this.invert = false});
+  final ShipRegistry reg;
+  const GridCellWidget(this.cell,this.size,this.ships,this.playShip,
+      {super.key, required this.reg, this.inTargetPath = false, this.targeted = false, this.scanned = false, this.invert = false});
 
   bool get sameDepth => (cell.coord.z - playShip.loc.cell.coord.z).abs() == 0;
-  bool get sameDepthAndNotEmpty => sameDepth && !cell.empty(playShip.loc.level.map);
+  bool get sameDepthAndNotEmpty => sameDepth && !cell.isEmpty(reg);
   bool get selected => scanned || targeted;
   bool get special => scanned || targeted || sameDepthAndNotEmpty;
 

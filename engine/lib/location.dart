@@ -18,7 +18,9 @@ sealed class SpaceLocation implements Locatable {
   }
   Level get level => _level;
   GridCell get cell => _cell;
-  Set<Ship> get ships => level.shipsAt(cell);
+
+  SpaceLocation withCell(GridCell newCell);
+
   System get system {
     final loc = this; return switch(loc) {
       SystemLocation() => loc.level,
@@ -60,6 +62,8 @@ class SystemLocation extends SpaceLocation {
   SectorCell get cell => _cell as SectorCell;
 
   const SystemLocation(super.level, super.cell);
+  @override
+  SystemLocation withCell(GridCell newCell) => SystemLocation(level, newCell as SectorCell);
 
   @override
   String toString() {
@@ -76,6 +80,8 @@ class ImpulseLocation extends SpaceLocation {
   ImpulseCell get cell => _cell as ImpulseCell;
 
   const ImpulseLocation(this.systemLoc, super.level, super.cell);
+  @override
+  ImpulseLocation withCell(GridCell newCell) => ImpulseLocation(systemLoc, level, newCell as ImpulseCell);
 
   @override
   String toString() {
@@ -84,7 +90,7 @@ class ImpulseLocation extends SpaceLocation {
 }
 
 //TODO: use this
-sealed class PilotLocale {
+sealed class PilotLocale implements Locatable {
   SpaceLocation get loc;
 }
 

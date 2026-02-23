@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/ship_reg.dart';
 import 'controllers/scanner_controller.dart';
 import 'coord_3d.dart';
 import 'hazards.dart';
@@ -12,48 +13,27 @@ abstract class Level {
   GridCell? upperLevel;
   late Grid map;
   Level({this.upperLevel});
-  Set<Ship> shipsAt(GridCell cell) => map.shipMap[cell] ?? {};
-  Set<Ship> getAllShips() {
-    Set<Ship> ships = {};
-    for (final cell in map._cellList) {
-      final s = shipsAt(cell); if (s.isNotEmpty) ships.addAll(s);
-    }
-    return ships;
-  }
-  bool addShip(Ship ship, GridCell cell) {
-    return  map.shipMap.putIfAbsent(cell, () => {}).add(ship);
-  }
-  bool removeShip(Ship ship, {GridCell? cell}) {
-    return map.shipMap.putIfAbsent(cell ?? ship.loc.cell, () => {}).remove(ship);
-  }
 }
 
+//if (ships.isNotEmpty && (countPlayer || ships.length > 2 || ships.first.npc)) return true;
 abstract class GridCell {
-  final Coord3D coord; //Set<Ship> ships = {};
+  final Coord3D coord;
   final Map<Hazard,double> hazMap;
   GridCell(this.coord,this.hazMap);
-  bool empty(Grid grid, {countPlayer = true});
-  bool hasShips(Grid grid,{countPlayer = true}) {
-    final ships = (grid.shipMap[this] ?? {});
-    if (ships.isNotEmpty && (countPlayer || ships.length > 2 || ships.first.npc)) return true;
-    return false;
-  }
-
+  bool isEmpty(ShipRegistry reg, {countPlayer = true});
   void clearHazard(Hazard haz) => hazMap.remove(haz);
   void clearHazards() => hazMap.clear();
 
-  String toScannerString(Grid grid) {
+  String toScannerString(ShipRegistry reg) {
     StringBuffer sb = StringBuffer(toString());
     for (final haz in hazMap.entries.where((h) => h.key != Hazard.wake)) {
       if (haz.value > 0) sb.write(", ${haz.key.shortName}: ${haz.value.toStringAsFixed(2)}"); //else sb.write("?");
     }
-    for (Ship ship in grid.shipMap[this] ?? {}) {
-      sb.write("\n$ship");
-    }
+    for (Ship ship in reg.atCell(this)) sb.write("\n$ship");
     return sb.toString();
   }
 
-  bool scannable(Grid grid,ScannerMode mode);
+  bool scannable(ScannerMode mode, ShipRegistry reg);
   double get hazLevel => hazMap.entries.where((h) => h.key != Hazard.wake).map((el) => el.value).sum;
   bool hasHaz(Hazard h) => hazMap.containsKey(h) && hazMap[h]! > 0;
 
@@ -63,8 +43,7 @@ abstract class GridCell {
   }
 }
 
-class Grid<T extends GridCell> {
-  Map<GridCell,Set<Ship>> shipMap = {};
+class Grid<T extends GridCell> { //Map<GridCell,Set<Ship>> shipMap = {};
   final int size;
   final Map<Coord3D, T> cells;
   late final List<T> _cellList;

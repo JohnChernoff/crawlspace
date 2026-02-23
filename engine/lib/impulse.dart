@@ -1,7 +1,7 @@
 import 'dart:math';
-
 import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/sector.dart';
+import 'package:crawlspace_engine/ship_reg.dart';
 import 'controllers/scanner_controller.dart';
 import 'grid.dart';
 import 'hazards.dart';
@@ -13,9 +13,9 @@ class ImpulseCell extends GridCell {
   ImpulseCell(super.coord, super.hazMap);
 
   @override
-  bool scannable(Grid grid, ScannerMode mode) {
+  bool scannable(ScannerMode mode, ShipRegistry reg) {
     if (mode == ScannerMode.all) return true;
-    if (mode.scaningShips && hasShips(grid)) return true;
+    if (mode.scaningShips && reg.atCell(this).isNotEmpty) return true;
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
     if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;
@@ -24,8 +24,9 @@ class ImpulseCell extends GridCell {
   }
 
   @override
-  bool empty(Grid<GridCell> grid, {countPlayer = true}) {
-    if (super.hasShips(grid,countPlayer: countPlayer)) return false;
+  bool isEmpty(ShipRegistry reg, {countPlayer = true}) {
+    final ships = reg.atCell(this);
+    if (ships.isNotEmpty && (countPlayer || ships.any((s) => s.npc))) return false;
     if (hazLevel > 0) return false;
     if (items.isNotEmpty) return false;
     return true;

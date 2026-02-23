@@ -99,11 +99,11 @@ class ScannerController extends FugueController {
       blocks.add(const TextBlock("?", GameColors.red, true));
     } else {
       final cells = ship.loc.level.map.cells.values
-          .where((c) => c.scannable(ship.loc.level.map, mode ?? scannerMode))
+          .where((c) => c.scannable(mode ?? scannerMode,fm.shipRegistry))
           .sorted((c1,c2) => c1.coord.distance(ship.loc.cell.coord).compareTo(c2.coord.distance(ship.loc.cell.coord)));
       for (GridCell cell in cells) {
-        if (!cell.empty(ship.loc.level.map)) {
-          blocks.add(TextBlock(cell.toScannerString(ship.loc.level.map), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
+        if (!cell.isEmpty(fm.shipRegistry)) {
+          blocks.add(TextBlock(cell.toScannerString(fm.shipRegistry), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
           currentScan.add(cell);
         }
       }
@@ -132,7 +132,7 @@ class ScannerController extends FugueController {
     final scannedCell = cell ?? currentScanSelection;
     if (scannedCell == null || !currentScan.contains(scannedCell)) return;
     Ship? playShip = fm.playerShip; if (playShip != null) {
-      final ships = playShip.loc.level.shipsAt(scannedCell);
+      final ships = fm.shipRegistry.inLevel(playShip.loc.level);
       if (ships.length > 1) {
         currentScannedShipIndex++;
         if (currentScannedShipIndex >= ships.length) currentScannedShipIndex = 0;

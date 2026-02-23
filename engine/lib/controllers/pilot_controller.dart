@@ -107,12 +107,13 @@ class PilotController extends FugueController {
   void npcShipAct(Ship ship) {
     if (ship == fm.playerShip) return;
     ship.tick(rnd: fm.rnd);
-    Pilot pilot = ship.pilot; if (pilot == nobody) return;
+    Pilot pilot = ship.pilot; //print(pilot.name);
+    if (pilot == nobody) return;
     if (pilot.ready) { //print("${ship.name}'s turn...");
       final playLoc = fm.playerShip != null ? ship.detect(fm.playerShip!) : null;
       if (playLoc != null &&
           pilot.hostile &&
-          ship.loc.level.getAllShips().contains(fm.playerShip)) {
+          fm.shipRegistry.inLevel(ship.loc.level).contains(fm.playerShip)) {
         ship.targetShip = fm.playerShip;
         final loc = ship.loc; if (loc is ImpulseLocation) {
             Weapon? w = ship.primaryWeapon;

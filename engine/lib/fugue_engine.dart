@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/hazards.dart';
-import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/pilot_reg.dart';
+import 'package:crawlspace_engine/ship_reg.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/systems/engines.dart';
 import 'package:crawlspace_engine/systems/power.dart';
@@ -57,10 +58,10 @@ class FugueEngine {
   }
 
   final String version = "0.1l";
-  Galaxy galaxy;
+  final Galaxy galaxy;
   late Player player;
   int numAgents = 3;
-  List<Agent> agents = [];
+  final List<Agent> agents = [];
   late Random rnd,combatRng,mapRng,speciesRng,aiRng,itemRng; //TODO: remove rnd
   int auTick = 0;
   String get result => blownUp ? "blown up" : isVictorious ? "victorious" : "vanquished";
@@ -70,23 +71,24 @@ class FugueEngine {
   bool get gameOver => victory != null || blownUp;
   int get score => auTick + (player.starOne ? 500 : 0) +
       (galaxy.discoveredSystems() * 2) + (player.piratesVanquished * 3) + (isVictorious ? 1000 : 0);
-  Map<Pilot,Ship> _shipMap = {};
-  Set<Pilot> npcPilots = {};
-  Ship? getShip(Pilot pilot) => _shipMap[pilot];
+  final ShipRegistry _shipRegistry = ShipRegistry();
+  ShipRegistry get shipRegistry => _shipRegistry;
+  final PilotRegistry _pilotRegistry = PilotRegistry();
+  Ship? getShip(Pilot pilot) => _shipRegistry.byPilot(pilot);
   Ship? get playerShip => getShip(player);
-  Iterable<Pilot> get activePilots => npcPilots.where((p) => getShip(p) != null);
+  Iterable<Pilot> get activePilots => _pilotRegistry.withShips(shipRegistry, npc: true);
   Iterable<Pilot> get availablePilots => activePilots.where((p) => p.auCooldown == 0);
 
-  late MessageController msgController;
-  late MovementController movementController;
-  late LayerTransitController layerTransitController;
-  late PilotController pilotController;
-  late CombatController combatController;
-  late MenuController menuController;
-  late PlanetsideController planetsideController;
-  late ScannerController scannerController;
-  late AudioController audioController;
-  ShopOptions shopOptions = ShopOptions();
+  late final MessageController msgController;
+  late final MovementController movementController;
+  late final LayerTransitController layerTransitController;
+  late final PilotController pilotController;
+  late final CombatController combatController;
+  late final MenuController menuController;
+  late final PlanetsideController planetsideController;
+  late final ScannerController scannerController;
+  late final AudioController audioController;
+  final ShopOptions shopOptions = ShopOptions();
 
   FugueEngine(this.galaxy,String playerName,{seed = 0}) {
     rnd = Random(seed);
@@ -120,49 +122,34 @@ class FugueEngine {
         shield: Shield.fromStock(StockSystem.basicEnergon),
         weapons: [Weapon.fromStock(StockSystem.fedLaser3),Weapon.fromStock(StockSystem.plasmaCannon)],
         ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 50});
-    player = Player(playerName,mapRng, loc: playShip);
+    player = Player(playerName,mapRng, loc: AboardShip(playShip)); //playShip.pilot = player;
     player.system.visited = true;
     addShip(playShip);
-
     msgController.addMsg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
     update();
+  }
+
+  void addShip(Ship ship) {
+    _shipRegistry.add(ship);
+    _pilotRegistry.add(ship.pilot);
   }
 
   void populateSystem(System system, {int? numShips}) {
     glog("Populating System, $system");
     numShips ??= rnd.nextInt(3);
     for (int i = 0; i < numShips; i++) {
-      final ship = Rng.generateShip(system, galaxy, itemRng);
-      addShip(ship);
-    }
-  }
-
-  void addShip(Ship ship, {Pilot? pilot}) {
-    if (pilot != null) ship.pilot = pilot;
-    if (ship.pilot != nobody) {
-      _shipMap[ship.pilot] = ship;
-      if (ship.pilot != player) npcPilots.add(ship.pilot);
-      ship.loc.level.addShip(ship,ship.loc.cell);
+      addShip(Rng.generateShip(system, galaxy, itemRng));
     }
   }
 
   void newShip(Pilot pilot, Ship ship) {
-    final formerShip = _shipMap[pilot];
-    final hangar = (pilot.locale as SpaceEnvironment?)?.hangar;
-    hangar?.remove(ship);
-    if (formerShip != null) {
-      ship.loc = formerShip.loc;
-      hangar?.add(formerShip);
-      removeShip(formerShip);
+    final loc = pilot.locale;
+    if (loc is AtEnvironment) {
+      _shipRegistry.undock(ship, loc.env);
+      final formerShip = _shipRegistry.byPilot(pilot);
+      if (formerShip != null) _shipRegistry.dock(ship, loc.env);
     }
-    addShip(ship,pilot: pilot);
-  }
-
-  void removeShip(Ship ship) {
-    //ship.pilot = nobody; //TODO: decouple pilot
-    for (final s in _shipMap.values) if (s.targetShip == ship) s.targetShip = null;
-    _shipMap.remove(ship.pilot);
-    ship.loc.level.map.shipMap[ship.loc.cell]?.remove(ship);
+    _shipRegistry.changePilot(ship, pilot);
   }
 
   AgentSystemReport agentAt(System system, {bool playerPerspective = true}) {
@@ -312,7 +299,7 @@ class FugueEngine {
         final playLevel = playShip.loc.level as ImpulseLevel;
         if (playLevel.sector.hasHaz(Hazard.ion)) playMap.hodgeTick(Hazard.ion, rnd);
       }
-      for (final s in playShip.loc.level.getAllShips().where((s) => s.npc)) playShip.detect(s);
+      for (final s in _shipRegistry.inLevel(playShip.loc.level).where((s) => s.npc)) playShip.detect(s);
     }
     update();
     return playerShip?.loc.domain == domain;

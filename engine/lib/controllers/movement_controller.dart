@@ -21,7 +21,7 @@ class MovementController extends FugueController {
       return MoveResult.badDestination;
     }
     if (ship.loc.domain == Domain.impulse) {
-      if (ship.loc.level.shipsAt(destination).isNotEmpty) {
+      if (fm.shipRegistry.atCell(destination).isNotEmpty) {
         return MoveResult.impCollision;
       }
       if (ship.pilot.safeMovement && destination.hazMap.entries
@@ -43,8 +43,8 @@ class MovementController extends FugueController {
     if (!ship.burnEnergy(energyRequired)) {
       return MoveResult.outOfEnergy;
     }
-    ship.move(destination); //fm.glog("Moving ${ship.name} => $destination");
-    final ships = ship.loc.level.shipsAt(destination);
+    ship.move(ship.loc.withCell(destination),fm.shipRegistry); //fm.glog("Moving ${ship.name} => $destination");
+    final ships = fm.shipRegistry.atCell(destination);
     if (ship.loc.domain == Domain.system && ships.length > 1 && ships.contains(fm.playerShip)) {
       fm.layerTransitController.createAndEnterImpulse(); //action?
       return MoveResult.impEnter;

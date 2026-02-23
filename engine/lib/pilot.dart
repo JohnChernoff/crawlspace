@@ -3,7 +3,6 @@ import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/player.dart';
 import 'package:crawlspace_engine/rng.dart';
 import 'package:crawlspace_engine/sector.dart';
-import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'controllers/pilot_controller.dart';
 import 'galaxy/galaxy.dart';
@@ -28,20 +27,21 @@ class TransactionRecord {
   const TransactionRecord(this.type,this.credits);
 }
 
-System nowhere = System("nowhere",StellarClass.A,Random());
-Pilot nobody = Pilot("nobody",Random(),loc: SpaceEnvironment("nowhere", 0, 0, locale: SystemLocation(nowhere,SectorCell(Coord3D(0,0,0),{},0))));
+final nowhere = AtEnvironment(SpaceEnvironment("nowhere", 0, 0, locale:
+SystemLocation(System("nowhere",StellarClass.A,Random()),SectorCell(Coord3D(0,0,0),{},0))));
+Pilot nobody = Pilot("nobody",Random(),loc:nowhere);
 
 class Pilot implements Locatable {
   String name;
   SpaceLocation get loc => locale.loc;
-  Locatable get locale => _locale; //could be Planet, Ship, SpaceEnvironment, etc.
-  void set locale(Locatable l) {
+  PilotLocale get locale => _locale; //could be Planet, Ship, SpaceEnvironment, etc.
+  void set locale(PilotLocale l) {
     _locale = l; //print("Setting locale: ${l.name}");
-    if (l is Ship && this != nobody) {
-      l.pilot = this;
+    if (l is AboardShip && this != nobody) {
+      l.ship.pilot = this;
     }
   }
-  late Locatable _locale;
+  late PilotLocale _locale;
   System get system => locale.loc.system;
   int credits = 10000;
   List<TransactionRecord> transRec = [];
@@ -58,7 +58,7 @@ class Pilot implements Locatable {
   bool get ready => auCooldown == 0;
   void tick() => auCooldown = max(0,auCooldown - 1);
 
-  Pilot(this.name,Random rnd,{required Locatable loc, Galaxy? galaxy, Faction? f, this.hp = 32, this.hostile = true}) {
+  Pilot(this.name,Random rnd,{required PilotLocale loc, Galaxy? galaxy, Faction? f, this.hp = 32, this.hostile = true}) {
     locale = loc;
     if (this is Player) { //FactionList.values.forEach((f) => print(f.factionName)); print(FactionList.values);
       faction = getFaction(FactionList.fedReb)!;
