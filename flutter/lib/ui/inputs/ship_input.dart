@@ -242,7 +242,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ScannerModeIntent: CallbackAction<ScannerModeIntent>(
           onInvoke: (intent) {
             if (intent.mode == null) {
-              fm.scannerController.toggleScannerMode(forwards: intent.forwards);
+              fm.scannerController.cycleScannerMode(forwards: intent.forwards);
             }
             return null;
           }

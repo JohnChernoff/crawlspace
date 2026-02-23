@@ -283,7 +283,7 @@ class FugueEngine {
         try {
           p.tick();
           Ship? ship = getShip(p);
-          if (ship != null && ship.loc.level == playerShip?.loc.level && player.locale is Ship) {
+          if (ship != null && ship.loc.level == playerShip?.loc.level && player.locale is AboardShip) {
             pilotController.npcShipAct(ship);
           }
         } on ConcurrentModificationError {

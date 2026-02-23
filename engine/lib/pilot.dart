@@ -27,16 +27,15 @@ class TransactionRecord {
   const TransactionRecord(this.type,this.credits);
 }
 
-final nowhere = AtEnvironment(SpaceEnvironment("nowhere", 0, 0, locale:
-SystemLocation(System("nowhere",StellarClass.A,Random()),SectorCell(Coord3D(0,0,0),{},0))));
-Pilot nobody = Pilot("nobody",Random(),loc:nowhere);
+final nowhere = AtEnvironment.fromSystem(SystemLocation(System("nowhere",StellarClass.A,Random()),SectorCell(Coord3D(0,0,0),{},0)));
+final Pilot nobody = Pilot("nobody",Random(),loc:nowhere);
 
 class Pilot implements Locatable {
   String name;
   SpaceLocation get loc => locale.loc;
-  PilotLocale get locale => _locale; //could be Planet, Ship, SpaceEnvironment, etc.
-  void set locale(PilotLocale l) {
-    _locale = l; //print("Setting locale: ${l.name}");
+  PilotLocale get locale => _locale;
+  void set locale(PilotLocale l) { //print("Setting locale: ${l.name}");
+    _locale = l;
     if (l is AboardShip && this != nobody) {
       l.ship.pilot = this;
     }

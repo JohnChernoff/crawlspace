@@ -89,7 +89,6 @@ class ImpulseLocation extends SpaceLocation {
   }
 }
 
-//TODO: use this
 sealed class PilotLocale implements Locatable {
   SpaceLocation get loc;
 }
@@ -104,6 +103,7 @@ class AboardShip extends PilotLocale {
 class AtEnvironment extends PilotLocale {
   final SpaceEnvironment env;
   AtEnvironment(this.env);
+  factory AtEnvironment.fromSystem(SystemLocation s) => AtEnvironment(SpaceEnvironment("",0,0,locale: s)); //TODO: copy galactic kernels
   @override
   SpaceLocation get loc => env.loc; // stable — fixed point
 }
