@@ -84,6 +84,7 @@ abstract class ShipSystem extends Item {
   final SystemSlot slot;
   final double mass; //kilos
   final double baseRepairCost; //credits per 1% repair
+  String get dmgTxt => "${(damage * 100).round()}";
   double damage; //% damaged
   int enhancement;
   final int maxEnhancement;
@@ -123,11 +124,9 @@ abstract class ShipSystem extends Item {
   }
 
   double repair(double r) {
-    double dmg = max(damage - r,0);
-    if (dmg < damage) {
-      final i = damage - dmg;
-      damage = dmg; return i;
-    } return 0;
+    double dmg = min(damage,r);
+    damage -= dmg;
+    return dmg;
   }
 
   @override

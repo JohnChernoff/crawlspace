@@ -57,7 +57,7 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1l";
+  final String version = "0.1m";
   final Galaxy galaxy;
   late Player player;
   int numAgents = 3;
@@ -135,8 +135,8 @@ class FugueEngine {
   }
 
   void populateSystem(System system, {int? numShips}) {
-    glog("Populating System, $system");
     numShips ??= rnd.nextInt(3);
+    print("Populating System: ${system.name}, ships: $numShips");
     for (int i = 0; i < numShips; i++) {
       addShip(Rng.generateShip(system, galaxy, itemRng));
     }

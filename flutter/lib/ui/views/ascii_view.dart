@@ -64,7 +64,8 @@ class AsciiViewState extends State<AsciiView> {
           if (currentView == ViewType.normal) Expanded(child: TextBlockWidget(widget.fugueModel.scannerController.scannerText())),
           if (currentView == ViewType.normal) Expanded(child: TextBlockWidget(widget.fugueModel.scannerController.statusText())),
           if (currentView == ViewType.normal && widget.fugueModel.playerShip?.targetShip != null) Expanded(
-              child: TextBlockWidget(widget.fugueModel.playerShip!.targetShip!.status(tactical: true)))
+              child: TextBlockWidget(widget.fugueModel.playerShip!.targetShip!.status(
+                  tactical: true, nebula: widget.fugueModel.playerShip!.inNebula)))
         ])),
         if (currentView == ViewType.normal) Expanded(child: Row(children: [
           Expanded(child: AspectRatio(aspectRatio: 2, child: AsciiGrid(widget.fugueModel)))

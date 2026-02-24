@@ -36,7 +36,7 @@ class ShipRegistry {
   void changePilot(Ship ship, Pilot newPilot) {
     if (ship.hasPilot) _byPilot.remove(ship.pilot);
     ship.pilot = newPilot;
-    _byPilot[newPilot] = ship;
+    if (newPilot != nobody) _byPilot[newPilot] = ship;
   }
 
   void undock(Ship ship, SpaceEnvironment env) {

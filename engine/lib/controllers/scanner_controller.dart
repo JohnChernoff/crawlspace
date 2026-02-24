@@ -1,5 +1,6 @@
 //import 'package:collection/collection.dart';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/hazards.dart';
 
 import '../fugue_engine.dart';
 import '../color.dart';
@@ -62,7 +63,7 @@ class ScannerController extends FugueController {
   }
 
   List<TextBlock> statusText() {
-    List<TextBlock> blocks = []; //blocks.add(const TextBlock("Status: ",Colors.white,true));
+    List<TextBlock> blocks = [];
     if (debugLevel.level < DebugLevel.Info.level ) {
       blocks.add(TextBlock("Mode: ${fm.menuController.inputMode.name}",GameColors.white,true));
       blocks.add(TextBlock("Tick: ${fm.auTick / 100}",GameColors.brown,true));
@@ -81,22 +82,15 @@ class ScannerController extends FugueController {
     return blocks;
   }
 
-  void cycleScannerTargetMode() {
-    int i = targetPathMode.index < TargetPathMode.values.length - 1
-        ? targetPathMode.index + 1
-        : 0;
-    targetPathMode = TargetPathMode.values.elementAt(i);
-    if (targetPathMode == TargetPathMode.safest) targetPathMode = TargetPathMode.direct; // skipping safest for now
-    fm.msgController.addMsg("Scanner Target Path Mode: ${targetPathMode.name}");
-    fm.update();
-  }
-
   List<TextBlock> scannerText({ScannerMode? mode}) {
-    List<TextBlock> blocks = []; currentScan.clear();
+    currentScan.clear();
+    List<TextBlock> blocks = [];
     blocks.add(const TextBlock("Scanner mode: ",GameColors.white,false));
     blocks.add(TextBlock(scannerMode.name, scannerMode.color, true));
     Ship? ship = fm.playerShip; if (ship == null) {
       blocks.add(const TextBlock("?", GameColors.red, true));
+    } else if (ship.inNebula) {
+      return [TextBlock("In Nebula", GameColors.red, true)];
     } else {
       final cells = ship.loc.level.map.cells.values
           .where((c) => c.scannable(mode ?? scannerMode,fm.shipRegistry))
@@ -168,6 +162,16 @@ class ScannerController extends FugueController {
     }
     if (!scannerMode.accessable) cycleScannerMode(forwards: forwards);
     reset();
+    fm.update();
+  }
+
+  void cycleScannerTargetMode() {
+    int i = targetPathMode.index < TargetPathMode.values.length - 1
+        ? targetPathMode.index + 1
+        : 0;
+    targetPathMode = TargetPathMode.values.elementAt(i);
+    if (targetPathMode == TargetPathMode.safest) targetPathMode = TargetPathMode.direct; // skipping safest for now
+    fm.msgController.addMsg("Scanner Target Path Mode: ${targetPathMode.name}");
     fm.update();
   }
 

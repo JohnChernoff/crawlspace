@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/object.dart';
@@ -15,6 +17,7 @@ import '../sector.dart';
 import '../ship.dart';
 import '../shop.dart';
 import '../galaxy/system.dart';
+import '../systems/ship_system.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 
@@ -201,24 +204,63 @@ class PlanetsideController extends FugueController {
     Ship? ship = fm.playerShip; if (ship == null) return;
     fm.menuController.showMenu(() => [
       TextEntry("Credits: ${fm.player.credits}"),
-      ActionEntry("1", "repair 1% of hull", (m) => tryRepair(ship,.01)),
-      ActionEntry("5", "repair 5% of hull", (m) => tryRepair(ship,.05)),
-      ActionEntry("t", "repair 10% of hull", (m) => tryRepair(ship,.1)),
-      ActionEntry("q", "repair 25% of hull", (m) => tryRepair(ship,.25)),
-      ActionEntry("h", "repair 50% of hull", (m) => tryRepair(ship,.5)),
-      ActionEntry("a", "repair 100% of hull", (m) => tryRepair(ship,1)),
+      ActionEntry("h", "repair (h)ull", (m) => enterMainRepairShop(ship)),
+      ActionEntry("s", "repair (s)ystem", (m) => enterSystemRepairShop(ship)),
     ],headerTxt: "Repair Shop");
   }
 
-  void tryRepair(Ship ship, double percent, {double discount = 1}) {
+  void enterMainRepairShop(Ship ship, {ShipSystem? sys}) {
+    fm.menuController.showMenu(() => createRepairMenu(ship: ship,sys: sys), headerTxt: "Repair %");
+  }
+
+  List<MenuEntry> createRepairMenu({required Ship ship, ShipSystem? sys}) {
+    final desc = sys == null ? "hull" : sys.name;
+    return [
+      TextEntry("Credits: ${fm.player.credits}"),
+      sys == null ? TextEntry("Hull Damage: ${ship.hullDamage.round()}") : TextEntry("${sys.name} Damage: ${sys.dmgTxt}"),
+      ActionEntry("1", "repair 1% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,.01) : tryHullRepair(ship,.01)),
+      ActionEntry("5", "repair 5% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,.05) : tryHullRepair(ship,.05)),
+      ActionEntry("t", "repair 10% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,.1) : tryHullRepair(ship,.1)),
+      ActionEntry("q", "repair 25% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,.25) : tryHullRepair(ship,.25)),
+      ActionEntry("h", "repair 50% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,.5) : tryHullRepair(ship,.5)),
+      ActionEntry("a", "repair 100% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,1) : tryHullRepair(ship,1)),
+    ];
+  }
+
+  List<MenuEntry> createSystemRepairMenu(Ship ship) {
+    List<ActionEntry> sysList = []; int i=0;
+    for (final s in ship.getInstalledSystems().where((sys) => sys.damage > 0)) {
+      sysList.add(ActionEntry(fm.menuController.letter(i++), "${s.name}", (m) => enterMainRepairShop(ship,sys: s)));
+    }
+    return sysList;
+  }
+
+  void enterSystemRepairShop(Ship ship) {
+    fm.menuController.showMenu(() => createSystemRepairMenu(ship), headerTxt: "Pick System");
+  }
+
+  void tryHullRepair(Ship ship, double percent, {double discount = 1}) {
     int repairing = (ship.hullDamage * percent).round();
-    int cost = (repairing * ship.hullType.baseRepairCost).round();
+    int cost = (repairing * ship.hullType.baseRepairCost).round(); //TODO: add hull mods
     if (fm.player.transaction(TransactionType.repair, -cost)) {
       ship.hullDamage -= repairing;
       fm.msgController.addMsg("Repaired $repairing damage ($cost credits)");
     } else {
       fm.msgController.addMsg("Sorry, you can't afford that.");
     }
+    fm.menuController.replaceTopMenuFull(() => createRepairMenu(ship: ship));
+  }
+
+  void trySystemRepair(Ship ship, ShipSystem system, double percent, {double discount = 1}) {
+    double repairing = min(system.damage,percent);
+    int cost = ((repairing  * 100) *  system.baseRepairCost).round(); //TODO: add system mods
+    if (fm.player.transaction(TransactionType.repair, -cost)) {
+      system.repair(percent);
+      fm.msgController.addMsg("Repaired ${(repairing * 100).round()}% damage ($cost credits)");
+    } else {
+      fm.msgController.addMsg("Sorry, you can't afford that.");
+    }
+    fm.menuController.replaceTopMenuFull(() => createRepairMenu(ship: ship, sys: system));
   }
 
 }

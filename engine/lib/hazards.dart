@@ -22,16 +22,16 @@ enum Hazard {
     final cell = ship.loc.cell;
     if (rnd.nextDouble() < (cell.hazMap[this] ?? 0)) {
       if (this == Hazard.ion) {
-        final system = ship.getAllSystems.elementAt(
-            rnd.nextInt(ship.getAllSystems.length));
-        final dmg = (rnd.nextDouble() * (cell is ImpulseCell ? .25 : .1)) * turns;
+        final system = ship.getInstalledSystems().elementAt(
+            rnd.nextInt(ship.getInstalledSystems().length));
+        final dmg = (rnd.nextDouble() * (cell is ImpulseCell ? .025 : .01)) * turns;
         system.takeDamage(dmg);
-        return "${ship.name} takes $dmg ion damage to ${system.name}...";
+        return "${ship.name} takes ${(dmg * 100).round()}% ion damage to ${system.name}...";
       }
       if (this == Hazard.roid) {
         final dmg = rnd.nextInt(cell is ImpulseCell ? 10 : 40) * turns;
         ship.takeDamage(dmg as double, DamageType.kinetic);
-        return "${ship.name} takes $dmg asteroid damage...";
+        return "${ship.name} takes ${dmg.round()} asteroid damage...";
       }
     }
     return null;

@@ -32,10 +32,10 @@ class HullResistance {
   const HullResistance(this.dmgType,this.resistance);
 }
 
-class InstalledSystem {
+class SlotAssignment {
   SystemSlot slot;
   ShipSystem? system;
-  InstalledSystem(this.slot,this.system);
+  SlotAssignment(this.slot,this.system);
 }
 
 class FireResult {
@@ -71,7 +71,7 @@ class Ship extends Item implements Locatable {
   Pilot get pilot => _pilot ?? nobody;
   set pilot(Pilot? p) => _pilot = (p == nobody) ? null : p;
   bool get hasPilot => _pilot != null;
-  List<InstalledSystem> systemMap = []; //rename to shipSlots?
+  List<SlotAssignment> systemMap = []; //rename to shipSlots?
   Map<Ammo,int> ammoMap = {};
   double hullDamage = 0;
   int minCool = 0;
@@ -85,6 +85,7 @@ class Ship extends Item implements Locatable {
   List<Scrap> scrapHeap = [];
   Map<Ship,SpaceLocation> lastKnown = {};
   HullType hullType;
+  bool get inNebula => loc.cell.hasHaz(Hazard.nebula);
 
   Ship(super.name, {
     this.owner,
@@ -107,7 +108,7 @@ class Ship extends Item implements Locatable {
 
     for (final classSlot in shipClass.slots) {
       for (int i=0;i<classSlot.num;i++) { //print("$name: Installing: ${classSlot.slot}");
-        systemMap.add(InstalledSystem(classSlot.slot,null));
+        systemMap.add(SlotAssignment(classSlot.slot,null));
       }
     }
 
@@ -183,24 +184,21 @@ class Ship extends Item implements Locatable {
   }
   bool canScan(GridCell cell) => !(loc.cell.hasHaz(Hazard.nebula) || cell.hasHaz(Hazard.nebula));
 
-  Iterable<ShipSystem> get getAllSystems {
+  Iterable<ShipSystem> getInstalledSystems({List<ShipSystemType>? types}) {
+    if (types != null) return systemMap.where((s) => types.contains(s.system?.type)).map((i) => i.system!);
     return systemMap.where((s) => (s.system != null)).map((i) => i.system!);
   }
 
-  Iterable<ShipSystem> getInstalledSystems(List<ShipSystemType> types) {
-    return systemMap.where((s) => types.contains(s.system?.type)).map((i) => i.system!);
-  }
-
-  bool isInstalled(ShipSystem s) => getAllSystems.contains(s);
+  bool isInstalled(ShipSystem s) => getInstalledSystems().contains(s);
   Iterable<ShipSystem> get uninstalledSystems => inventory.whereType<ShipSystem>().where((s) => !isInstalled(s));
 
-  Iterable<InstalledSystem> get vacantSlots => systemMap.where((sys) => sys.system == null);
-  Iterable<InstalledSystem> availableSlots(SystemSlot slot, ShipSystemType type) => vacantSlots.where((i) => i.slot.supports(slot,type));
-  Iterable<InstalledSystem> availableSlotsbySystem(ShipSystem s) => vacantSlots.where((i) => i.slot.supportsSystem(s));
-  Iterable<InstalledSystem> exactSlots(SystemSlot s) => vacantSlots.where((as) => as.slot == s).toList();
+  Iterable<SlotAssignment> get vacantSlots => systemMap.where((sys) => sys.system == null);
+  Iterable<SlotAssignment> availableSlots(SystemSlot slot, ShipSystemType type) => vacantSlots.where((i) => i.slot.supports(slot,type));
+  Iterable<SlotAssignment> availableSlotsbySystem(ShipSystem s) => vacantSlots.where((i) => i.slot.supportsSystem(s));
+  Iterable<SlotAssignment> exactSlots(SystemSlot s) => vacantSlots.where((as) => as.slot == s).toList();
 
-  InstalledSystem? installSystem(ShipSystem system, {SystemSlot? slot}) {
-    InstalledSystem? sys;
+  SlotAssignment? installSystem(ShipSystem system, {SystemSlot? slot}) {
+    SlotAssignment? sys;
     if (slot == null) {
       final slots = availableSlotsbySystem(system).toList();
       if (slots.isNotEmpty) {
@@ -241,40 +239,40 @@ class Ship extends Item implements Locatable {
 
   bool installRndPower(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install power generator <= techlvl $techLvl...");
     int attempts = 0;
-    while (getInstalledSystems([ShipSystemType.power]).isEmpty && attempts++ < 100) {
+    while (getInstalledSystems(types: [ShipSystemType.power]).isEmpty && attempts++ < 100) {
       final powerType = Rng.weightedRandom(pilot.faction.powerWeights.normalized,rnd);
       final powerList = stockPPs.entries.where((v) => v.value.powerType == powerType &&
           v.key.techLvl <= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
       if (powerList.isNotEmpty) installSystem(PowerGenerator.fromStock(powerList.elementAt(rnd.nextInt(powerList.length)).key));
     }
-    return getInstalledSystems([ShipSystemType.power]).isNotEmpty ? true : techLvl > 0 ? installRndPower(0, rnd) : false;
+    return getInstalledSystems(types: [ShipSystemType.power]).isNotEmpty ? true : techLvl > 0 ? installRndPower(0, rnd) : false;
   }
 
   bool installRndShield(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install shield <= techlvl $techLvl...");
     int attempts = 0;
-    while (getInstalledSystems([ShipSystemType.shield]).isEmpty && attempts++ < 100) {
+    while (getInstalledSystems(types: [ShipSystemType.shield]).isEmpty && attempts++ < 100) {
       final shieldType = Rng.weightedRandom(pilot.faction.shieldWeights.normalized,rnd);
       final shieldList = stockShields.entries.where((v) => v.value.shieldType == shieldType &&
           v.key.techLvl <= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
       if (shieldList.isNotEmpty) installSystem(Shield.fromStock(shieldList.elementAt(rnd.nextInt(shieldList.length)).key));
     }
-    return getInstalledSystems([ShipSystemType.shield]).isNotEmpty ? true : techLvl > 0 ? installRndShield(0, rnd) : false;
+    return getInstalledSystems(types: [ShipSystemType.shield]).isNotEmpty ? true : techLvl > 0 ? installRndShield(0, rnd) : false;
   }
 
   bool installRndWeapon(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install weapon <= techlvl $techLvl...");
     int attempts = 0;
-    while (getInstalledSystems([ShipSystemType.weapon]).isEmpty && attempts++ < 100) {
+    while (getInstalledSystems(types: [ShipSystemType.weapon]).isEmpty && attempts++ < 100) {
       final dmgType = Rng.weightedRandom(pilot.faction.damageWeights.normalized,rnd);
       final weaponList = stockWeapons.entries.where((v) => v.value.dmgType == dmgType &&
           v.key.techLvl <= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
       if (weaponList.isNotEmpty) installSystem(Weapon.fromStock(weaponList.elementAt(rnd.nextInt(weaponList.length)).key));
     }
-    return getInstalledSystems([ShipSystemType.weapon]).isNotEmpty;
+    return getInstalledSystems(types: [ShipSystemType.weapon]).isNotEmpty;
   }
 
   bool installRndLauncher(int techLvl, Random rnd, {maxAttempts = 10}) {
     int attempts = 0;
-    while (getInstalledSystems([ShipSystemType.launcher]).isEmpty && attempts++ < 100) {
+    while (getInstalledSystems(types: [ShipSystemType.launcher]).isEmpty && attempts++ < 100) {
       final dmgType = Rng.weightedRandom(pilot.faction.damageWeights.normalized,rnd);
       final launchList = stockLaunchers.entries.where((v) => v.value.dmgType == dmgType &&
           v.key.techLvl <= techLvl && availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
@@ -289,7 +287,7 @@ class Ship extends Item implements Locatable {
         }
       }
     }
-    return getInstalledSystems([ShipSystemType.launcher]).isNotEmpty;
+    return getInstalledSystems(types: [ShipSystemType.launcher]).isNotEmpty;
   }
 
   double get scrapVal => scrapHeap.fold<double>(0.0, (sum, i) => sum + i.baseCost);
@@ -350,7 +348,7 @@ class Ship extends Item implements Locatable {
 
   double get currentMaxShieldStrength {
     double e = 0;
-    for (final shield in getInstalledSystems([ShipSystemType.shield])) {
+    for (final shield in getInstalledSystems(types: [ShipSystemType.shield])) {
       if (shield is Shield && shield.active) {
         e = shield.currentMaxEnergy; if (shield.currentEnergy > 0) return e;
       }
@@ -360,7 +358,7 @@ class Ship extends Item implements Locatable {
 
   double get currentShieldStrength => getCurrentShield?.currentEnergy ?? 0;
   Shield? get getCurrentShield {
-    for (final shield in getInstalledSystems([ShipSystemType.shield])) {
+    for (final shield in getInstalledSystems(types: [ShipSystemType.shield])) {
       if (shield is Shield && shield.active) {
         if (shield.currentEnergy > 0) return shield;
       }
@@ -369,7 +367,8 @@ class Ship extends Item implements Locatable {
   }
 
   Iterable<Weapon> get availableWeapons {
-    return getInstalledSystems([ShipSystemType.weapon,ShipSystemType.launcher]).where((w) => w is Weapon && w.active).map((s) => s as Weapon);
+    return getInstalledSystems(types: [ShipSystemType.weapon,ShipSystemType.launcher])
+        .where((w) => w is Weapon && w.active).map((s) => s as Weapon);
   }
 
   Iterable<Weapon> get readyWeapons {
@@ -377,7 +376,7 @@ class Ship extends Item implements Locatable {
   }
 
   bool burnEnergy(double e) {
-    for (final gen in getInstalledSystems([ShipSystemType.power])) {
+    for (final gen in getInstalledSystems(types: [ShipSystemType.power])) {
       if (gen is PowerGenerator && gen.active && gen.burn(e,partial: false) > 0) { //print("Burning: $e");
         return true;
       }
@@ -387,7 +386,7 @@ class Ship extends Item implements Locatable {
 
   double getCurrentMaxEnergy({bool raw = false}) {
     double e = 0;
-    for (final gen in getInstalledSystems([ShipSystemType.power])) {
+    for (final gen in getInstalledSystems(types: [ShipSystemType.power])) {
       if (gen is PowerGenerator && gen.active) {
         e += (raw ? gen.rawMaxEnergy : gen.currentMaxEnergy);
       }
@@ -397,7 +396,7 @@ class Ship extends Item implements Locatable {
 
   double getCurrentEnergy({bool raw = false}) {
     double e = 0;
-    for (final gen in getInstalledSystems([ShipSystemType.power])) {
+    for (final gen in getInstalledSystems(types: [ShipSystemType.power])) {
       if (gen is PowerGenerator && gen.active) {
         e += (raw ? gen.rawEnergy : gen.currentEnergy);
       }
@@ -410,9 +409,9 @@ class Ship extends Item implements Locatable {
     Domain.system => subEngine,
     Domain.impulse => impEngine,
   };
-  Engine? get impEngine => getInstalledSystems([ShipSystemType.engine]).whereType<Engine>().where((w) => w.domain == Domain.impulse).firstOrNull;
-  Engine? get subEngine => getInstalledSystems([ShipSystemType.engine]).whereType<Engine>().where((w) => w.domain == Domain.system).firstOrNull;
-  Engine? get hyperEngine => getInstalledSystems([ShipSystemType.engine]).whereType<Engine>().where((w) => w.domain == Domain.hyperspace).firstOrNull;
+  Engine? get impEngine => getInstalledSystems(types: [ShipSystemType.engine]).whereType<Engine>().where((w) => w.domain == Domain.impulse).firstOrNull;
+  Engine? get subEngine => getInstalledSystems(types: [ShipSystemType.engine]).whereType<Engine>().where((w) => w.domain == Domain.system).firstOrNull;
+  Engine? get hyperEngine => getInstalledSystems(types: [ShipSystemType.engine]).whereType<Engine>().where((w) => w.domain == Domain.hyperspace).firstOrNull;
 
   double repairHull(double amount) {
     double prevDam = hullDamage;
@@ -423,7 +422,7 @@ class Ship extends Item implements Locatable {
   //int repairAll() { return; }
 
   double recharge(double energy) {
-    for (final gen in getInstalledSystems([ShipSystemType.power])) {
+    for (final gen in getInstalledSystems(types: [ShipSystemType.power])) {
       if (gen is PowerGenerator && gen.active) {
         energy -= gen.recharge(energy);
       }
@@ -481,7 +480,7 @@ class Ship extends Item implements Locatable {
 
   int get turnsUntilWeaponReady {
     int t = 999;
-    for (final w in getInstalledSystems([ShipSystemType.weapon])) {
+    for (final w in getInstalledSystems(types: [ShipSystemType.weapon])) {
       if (w is Weapon && w.active) {
         if (w.cooldown == 0) return 0;
         if (w.cooldown < t) t = w.cooldown;
@@ -494,7 +493,7 @@ class Ship extends Item implements Locatable {
     if (!okMass(ammo.mass * n)) return false;
     ammoMap[ammo] = ammoMap.containsKey(ammo) ? ammoMap[ammo]! + n : n; //print("Setting weapon...");
     if (setWeapon) {
-      final weapons = getInstalledSystems([ShipSystemType.launcher]);
+      final weapons = getInstalledSystems(types: [ShipSystemType.launcher]);
       if (weapons.isNotEmpty) {
         for (final w in weapons) {
           if (w is Weapon) {
@@ -510,7 +509,7 @@ class Ship extends Item implements Locatable {
 
   bool setWeaponAmmo(Weapon w, Ammo a) {
     if (w.usesAmmo) {
-      final weapon = getAllSystems.firstWhereOrNull((e) => e == w);
+      final weapon = getInstalledSystems().firstWhereOrNull((e) => e == w);
       if (weapon != null) { //print("Setting ${w.name},${w.ammoType}...");
         if (weapon is Weapon && weapon.ammoType == a.ammoType) {
           weapon.ammo = a; //print("${weapon.name} -> ${a.name}");
@@ -527,7 +526,7 @@ class Ship extends Item implements Locatable {
       m += ammoMap[ammo]! * ammo.mass;
     }
     m += scrapHeap.fold<double>(0.0, (sum, i) => sum + i.mass);
-    return (getAllSystems.fold<double>(0.0, (sum, s) => sum + s.mass)) + m;
+    return inventory.whereType<ShipSystem>().fold<double>(0.0, (sum, s) => sum + s.mass) + m;
   }
 
   double get availableMass => shipClass.maxMass - currentMass;
@@ -536,7 +535,7 @@ class Ship extends Item implements Locatable {
   //TODO: handle power outages?
   double tick({Random? rnd, dryRun = false}) { //print("Tick... $dryRun");
     double totalRecharge = 0, totalBurn = 0;
-    for (final rss in getInstalledSystems([ShipSystemType.power,ShipSystemType.shield])) {
+    for (final rss in getInstalledSystems(types: [ShipSystemType.power,ShipSystemType.shield])) {
       if (rss is RechargableShipSystem && rss.active && rss.currentEnergy < rss.currentMaxEnergy) { //print(rss.name); print(rss.rechargeRate);
         double recharge = rss.currentMaxEnergy * rss.rechargeRate * (1-rss.damage);
         if (!dryRun) {
@@ -559,16 +558,16 @@ class Ship extends Item implements Locatable {
       }
     } //print("$name: Net energy per tick: ${recharge - totalBurn}");
     if (!dryRun) {
-      for (final w in getInstalledSystems([ShipSystemType.weapon,ShipSystemType.launcher])) {
+      for (final w in getInstalledSystems(types: [ShipSystemType.weapon,ShipSystemType.launcher])) {
         if (w is Weapon && w.cooldown > 0) w.cooldown--;
       }
     }
     return totalRecharge - totalBurn;
   }
 
-  List<TextBlock> status({bool tactical = false, bool showScannedShip = false}) {
+  List<TextBlock> status({bool tactical = false, bool showScannedShip = false, nebula = false}) {
+    if (nebula || (tactical && loc.cell.hasHaz(Hazard.nebula))) return [TextBlock("In Nebula", GameColors.red, true)];
     List<TextBlock> blocks = [];
-
     blocks.add(TextBlock(name,GameColors.green,true));
     blocks.add(TextBlock("${pilot.faction.name} ${shipClass.type.name}",pilot.faction.color,true));
     blocks.add(TextBlock("Hull: ${hullRemaining.toStringAsFixed(2)} ",GameColors.green,false));
@@ -583,7 +582,10 @@ class Ship extends Item implements Locatable {
     for (final system in systemMap) { ShipSystem? s = system.system;
       if (s != null) {
         bool cooldown = s is Weapon && s.cooldown > 0;
-        blocks.add(TextBlock("${s.name} ${s.active ? '+' : '-'}",cooldown ? GameColors.red : GameColors.white,true));
+        final color = cooldown ? GameColors.red : GameColors.white;
+        blocks.add(TextBlock("${s.name} ",color,false));
+        if (s.damage > 0) blocks.add(TextBlock("${s.dmgTxt}% ", GameColors.gray, false));
+        blocks.add(TextBlock("${s.active ? '+' : '-'}",color,true));
         if (s is Weapon && s.ammo != null) {
           blocks.add(TextBlock("${s.ammo!.name}: ${ammoMap[s.ammo]}",GameColors.coral,true));
         }

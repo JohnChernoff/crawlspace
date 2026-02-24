@@ -172,8 +172,8 @@ class System extends Level {
 
   String shortString(Galaxy g, {bool showVisit = false}) {
     return "$name ("
-        "🛡${(g.fedKernel.valStr(this) * 100)},"
-        "⚙${g.techKernel.valStr(this) * 100})"
+        "🛡${(g.fedKernel.valStr(this))},"
+        "⚙${g.techKernel.valStr(this)})"
         "${(showVisit && visited) ? '*' : ''}";
   }
 
@@ -186,7 +186,6 @@ class System extends Level {
     for (int i=0;i<planets.length;i++) {
       planetsStr.write(" ${planets.elementAt(i).name} ");
     }
-
     return "$name (${links.length} links,${trafficGenHint.name}): $linksStr planets: $planetsStr \n";
   }
 

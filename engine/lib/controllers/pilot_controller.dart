@@ -47,7 +47,7 @@ class PilotController extends FugueController {
   }
 
   void toggleSystem(Ship ship) {
-    final systems = ship.getAllSystems;
+    final systems = ship.getInstalledSystems();
     final menuEntries = List<MenuEntry>.generate(systems.length, (i) => ValueEntry(
         fm.menuController.letter(i),
         systems.elementAt(i).name,

@@ -42,7 +42,7 @@ class LayerTransitController extends FugueController {
 
     List<ActionEntry> links = List.generate(system.links.length, (i) =>
         ActionEntry(fm.menuController.letter(i),
-            system.links.elementAt(i).toString(),
+            system.links.elementAt(i).shortString(fm.galaxy, showVisit: true),
                 (m) => newSystem(fm.player, system.links.elementAt(i)),exitAfter: true)
     );
     fm.menuController.showMenu(() => links, headerTxt: "Hyperspace");
@@ -69,7 +69,7 @@ class LayerTransitController extends FugueController {
       if (sysLoc is SystemLocation) {
         if (sysLoc.cell.starClass != null) { //sysLoc.level.removeShip(ship);
           if (action) fm.pilotController.action(pilot,ActionType.sector);
-          if (sysLoc == ship.loc) {
+          if (ship.loc.domain == Domain.system) { //didn't get pulled into impulse
             final stars = system.map.cells.values.where((c) => c is SectorCell && c.starClass != null);
             ship.move(SystemLocation(system,stars.first),fm.shipRegistry);
             system.visit(fm);
