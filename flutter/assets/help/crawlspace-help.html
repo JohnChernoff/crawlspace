@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRAWLSPACE — Navigation Manual</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=VT323&display=swap');
+
+  :root {
+    --green: #00ff88;
+    --green-dim: #00aa55;
+    --green-faint: #003322;
+    --amber: #ffcc00;
+    --red: #ff4444;
+    --cyan: #00ddff;
+    --purple: #cc88ff;
+    --bg: #030a06;
+    --bg2: #070f0a;
+    --border: #00aa55;
+    --text: #88ffbb;
+    --text-dim: #336644;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* Scanline overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* Noise texture */
+  body::after {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.4;
+  }
+
+  /* Header */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 40px 48px 32px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 20% 50%, rgba(0,255,136,0.05) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 20%, rgba(0,221,255,0.04) 0%, transparent 50%);
+  }
+
+  .header-eyebrow {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.3em;
+    color: var(--green-dim);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  h1 {
+    font-family: 'Orbitron', monospace;
+    font-size: clamp(32px, 6vw, 72px);
+    font-weight: 900;
+    color: var(--green);
+    letter-spacing: 0.05em;
+    text-shadow: 0 0 40px rgba(0,255,136,0.4), 0 0 80px rgba(0,255,136,0.1);
+    line-height: 1;
+    animation: flicker 8s infinite;
+  }
+
+  @keyframes flicker {
+    0%, 95%, 100% { opacity: 1; }
+    96% { opacity: 0.85; }
+    97% { opacity: 1; }
+    98% { opacity: 0.9; }
+  }
+
+  .header-sub {
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    color: var(--green-dim);
+    margin-top: 8px;
+    letter-spacing: 0.1em;
+  }
+
+  .header-desc {
+    max-width: 600px;
+    margin-top: 20px;
+    color: #55bb88;
+    font-size: 13px;
+    line-height: 1.8;
+  }
+
+  /* Navigation */
+  nav {
+    border-bottom: 1px solid var(--border);
+    padding: 0 48px;
+    display: flex;
+    gap: 0;
+    overflow-x: auto;
+  }
+
+  nav a {
+    color: var(--green-dim);
+    text-decoration: none;
+    padding: 14px 20px;
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+
+  nav a:hover {
+    color: var(--green);
+    border-bottom-color: var(--green);
+    background: rgba(0,255,136,0.03);
+  }
+
+  /* Layout */
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: calc(100vh - 200px);
+  }
+
+  /* Sidebar */
+  aside {
+    border-right: 1px solid var(--border);
+    padding: 32px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 0 20px 24px;
+  }
+
+  .sidebar-label {
+    font-size: 10px;
+    letter-spacing: 0.3em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    padding: 0 4px;
+  }
+
+  aside a {
+    display: block;
+    color: var(--green-dim);
+    text-decoration: none;
+    padding: 5px 8px;
+    font-size: 13px;
+    border-left: 2px solid transparent;
+    transition: all 0.15s;
+  }
+
+  aside a:hover {
+    color: var(--green);
+    border-left-color: var(--green);
+    background: rgba(0,255,136,0.04);
+  }
+
+  /* Main content */
+  main {
+    padding: 48px 56px;
+    max-width: 860px;
+  }
+
+  .section {
+    margin-bottom: 72px;
+    animation: fadeIn 0.4s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--green-faint);
+  }
+
+  .section-num {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    color: var(--text-dim);
+  }
+
+  h2 {
+    font-family: 'Orbitron', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--green);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    color: var(--amber);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin: 28px 0 12px;
+  }
+
+  p {
+    color: #88bbaa;
+    margin-bottom: 14px;
+    max-width: 680px;
+  }
+
+  /* Terminal block */
+  .terminal {
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    padding: 20px 24px;
+    margin: 20px 0;
+    position: relative;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: var(--green);
+    line-height: 1.5;
+    box-shadow: 0 0 20px rgba(0,255,136,0.05), inset 0 0 40px rgba(0,0,0,0.8);
+  }
+
+  .terminal::before {
+    content: '> ';
+    color: var(--green-dim);
+  }
+
+  .terminal-block {
+    background: #000;
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    margin: 20px 0;
+    font-family: 'VT323', monospace;
+    font-size: 17px;
+    color: var(--green);
+    line-height: 1.6;
+    box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+    white-space: pre;
+  }
+
+  /* Command tables */
+  .cmd-grid {
+    display: grid;
+    gap: 2px;
+    margin: 16px 0;
+  }
+
+  .cmd-row {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 16px;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+  }
+
+  .cmd-row:hover {
+    background: rgba(0,255,136,0.03);
+    border-color: var(--green-faint);
+  }
+
+  .cmd-row:nth-child(even) {
+    background: rgba(0,255,136,0.015);
+  }
+
+  .cmd-row:nth-child(even):hover {
+    background: rgba(0,255,136,0.04);
+  }
+
+  .key {
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--amber);
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+  }
+
+  .kbd {
+    background: #111;
+    border: 1px solid #444;
+    border-bottom: 2px solid #333;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 12px;
+    color: #ffdd66;
+    display: inline-block;
+    box-shadow: 0 1px 0 #222;
+  }
+
+  .cmd-desc {
+    color: #88bbaa;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Symbol legend */
+  .legend-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 8px;
+    margin: 16px 0;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 16px;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--green-faint);
+    border-left: 3px solid var(--border);
+    transition: all 0.15s;
+  }
+
+  .legend-item:hover {
+    border-left-color: var(--green);
+    background: rgba(0,255,136,0.04);
+  }
+
+  .glyph {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    width: 32px;
+    text-align: center;
+    flex-shrink: 0;
+    line-height: 1;
+  }
+
+  .legend-text {
+    flex: 1;
+  }
+
+  .legend-name {
+    color: var(--green);
+    font-size: 13px;
+    font-weight: bold;
+  }
+
+  .legend-detail {
+    color: #55886a;
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  /* Domain cards */
+  .domain-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 20px 0;
+  }
+
+  .domain-card {
+    border: 1px solid var(--border);
+    padding: 20px;
+    background: rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.2s;
+  }
+
+  .domain-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+
+  .domain-card.hyper::before { background: var(--purple); }
+  .domain-card.system::before { background: var(--cyan); }
+  .domain-card.impulse::before { background: var(--green); }
+
+  .domain-card:hover {
+    background: rgba(0,255,136,0.04);
+    transform: translateY(-2px);
+  }
+
+  .domain-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    margin-bottom: 10px;
+  }
+
+  .domain-card.hyper .domain-name { color: var(--purple); }
+  .domain-card.system .domain-name { color: var(--cyan); }
+  .domain-card.impulse .domain-name { color: var(--green); }
+
+  .domain-desc {
+    color: #667788;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+
+  .domain-enter {
+    margin-top: 12px;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  /* Stat bars */
+  .stat-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 8px 0;
+  }
+
+  .stat-label {
+    width: 100px;
+    font-size: 12px;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+
+  .stat-bar {
+    flex: 1;
+    height: 4px;
+    background: #111;
+    border: 1px solid #222;
+    max-width: 200px;
+  }
+
+  .stat-fill {
+    height: 100%;
+    transition: width 0.3s;
+  }
+
+  .stat-fill.hull { background: var(--green); }
+  .stat-fill.shield { background: var(--cyan); }
+  .stat-fill.energy { background: var(--amber); }
+
+  .stat-val {
+    font-size: 12px;
+    color: #55886a;
+    width: 40px;
+  }
+
+  /* Hazard tags */
+  .hazard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 10px;
+    margin: 16px 0;
+  }
+
+  .hazard-item {
+    display: flex;
+    gap: 14px;
+    padding: 12px 16px;
+    background: rgba(0,0,0,0.6);
+    border: 1px solid #1a1a1a;
+  }
+
+  .hazard-glyph {
+    font-family: 'VT323', monospace;
+    font-size: 26px;
+    width: 28px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .hazard-info .name {
+    color: var(--red);
+    font-size: 13px;
+  }
+
+  .hazard-info .effect {
+    color: #667766;
+    font-size: 12px;
+    margin-top: 3px;
+  }
+
+  /* Faction table */
+  .faction-grid {
+    display: grid;
+    gap: 8px;
+    margin: 16px 0;
+  }
+
+  .faction-row {
+    display: grid;
+    grid-template-columns: 28px 140px 1fr;
+    gap: 16px;
+    align-items: center;
+    padding: 10px 14px;
+    background: rgba(0,0,0,0.4);
+    border: 1px solid #111;
+    transition: all 0.15s;
+  }
+
+  .faction-row:hover {
+    background: rgba(0,255,136,0.03);
+  }
+
+  .faction-glyph {
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    text-align: center;
+  }
+
+  .faction-name {
+    color: var(--green);
+    font-size: 13px;
+  }
+
+  .faction-desc {
+    color: #55886a;
+    font-size: 12px;
+  }
+
+  /* Info box */
+  .info-box {
+    border: 1px solid var(--cyan);
+    border-left: 3px solid var(--cyan);
+    padding: 14px 18px;
+    margin: 20px 0;
+    background: rgba(0,221,255,0.03);
+  }
+
+  .info-box .label {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--cyan);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .info-box p {
+    color: #7aaabb;
+    margin: 0;
+    font-size: 13px;
+  }
+
+  .warn-box {
+    border: 1px solid var(--amber);
+    border-left: 3px solid var(--amber);
+    padding: 14px 18px;
+    margin: 20px 0;
+    background: rgba(255,204,0,0.03);
+  }
+
+  .warn-box .label {
+    font-size: 11px;
+    letter-spacing: 0.25em;
+    color: var(--amber);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .warn-box p {
+    color: #aaaa77;
+    margin: 0;
+    font-size: 13px;
+  }
+
+  /* Map sample */
+  .map-sample {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    background: #000;
+    border: 1px solid var(--border);
+    padding: 20px 24px;
+    line-height: 1.4;
+    display: inline-block;
+    margin: 16px 0;
+    box-shadow: 0 0 30px rgba(0,255,136,0.08);
+  }
+
+  .map-sample span.player { color: var(--green); }
+  .map-sample span.npc { color: #ff8844; }
+  .map-sample span.planet { color: #88aaff; }
+  .map-sample span.star { color: var(--amber); }
+  .map-sample span.haz { color: #aa4444; }
+  .map-sample span.dim { color: #1a3322; }
+  .map-sample span.nebula { color: #225533; }
+
+  /* Footer */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 24px 48px;
+    color: var(--text-dim);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: #000; }
+  ::-webkit-scrollbar-thumb { background: var(--border); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--green); }
+
+  /* Section divider glyphs */
+  .divider {
+    color: var(--text-dim);
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    letter-spacing: 0.5em;
+    margin: 16px 0;
+  }
+
+  /* combo hint */
+  .combo-hint {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    padding-left: 12px;
+  }
+
+  @media (max-width: 768px) {
+    .layout { grid-template-columns: 1fr; }
+    aside { display: none; }
+    main { padding: 32px 24px; }
+    header { padding: 28px 24px 24px; }
+    nav { padding: 0 16px; }
+    .domain-grid { grid-template-columns: 1fr; }
+    h1 { font-size: 36px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-eyebrow">/// NAVIGATION MANUAL v0.1</div>
+  <h1>CRAWLSPACE</h1>
+  <div class="header-sub">ONE MAN'S ATTEMPT TO MERGE CRAWL WITH ELITE / STAR CONTROL</div>
+  <p class="header-desc">
+    A 3D ASCII roguelike set in a procedurally generated galaxy. Navigate star systems,
+    trade on alien worlds, engage in tactical combat, and uncover the truth about Star One
+    before the Federation finds you.
+  </p>
+</header>
+
+<nav>
+  <a href="#overview">Overview</a>
+  <a href="#domains">Space Layers</a>
+  <a href="#symbols">Legend</a>
+  <a href="#commands">Commands</a>
+  <a href="#hazards">Hazards</a>
+  <a href="#factions">Factions</a>
+  <a href="#scoring">Scoring</a>
+</nav>
+
+<div class="layout">
+  <aside>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Getting Started</div>
+      <a href="#overview">What is Crawlspace?</a>
+      <a href="#domains">The Three Domains</a>
+      <a href="#your-ship">Your Ship</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Reference</div>
+      <a href="#symbols">Map Symbols</a>
+      <a href="#commands">All Commands</a>
+      <a href="#movement">Movement</a>
+      <a href="#combat">Combat</a>
+      <a href="#scanner">Scanner</a>
+      <a href="#hazards">Hazards</a>
+    </div>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Universe</div>
+      <a href="#factions">Factions</a>
+      <a href="#galaxy-map">Galaxy Map</a>
+      <a href="#planets">Planets</a>
+      <a href="#scoring">Victory & Score</a>
+    </div>
+  </aside>
+
+  <main>
+
+    <!-- OVERVIEW -->
+    <section class="section" id="overview">
+      <div class="section-header">
+        <span class="section-num">01</span>
+        <h2>What is Crawlspace?</h2>
+      </div>
+
+      <p>
+        Crawlspace is a 3D space roguelike in which you pilot a starship through a procedurally
+        generated galaxy of 250 star systems. The universe is politically complex — a Federation
+        exerts influence across space, alien species compete for territory, and rebel factions
+        operate in the margins.
+      </p>
+      <p>
+        Your goal: find the mysterious <strong style="color:var(--amber)">Star One</strong>,
+        broadcast its coordinates to the galaxy, and return home before the Federation's
+        agents track you down.
+      </p>
+
+      <div class="info-box">
+        <div class="label">⬡ Tip</div>
+        <p>Movement is turn-based. Every action you take gives NPC ships a chance to act.
+        Plan ahead — a hostile vessel in the same impulse zone will respond to your moves.</p>
+      </div>
+
+      <div class="terminal">The galaxy just got significantly more dangerous.</div>
+
+      <h3>Core Loop</h3>
+      <p>
+        Jump between star systems in <strong style="color:var(--purple)">Hyperspace</strong>.
+        Navigate within systems at the <strong style="color:var(--cyan)">System level</strong>.
+        Enter close-quarters <strong style="color:var(--green)">Impulse combat</strong> near planets and stations.
+        Trade, repair, and resupply at inhabited worlds. Avoid the Federation's heat.
+      </p>
+    </section>
+
+    <!-- DOMAINS -->
+    <section class="section" id="domains">
+      <div class="section-header">
+        <span class="section-num">02</span>
+        <h2>The Three Space Domains</h2>
+      </div>
+
+      <p>Space is divided into three nested layers. Your ship's engines determine which layers
+      you can access. The grid view changes to reflect your current domain.</p>
+
+      <div class="domain-grid">
+        <div class="domain-card hyper">
+          <div class="domain-name">Hyperspace</div>
+          <div class="domain-desc">
+            The galactic layer. Jump between star systems using your hyperdrive.
+            Each system is a node in the network — you can only jump to directly linked systems.
+          </div>
+          <div class="domain-enter">ENTER: <span style="color:#cc88ff">H</span> from a star cell</div>
+        </div>
+        <div class="domain-card system">
+          <div class="domain-name">System Level</div>
+          <div class="domain-desc">
+            The tactical system map. An 8×8×8 3D grid containing stars, planets, asteroid fields,
+            and nebulae. Navigate using your sublight drive.
+          </div>
+          <div class="domain-enter">ENTER: <span style="color:#00ddff">.</span> from impulse</div>
+        </div>
+        <div class="domain-card impulse">
+          <div class="domain-name">Impulse</div>
+          <div class="domain-desc">
+            Close-range combat zone. Generated from the sector cell you occupy.
+            Hazards from that cell carry through. Ships from the same sector also enter.
+          </div>
+          <div class="domain-enter">ENTER: <span style="color:#00ff88">,</span> from system level</div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="label">⬡ 3D Navigation</div>
+        <p>All domains are 3D grids. Use <span style="color:var(--amber)">Z + arrow</span>
+        to move up one Z-plane and <span style="color:var(--amber)">Shift + arrow</span>
+        to move down. The grid displays all Z-depths stacked with perspective — closer cells
+        appear larger and brighter.</p>
+      </div>
+    </section>
+
+    <!-- MAP SYMBOLS -->
+    <section class="section" id="symbols">
+      <div class="section-header">
+        <span class="section-num">03</span>
+        <h2>Map Legend</h2>
+      </div>
+
+      <p>The ASCII grid uses characters and colors to represent everything in space.
+      Colors indicate depth — yellow/bright = near your Z-level, dark = far away.</p>
+
+      <div class="map-sample">
+<span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="haz">~</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>
+<span class="dim">.</span>  <span class="dim">.</span>  <span class="nebula">≈</span>  <span class="nebula">≈</span>  <span class="haz">~</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>
+<span class="dim">.</span>  <span class="npc">ψ</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>
+<span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="player">@</span>  <span class="dim">.</span>  <span class="planet">O</span>  <span class="dim">.</span>  <span class="dim">.</span>
+<span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>
+<span class="dim">.</span>  <span class="dim">.</span>  <span class="haz">*</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>
+<span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="star">✦</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>
+<span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="dim">.</span>  <span class="haz">%</span>  <span class="dim">.</span>
+      </div>
+
+      <h3>Ships & Entities</h3>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <div class="glyph" style="color:var(--green)">@</div>
+          <div class="legend-text">
+            <div class="legend-name">Your Ship</div>
+            <div class="legend-detail">Always shown in green</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#ff8844">ψ</div>
+          <div class="legend-text">
+            <div class="legend-name">NPC Ship</div>
+            <div class="legend-detail">Glyph and color vary by species/faction</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#ffcc00">$</div>
+          <div class="legend-text">
+            <div class="legend-name">Salvage / Items</div>
+            <div class="legend-detail">Collectible items on the impulse grid</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Celestial Objects (System Level)</h3>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <div class="glyph" style="color:#88aaff">O</div>
+          <div class="legend-text">
+            <div class="legend-name">Planet</div>
+            <div class="legend-detail">Land to trade, repair, and resupply</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:var(--amber)">✦</div>
+          <div class="legend-text">
+            <div class="legend-name">Star</div>
+            <div class="legend-detail">Use for energy scooping</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#ffffff">✦</div>
+          <div class="legend-text">
+            <div class="legend-name">Star One</div>
+            <div class="legend-detail">The mysterious target — brighter than others</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#666">-</div>
+          <div class="legend-text">
+            <div class="legend-name">Black Hole</div>
+            <div class="legend-detail">Extreme hazard — avoid</div>
+          </div>
+        </div>
+      </div>
+
+      <h3>Hazard Symbols</h3>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <div class="glyph" style="color:#334455">~</div>
+          <div class="legend-text">
+            <div class="legend-name">Nebula</div>
+            <div class="legend-detail">Blocks scanning; may block movement</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#885522">*</div>
+          <div class="legend-text">
+            <div class="legend-name">Asteroid Field</div>
+            <div class="legend-detail">Risk of hull damage</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#4455aa">↯</div>
+          <div class="legend-text">
+            <div class="legend-name">Ion Storm</div>
+            <div class="legend-detail">Disrupts ship systems</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#558844">≈</div>
+          <div class="legend-text">
+            <div class="legend-name">Ionized Nebula</div>
+            <div class="legend-detail">Nebula + ion (combo hazard)</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#664422">✱</div>
+          <div class="legend-text">
+            <div class="legend-name">Asteroid Nebula</div>
+            <div class="legend-detail">Asteroids inside a nebula</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#774433">%</div>
+          <div class="legend-text">
+            <div class="legend-name">Charged Asteroids</div>
+            <div class="legend-detail">Ion + asteroid collision zone</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#556633">§</div>
+          <div class="legend-text">
+            <div class="legend-name">Irradiated Rocks</div>
+            <div class="legend-detail">Gamma radiation + asteroids</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#993333">※</div>
+          <div class="legend-text">
+            <div class="legend-name">Complex Hazard</div>
+            <div class="legend-detail">3+ simultaneous hazard types</div>
+          </div>
+        </div>
+        <div class="legend-item">
+          <div class="glyph" style="color:#223333">⌇</div>
+          <div class="legend-text">
+            <div class="legend-name">Warp Wake</div>
+            <div class="legend-detail">Edge of impulse zone — boundary marker</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COMMANDS -->
+    <section class="section" id="commands">
+      <div class="section-header">
+        <span class="section-num">04</span>
+        <h2>Commands</h2>
+      </div>
+
+      <h3 id="movement">Movement</h3>
+      <p>All movement is relative to your current position. The Z-axis represents depth — combine
+      direction keys with modifier keys to move up or down through Z-planes.</p>
+
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">↑</span><span class="kbd">↓</span><span class="kbd">←</span><span class="kbd">→</span></div>
+          <div class="cmd-desc">Move on the X/Y plane (cardinal directions)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Home</span><span class="kbd">End</span><span class="kbd">PgUp</span><span class="kbd">PgDn</span></div>
+          <div class="cmd-desc">Diagonal movement (NW, SW, NE, SE)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Z</span> + any arrow</div>
+          <div class="cmd-desc">Move in same direction but +1 Z (upward)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Shift</span> + any arrow</div>
+          <div class="cmd-desc">Move in same direction but -1 Z (downward)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Z</span> + <span class="kbd">Clear</span></div>
+          <div class="cmd-desc">Move straight up one Z level</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Shift</span> + <span class="kbd">Clear</span></div>
+          <div class="cmd-desc">Move straight down one Z level</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Clear / 5</span></div>
+          <div class="cmd-desc">Loiter (wait one turn in place)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Enter</span></div>
+          <div class="cmd-desc">Wait until next weapon is ready</div>
+        </div>
+      </div>
+
+      <h3>Space Layer Transitions</h3>
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">H</span></div>
+          <div class="cmd-desc">Hyperspace jump — opens link menu (must be at a star cell)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">,</span></div>
+          <div class="cmd-desc">Enter Impulse — zoom into current sector cell</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">.</span></div>
+          <div class="cmd-desc">Exit Impulse — return to System level</div>
+        </div>
+      </div>
+
+      <h3 id="combat">Combat</h3>
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">F</span></div>
+          <div class="cmd-desc">Fire all ready weapons at targeted ship</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">+</span></div>
+          <div class="cmd-desc">Pursue targeted ship (auto-move toward)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Enter</span></div>
+          <div class="cmd-desc">Wait until next weapon cooldown is ready</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Shift</span>+<span class="kbd">S</span></div>
+          <div class="cmd-desc">Collect nearby scrap</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">J</span></div>
+          <div class="cmd-desc">Jettison lowest-value scrap from hold</div>
+        </div>
+      </div>
+
+      <h3 id="scanner">Scanner</h3>
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">S</span></div>
+          <div class="cmd-desc">Cycle scanner mode forward</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">W</span></div>
+          <div class="cmd-desc">Cycle scanner mode backward</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Q</span></div>
+          <div class="cmd-desc">Move scanner selection up</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">A</span></div>
+          <div class="cmd-desc">Move scanner selection down</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">T</span></div>
+          <div class="cmd-desc">Target the currently scanned object</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">-</span></div>
+          <div class="cmd-desc">Cycle target mode (ship / coordinate)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">=</span></div>
+          <div class="cmd-desc">Toggle depth view (all Z-planes / closest only)</div>
+        </div>
+      </div>
+
+      <h3>Ship Systems</h3>
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">'</span></div>
+          <div class="cmd-desc">Toggle ship system on/off (opens menu)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">I</span></div>
+          <div class="cmd-desc">Install a system from inventory</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">U</span></div>
+          <div class="cmd-desc">Uninstall an installed system</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">E</span></div>
+          <div class="cmd-desc">Energy scoop from nearby star</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">L</span></div>
+          <div class="cmd-desc">Land on / interact with nearby planet</div>
+        </div>
+      </div>
+
+      <h3>View & Audio</h3>
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Space</span></div>
+          <div class="cmd-desc">Toggle text-only / normal view</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Shift</span>+<span class="kbd">G</span></div>
+          <div class="cmd-desc">Toggle galaxy map</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">M</span></div>
+          <div class="cmd-desc">Toggle music pause / resume</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">N</span></div>
+          <div class="cmd-desc">Next music track</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Shift</span>+<span class="kbd">O</span></div>
+          <div class="cmd-desc">Open options</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Shift</span>+<span class="kbd">H</span></div>
+          <div class="cmd-desc">Open help</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">V</span></div>
+          <div class="cmd-desc">Show game version</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key"><span class="kbd">Esc</span></div>
+          <div class="cmd-desc">Exit galaxy map / close menu</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- HAZARDS -->
+    <section class="section" id="hazards">
+      <div class="section-header">
+        <span class="section-num">05</span>
+        <h2>Hazards</h2>
+      </div>
+
+      <p>Hazardous cells affect your ship each turn you spend inside them. Hazard intensity
+      varies — a partial nebula will impair scanning, a dense ion storm can knock out systems.
+      Multiple hazards combine into special symbols.</p>
+
+      <div class="hazard-grid">
+        <div class="hazard-item">
+          <div class="hazard-glyph" style="color:#334455">~</div>
+          <div class="hazard-info">
+            <div class="name">Nebula</div>
+            <div class="effect">Blocks scanning in and out of affected cells. Ships inside cannot be detected, and cannot detect others. Safe to fly through.</div>
+          </div>
+        </div>
+        <div class="hazard-item">
+          <div class="hazard-glyph" style="color:#885522">*</div>
+          <div class="hazard-info">
+            <div class="name">Asteroid Field</div>
+            <div class="effect">Deals hull damage per turn. Heavier fields deal more damage. Energy scooping is possible near dense roid fields.</div>
+          </div>
+        </div>
+        <div class="hazard-item">
+          <div class="hazard-glyph" style="color:#4455aa">↯</div>
+          <div class="hazard-info">
+            <div class="name">Ion Storm</div>
+            <div class="effect">Disrupts ship electronics. Can disable systems. At the impulse level, ion storms evolve dynamically (Hodgepodge automaton).</div>
+          </div>
+        </div>
+        <div class="hazard-item">
+          <div class="hazard-glyph" style="color:#667744">γ</div>
+          <div class="hazard-info">
+            <div class="name">Gamma Radiation</div>
+            <div class="effect">Biological damage to crew. Cumulative exposure increases risk per turn spent in the zone.</div>
+          </div>
+        </div>
+        <div class="hazard-item">
+          <div class="hazard-glyph" style="color:#223333">⌇</div>
+          <div class="hazard-info">
+            <div class="name">Warp Wake</div>
+            <div class="effect">Edge boundary of an impulse zone. Exiting through the wake returns you to system level.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="warn-box">
+        <div class="label">⚠ Warning</div>
+        <p>NPC ships are also affected by hazards and will attempt to avoid them. Use hazard
+        zones tactically — a nebula can break scanner lock and let you escape pursuit.</p>
+      </div>
+    </section>
+
+    <!-- FACTIONS -->
+    <section class="section" id="factions">
+      <div class="section-header">
+        <span class="section-num">06</span>
+        <h2>Factions & Species</h2>
+      </div>
+
+      <p>
+        The galaxy is home to multiple species, each with their own homeworld, technology level,
+        and faction alignments. NPC ships display their species' glyph in their faction's color.
+        Hostile factions will engage you on sight if you're in their territory.
+      </p>
+
+      <p>
+        The <strong style="color:#aaaaff">Federation</strong> exerts gravitational influence
+        across the galaxy. Core systems (near Mentos, the Federation homeworld) have heavy
+        patrols and strict law enforcement. Frontier systems are lawless. Your
+        <strong style="color:var(--amber)">heat level</strong> determines how aggressively
+        agents pursue you.
+      </p>
+
+      <h3>Galaxy Map Legend Modes</h3>
+      <p>On the galaxy map (<span style="color:var(--amber)">Shift+G</span>), press
+      <span style="color:var(--amber)">W</span>/<span style="color:var(--amber)">Q</span>
+      to cycle through legend overlays:</p>
+
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div class="key">Star</div>
+          <div class="cmd-desc">Color by stellar class (O→M, blue to red)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Planets</div>
+          <div class="cmd-desc">Brightness = number of planets in system</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Fed</div>
+          <div class="cmd-desc">Blue intensity = Federation authority level</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Tech</div>
+          <div class="cmd-desc">Green intensity = technological development</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Species</div>
+          <div class="cmd-desc">Color by dominant species in system</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">History</div>
+          <div class="cmd-desc">Blue = visited, purple = unknown, red = agent last seen here</div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- YOUR SHIP -->
+    <section class="section" id="your-ship">
+      <div class="section-header">
+        <span class="section-num">07</span>
+        <h2>Your Ship</h2>
+      </div>
+
+      <p>Your ship has three vital stats displayed in the status panel on the right side of the screen:</p>
+
+      <div style="margin: 20px 0; padding: 16px; background: #000; border: 1px solid var(--border);">
+        <div class="stat-row">
+          <div class="stat-label">Hull</div>
+          <div class="stat-bar"><div class="stat-fill hull" style="width:72%"></div></div>
+          <div class="stat-val" style="color:var(--green)">72%</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-label">Shields</div>
+          <div class="stat-bar"><div class="stat-fill shield" style="width:45%"></div></div>
+          <div class="stat-val" style="color:var(--cyan)">45%</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-label">Energy</div>
+          <div class="stat-bar"><div class="stat-fill energy" style="width:88%"></div></div>
+          <div class="stat-val" style="color:var(--amber)">88%</div>
+        </div>
+      </div>
+
+      <p><strong style="color:var(--green)">Hull</strong> — structural integrity.
+      At zero your ship is destroyed and the game ends. Repair at planets.</p>
+      <p><strong style="color:var(--cyan)">Shields</strong> — absorb incoming damage before hull takes hits.
+      Recharge automatically each turn based on shield system rating.</p>
+      <p><strong style="color:var(--amber)">Energy</strong> — powers all systems.
+      Generated by your power plant; consumed by engines, weapons, shields, and active systems.
+      Recharge by scooping a star.</p>
+
+      <h3>Ship Systems</h3>
+      <p>Your ship has slots for installed systems. Each slot type accepts specific equipment:</p>
+
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div class="key">Engine (Impulse)</div>
+          <div class="cmd-desc">Enables movement at the Impulse domain</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Engine (Sublight)</div>
+          <div class="cmd-desc">Enables movement at the System domain</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Engine (Hyperdrive)</div>
+          <div class="cmd-desc">Enables jumps between star systems</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Power Generator</div>
+          <div class="cmd-desc">Produces energy per tick; determines recharge rate</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Shield</div>
+          <div class="cmd-desc">Absorbs incoming damage; recharges from energy</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Weapon</div>
+          <div class="cmd-desc">Direct-fire weapon with cooldown and range profile</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Launcher</div>
+          <div class="cmd-desc">Ammo-based weapon; requires matching ammo in hold</div>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <div class="label">⬡ Mass Limit</div>
+        <p>Every system and item has mass. Your ship class determines maximum mass capacity.
+        Running out of mass means you can't add more equipment or ammo. Jettison scrap
+        with <span style="color:var(--amber)">J</span> to free up space.</p>
+      </div>
+    </section>
+
+    <!-- PLANETS -->
+    <section class="section" id="planets">
+      <div class="section-header">
+        <span class="section-num">08</span>
+        <h2>Planets & Trade</h2>
+      </div>
+
+      <p>
+        Each planet has unique characteristics shaped by its system's Federation influence,
+        tech level, and the dominant local species. Planet stats are rated 0–1 and displayed
+        as shield/tech icons in the scanner.
+      </p>
+
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div class="key" style="color:var(--green)">🛡 Fed</div>
+          <div class="cmd-desc">Federation authority. High = safer but more surveillance</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key" style="color:var(--cyan)">⚙ Tech</div>
+          <div class="cmd-desc">Technological level. High = better equipment available</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">R</div>
+          <div class="cmd-desc">Residential density (population)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">C</div>
+          <div class="cmd-desc">Commerce level (shop variety and credits)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">I</div>
+          <div class="cmd-desc">Industry (manufacturing; affects ship yards)</div>
+        </div>
+      </div>
+
+      <p>
+        Land on a planet with <span style="color:var(--amber)">L</span> when adjacent to it.
+        Planets with shops display available wares; shipyards allow you to buy or sell ships.
+        You can repair hull and recharge systems for credits.
+      </p>
+    </section>
+
+    <!-- SCORING -->
+    <section class="section" id="scoring">
+      <div class="section-header">
+        <span class="section-num">09</span>
+        <h2>Victory & Scoring</h2>
+      </div>
+
+      <p>
+        Your mission: locate <strong style="color:var(--amber)">Star One</strong>, broadcast
+        its coordinates across the galaxy, then return to the Federation homeworld
+        <strong style="color:white">Mentos</strong>. Arriving without broadcasting first
+        leads to immediate execution.
+      </p>
+
+      <div class="warn-box">
+        <div class="label">⚠ Victory Condition</div>
+        <p>You must broadcast the Star One signal before returning home, and the broadcast
+        must reach enough systems to trigger a political collapse. Returning early or
+        without enough broadcasts results in a bad ending.</p>
+      </div>
+
+      <h3>Score Breakdown</h3>
+      <div class="cmd-grid">
+        <div class="cmd-row">
+          <div class="key">Turns Survived</div>
+          <div class="cmd-desc">+1 point per turn (auTick)</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Systems Discovered</div>
+          <div class="cmd-desc">+2 points per system visited</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Pirates Vanquished</div>
+          <div class="cmd-desc">+3 points per pirate destroyed</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Star One Found</div>
+          <div class="cmd-desc">+500 point bonus</div>
+        </div>
+        <div class="cmd-row">
+          <div class="key">Victory</div>
+          <div class="cmd-desc">+1000 point bonus</div>
+        </div>
+      </div>
+
+      <div class="terminal-block">FINAL SCORE = turns + (systems × 2) + (pirates × 3) + star_one + victory</div>
+
+    </section>
+
+    <div class="divider">· · · ✦ · · ·</div>
+
+  </main>
+</div>
+
+<footer>
+  <span>CRAWLSPACE v0.1 — Navigation Manual</span>
+  <span style="color:var(--green-dim)">play at crawlspace.online</span>
+</footer>
+
+</body>
+</html>

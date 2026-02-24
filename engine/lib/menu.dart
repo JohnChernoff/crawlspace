@@ -85,7 +85,7 @@ class ActionEntry extends MenuEntry {
     if (enabled) {
       action(mc); // run first
       if (exitAfter) mc.exitMenu();
-      else mc.fm.update();
+      else mc.fm.update(noWait: true);
     }
   }
 }
@@ -101,7 +101,7 @@ class ValueEntry<T> extends MenuEntry {
     if (enabled) {
       onSelect(value);
       if (exitAfter) mc.exitMenu();
-      else mc.fm.update();
+      else mc.fm.update(noWait: true);
     }
   }
 }

@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:crawlspace_engine/object.dart';
-
 import '../foosham/foosham.dart';
 import '../foosham/throws.dart';
 import '../fugue_engine.dart';
@@ -25,9 +24,13 @@ class MenuController extends FugueController {
   MenuController(super.fm);
 
   void exitMenu() { //print("Exit Menu called");
-    if (menuStack.length > 1) { //print("Exiting...");
-      menuStack.removeLast();
+    if (menuStack.length > 1) menuStack.removeLast();
+    if (menuStack.length > 1) {
       _rebuildMenu();
+    } else {
+      fm.msgController.addDummyMsg();
+      fm.update();
+      print("Back to main");
     }
     fm.update(noWait: true);
   }
@@ -207,6 +210,7 @@ class MenuController extends FugueController {
 
     if (full.isEmpty) { //fm.msgController.addMsg(ctx.nothingTxt);
       if (emptyExit || ctx.noExit) {
+        print("Hrumph");
         exitMenu();
         return;
       }

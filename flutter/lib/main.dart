@@ -83,7 +83,7 @@ class _FugueHomeState extends State<FugueHome> {
           image: DecorationImage(image: AssetImage("img/splash_land.png"),fit: BoxFit.fill),
         ),
         child: Center(child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: (model?.engine == null)
               ? preGameColumn()
               : gameColumn(),
@@ -108,7 +108,8 @@ class _FugueHomeState extends State<FugueHome> {
   List<Widget> preGameColumn() {
     return [
       const SizedBox(height: 24),
-      newGameButton(),
+      Expanded(flex: 2, child: SizedBox()),
+      Expanded(flex: 1, child: Row(mainAxisAlignment: MainAxisAlignment.center,children: [newGameButton(), SizedBox(width: 24), helpButton()]))
     ];
   }
 
@@ -128,7 +129,7 @@ class _FugueHomeState extends State<FugueHome> {
 
   Widget helpButton({isNewTab = true}) {
     return ElevatedButton(
-        onPressed: () => launchUrl(Uri.parse('https://spacefugue.online/help/overview.html'),webOnlyWindowName: isNewTab ? '_blank' : '_self',),
+        onPressed: () => launchUrl(Uri.parse('https://crawlspace.online/help/index.html'),webOnlyWindowName: isNewTab ? '_blank' : '_self',),
         child: kIsWeb ? const Text('Help') : const Icon(Icons.help)
     );
   }

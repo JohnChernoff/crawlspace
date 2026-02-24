@@ -21,9 +21,14 @@ class MessageController extends FugueController {
     if (updateAfter) fm.update();
   }
 
+  void addDummyMsg() {
+    msgWorker.addMsg(Message(text: Message.dummyMsg, timestamp: fm.starDate()));
+  }
+
 }
 
 class Message {
+  static const String dummyMsg = ".";
   final String text;
   final String timestamp;
   final GameColor? color;
@@ -62,7 +67,7 @@ class MessageQueueWorker {
       final qm = _queue.removeFirst();
       await Future.delayed(Duration(milliseconds: qm.delay));
       _messages = _messages.add(qm.msg);
-      _controller.add(_messages);
+      _controller.add(_messages.where((m) => m.text != Message.dummyMsg).toIList());
     }
     isProcessing = false;
     processNotifier.complete();
