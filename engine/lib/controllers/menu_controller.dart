@@ -89,7 +89,7 @@ class MenuController extends FugueController {
   }
 
   List<MenuEntry> createUninstallMenu(Ship ship) {
-    final systems = ship.getInstalledSystems().toList();
+    final systems = ship.systemControl.getInstalledSystems().toList();
     return <MenuEntry> [
       for (int i = 0; i < systems.length; i++)
         ValueEntry(letter(i),"${systems[i].name} , ${systems[i].slot}", systems[i],
@@ -98,17 +98,19 @@ class MenuController extends FugueController {
   }
 
   List<MenuEntry> createInstallMenu(Ship ship) {
-    final systems = ship.uninstalledSystems.toList();
+    final systems = ship.systemControl.uninstalledSystems.toList();
     return <MenuEntry> [
       for (int i = 0; i < systems.length; i++)
         ValueEntry(letter(i),"${systems[i].name} , ${systems[i].slot}", systems[i],
                 (system) => fm.pilotController.installSystem(ship, system),
-            exitAfter: false, disabledReason: () => (ship.availableSlotsbySystem(systems[i]).isEmpty ? "No available slot" : null))
+            exitAfter: false, disabledReason: () => (ship.systemControl.availableSlotsbySystem(systems[i]).isEmpty
+                ? "No available slot"
+                : null))
     ];
   }
 
   List<MenuEntry> createInstallSlotMenu(Ship ship, ShipSystem system) {
-    final slots = ship.availableSlotsbySystem(system).map((s) => s.slot).toList();
+    final slots = ship.systemControl.availableSlotsbySystem(system).map((s) => s.slot).toList();
     return <MenuEntry> [
       for (int i = 0; i < slots.length; i++)
         ValueEntry(letter(i),"${slots[i]}", slots[i],
@@ -141,7 +143,7 @@ class MenuController extends FugueController {
 
   //TODO: make player inventory like shops?
   List<MenuEntry> createShopSellMenu(Shop shop, {Ship? ship}) { //TODO: filter by shop type
-    final installed = ship?.getInstalledSystems() ?? [];
+    final installed = ship?.systemControl.getInstalledSystems() ?? [];
     final items = [
       ...ship?.inventory.where((i) => !installed.contains(i)) ?? [],
       ...ship?.scrapHeap ?? [],

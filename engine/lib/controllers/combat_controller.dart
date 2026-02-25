@@ -73,11 +73,11 @@ class CombatController extends FugueController {
 
   void explode(Ship ship) {
     fm.msgController.addMsg("${ship.name} explodes!");
-    for (final cmp in ship.systemMap.where((s) => s.system != null)) {
+    for (final system in ship.systemControl.getInstalledSystems()) {
       if (fm.rnd.nextBool()) {
         final cell = ship.loc.cell; if (cell is ImpulseCell) {
-          cmp.system!.damage = 50.0 + fm.rnd.nextInt(50);
-          cell.items.add(cmp.system!);
+          system.damage = 50.0 + fm.rnd.nextInt(50);
+          cell.items.add(system);
         }
       }
     }

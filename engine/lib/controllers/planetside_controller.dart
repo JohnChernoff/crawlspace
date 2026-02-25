@@ -229,7 +229,7 @@ class PlanetsideController extends FugueController {
 
   List<MenuEntry> createSystemRepairMenu(Ship ship) {
     List<ActionEntry> sysList = []; int i=0;
-    for (final s in ship.getInstalledSystems().where((sys) => sys.damage > 0)) {
+    for (final s in ship.systemControl.getInstalledSystems().where((sys) => sys.damage > 0)) {
       sysList.add(ActionEntry(fm.menuController.letter(i++), "${s.name}", (m) => enterMainRepairShop(ship,sys: s)));
     }
     return sysList;

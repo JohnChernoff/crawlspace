@@ -142,7 +142,7 @@ class LayerTransitController extends FugueController {
 
   void _enterImpulse(ImpulseLevel impLvl, Ship? ship, {ImpulseCell? cell, safeDist = 4}) {
     if (ship == null) return;
-    ship.subEngine?.active = false;
+    ship.systemControl.subEngine?.active = false;
     final sysLoc = ship.loc;
     if (sysLoc is SystemLocation) {
       GridCell targetCell = cell ?? impLvl.map.rndCell(fm.rnd);
@@ -168,11 +168,16 @@ class LayerTransitController extends FugueController {
 
   void enterSublight(Ship? ship) {
     if (ship == null) return;
-    ship.impEngine?.active = false;
     final impLoc = ship.loc;
     if (impLoc is ImpulseLocation) {
-      if (ship == fm.playerShip) {
-        fm.shipRegistry.inLevel(impLoc.level).forEach((s) => _exitImpulse(s, impLoc));
+      final ships = fm.shipRegistry.inLevel(impLoc.level);
+      if (ship == fm.playerShip && ships.length > 1) {
+        if (ship.impEscape) {
+          ships.forEach((s) => _exitImpulse(s, impLoc));
+        } else {
+          fm.msgController.addMsg("You cannot accelerate to system travel with hostile vessels in the area");
+          return;
+        }
       } else {
         _exitImpulse(ship, impLoc);
       }
@@ -184,6 +189,7 @@ class LayerTransitController extends FugueController {
   }
 
   void _exitImpulse(Ship ship, ImpulseLocation impLoc) {
+    ship.systemControl.impEngine?.active = false;
     ship.move(impLoc.systemLoc, fm.shipRegistry);
   }
 

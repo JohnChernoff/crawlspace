@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
@@ -229,11 +228,11 @@ class Rng {
     }
     final shipClassType = ShipClassType.values.firstWhereOrNull((t) => t.shipclass.type == shipType) ?? ShipClassType.mentok;
     Ship ship = Ship("HMS ${randomAlienName(rnd)}",pilot: pilot, location: location, shipClass: shipClassType.shipclass);
-    ship.installRndPower(techLvl, rnd);
-    ship.installRndEngine(Domain.impulse, techLvl, rnd);
-    ship.installRndEngine(Domain.system, techLvl, rnd); //no hyperspace
-    ship.installRndShield(techLvl, rnd);
-    ship.installRndWeapon(techLvl, rnd);
+    ship.rndSystemInstaller.installRndPower(techLvl, rnd);
+    ship.rndSystemInstaller.installRndEngine(Domain.impulse, techLvl, rnd);
+    ship.rndSystemInstaller.installRndEngine(Domain.system, techLvl, rnd); //no hyperspace
+    ship.rndSystemInstaller.installRndShield(techLvl, rnd);
+    ship.rndSystemInstaller.installRndWeapon(techLvl, rnd);
     return ship;
   }
 }

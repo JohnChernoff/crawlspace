@@ -23,6 +23,7 @@ class ShipRegistry {
     if (ship.hasPilot) _byPilot.remove(ship.pilot);
     _byLevel[ship.loc.level]?.remove(ship);
     _byCell[ship.loc.cell]?.remove(ship);
+    for (final shp in _all.where((s) => s.targetShip == ship)) shp.targetShip = null;
   }
 
   //call before moving

@@ -31,8 +31,8 @@ class MovementController extends FugueController {
     }
     final dist = ship.loc.cell.coord.distance(destination.coord);
     Engine? engine = switch(ship.loc) {
-      SystemLocation() => ship.subEngine,
-      ImpulseLocation() => ship.impEngine,
+      SystemLocation() => ship.systemControl.subEngine,
+      ImpulseLocation() => ship.systemControl.impEngine,
     };
     if (engine == null) {
       return MoveResult.noEngine;
@@ -40,7 +40,7 @@ class MovementController extends FugueController {
     engine.active = true; //auto activate
     final auts = (engine.baseAutPerUnitTraversal * dist).round(); //print("Auts: $auts");
     double energyRequired = baseEnergy * (1 / engine.efficiency) * dist;
-    if (!ship.burnEnergy(energyRequired)) {
+    if (!ship.systemControl.burnEnergy(energyRequired)) {
       return MoveResult.outOfEnergy;
     }
     ship.move(ship.loc.withCell(destination),fm.shipRegistry); //fm.glog("Moving ${ship.name} => $destination");

@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/coord_3d.dart';
+import 'package:crawlspace_engine/ship_sys.dart';
 import '../grid.dart';
 import '../location.dart';
 import '../menu.dart';
@@ -47,7 +48,7 @@ class PilotController extends FugueController {
   }
 
   void toggleSystem(Ship ship) {
-    final systems = ship.getInstalledSystems();
+    final systems = ship.systemControl.getInstalledSystems();
     final menuEntries = List<MenuEntry>.generate(systems.length, (i) => ValueEntry(
         fm.menuController.letter(i),
         systems.elementAt(i).name,
@@ -57,7 +58,7 @@ class PilotController extends FugueController {
   }
 
   ResultMessage uninstallSystem(ShipSystem system, Ship ship) {
-    if (ship.uninstallSystem(system)) {
+    if (ship.systemControl.uninstallSystem(system)) {
       return const ResultMessage("Uninstalled",true);
     } else {
       return const ResultMessage("Couldn't uninstall",false);
@@ -66,15 +67,15 @@ class PilotController extends FugueController {
 
   ResultMessage installSystem(Ship ship, ShipSystem system, {SystemSlot? slot}) {
     if (ship.inventory.contains(system)) {
-      if (slot == null) { //print("Ergh");
+      if (slot == null) {
         fm.menuController.showMenu(() => fm.menuController.createInstallSlotMenu(ship,system),headerTxt: "Select Slot:");
         return const ResultMessage("Select a slot", true);
       } else { //print("hmm");
-        final installedSystem = ship.installSystem(system, slot: slot);
-        if (installedSystem != null) {
+        final result = ship.systemControl.installSystem(system, slot: slot);
+        if (result == InstallResult.success) {
           return ResultMessage("Installed at slot: $slot",true);
         } else {
-          return ResultMessage("Invalid/unavailable slot: $slot",false);
+          return ResultMessage("${result.name} slot: $slot",false);
         }
       }
     }
@@ -116,7 +117,7 @@ class PilotController extends FugueController {
           fm.shipRegistry.inLevel(ship.loc.level).contains(fm.playerShip)) {
         ship.targetShip = fm.playerShip;
         final loc = ship.loc; if (loc is ImpulseLocation) {
-            Weapon? w = ship.primaryWeapon;
+            Weapon? w = ship.systemControl.primaryWeapon;
             if (w != null && ship.currentHullPercentage > (ship.pilot.faction.courage * 100)) {
               final r = w.accuracyRangeConfig.idealRange, d = ship.distance(l: playLoc); //print("${ship.name} combat...$r, $d");
               if ((r -d).abs() > 1) { //print("${ship.name} maneuvering...");
@@ -165,7 +166,7 @@ class PilotController extends FugueController {
       fm.msgController.addMsg("You're not in a ship."); return;
     }
     double amount = 50; //((ship.energyConvertor.value/(Rng.biasedRndInt(rnd,mean: 50, min: 25, max: 80))) * player.system.starClass.power).floor();
-    fm.msgController.addMsg("Scooping class ${fm.player.system.starClass.name} star... gained ${ship.recharge(amount)} energy");
+    fm.msgController.addMsg("Scooping class ${fm.player.system.starClass.name} star... gained ${ship.systemControl.recharge(amount)} energy");
     fm.pilotController.action(fm.player,ActionType.energyScoop);
   }
 }
