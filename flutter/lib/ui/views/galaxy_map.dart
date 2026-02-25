@@ -32,7 +32,7 @@ class GalaxyMap extends StatefulWidget {
 }
 
 class GalaxyMapState extends State<GalaxyMap> {
-  GalaxyMapLegend legend = GalaxyMapLegend.species;
+  GalaxyMapLegend legend = GalaxyMapLegend.fed;
   late final FugueGraph fugueGraph;
   late final ForceDirectedGraphController<System> _controller;
   late final FocusNode _focusNode; // Add this
@@ -226,36 +226,25 @@ class GalaxyMapState extends State<GalaxyMap> {
     if (fm.galaxy.fedHomeSystem == system) return Colors.white;
     return switch(legend) {
       GalaxyMapLegend.star => Color(system.starClass.color.argb),
-      GalaxyMapLegend.fed => fedColor(g, system), //blue
-      GalaxyMapLegend.tech => techColor(g, system), //green
-      GalaxyMapLegend.trade => tradeColor(g, system), //green
+      GalaxyMapLegend.fed => graphColor(g.fedKernel.val(system), red: 128, green: 0), //blue
+      GalaxyMapLegend.tech => graphColor(g.techKernel.val(system), red: 0, blue: 92), //green
+      GalaxyMapLegend.trade => graphColor(g.techKernel.val(system)), //white
       GalaxyMapLegend.species => Color(g.civMod.systemSpeciesColor(system).argb),
       GalaxyMapLegend.history => switch(fm.agentAt(system)) {
-        AgentSystemReport.none => system.visited ? Colors.blue : Colors.purple,
+        AgentSystemReport.none => system.visited ?  Colors.green : Colors.deepPurple,
         AgentSystemReport.lastKnown => Colors.grey,
         AgentSystemReport.current => Colors.red,
       }, //GalaxyMapLegend.planets =>
     };
   }
 
-  Color planColor(Galaxy g, System system) {
-    int c = ((system.planets.length / Galaxy.maxPlanets) * 222).floor() + 32;
-    return Color.fromRGBO(c,c,c,1);
-  }
-
-  Color fedColor(Galaxy g, System system) {
-    int c = ((g.fedKernel.val(system)) * 222).floor() + 32;
-    return Color.fromRGBO(0, 0, c, 1);
-  }
-
-  Color techColor(Galaxy g, System system) {
-    int c = ((g.techKernel.val(system)) * 222).floor() + 32;
-    return Color.fromRGBO(0, c, 0, 1);
-  }
-
-  Color tradeColor(Galaxy g, System system) {
-    int c = ((g.commerceKernel.val(system)) * 255).floor() + 0;
-    return Color.fromRGBO(c, c, c, 1);
+  Color graphColor(double v, {int? red, int? green, int? blue, int min = 32, invRed = false, invGreen = false, invBlue = false}) {
+    int c = (v * (255 - min)).floor() + min;
+    int i = 255 - c;
+    return Color.fromRGBO(
+        red ?? (invRed ? i : c),
+        green ?? (invGreen ? i : c),
+        blue ?? (invBlue ? i : c), 1);
   }
 
 }
@@ -363,3 +352,9 @@ class DiamondPainter extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
 
+/*
+  Color planColor(Galaxy g, System system) {
+    int c = ((system.planets.length / Galaxy.maxPlanets) * 222).floor() + 32;
+    return Color.fromRGBO(c,c,c,1);
+  }
+ */

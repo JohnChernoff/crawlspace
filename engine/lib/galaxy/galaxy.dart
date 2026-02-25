@@ -16,6 +16,30 @@ import '../name_generator.dart';
 import '../planet.dart';
 import 'system.dart';
 
+/*
+  GALAXY SIMULATION LAYERS
+
+  STATIC (computed once at gen, changes only on tickCentury):
+    fedMod.fedPressure    - raw distance from Mentos; is the Fed present at all?
+    fedKernel             - shaped Fed influence across whole galaxy; how much does it matter?
+    techKernel            - technological development level by region
+    commerceKernel        - trade and economic activity by region
+    civKernel             - total civilisation density
+    civMod.civIntensity   - species population mix per system (who lives here?)
+    civMod.politicalMap   - inter-species relationships
+
+  DYNAMIC (ticking forward each turn):
+    flowFields["fedSurveillance"]  - active patrol/surveillance responding to events
+    flowFields["rumors"]           - information spreading through trade networks
+    heatMod.playerHeatMap          - player's personal notoriety per system
+
+  DERIVED (combine static + dynamic for live game state):
+    galaxy.fedLevel(s)     - fedKernel * 0.7 + surveillance * 0.3
+    galaxy.rumorLevel(s)   - commerceKernel * 0.5 + rumors * 0.5
+    galaxy.law(s)          - LawLevel derived from fedLevel
+    galaxy.patrolChance(s) - fedLevel * techKernel
+*/
+
 enum LawLevel { core, regulated, frontier, lawless }
 
 class Galaxy {
