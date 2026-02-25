@@ -21,14 +21,14 @@ class ShipSystemControl {
   Iterable<ShipSystem> get uninstalledSystems => ship.inventory.whereType<ShipSystem>().where((s) => !isInstalled(s));
   Iterable<SlotAssignment> get vacantSlots => systemMap.where((sys) => sys.system == null);
 
-  Engine? get impEngine => getInstalledSystems().whereType<Engine>().where((s) => s.domain == Domain.impulse && s.active).firstOrNull;
-  Engine? get subEngine => getInstalledSystems().whereType<Engine>().where((s) => s.domain == Domain.system && s.active).firstOrNull;
-  Engine? get hyperEngine => getInstalledSystems().whereType<Engine>().where((s) => s.domain == Domain.hyperspace && s.active).firstOrNull;
-  Shield? get shield => getInstalledSystems().whereType<Shield>().where((s) => s.active).firstOrNull;
-  PowerGenerator? get power => getInstalledSystems().whereType<PowerGenerator>().where((s) => s.active).firstOrNull;
-  Iterable<Shield> get shields => getInstalledSystems().whereType<Shield>().where((s) => s.active);
-  Iterable<PowerGenerator> get powers => getInstalledSystems().whereType<PowerGenerator>().where((s) => s.active);
-  Iterable<Weapon> get weapons => getInstalledSystems().whereType<Weapon>().where((s) => s.active);
+  Engine? getEngine(Domain domain, {activeOnly = true}) {
+    return getInstalledSystems().whereType<Engine>().where((s) => s.domain == domain && (!activeOnly || s.active)).firstOrNull;
+  }
+  Shield? getShield({activeOnly = true}) => getInstalledSystems().whereType<Shield>().where((s) => (!activeOnly || s.active)).firstOrNull;
+  PowerGenerator? getPower({activeOnly = true}) => getInstalledSystems().whereType<PowerGenerator>().where((s) => (!activeOnly || s.active)).firstOrNull;
+  Iterable<Shield> getShields({activeOnly = true}) => getInstalledSystems().whereType<Shield>().where((s) => (!activeOnly || s.active));
+  Iterable<PowerGenerator> getPowers({activeOnly = true}) => getInstalledSystems().whereType<PowerGenerator>().where((s) => (!activeOnly || s.active));
+  Iterable<Weapon> getWeapons({activeOnly = true}) => getInstalledSystems().whereType<Weapon>().where((s) => (!activeOnly || s.active));
   Iterable<RechargableShipSystem> get rechargables => getInstalledSystems().whereType<RechargableShipSystem>().where((s) => s.active);
   Iterable<ShipSystem> get activeSystems => getInstalledSystems().where((s) => s.active);
   bool duplicateInstallation(ShipSystem s) => !ship.multiSystems.contains(s.type) && getInstalledSystems().any((sys) => sys.type == s.type);
@@ -41,10 +41,9 @@ class ShipSystemControl {
     if (assignment.slot.supportsSystem(s)) return  InstallResult.success;
     return InstallResult.unsupported;
   }
-
   double get currentShieldStrength => ship.multiSystems.contains(ShipSystemType.shield)
-      ? shields.where((s) => s.currentEnergy > 0).firstOrNull?.currentEnergy ?? 0
-      : shield?.currentEnergy ?? 0;
+      ? getShields().where((s) => s.currentEnergy > 0).firstOrNull?.currentEnergy ?? 0
+      : getShield()?.currentEnergy ?? 0;
   Weapon? get primaryWeapon => availableWeapons.sorted((w1,w2) => w1.baseCost - w2.baseCost).firstOrNull;
 
   bool ammoOK(Weapon weapon) => ammoMap.containsKey(weapon.ammo) && ammoMap[weapon.ammo]! > 0;
@@ -56,15 +55,21 @@ class ShipSystemControl {
     return prevAmmo - newAmmo;
   }
 
+  void toggleSystem(ShipSystem? s, {bool? on}) {
+    if (s != null) {
+      if (on == null) s.active = !s.active; else s.active = on;
+    }
+  }
+
   bool burnEnergy(double e) {
     if (ship.multiSystems.contains(ShipSystemType.power)) {
-      for (final gen in powers) {
+      for (final gen in getPowers()) {
         if (gen.burn(e,partial: false) > 0) { //print("Burning: $e");
           return true;
         }
       }
     } else {
-      return ((power?.burn(e,partial: false) ?? 0) > 0);
+      return ((getPower()?.burn(e,partial: false) ?? 0) > 0);
     }
     return false;
   }
@@ -85,12 +90,6 @@ class ShipSystemControl {
   void removeSystem(ShipSystem sys) {
     systemMap.removeWhere((s) => s.system == sys);
   }
-
-  Engine? getEngine(Domain domain) => switch(domain) {
-    Domain.hyperspace => hyperEngine,
-    Domain.system => subEngine,
-    Domain.impulse => impEngine,
-  };
 
   InstallResult installSystem(ShipSystem system, {SystemSlot? slot}) {
     if (duplicateInstallation(system)) return InstallResult.duplicate;
@@ -156,19 +155,19 @@ class ShipSystemControl {
   double getCurrentMaxEnergy({bool raw = false}) {
     if (ship.multiSystems.contains(ShipSystemType.power)) {
       double e = 0;
-      for (final gen in powers) e += (raw ? gen.rawMaxEnergy : gen.currentMaxEnergy);
+      for (final gen in getPowers()) e += (raw ? gen.rawMaxEnergy : gen.currentMaxEnergy);
       return e;
     }
-    return raw ? power?.rawMaxEnergy ?? 0 : power?.currentMaxEnergy ?? 0;
+    return raw ? getPower()?.rawMaxEnergy ?? 0 : getPower()?.currentMaxEnergy ?? 0;
   }
 
   double getCurrentEnergy({bool raw = false}) {
     if (ship.multiSystems.contains(ShipSystemType.power)) {
       double e = 0;
-      for (final gen in powers) e += (raw ? gen.rawEnergy : gen.currentEnergy);
+      for (final gen in getPowers()) e += (raw ? gen.rawEnergy : gen.currentEnergy);
       return e;
     }
-    return raw ? power?.rawEnergy ?? 0 : power?.currentEnergy ?? 0;
+    return raw ? getPower()?.rawEnergy ?? 0 : getPower()?.currentEnergy ?? 0;
   }
 
   double get currentEnergyPercentage {
@@ -205,7 +204,7 @@ class ShipSystemControl {
   }
 
   double recharge(double energy) {
-    for (final gen in powers) {
+    for (final gen in getPowers()) {
       energy -= gen.recharge(energy);
     }
     return energy;

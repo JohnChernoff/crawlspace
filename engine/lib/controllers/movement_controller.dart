@@ -6,7 +6,7 @@ import '../systems/engines.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 
-enum MoveResult {moved,impCollision,impEnter,noEngine,outOfEnergy,badDestination,unsafeDestination,error}
+enum MoveResult {moved,impCollision,impEnter,noEngine,inactiveEngine,outOfEnergy,badDestination,unsafeDestination,error}
 
 class MovementController extends FugueController {
   MovementController(super.fm);
@@ -30,14 +30,9 @@ class MovementController extends FugueController {
       }
     }
     final dist = ship.loc.cell.coord.distance(destination.coord);
-    Engine? engine = switch(ship.loc) {
-      SystemLocation() => ship.systemControl.subEngine,
-      ImpulseLocation() => ship.systemControl.impEngine,
-    };
-    if (engine == null) {
-      return MoveResult.noEngine;
-    }
-    engine.active = true; //auto activate
+    Engine? engine = ship.systemControl.getEngine(ship.loc.domain);
+    if (engine == null) return MoveResult.noEngine;
+    if (!engine.active) return MoveResult.inactiveEngine; //engine.active = true; //auto activate
     final auts = (engine.baseAutPerUnitTraversal * dist).round(); //print("Auts: $auts");
     double energyRequired = baseEnergy * (1 / engine.efficiency) * dist;
     if (!ship.systemControl.burnEnergy(energyRequired)) {

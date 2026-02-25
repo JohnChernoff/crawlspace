@@ -47,14 +47,21 @@ class PilotController extends FugueController {
     }
   }
 
-  void toggleSystem(Ship ship) {
+  void showToggleSystemMenu(Ship ship) {
     final systems = ship.systemControl.getInstalledSystems();
     final menuEntries = List<MenuEntry>.generate(systems.length, (i) => ValueEntry(
         fm.menuController.letter(i),
         systems.elementAt(i).name,
         systems.elementAt(i),
-        (s) => s.active = !s.active, exitAfter: true));
+        (s) => toggleSystem(s, ship), exitAfter: true));
     fm.menuController.showMenu(headerTxt: "Toggle System", () => menuEntries);
+  }
+
+  void toggleSystem(ShipSystem? system, Ship ship, {bool? on, silent = false}) {
+    if (system != null) {
+      ship.systemControl.toggleSystem(system, on: on);
+      if (!silent) fm.msgController.addMsg("${system.type.name}: ${system.active ? 'on' : 'off'}");
+    }
   }
 
   ResultMessage uninstallSystem(ShipSystem system, Ship ship) {

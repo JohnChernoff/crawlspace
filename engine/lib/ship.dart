@@ -121,7 +121,7 @@ class Ship extends Item implements Locatable {
     if (system != null) {
       addToInventory(system);
       final result = systemControl.installSystem(system);
-      if (result == InstallResult.success) system.active = active;
+      if (result == InstallResult.success) systemControl.toggleSystem(system, on: active);
       else print("Error installing ${system.name}: $result");
     }
   }
@@ -294,7 +294,7 @@ class Ship extends Item implements Locatable {
       totalBurn += e;
     } //print("$name: Net energy per tick: ${recharge - totalBurn}");
     if (!dryRun) {
-      for (final w in systemControl.weapons) if (w.cooldown > 0) w.cooldown--;
+      for (final w in systemControl.getWeapons()) if (w.cooldown > 0) w.cooldown--;
     }
     return totalRecharge - totalBurn;
   }

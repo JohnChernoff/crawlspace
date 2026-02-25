@@ -142,7 +142,8 @@ class LayerTransitController extends FugueController {
 
   void _enterImpulse(ImpulseLevel impLvl, Ship? ship, {ImpulseCell? cell, safeDist = 4}) {
     if (ship == null) return;
-    ship.systemControl.subEngine?.active = false;
+    fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.impulse, activeOnly: false), ship, on: true, silent: true);
+    fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: false, silent: true);
     final sysLoc = ship.loc;
     if (sysLoc is SystemLocation) {
       GridCell targetCell = cell ?? impLvl.map.rndCell(fm.rnd);
@@ -189,7 +190,9 @@ class LayerTransitController extends FugueController {
   }
 
   void _exitImpulse(Ship ship, ImpulseLocation impLoc) {
-    ship.systemControl.impEngine?.active = false;
+    fm.msgController.addMsg("Exiting impulse, resuming system travel");
+    fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: true, silent: true);
+    fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.impulse, activeOnly: false), ship, on: false, silent: true);
     ship.move(impLoc.systemLoc, fm.shipRegistry);
   }
 

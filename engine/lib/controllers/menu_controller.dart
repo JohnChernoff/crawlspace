@@ -157,13 +157,6 @@ class MenuController extends FugueController {
     ];
   }
 
-  //unused
-  /*
-  void createAndShowShopMenu(Shop shop, Ship ship, bool refresh) {
-    if (refresh) replaceTopMenuFull(() => createShopMenu(shop, ship));  // maxListLength: 12);
-    else showMenu(() => createShopMenu(shop, ship));
-  } */
-
   ShopItemEntry slotEntry(ShopSlot itemSlot, String ltr, Shop shop, Ship? ship) {
     final slot = itemSlot;
     if (slot.items.isNotEmpty) {
@@ -247,6 +240,14 @@ class MenuController extends FugueController {
     glog(menuStack.map((m)=>m.headerTxt).join(" > "),level: DebugLevel.Info);
   }
 
-  //void refreshMenu() { if (_lastBuilder != null) replaceTopMenuFull(_lastBuilder!); }
-
 }
+
+/*
+  //void refreshMenu() { if (_lastBuilder != null) replaceTopMenuFull(_lastBuilder!); }
+//unused
+/*
+  void createAndShowShopMenu(Shop shop, Ship ship, bool refresh) {
+    if (refresh) replaceTopMenuFull(() => createShopMenu(shop, ship));  // maxListLength: 12);
+    else showMenu(() => createShopMenu(shop, ship));
+  } */
+ */

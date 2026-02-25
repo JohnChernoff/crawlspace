@@ -333,7 +333,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ),
         ToggleSystemIntent: CallbackAction<ToggleSystemIntent>(
             onInvoke: (_) {
-              if (fm.playerShip != null) fm.pilotController.toggleSystem(fm.playerShip!);
+              if (fm.playerShip != null) fm.pilotController.showToggleSystemMenu(fm.playerShip!);
               return null;
             }
         ),
