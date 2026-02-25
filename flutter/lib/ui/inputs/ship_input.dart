@@ -323,9 +323,9 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
             onInvoke: (intent) {
               if (fm.playerShip != null) {
                 if (intent.remove) {
-                  fm.menuController.showMenu(() => fm.menuController.createUninstallMenu(fm.playerShip!));
+                  fm.menuController.showMenu(() => fm.menuFactory.createUninstallMenu(fm.playerShip!));
                 } else {
-                  fm.menuController.showMenu(() => fm.menuController.createInstallMenu(fm.playerShip!));
+                  fm.menuController.showMenu(() => fm.menuFactory.createInstallMenu(fm.playerShip!));
                 }
               }
               return null;

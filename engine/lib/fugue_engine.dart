@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/hazards.dart';
+import 'package:crawlspace_engine/menu_factory.dart';
 import 'package:crawlspace_engine/pilot_reg.dart';
 import 'package:crawlspace_engine/ship_reg.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
@@ -62,7 +63,7 @@ class FugueEngine {
   late Player player;
   int numAgents = 3;
   final List<Agent> agents = [];
-  late Random rnd,combatRng,mapRng,speciesRng,aiRng,itemRng; //TODO: remove rnd
+  late Random rnd,combatRng,mapRng,speciesRng,aiRng,itemRng, audioRnd; //TODO: remove rnd
   int auTick = 0;
   String get result => blownUp ? "blown up" : isVictorious ? "victorious" : "vanquished";
   bool get blownUp => (getShip(player)?.hullRemaining ?? 1) <= 0;
@@ -79,34 +80,26 @@ class FugueEngine {
   Iterable<Pilot> get activePilots => _pilotRegistry.withShips(shipRegistry, npc: true);
   Iterable<Pilot> get availablePilots => activePilots.where((p) => p.auCooldown == 0);
 
-  late final MessageController msgController;
-  late final MovementController movementController;
-  late final LayerTransitController layerTransitController;
-  late final PilotController pilotController;
-  late final CombatController combatController;
-  late final MenuController menuController;
-  late final PlanetsideController planetsideController;
-  late final ScannerController scannerController;
-  late final AudioController audioController;
+  late final MenuFactory menuFactory = MenuFactory(this);
+  late final MenuController menuController = MenuController(this);
+  late final MessageController msgController = MessageController(this);
+  late final MovementController movementController = MovementController(this);
+  late final LayerTransitController layerTransitController = LayerTransitController(this);
+  late final PilotController pilotController = PilotController(this);
+  late final CombatController combatController = CombatController(this);
+  late final PlanetsideController planetsideController = PlanetsideController(this);
+  late final ScannerController scannerController = ScannerController(this);
+  late final AudioController audioController = AudioController(NullAudioService(),audioRnd);
   final ShopOptions shopOptions = ShopOptions();
 
   FugueEngine(this.galaxy,String playerName,{seed = 0}) {
     rnd = Random(seed);
-    mapRng = Random(seed ^0xAAAAAA);
+    audioRnd = Random(seed ^0xAAAAAA);
+    mapRng = Random(seed ^0xBBBBBBB);
     speciesRng = Random(seed ^ 0xC0FFEE);
     aiRng = Random(seed ^ 0xBADC0DE);
     itemRng = Random(seed ^ 0xC0BFEED);
     combatRng = Random(seed ^ 0xABCDEF00);
-    msgController = MessageController(this);
-    movementController = MovementController(this);
-    layerTransitController = LayerTransitController(this);
-    pilotController = PilotController(this);
-    combatController = CombatController(this);
-    menuController = MenuController(this);
-    planetsideController = PlanetsideController(this);
-    scannerController = ScannerController(this);
-    audioController = AudioController(NullAudioService(),rnd);
-
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
     for (int i=0;i<numAgents;i++) {
       //agents.add(Agent("Agent ${Rng.generateName(rnd: rnd)}", mapRng, 25, sys: galaxy.fedHomeSystem, galaxy: galaxy));

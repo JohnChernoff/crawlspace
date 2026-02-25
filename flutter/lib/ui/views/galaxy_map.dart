@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'dart:ui';
 import 'package:crawlspace_engine/agent.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
@@ -97,9 +98,23 @@ class GalaxyMapState extends State<GalaxyMap> {
           height: 8,
           color: a == widget.fugueModel.player.system || b == widget.fugueModel.player.system
               ? Colors.white
-              : Colors.brown,
+              : avgColor([systemColor(a), systemColor(b)]),
         );
       },
+    );
+  }
+
+  Color avgColor(List<Color> colors) {
+    if (colors.isEmpty) return Colors.black;
+    final a = colors.map((c) => c.a).reduce((a, b) => a + b) / colors.length;
+    final r = colors.map((c) => c.r).reduce((a, b) => a + b) / colors.length;
+    final g = colors.map((c) => c.g).reduce((a, b) => a + b) / colors.length;
+    final b = colors.map((c) => c.b).reduce((a, b) => a + b) / colors.length;
+    return Color.fromARGB(
+      (a * 255).round(),
+      (r * 255).round(),
+      (g * 255).round(),
+      (b * 255).round(),
     );
   }
 
@@ -229,17 +244,17 @@ class GalaxyMapState extends State<GalaxyMap> {
   }
 
   Color fedColor(Galaxy g, System system) {
-    int c = ((g.commerceKernel.val(system)) * 222).floor() + 32;
+    int c = ((g.fedKernel.val(system)) * 222).floor() + 32;
     return Color.fromRGBO(0, 0, c, 1);
   }
 
   Color techColor(Galaxy g, System system) {
-    int c = ((g.commerceKernel.val(system)) * 222).floor() + 32;
+    int c = ((g.techKernel.val(system)) * 222).floor() + 32;
     return Color.fromRGBO(0, c, 0, 1);
   }
 
   Color tradeColor(Galaxy g, System system) {
-    int c = ((g.commerceKernel.val(system)) * 222).floor() + 32;
+    int c = ((g.commerceKernel.val(system)) * 255).floor() + 0;
     return Color.fromRGBO(c, c, c, 1);
   }
 

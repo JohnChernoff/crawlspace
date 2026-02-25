@@ -39,13 +39,7 @@ class LayerTransitController extends FugueController {
     final system = ship.loc.level; if (system is! System) {
       fm.msgController.addMsg("No system?!"); return;
     }
-
-    List<ActionEntry> links = List.generate(system.links.length, (i) =>
-        ActionEntry(fm.menuController.letter(i),
-            system.links.elementAt(i).shortString(fm.galaxy, showVisit: true),
-                (m) => newSystem(fm.player, system.links.elementAt(i)),exitAfter: true)
-    );
-    fm.menuController.showMenu(() => links, headerTxt: "Hyperspace");
+    fm.menuController.showMenu(() => fm.menuFactory.buildHyperspaceMenu(system), headerTxt: "Hyperspace");
   }
 
   void emergencyWarp(Ship ship) {

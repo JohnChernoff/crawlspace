@@ -48,13 +48,7 @@ class PilotController extends FugueController {
   }
 
   void showToggleSystemMenu(Ship ship) {
-    final systems = ship.systemControl.getInstalledSystems();
-    final menuEntries = List<MenuEntry>.generate(systems.length, (i) => ValueEntry(
-        fm.menuController.letter(i),
-        systems.elementAt(i).name,
-        systems.elementAt(i),
-        (s) => toggleSystem(s, ship), exitAfter: true));
-    fm.menuController.showMenu(headerTxt: "Toggle System", () => menuEntries);
+    fm.menuController.showMenu(headerTxt: "Toggle System", () => fm.menuFactory.buildSystemToggleMenu(ship));
   }
 
   void toggleSystem(ShipSystem? system, Ship ship, {bool? on, silent = false}) {
@@ -75,7 +69,7 @@ class PilotController extends FugueController {
   ResultMessage installSystem(Ship ship, ShipSystem system, {SystemSlot? slot}) {
     if (ship.inventory.contains(system)) {
       if (slot == null) {
-        fm.menuController.showMenu(() => fm.menuController.createInstallSlotMenu(ship,system),headerTxt: "Select Slot:");
+        fm.menuController.showMenu(() => fm.menuFactory.createInstallSlotMenu(ship,system),headerTxt: "Select Slot:");
         return const ResultMessage("Select a slot", true);
       } else { //print("hmm");
         final result = ship.systemControl.installSystem(system, slot: slot);

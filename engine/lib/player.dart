@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:crawlspace_engine/location.dart';
 
 import 'galaxy/galaxy.dart';
@@ -21,9 +23,33 @@ class Player extends Pilot {
   int piratesEncountered = 0;
   int piratesVanquished = 0;
   Set<Ship> fleet = {};
-  double heat = 0;
+  double inebriation = 0;
 
   Player(super.name,super.rnd, {required super.loc, super.galaxy, super.hostile = false});
+
+  void drink(int pints, double strength) {
+    final con = attributes[AttribType.con] ?? 0.5;
+    final resistance = 0.1 + con * 0.9;
+    inebriation = (inebriation + (pints * strength * (1 / resistance)) / 100).clamp(0, 1);
+  }
+
+  String get inebriationLevel => switch(inebriation) {
+    > .9  => "face down on the bar",
+    > .75 => "seeing double suns",
+    > .66 => "the room is in hyperspace",
+    > .5  => "three sheets to the solar wind",
+    > .33 => "pleasantly adrift",
+    > .25 => "a little loose in the airlock",
+    > .10 => "slightly pressurized",
+    _     => "completely sober"
+  };
+
+  void tick() {
+    super.tick();
+    final con = attributes[AttribType.con] ?? 0.5;
+    final decayRate = 0.005 + con * 0.02; // con 0 = 0.005, con 1 = 0.025
+    inebriation = max(0, inebriation - decayRate);
+  }
 
   double fedLevel(Galaxy g) {
     final loc = locale;

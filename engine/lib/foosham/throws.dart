@@ -6,28 +6,27 @@ const List<String> zodThrows = [
 ];
 
 const List<String> starThrows = [
-  "Sirius", "Canopus", "Alpha Centauri", "Betelgeuse", "Rigel",
-  "Vega", "Capella", "Arcturus", "Altair", "Aldebaran",
-  "Antares", "Deneb", "Polaris", "Proxima Centauri", "Tau Ceti"
+  "Sirius", "Canopus", "Alpha Centauri", "Betelgeuse", "Rigel", "Vega",
+  "Capella", "Arcturus", "Altair", "Aldebaran", "Antares",  "Polaris",
+  //"Deneb", "Proxima Centauri", "Tau Ceti"
 ];
 
 const List<String> authorThrows = [
-  "Asimov", "Clarke", "Heinlein", "Le Guin", "Dick",
-  "Bradbury", "Niven", "Pohl", "Ellison", "Silverberg",
-  "Sturgeon", "Harrison", "Sheckley", "Simak", "Brin"
+  "Asimov", "Clarke", "Heinlein", "LeGuin", "Dick", "Bradbury",
+  "Niven", "Pohl", "Ellison", "Silverberg", "Sturgeon", "Harrison",
+  //"Sheckley", "Simak", "Brin"
 ];
 
 const List<String> celestialThrows = [
   "Mercury", "Venus", "Earth", "Mars", "Jupiter", "Saturn",
-  "Uranus", "Neptune", "Titan", "Europa", "Io", "Triton",
-  "Ganymede", "Miranda", "Enceladus"
+  "Uranus", "Neptune", "Titan", "Europa", "Io ", "Triton",
+  //"Ganymede", "Miranda", "Enceladus"
 ];
 
 const List<String> quantumThrows = [
-  "Planck", "Heisenberg", "Schrödinger", "Born",
-  "Pauli", "Feynman", "Bohr", "Einstein", "Dirac",
-  "Fermi", "Bell", "Everett", "Aspect", "Zeilinger",
-  "Susskind", "Wheeler", "Wigner", "von Neumann", "Hawking"
+  "Planck", "Heisenberg", "Schrödinger", "Born", "Pauli", "Feynman",
+  "Bohr", "Einstein", "Dirac", "von Neumann", "Hawking", "Fermi"
+  // "Bell", "Everett", "Aspect", "Zeilinger","Susskind", "Wheeler", "Wigner",
 ];
 
 enum ThrowList {

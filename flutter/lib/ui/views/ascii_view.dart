@@ -76,8 +76,8 @@ class AsciiViewState extends State<AsciiView> {
 
 class TextBlockWidget extends StatelessWidget {
   final List<TextBlock> blocks;
-
-  const TextBlockWidget(this.blocks, {super.key});
+  final bool box;
+  const TextBlockWidget(this.blocks, {this.box = true, super.key});
 
   @override
   Widget build(BuildContext context) { //print("TextBlockWidget building with blocks: ${blocks.length}");
@@ -99,7 +99,7 @@ class TextBlockWidget extends StatelessWidget {
 
     return DecoratedBox(
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.white)
+          border: box ? Border.all(color: Colors.white) : null
         ),
         child: ListView(children: lines)
     );

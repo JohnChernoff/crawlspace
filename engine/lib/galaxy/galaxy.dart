@@ -61,7 +61,7 @@ class Galaxy {
 
     topo = GalaxyTopology(this);
     assignHomeworlds();
-    civMod = CivModel(this, allSpecies);
+    civMod = CivModel(this);
     computeKernels();
     initFlowFields();
     fedMod = FederationModel(this);

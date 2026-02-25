@@ -1,3 +1,4 @@
+import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'controllers/menu_controller.dart';
@@ -53,15 +54,16 @@ enum InputMode {
 }
 
 abstract class MenuEntry {
-  final String letter;
-  final String label;
+  final String? letter;
+  final String? label;
+  final List<TextBlock> txtBlocks;
   final bool exitAfter;
   final String? Function() disabledReason;
   bool get enabled => disabledReason() == null;
 
-  MenuEntry(
-      this.letter,
-      this.label, {
+  MenuEntry({this.letter,
+        this.label,
+        this.txtBlocks = const [],
         this.exitAfter = false,
         StringFn? disabledReason,
       }) : disabledReason = disabledReason ?? (() => null);
@@ -70,7 +72,7 @@ abstract class MenuEntry {
 }
 
 class TextEntry extends MenuEntry {
-  TextEntry(String label) : super("", label);
+  TextEntry({super.label,super.txtBlocks});
   @override
   void activate(MenuController mc) {}
 }
@@ -78,14 +80,14 @@ class TextEntry extends MenuEntry {
 class ActionEntry extends MenuEntry {
   final void Function(MenuController) action;
 
-  ActionEntry(super.letter, super.label, this.action, {super.exitAfter,super.disabledReason});
+  ActionEntry(this.action,{super.letter, super.label, super.txtBlocks, super.exitAfter, super.disabledReason});
 
   @override
   void activate(MenuController mc) {
     if (enabled) {
       action(mc); // run first
       if (exitAfter) mc.exitMenu();
-      else mc.fm.update(noWait: true);
+      else mc.rebuild(); // mc.fm.update(noWait: true);
     }
   }
 }
@@ -94,14 +96,14 @@ class ValueEntry<T> extends MenuEntry {
   final T value;
   final void Function(T) onSelect;
 
-  ValueEntry(super.letter, super.label, this.value, this.onSelect, {super.exitAfter,super.disabledReason});
+  ValueEntry(this.value, this.onSelect, {super.letter, super.label, super.txtBlocks, super.exitAfter, super.disabledReason});
 
   @override
   void activate(MenuController mc) {
     if (enabled) {
       onSelect(value);
       if (exitAfter) mc.exitMenu();
-      else mc.fm.update(noWait: true);
+      else mc.rebuild(); //mc.fm.update(noWait: true);
     }
   }
 }
@@ -120,7 +122,7 @@ class ShopItemEntry<T> extends ValueEntry<T> {
     return false;
   }
 
-  ShopItemEntry(super.letter, super.label, super.value, super.onSelect, {required this.shopper, super.exitAfter});
+  ShopItemEntry(super.value, super.onSelect, {super.letter, super.label, super.txtBlocks, required this.shopper, super.exitAfter});
 
 }
 

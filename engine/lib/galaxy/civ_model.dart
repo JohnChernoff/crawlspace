@@ -6,12 +6,13 @@ import '../stock_items/species.dart';
 import 'system.dart';
 
 class CivModel extends GalaxySubMod {
-  final List<Species> allSpecies;
+  List<Species> get allSpecies => galaxy.allSpecies;
+  Map<Species,Map<Species,double>> politicalMap = {}; // -1.0 hostile to 1.0 friendly
   Map<System, Map<Species,double>> civIntensity = {};
   Map<System,double> techField = {};
   Map<System,double> commerceField = {};
 
-  CivModel(super.galaxy, this.allSpecies) {
+  CivModel(super.galaxy) {
     computeCivFields();
   }
 

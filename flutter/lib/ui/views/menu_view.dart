@@ -1,5 +1,7 @@
+import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/controllers/message_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_flutter/ui/views/ascii_view.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
 import '../inputs/menu_input.dart';
@@ -66,19 +68,22 @@ class MenuWidgetState extends State<MenuWidget> {
                 itemBuilder: (context, i) {
                   final isEnabled = list[i].enabled;
                   final disabledString =  isEnabled ? '' : "(${list[i].disabledReason()})";
-                  final txtString = list[i].letter.isNotEmpty
-                      ? "${list[i].letter}: ${list[i].label} $disabledString"
-                      : list[i].label;
+                  final letter = list[i].letter;
+                  final label = list[i].label ?? "";
+                  final txtBlocks = list[i].txtBlocks;
+                  List<TextBlock> blocks = [];
+                  if (txtBlocks.isNotEmpty) {
+                    if (letter != null) blocks.add(TextBlock(" $letter ", GameColors.white, false));
+                    blocks.addAll(txtBlocks);
+                  }
+                  final txtStyle = TextStyle(color: isEnabled ? Colors.white : Colors.grey, fontSize: textStyle.fontSize, height: 1.5);
+                  final menuItem = blocks.isNotEmpty
+                      ? SizedBox(height: 20.0 * ((blocks.where((b) => b.newline).length)), child: TextBlockWidget(blocks, box: false))
+                      : Text(letter != null ? "$letter: $label $disabledString" : label, style: txtStyle, // Better line spacing
+                  );
                   return Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-                    child: Text(
-                      txtString,
-                      style: TextStyle(
-                        color: isEnabled ? Colors.white : Colors.grey,
-                        fontSize: textStyle.fontSize,
-                        height: 1.5, // Better line spacing
-                      ),
-                    ),
+                    child: menuItem
                   );
                 },
               ),

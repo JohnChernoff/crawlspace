@@ -5,6 +5,7 @@ import 'package:crawlspace_engine/rng.dart';
 import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'controllers/pilot_controller.dart';
+import 'galaxy/civ_model.dart';
 import 'galaxy/galaxy.dart';
 import 'hazards.dart';
 import 'location.dart';
@@ -45,15 +46,15 @@ class Pilot implements Locatable {
   int credits = 10000;
   List<TransactionRecord> transRec = [];
   late Faction faction;
-  Map<AttribType,int> attributes = {};
-  Map<SkillType,int> skills = {};
+  Map<AttribType,double> attributes = {};
+  Map<SkillType,double> skills = {};
   int hp;
   int auCooldown = 0;
   ActionType? lastAct;
   bool hostile;
   bool safeMovement = true;
   Set<Hazard> safeList = { Hazard.nebula, Hazard.wake };
-
+  Map<Species, double> reputation = {}; // -1.0 hostile to 1.0 friendly
   bool get ready => auCooldown == 0;
   void tick() => auCooldown = max(0,auCooldown - 1);
 
@@ -68,6 +69,14 @@ class Pilot implements Locatable {
       final factionMap = Map.fromEntries(factions.where((fa) => fa.species == species).map((f2) => MapEntry(f2, f2.relativeFreq)));
       faction = f ?? Rng.weightedRandom(factionMap, rnd, fallback: factions.first);
     }
+    for (final a in AttribType.values) attributes[a] = .25;
+    for (final skill in SkillType.values) skills[skill] = .5;
+  }
+
+  double hostilityToward(Species s, CivModel civ) {
+    final baseline = civ.politicalMap[faction.species]?[s] ?? 0.5;
+    final rep = reputation[s] ?? 0.0;
+    return (baseline - rep).clamp(0, 1);
   }
 
   bool transaction(TransactionType type, int c) {

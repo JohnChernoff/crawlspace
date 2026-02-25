@@ -1,8 +1,6 @@
 import 'dart:math';
-
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/menu.dart';
-import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../agent.dart';
 import '../audio_service.dart';
@@ -39,7 +37,8 @@ class PlanetsideController extends FugueController {
       if (planet.loc.level.homeworld == StockSpecies.humanoid.species) {
         fm.homecoming(home: true);
       } else {
-        fm.menuController.showPlanetMenu(planet);
+        fm.menuController.showMenu(() => fm.menuFactory.buildPlanetMenu(planet),
+            headerTxt: planet.name, noExit: true, mode: InputMode.planet);
         fm.audioController.newTrack(newMood: MusicalMood.planet);
         fm.msgController.addMsg("Landing on ${planet.name}");
         fm.msgController.addMsg(planet.description ?? "What a dump");
@@ -164,7 +163,7 @@ class PlanetsideController extends FugueController {
       } else {
         location.env.shop ??= Shop.random(location.env,1,fm.rnd);
       }
-      fm.menuController.showMenu(() => fm.menuController.createShopBuyMenu(location.env.shop!, ship: fm.playerShip),
+      fm.menuController.showMenu(() => fm.menuFactory.createShopBuyMenu(location.env.shop!, ship: fm.playerShip),
           headerTxt: "${location.env.shop!.name}");
     }
   }
@@ -172,8 +171,7 @@ class PlanetsideController extends FugueController {
   void newFooShamGame(ThrowList list) {
     Pilot? pilot = fm.playerShip?.pilot;
     if (pilot != null) {
-      final fooShamGame = FooShamGame(ThrowList.rndList(fm.rnd),fm.rnd, difficulty: FooShamDifficulty.medium);
-      fm.menuController.showMenu(() => fm.menuController.createThrowMenu(pilot, fooShamGame));
+      fm.menuController.showMenu(() => fm.menuFactory.buildThrowIntroMenu(pilot, fm.aiRng));
     }
   }
 
@@ -199,47 +197,21 @@ class PlanetsideController extends FugueController {
           shiplist: List.generate(fm.itemRng.nextInt(5) + 1, (i) =>
               Rng.generateShip(fm.player.system, fm.galaxy, fm.itemRng)));
       fm.menuController.showMenu(() =>
-          fm.menuController.createShopBuyMenu(loc.env.yard!, ship: fm.playerShip), headerTxt: "${loc.env.yard!.name}");
+          fm.menuFactory.createShopBuyMenu(loc.env.yard!, ship: fm.playerShip), headerTxt: "${loc.env.yard!.name}");
     }
   }
 
-  void enterRepairShop() {
+  void enterMainRepairShop() {
     Ship? ship = fm.playerShip; if (ship == null) return;
-    fm.menuController.showMenu(() => [
-      TextEntry("Credits: ${fm.player.credits}"),
-      ActionEntry("h", "repair (h)ull", (m) => enterMainRepairShop(ship)),
-      ActionEntry("s", "repair (s)ystem", (m) => enterSystemRepairShop(ship)),
-    ],headerTxt: "Repair Shop");
+    fm.menuController.showMenu(() => fm.menuFactory.buildMainRepairMenu(ship),headerTxt: "Repair Shop");
   }
 
-  void enterMainRepairShop(Ship ship, {ShipSystem? sys}) {
-    fm.menuController.showMenu(() => createRepairMenu(ship: ship,sys: sys), headerTxt: "Repair %");
-  }
-
-  List<MenuEntry> createRepairMenu({required Ship ship, ShipSystem? sys}) {
-    final desc = sys == null ? "hull" : sys.name;
-    return [
-      TextEntry("Credits: ${fm.player.credits}"),
-      sys == null ? TextEntry("Hull Damage: ${ship.hullDamage.round()}") : TextEntry("${sys.name} Damage: ${sys.dmgTxt}"),
-      ActionEntry("1", "repair 1% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,.01) : tryHullRepair(ship,.01)),
-      ActionEntry("5", "repair 5% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,.05) : tryHullRepair(ship,.05)),
-      ActionEntry("t", "repair 10% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,.1) : tryHullRepair(ship,.1)),
-      ActionEntry("q", "repair 25% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,.25) : tryHullRepair(ship,.25)),
-      ActionEntry("h", "repair 50% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,.5) : tryHullRepair(ship,.5)),
-      ActionEntry("a", "repair 100% of $desc", (m) => sys != null ? trySystemRepair(ship,sys,1) : tryHullRepair(ship,1)),
-    ];
-  }
-
-  List<MenuEntry> createSystemRepairMenu(Ship ship) {
-    List<ActionEntry> sysList = []; int i=0;
-    for (final s in ship.systemControl.getInstalledSystems().where((sys) => sys.damage > 0)) {
-      sysList.add(ActionEntry(fm.menuController.letter(i++), "${s.name}", (m) => enterMainRepairShop(ship,sys: s)));
-    }
-    return sysList;
+  void enterRepairShop(Ship ship, {ShipSystem? sys}) {
+    fm.menuController.showMenu(() => fm.menuFactory.buildRepairMenu(ship: ship,sys: sys), headerTxt: "Repair %");
   }
 
   void enterSystemRepairShop(Ship ship) {
-    fm.menuController.showMenu(() => createSystemRepairMenu(ship), headerTxt: "Pick System");
+    fm.menuController.showMenu(() => fm.menuFactory.buildSystemRepairMenu(ship), headerTxt: "Pick System");
   }
 
   void tryHullRepair(Ship ship, double percent, {double discount = 1}) {
@@ -251,7 +223,6 @@ class PlanetsideController extends FugueController {
     } else {
       fm.msgController.addMsg("Sorry, you can't afford that.");
     }
-    fm.menuController.replaceTopMenuFull(() => createRepairMenu(ship: ship));
   }
 
   void trySystemRepair(Ship ship, ShipSystem system, double percent, {double discount = 1}) {
@@ -263,7 +234,6 @@ class PlanetsideController extends FugueController {
     } else {
       fm.msgController.addMsg("Sorry, you can't afford that.");
     }
-    fm.menuController.replaceTopMenuFull(() => createRepairMenu(ship: ship, sys: system));
   }
 
 }
