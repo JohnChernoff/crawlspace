@@ -12,7 +12,15 @@ import '../graphs/graph.dart';
 import '../../main.dart';
 import '../../options.dart';
 
-enum GalaxyMapLegend {star,planets,fed,tech,species,history}
+enum GalaxyMapLegend {
+  fed,
+  tech,
+  trade,
+  species,
+  star,
+  history,
+  //planets
+}
 
 class GalaxyMap extends StatefulWidget {
   final FugueEngine fugueModel;
@@ -77,10 +85,12 @@ class GalaxyMapState extends State<GalaxyMap> {
   }
 
   void _rebuildGraph() { //print("Building graph...");
-    graphWidget = ForceDirectedGraphWidget(
+    graphWidget = ForceDirectedGraphWidget<System>(
       controller: _controller,
-      nodesBuilder: (context, data) =>
-      fugueOptions.getBool(FugueOption.fancyGraph) ? fancyNode(data) : boxSystem(data),
+      nodesBuilder: (context, sys) =>
+      fugueOptions.getBool(FugueOption.fancyGraph)
+          ? fancyNode(sys)
+          : systemShape(sys),
       edgesBuilder: (context, a, b, distance) {
         return Container(
           width: distance,
@@ -91,6 +101,12 @@ class GalaxyMapState extends State<GalaxyMap> {
         );
       },
     );
+  }
+
+  Widget systemShape(System sys) {
+    if (sys.homeworld != null) return starSystem(sys);
+    if (sys.planets.contains(widget.fugueModel.player.tradeTarget?.destination)) return diamondSystem(sys);
+    return boxSystem(sys);
   }
 
   @override
@@ -176,27 +192,55 @@ class GalaxyMapState extends State<GalaxyMap> {
         ));
   }
 
+  Widget diamondSystem(System system) {
+    return CustomPaint(
+        painter: DiamondPainter(systemColor(system)),
+        child: SizedBox(
+          width: 255,
+          height: 128,
+          child: Center(
+            child: Text(system.name, style: const TextStyle(color: Colors.white)),
+          ),
+        ));
+  }
+
   Color systemColor(System system) {
     FugueEngine fm = widget.fugueModel;
     Galaxy g = fm.galaxy;
-    int planV = 0;
-    if (legend == GalaxyMapLegend.planets || legend == GalaxyMapLegend.species) {
-      planV = ((system.planets.length / Galaxy.maxPlanets) * 222).floor() + 32;
-    }
-    return fm.player.system == system ? Colors.yellow :
-    fm.galaxy.fedHomeSystem == system ? Colors.white : switch(legend) {
+    if (fm.player.system == system) return Colors.yellow;
+    if (fm.galaxy.fedHomeSystem == system) return Colors.white;
+    return switch(legend) {
       GalaxyMapLegend.star => Color(system.starClass.color.argb),
-      GalaxyMapLegend.planets => Color.fromRGBO(planV, planV, planV, 1),
-      GalaxyMapLegend.fed => Color.fromRGBO(0,0,((g.fedKernel.val(system)) * 222).floor() + 32, 1), //blue
-      GalaxyMapLegend.tech => Color.fromRGBO(0,((g.techKernel.val(system)) * 222).floor() + 32, 0,1), //green
+      GalaxyMapLegend.fed => fedColor(g, system), //blue
+      GalaxyMapLegend.tech => techColor(g, system), //green
+      GalaxyMapLegend.trade => tradeColor(g, system), //green
       GalaxyMapLegend.species => Color(g.civMod.systemSpeciesColor(system).argb),
       GalaxyMapLegend.history => switch(fm.agentAt(system)) {
-        AgentSystemReport.none => fm.player.tradeTarget != null && system.planets.contains(fm.player.tradeTarget?.location)
-            ? Colors.green : system.visited ? Colors.blue : Colors.purple,
+        AgentSystemReport.none => system.visited ? Colors.blue : Colors.purple,
         AgentSystemReport.lastKnown => Colors.grey,
         AgentSystemReport.current => Colors.red,
-      }
+      }, //GalaxyMapLegend.planets =>
     };
+  }
+
+  Color planColor(Galaxy g, System system) {
+    int c = ((system.planets.length / Galaxy.maxPlanets) * 222).floor() + 32;
+    return Color.fromRGBO(c,c,c,1);
+  }
+
+  Color fedColor(Galaxy g, System system) {
+    int c = ((g.commerceKernel.val(system)) * 222).floor() + 32;
+    return Color.fromRGBO(0, 0, c, 1);
+  }
+
+  Color techColor(Galaxy g, System system) {
+    int c = ((g.commerceKernel.val(system)) * 222).floor() + 32;
+    return Color.fromRGBO(0, c, 0, 1);
+  }
+
+  Color tradeColor(Galaxy g, System system) {
+    int c = ((g.commerceKernel.val(system)) * 222).floor() + 32;
+    return Color.fromRGBO(c, c, c, 1);
   }
 
 }
@@ -274,3 +318,33 @@ class HexagramPainter extends CustomPainter {
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
+
+class DiamondPainter extends CustomPainter {
+  final Color color;
+  DiamondPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final rx = size.width * 0.4;
+    final ry = size.height * 0.45;
+
+    final path = Path()
+      ..moveTo(cx, cy - ry)   // top
+      ..lineTo(cx + rx, cy)   // right
+      ..lineTo(cx, cy + ry)   // bottom
+      ..lineTo(cx - rx, cy)   // left
+      ..close();
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+

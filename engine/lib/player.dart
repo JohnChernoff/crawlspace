@@ -7,9 +7,9 @@ import 'ship.dart';
 
 class TradeTarget {
   SpaceEnvironment source;
-  SpaceEnvironment location;
+  SpaceEnvironment destination;
   int reward;
-  TradeTarget(this.location,this.source,this.reward);
+  TradeTarget(this.destination,this.source,this.reward);
 }
 
 class Player extends Pilot {

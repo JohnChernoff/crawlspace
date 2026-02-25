@@ -34,8 +34,8 @@ class CommerceKernelField extends KernelField {
         speciesCommerce += entry.value * entry.key.commerce;
       }
 
-      final base = pow(civStrength * techStrength * speciesCommerce, .85);
-      final traffic = pow(galaxy.structuralTraffic(s), 1.2);
+      final base = pow(civStrength * techStrength * speciesCommerce, .66);
+      final traffic = pow(galaxy.structuralTraffic(s), 2);
       final local = base * traffic;
 
       final dist = galaxy.topo.distCache[s]!;

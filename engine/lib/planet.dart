@@ -22,9 +22,9 @@ class Planet extends SpaceEnvironment<SystemLocation> {
   double weirdness = 0;
 
   DistrictLvl tier(double v) {
-    if (v < 0.2) return DistrictLvl.none;
-    if (v < 0.4) return DistrictLvl.light;
-    if (v < 0.7) return DistrictLvl.medium;
+    if (v < 0.3) return DistrictLvl.none;
+    if (v < 0.5) return DistrictLvl.light;
+    if (v < 0.8) return DistrictLvl.medium;
     return DistrictLvl.heavy;
   }
 

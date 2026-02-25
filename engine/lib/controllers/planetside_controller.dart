@@ -43,7 +43,7 @@ class PlanetsideController extends FugueController {
         fm.audioController.newTrack(newMood: MusicalMood.planet);
         fm.msgController.addMsg("Landing on ${planet.name}");
         fm.msgController.addMsg(planet.description ?? "What a dump");
-        if (fm.player.tradeTarget?.location == planet) {
+        if (fm.player.tradeTarget?.destination == planet) {
           fm.msgController.addMsg(
               "You deliver your cargo.  Reward: ${fm.player.tradeTarget
                   ?.reward}");
@@ -89,9 +89,11 @@ class PlanetsideController extends FugueController {
   }
 
   void getTradeMission() {
+    final pLoc = fm.player.locale;
+    if (pLoc is! AtEnvironment) return;
     if (fm.playerShip == null) {
-      fm.msgController.addMsg("You're not in a ship!");
-    } else if (fm.player.tradeTarget?.source == fm.player.locale) {
+      fm.msgController.addMsg("You lack a ship!");
+    } else if (fm.player.tradeTarget?.source == pLoc.env) {
       fm.msgController.addMsg("You already have a mission from this planet.");
     } else {
       List<System> path = [];
@@ -102,9 +104,10 @@ class PlanetsideController extends FugueController {
       while (planet == null && tries++ < 100) {
         path = [fm.player.system];
         planet = createTradePlanet(path, steps);
+        print("Try $tries: path=${path.map((s) => s.name).join('->')}, planet=$planet");
       }
-      if (planet != null && fm.player.locale is SpaceEnvironment) {
-        fm.player.tradeTarget = TradeTarget(planet, fm.player.locale as SpaceEnvironment, reward);
+       if (planet != null) {
+        fm.player.tradeTarget = TradeTarget(planet, pLoc.env, reward);
         fm.msgController.addMsg("${planet.name} is in desperate need of ${rndEnum(Goods.values.where((g) => g != planet?.export))}, "
             "reward: $reward. Route: ${fm.pathList(path)}");
       } else {
