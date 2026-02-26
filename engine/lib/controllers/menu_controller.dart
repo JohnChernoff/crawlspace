@@ -71,9 +71,10 @@ class MenuController extends FugueController {
     ],headerTxt: query, noExit: true);
   }
 
-  void showMenu(MenuBuilder builder, { InputMode? mode, String? headerTxt, String? nothingTxt, int? maxEntries, bool? noExit, int? firstEntry}) {
+  //return false if empty
+  bool showMenu(MenuBuilder builder, { InputMode? mode, String? headerTxt, String? nothingTxt, int? maxEntries, bool? noExit, int? firstEntry}) {
     menuStack.add(MenuContext.fromBuilder(builder, m: mode, ht: headerTxt, nt: nothingTxt, me: maxEntries, ne: noExit, fe: firstEntry));
-    _rebuildMenu();
+    return _rebuildMenu();
   }
 
   void replaceTopMenu({MenuBuilder? builder, int? firstEntry}) {
@@ -94,8 +95,8 @@ class MenuController extends FugueController {
     _rebuildMenu();
   }
 
-  void _rebuildMenu({emptyExit = true}) {
-    if (menuStack.isEmpty) return;
+  bool _rebuildMenu({emptyExit = true}) {
+    if (menuStack.isEmpty) return false;
 
     final ctx = currentMenu;
     final full = ctx.builder();
@@ -103,7 +104,7 @@ class MenuController extends FugueController {
     if (full.isEmpty) { //fm.msgController.addMsg(ctx.nothingTxt);
       if (emptyExit || ctx.noExit) { print("Hrumph");
         exitMenu();
-        return;
+        return false;
       }
     }
 
@@ -128,13 +129,18 @@ class MenuController extends FugueController {
     }
 
     if (!ctx.noExit) {
-      page.add(ActionEntry(letter: "x", label: "e(x)it", (_) => exitMenu()));
+      if (full.any((m) => m.letter == "x")) {
+        page.add(ActionEntry(letter: "X", label: "e(X)it", (_) => exitMenu()));
+      } else {
+        page.add(ActionEntry(letter: "x", label: "e(x)it", (_) => exitMenu()));
+      }
     }
 
     _currentPage = page; //assert(page.every((e) => e is MenuEntry));
 
     fm.update();
     glog(menuStack.map((m)=>m.headerTxt).join(" > "),level: DebugLevel.Info);
+    return true;
   }
 
 }

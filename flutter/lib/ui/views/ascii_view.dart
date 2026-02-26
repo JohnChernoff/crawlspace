@@ -108,12 +108,11 @@ class TextBlockWidget extends StatelessWidget {
         child: ListView(children: lines)
     );
   }
-
 }
 
 Widget buildInputLayer({required Widget child, required FugueEngine fugueModel}) =>
   switch (fugueModel.menuController.inputMode) {
      InputMode.main => ShipInput(child,fugueModel),
-     InputMode.menu => MenuInput(child, fugueModel),
+     InputMode.menu => MenuInput(child,fugueModel),
      InputMode.system => SystemInput(child, fugueModel, raw: true)
 };

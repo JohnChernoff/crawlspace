@@ -4,6 +4,7 @@ import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/ship_sys.dart';
 import '../galaxy/system.dart';
 import '../grid.dart';
+import '../impulse.dart';
 import '../location.dart';
 import '../menu.dart';
 import '../pilot.dart';
@@ -178,6 +179,50 @@ class PilotController extends FugueController {
     double amount = 50; //((ship.energyConvertor.value/(Rng.biasedRndInt(rnd,mean: 50, min: 25, max: 80))) * player.system.starClass.power).floor();
     fm.msgController.addMsg("Scooping class ${fm.player.system.starClass.name} star... gained ${ship.systemControl.recharge(amount)} energy");
     fm.pilotController.action(fm.player,ActionType.energyScoop);
+  }
+
+  void scrap() { //print("Attempting to scrap");
+    int m = 0;
+    Ship? ship = fm.playerShip; if (ship != null) {
+      final cell = ship.loc.cell; if (cell is ImpulseCell) {
+        for (final i in List.of(cell.items)) {
+          if (i is ShipSystem) {
+            if (ship.addScrap(i)) {
+              m++;
+              fm.msgController.addMsg("Scrapping: ${i.name}");
+              cell.items.remove(i);
+            }
+            else {
+              fm.msgController.addMsg("Couldn't scrap: ${i.name}");
+            }
+          } else {
+            m++;
+            cell.items.remove(i);
+            ship.inventory.add(i);
+            fm.msgController.addMsg("Added: ${i.name}");
+          }
+        }
+      }
+      if (m > 0) {
+        fm.pilotController.action(ship.pilot, ActionType.scrap, actionAuts: ActionType.scrap.baseAuts * m);
+      }
+    }
+  }
+
+  void jettison(Ship? ship) {
+    if (ship != null) {
+      final s = ship.jettisonScrap(); if (s != null) {
+        fm.msgController.addMsg("${ship.name} jettisons ${s.name}");
+        fm.pilotController.action(ship.pilot, ActionType.scrap);
+      }
+    }
+  }
+
+  void installSystemSelect(Ship ship, {bool uninstall = false}) {
+    final available = fm.menuController.showMenu(() => uninstall
+      ? fm.menuFactory.buildUninstallMenu(ship)
+      : fm.menuFactory.buildInstallMenu(ship)); //show menu anyhow
+    if (!available) fm.msgController.addMsg("No available system");
   }
 }
 

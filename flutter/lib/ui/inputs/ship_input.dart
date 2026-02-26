@@ -58,8 +58,8 @@ class ScannerTargetModeIntent extends Intent {
   const ScannerTargetModeIntent();
 }
 
-class ToggleSystemIntent extends Intent {
-  const ToggleSystemIntent();
+class ToggleShipSystemIntent extends Intent {
+  const ToggleShipSystemIntent();
 }
 
 class AwaitIntent extends Intent {
@@ -212,20 +212,18 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         LogicalKeySet(LogicalKeyboardKey.equal):
         const DepthViewIntent(DepthViewOption.toggle),
 
-        LogicalKeySet(LogicalKeyboardKey.keyI):
+        LogicalKeySet(LogicalKeyboardKey.keyI,LogicalKeyboardKey.shift):
         const InstallationIntent(false),
 
-        LogicalKeySet(LogicalKeyboardKey.keyU):
+        LogicalKeySet(LogicalKeyboardKey.keyU,LogicalKeyboardKey.shift):
         const InstallationIntent(true),
 
         LogicalKeySet(LogicalKeyboardKey.quoteSingle):
-        const ToggleSystemIntent(),
+        const ToggleShipSystemIntent(),
 
         LogicalKeySet(LogicalKeyboardKey.keyS, LogicalKeyboardKey.shift):
         const SystemSelectIntent(false),
 
-        LogicalKeySet(LogicalKeyboardKey.keyU, LogicalKeyboardKey.shift):
-        const SystemSelectIntent(true),
       },
       actions: {
         ...generalActions,
@@ -313,9 +311,9 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ScrapIntent: CallbackAction<ScrapIntent>(
             onInvoke: (intent) {
               if (intent.collect) {
-                fm.combatController.scrap();
+                fm.pilotController.scrap();
               } else {
-                fm.combatController.jettison(fm.playerShip);
+                fm.pilotController.jettison(fm.playerShip);
               }
               return null;
             }
@@ -331,17 +329,11 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ),
         InstallationIntent: CallbackAction<InstallationIntent>(
             onInvoke: (intent) {
-              if (fm.playerShip != null) {
-                if (intent.remove) {
-                  fm.menuController.showMenu(() => fm.menuFactory.buildUninstallMenu(fm.playerShip!));
-                } else {
-                  fm.menuController.showMenu(() => fm.menuFactory.buildInstallMenu(fm.playerShip!));
-                }
-              }
+              if (fm.playerShip != null) fm.pilotController.installSystemSelect(fm.playerShip!,uninstall: intent.remove);
               return null;
             }
         ),
-        ToggleSystemIntent: CallbackAction<ToggleSystemIntent>(
+        ToggleShipSystemIntent: CallbackAction<ToggleShipSystemIntent>(
             onInvoke: (_) {
               if (fm.playerShip != null) fm.pilotController.showToggleSystemMenu(fm.playerShip!);
               return null;
@@ -354,6 +346,14 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
                 fm.update();
               } else {
                 fm.menuController.selectSystem().then((s) { if (s != null) fm.pilotController.plotCourse(fm.player, s); });
+              }
+              return null;
+            }
+        ),
+        OpenInventoryIntent: CallbackAction<OpenInventoryIntent>(
+            onInvoke: (_) {
+              if (fm.playerShip != null) {
+                fm.menuController.showMenu(() => fm.menuFactory.buildInventoryMenu(fm.playerShip!),headerTxt: "Inventory");
               }
               return null;
             }

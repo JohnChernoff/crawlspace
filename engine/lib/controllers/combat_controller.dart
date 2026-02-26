@@ -85,35 +85,4 @@ class CombatController extends FugueController {
     fm.update();
   }
 
-  void scrap() { //print("Attempting to scrap");
-    int m = 0;
-    Ship? ship = fm.playerShip; if (ship != null) {
-      final cell = ship.loc.cell; if (cell is ImpulseCell) {
-        for (final i in List.of(cell.items)) {
-          if (i is ShipSystem) {
-            if (ship.addScrap(i)) {
-              m++;
-              fm.msgController.addMsg("Scrapping: ${i.name}");
-              cell.items.remove(i);
-            }
-            else {
-              fm.msgController.addMsg("Couldn't scrap: ${i.name}");
-            }
-          }
-        }
-      }
-      if (m > 0) {
-        fm.pilotController.action(ship.pilot, ActionType.scrap, actionAuts: ActionType.scrap.baseAuts * m);
-      }
-    }
-  }
-
-  void jettison(Ship? ship) {
-    if (ship != null) {
-      final s = ship.jettisonScrap(); if (s != null) {
-        fm.msgController.addMsg("${ship.name} jettisons ${s.name}");
-        fm.pilotController.action(ship.pilot, ActionType.scrap);
-      }
-    }
-  }
 }

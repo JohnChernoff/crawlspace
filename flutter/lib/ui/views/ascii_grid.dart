@@ -15,18 +15,15 @@ class AsciiGrid extends StatefulWidget {
 }
 
 class _AsciiGridState extends State<AsciiGrid> {
-  late FocusNode _focusNode;
   bool showAllCellsOnZPlane = true;
 
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
   }
 
   @override
   void dispose() {
-    _focusNode.dispose();
     super.dispose();
   }
 

@@ -176,7 +176,7 @@ class PlanetsideController extends FugueController {
       final nearestTreasureSystem = fm.galaxy.treasureMap.keys
           .sorted((a,b) => fm.galaxy.topo.distance(a.system, fm.player.system)
           .compareTo(fm.galaxy.topo.distance(a.system, fm.player.system))).first;
-      fm.msgController.addMsg("Psst - there's a treasure at ${nearestTreasureSystem.system.name}");
+      fm.msgController.addMsg("Psst - there's a treasure at ${nearestTreasureSystem.loc}");
     }
   }
 

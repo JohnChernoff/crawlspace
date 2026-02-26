@@ -4,7 +4,6 @@ import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_flutter/ui/views/ascii_view.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
-import '../inputs/menu_input.dart';
 
 class MenuWidget extends StatefulWidget {
   final FugueEngine fm;
@@ -22,8 +21,7 @@ class MenuWidgetState extends State<MenuWidget> {
   Widget build(BuildContext context) {
     final list = widget.fm.menuController.selectionList;
 
-    return MenuInput(
-      Container(
+    return Container(
         decoration: BoxDecoration(
           border: Border.all(color: Colors.white, width: 4),
           color: Colors.black,
@@ -108,9 +106,7 @@ class MenuWidgetState extends State<MenuWidget> {
             ),
           ],
         ),
-      ),
-      widget.fm,
-    );
+      );
   }
 
   Widget menuMessageLog(Stream<IList<Message>> messageStream) {

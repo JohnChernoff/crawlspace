@@ -71,6 +71,7 @@ class Ship extends Item implements Locatable {
   int minCool = 0;
   int impulseMapSize = 8;
   Set<Item> inventory = {};
+  List<Item> get allInventory => [...inventory, ...scrapHeap];
   bool get playship => pilot is Player;
   bool get npc => !playship;
   Ship? targetShip;

@@ -114,8 +114,7 @@ class Galaxy {
     for (int i=0; i<1000; i++) items.add(Rng.randomArtifact(rnd, 100000));
     for (Item i in items) {
       final loc = rndLoc(rnd);
-      treasureMap.putIfAbsent(loc, () => {}).add(i);
-      print("Adding to ${loc}: ${i.name}, ${i.baseCost}");
+      treasureMap.putIfAbsent(loc, () => {}).add(i); //print("Adding to ${loc}: ${i.name}, ${i.baseCost}");
     }
     maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
   }

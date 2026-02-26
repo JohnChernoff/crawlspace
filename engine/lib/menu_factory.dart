@@ -34,7 +34,17 @@ class MenuFactory {
     return ShopItemEntry(letter: ltr, label: "empty inventory slot", null, (e) => {}, shopper: ship?.pilot ?? fm.player); //shouldn't occur
   }
 
-  //Menu SystemSelectionMenu() {fm.galaxy.systems.sorted((a,b) => a.name.compareTo(b.name)).take(12);}
+  Menu buildInventoryMenu(Ship ship, {VoidCallback? action}) {
+    print("Inventory: ${ship.allInventory}");
+    return List.generate(ship.allInventory.length,(i) {
+      final shipItem = ship.allInventory.elementAt(i);
+      String itemStr = (shipItem is ShipSystem && ship.systemControl.isInstalled(shipItem))
+      ? "${shipItem.name} (installed)"
+      : shipItem.name;
+      if (action != null) return ValueEntry(letter: mc.letter(i), label: itemStr, shipItem, (m) => action);
+      else return TextEntry(label: itemStr);
+    });
+  }
 
   Menu buildPlanetMenu(Planet planet) {
     return [
