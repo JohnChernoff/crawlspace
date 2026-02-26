@@ -17,6 +17,7 @@ class SpaceEnvironment<T extends SpaceLocation> extends SpaceObject implements L
   double techLvl;
   Shop? shop, yard;
   final Set<Ship> hangar = {};
+  double rapport = 0; //-1 - 1
   SpaceEnvironment(super.name,this.fedLvl,this.techLvl, {super.desc, required T this.locale}); // : _loc = loc;
 }
 

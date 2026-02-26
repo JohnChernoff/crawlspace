@@ -7,6 +7,10 @@ import 'general_input.dart';
 
 enum DepthViewOption {showAll,showClosest,toggle}
 
+class SystemSelectIntent extends Intent {
+  const SystemSelectIntent();
+}
+
 class DirectionIntent extends Intent {
   final int dx,dy,dz;
   const DirectionIntent(this.dx,this.dy,this.dz);
@@ -216,6 +220,8 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         LogicalKeySet(LogicalKeyboardKey.quoteSingle):
         const ToggleSystemIntent(),
 
+        LogicalKeySet(LogicalKeyboardKey.digit8):
+        const SystemSelectIntent(),
       },
       actions: {
         ...generalActions,
@@ -334,6 +340,13 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ToggleSystemIntent: CallbackAction<ToggleSystemIntent>(
             onInvoke: (_) {
               if (fm.playerShip != null) fm.pilotController.showToggleSystemMenu(fm.playerShip!);
+              return null;
+            }
+        ),
+        SystemSelectIntent: CallbackAction<SystemSelectIntent>(
+            onInvoke: (_) {
+              print("Setting System Select Mode");
+              fm.menuController.selectSystem().then((s) => print("Selected: ${s?.name}"));
               return null;
             }
         ),

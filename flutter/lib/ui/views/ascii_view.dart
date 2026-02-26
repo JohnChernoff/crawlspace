@@ -2,9 +2,11 @@ import 'dart:ui';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_flutter/main.dart';
+import 'package:crawlspace_flutter/ui/views/sys_select.dart';
 import 'package:flutter/material.dart';
 import '../inputs/menu_input.dart';
 import '../inputs/ship_input.dart';
+import '../inputs/system_input.dart';
 import 'ascii_grid.dart';
 import 'galaxy_map.dart';
 import 'menu_view.dart';
@@ -24,9 +26,11 @@ class AsciiViewState extends State<AsciiView> {
   Widget build(BuildContext context) { //print(widget.fugueModel.menuController.inputStack);
     return currentView == ViewType.galaxy
         ? GalaxyMap(widget.fugueModel)
-        : widget.fugueModel.menuController.inputMode.showMenu
-            ? menuView()
-            : buildInputLayer(child: asciiView(), fugueModel: widget.fugueModel);
+        : buildInputLayer(child: switch(widget.fugueModel.menuController.inputMode) {
+          InputMode.main =>  asciiView(),
+          InputMode.menu => menuView(),
+          InputMode.system => SystemSelect(widget.fugueModel),
+        }, fugueModel: widget.fugueModel);
   }
 
   Widget menuView() {
@@ -111,5 +115,5 @@ Widget buildInputLayer({required Widget child, required FugueEngine fugueModel})
   switch (fugueModel.menuController.inputMode) {
      InputMode.main => ShipInput(child,fugueModel),
      InputMode.menu => MenuInput(child, fugueModel),
-     InputMode.planet => MenuInput(child, fugueModel)
+     InputMode.system => SystemInput(child, fugueModel, raw: true)
 };

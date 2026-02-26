@@ -11,7 +11,6 @@ typedef StringFn = String? Function();
 class MenuContext {
 
   MenuBuilder builder;
-  final InputMode mode;
   final String headerTxt;
   final String nothingTxt;
   final int maxEntries;
@@ -26,7 +25,6 @@ class MenuContext {
 
   MenuContext({
     required this.builder,
-    required this.mode,
     this.headerTxt = defHeadTxt,
     this.nothingTxt = defNothingTxt,
     this.maxEntries = defMaxEntries,
@@ -36,7 +34,6 @@ class MenuContext {
 
   factory MenuContext.fromBuilder(MenuBuilder b, {InputMode? m, String? ht, String? nt, int? me, bool? ne, int? fe}) =>
       MenuContext(builder: b,
-          mode: m ?? defMode,
           headerTxt: ht ?? defHeadTxt,
           nothingTxt: nt ?? defNothingTxt,
           maxEntries: me ?? defMaxEntries,
@@ -48,7 +45,7 @@ class MenuContext {
 enum InputMode {
   main(false),
   menu(true),
-  planet(true);
+  system(false);
   final bool showMenu;
   const InputMode(this.showMenu);
 }

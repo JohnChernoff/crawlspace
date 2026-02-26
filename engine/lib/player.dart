@@ -30,7 +30,7 @@ class Player extends Pilot {
   void drink(int pints, double strength) {
     final con = attributes[AttribType.con] ?? 0.5;
     final resistance = 0.1 + con * 0.9;
-    inebriation = (inebriation + (pints * strength * (1 / resistance)) / 100).clamp(0, 1);
+    inebriation = (inebriation + (pints * strength * (1 / resistance)) / 32).clamp(0, 1);
   }
 
   String get inebriationLevel => switch(inebriation) {

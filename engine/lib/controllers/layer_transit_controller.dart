@@ -6,7 +6,6 @@ import '../grid.dart';
 import '../hazards.dart';
 import '../impulse.dart';
 import '../location.dart';
-import '../menu.dart';
 import '../path_gen.dart';
 import '../pilot.dart';
 import '../sector.dart';

@@ -1,6 +1,5 @@
 import '../coord_3d.dart';
 import '../grid.dart';
-import '../location.dart';
 import '../ship.dart';
 import '../systems/engines.dart';
 import 'fugue_controller.dart';

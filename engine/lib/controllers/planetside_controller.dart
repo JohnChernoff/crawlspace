@@ -1,12 +1,11 @@
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/location.dart';
-import 'package:crawlspace_engine/menu.dart';
+import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../agent.dart';
 import '../audio_service.dart';
 import '../descriptors.dart';
-import '../foosham/foosham.dart';
-import '../foosham/throws.dart';
 import '../pilot.dart';
 import '../planet.dart';
 import '../player.dart';
@@ -37,8 +36,7 @@ class PlanetsideController extends FugueController {
       if (planet.loc.level.homeworld == StockSpecies.humanoid.species) {
         fm.homecoming(home: true);
       } else {
-        fm.menuController.showMenu(() => fm.menuFactory.buildPlanetMenu(planet),
-            headerTxt: planet.name, noExit: true, mode: InputMode.planet);
+        fm.menuController.showMenu(() => fm.menuFactory.buildPlanetMenu(planet),headerTxt: planet.name, noExit: true);
         fm.audioController.newTrack(newMood: MusicalMood.planet);
         fm.msgController.addMsg("Landing on ${planet.name}");
         fm.msgController.addMsg(planet.desc ?? "What a dump");
@@ -168,10 +166,17 @@ class PlanetsideController extends FugueController {
     }
   }
 
-  void newFooShamGame(ThrowList list) {
-    Pilot? pilot = fm.playerShip?.pilot;
-    if (pilot != null) {
-      fm.menuController.showMenu(() => fm.menuFactory.buildThrowIntroMenu(pilot, fm.aiRng));
+  void drink(int pints, double strength, SpaceEnvironment env) {
+    fm.player.drink(1, strength);
+    if (fm.aiRng.nextDouble() < (fm.player.attributes[AttribType.cha]! / 4)) {
+      env.rapport += .1 * strength;
+      fm.msgController.addMsg("The locals seem to like you a bit better. (Rapport: ${env.rapport})");
+    }
+    if (fm.aiRng.nextDouble() < (env.rapport * .5)) {
+      final nearestTreasureSystem = fm.galaxy.treasureMap.keys
+          .sorted((a,b) => fm.galaxy.topo.distance(a.system, fm.player.system)
+          .compareTo(fm.galaxy.topo.distance(a.system, fm.player.system))).first;
+      fm.msgController.addMsg("Psst - there's a treasure at ${nearestTreasureSystem.system.name}");
     }
   }
 

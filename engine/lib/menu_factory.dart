@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/controllers/menu_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
@@ -8,7 +6,6 @@ import 'package:crawlspace_engine/planet.dart';
 import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'package:crawlspace_engine/systems/ship_system.dart';
-
 import 'foosham/foosham.dart';
 import 'foosham/throws.dart';
 import 'galaxy/system.dart';
@@ -37,6 +34,8 @@ class MenuFactory {
     return ShopItemEntry(letter: ltr, label: "empty inventory slot", null, (e) => {}, shopper: ship?.pilot ?? fm.player); //shouldn't occur
   }
 
+  //Menu SystemSelectionMenu() {fm.galaxy.systems.sorted((a,b) => a.name.compareTo(b.name)).take(12);}
+
   Menu buildPlanetMenu(Planet planet) {
     return [
       if (planet.tier(planet.population).atOrAbove(DistrictLvl.light))
@@ -46,7 +45,7 @@ class MenuFactory {
       if (planet.tier(planet.population).atOrAbove(DistrictLvl.heavy))
         ActionEntry(letter:  "a", label: "reveal (a)gent locations", (m) => fm.planetsideController.spy(), exitAfter: false),
       if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.none))
-        ActionEntry(letter:  "v", label:  "(v)isit the tavern", (m) => fm.planetsideController.newFooShamGame(ThrowList.quantum), exitAfter: false),
+        ActionEntry(letter:  "v", label:  "(v)isit the tavern", (m) => mc.showMenu(() => buildTavernMenu(planet)), exitAfter: false),
       if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.light))
         ActionEntry(letter:  "t", label:  "(t)rade mission", (m) => fm.planetsideController.getTradeMission(), exitAfter: false),
       if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.medium)) //&& planet.tier(planet.industry).atOrAbove(DistrictLvl.medium))
@@ -63,8 +62,29 @@ class MenuFactory {
     ];
   }
 
-  Menu buildThrowIntroMenu(Pilot pilot, Random rnd) {
-    final game = FooShamGame(ThrowList.rndList(rnd),rnd, difficulty: FooShamDifficulty.medium);
+  Menu buildTavernMenu(SpaceEnvironment env) {
+    return <MenuEntry> [
+      TextEntry(txtBlocks: [TextBlock("Welcome to ${env.name}", GameColors.green, true)]),
+      ActionEntry(letter: "c", label: "Enter the Cantina", (m) => mc.showMenu(() => buildCatinaMenu(env))),
+      ActionEntry(letter: "f", label: "Play Foohsam", (m) =>  mc.showMenu(() => buildFooshamIntroMenu(fm.player))),
+    ];
+  }
+
+  Menu buildCatinaMenu(SpaceEnvironment env) {
+    double drinkStrength = fm.aiRng.nextDouble();
+    if (env is Planet) {
+      drinkStrength = ((1-fm.galaxy.civKernel.val(fm.player.system)) + ((1-env.techLvl + env.industry)/2))/2;
+    }
+    return <MenuEntry> [
+      TextEntry(txtBlocks: [TextBlock("Grog's Cantina", GameColors.green, true)]),
+      TextEntry(label: "You are currently: ${fm.player.inebriationLevel}"),
+      ActionEntry(letter: "1", label: "Order a drink", (m) => fm.planetsideController.drink(1, drinkStrength, env)),
+      ActionEntry(letter: "2", label: "Order a double", (m) => fm.planetsideController.drink(2, drinkStrength, env)),
+    ];
+  }
+
+  Menu buildFooshamIntroMenu(Pilot pilot) {
+    final game = FooShamGame(ThrowList.rndList(fm.aiRng),fm.aiRng, difficulty: FooShamDifficulty.medium);
     return <MenuEntry> [
       TextEntry(txtBlocks: [
         TextBlock("Welcome to Intergalactic Roshambo!", GameColors.green, true),

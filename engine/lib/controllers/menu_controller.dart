@@ -1,18 +1,47 @@
+import 'dart:async';
 import 'dart:math';
+import 'package:collection/collection.dart';
+
 import '../fugue_engine.dart';
+import '../galaxy/system.dart';
 import '../menu.dart';
 import 'fugue_controller.dart';
 
 class MenuController extends FugueController {
-  final rootMenu = MenuContext(mode: InputMode.main, builder: () => []);
+  final rootMenu = MenuContext(builder: () => []);
   late final List<MenuContext> menuStack = [rootMenu];
   MenuContext get currentMenu => menuStack.last;
-  InputMode get inputMode => currentMenu.mode;
+  InputMode _inputMode = InputMode.main; //get inputMode => currentMenu.mode;
+  InputMode get inputMode => _inputMode;
+  void set inputMode(InputMode mode) {
+      final prevMode = _inputMode;
+      _inputMode = mode;
+      if (_inputMode != prevMode) fm.update();
+  }
   String get currentMenuTitle => currentMenu.headerTxt;
   List<MenuEntry> _currentPage = [];
   List<MenuEntry> get selectionList => _currentPage;
-
+  String systemSearchPrefix = "";
+  Completer<System?>? systemCompleter;
+  List<System> get selectedSystems => fm.galaxy.systems
+      .where((s) => s.name.toLowerCase().startsWith(systemSearchPrefix.toLowerCase()))
+      .sorted((a,b) => a.name.compareTo(b.name))
+      .toList();
+  System? get selectedSystem => selectedSystems.firstOrNull;
   MenuController(super.fm);
+
+  Future<System?> selectSystem() {
+    if (inputMode != InputMode.system) {
+      systemCompleter = Completer();
+      final prevMode = inputMode;
+      inputMode = InputMode.system;
+      return systemCompleter!.future.whenComplete(() {
+        systemSearchPrefix = "";
+        inputMode = prevMode;
+      });
+    }
+    return systemCompleter!.future;
+  }
 
   void exitMenu() { //print("Exit Menu called");
     if (menuStack.length > 1) menuStack.removeLast();
@@ -20,7 +49,7 @@ class MenuController extends FugueController {
       _rebuildMenu();
     } else {
       fm.msgController.addDummyMsg();
-      fm.update();
+      inputMode = InputMode.main; //TODO: what about if/when main isn't the root?
       print("Back to main");
     }
     fm.update(noWait: true);
@@ -71,6 +100,7 @@ class MenuController extends FugueController {
       }
     }
 
+    _inputMode = InputMode.menu;
     final start = ctx.firstEntry;
     final end = min(start + ctx.maxEntries, full.length);
     final page = full.sublist(start, end);

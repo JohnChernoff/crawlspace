@@ -8,6 +8,7 @@ import 'package:crawlspace_engine/ship_sys.dart';
 import 'fugue_engine.dart';
 import 'color.dart';
 import 'coord_3d.dart';
+import 'galaxy/system.dart';
 import 'grid.dart';
 import 'impulse.dart';
 import 'item.dart';
@@ -83,6 +84,7 @@ class Ship extends Item implements Locatable {
   List<ShipSystemType> multiSystems = [ShipSystemType.engine,ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.ammo,ShipSystemType.quarters];
   late ShipSystemControl systemControl;
   late RndSystemInstaller rndSystemInstaller;
+  List<System>? itinerary;
 
   Ship(super.name, {
     this.owner,
