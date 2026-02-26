@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:math';
 import 'package:collection/collection.dart';
-
 import '../fugue_engine.dart';
 import '../galaxy/system.dart';
 import '../menu.dart';
@@ -16,18 +15,27 @@ class MenuController extends FugueController {
   void set inputMode(InputMode mode) {
       final prevMode = _inputMode;
       _inputMode = mode;
+      fm.msgController.addDummyMsg();
       if (_inputMode != prevMode) fm.update();
   }
   String get currentMenuTitle => currentMenu.headerTxt;
   List<MenuEntry> _currentPage = [];
   List<MenuEntry> get selectionList => _currentPage;
-  String systemSearchPrefix = "";
+
+  String _systemSearchPrefix = "";
+  String get systemSearchPrefix => _systemSearchPrefix;
+  void set systemSearchPrefix(String pfx) {
+    _systemSearchPrefix = pfx;
+    fm.menuController.selectedIndex = 0;
+  }
   Completer<System?>? systemCompleter;
   List<System> get selectedSystems => fm.galaxy.systems
       .where((s) => s.name.toLowerCase().startsWith(systemSearchPrefix.toLowerCase()))
-      .sorted((a,b) => a.name.compareTo(b.name))
+      .sorted((a,b) => a.name.compareTo(b.name)) //TODO: other sorts
       .toList();
-  System? get selectedSystem => selectedSystems.firstOrNull;
+  int selectedIndex = 0;
+  System? get selectedSystem => selectedSystems.elementAtOrNull(selectedIndex);
+
   MenuController(super.fm);
 
   Future<System?> selectSystem() {
@@ -48,9 +56,8 @@ class MenuController extends FugueController {
     if (menuStack.length > 1) {
       _rebuildMenu();
     } else {
-      fm.msgController.addDummyMsg();
       inputMode = InputMode.main; //TODO: what about if/when main isn't the root?
-      print("Back to main");
+      //print("Back to main");
     }
     fm.update(noWait: true);
   }

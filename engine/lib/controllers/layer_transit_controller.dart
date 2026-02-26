@@ -66,6 +66,13 @@ class LayerTransitController extends FugueController {
             final stars = system.map.cells.values.where((c) => c is SectorCell && c.starClass != null);
             ship.move(SystemLocation(system,stars.first),fm.shipRegistry);
             system.visit(fm);
+            if (ship.itinerary != null) {
+              if (ship.itinerary!.last == system) {
+                ship.itinerary = null;
+                if (ship.playship) fm.msgController.addMsg("You have arrived at your destination");
+              }
+              else ship.itinerary = fm.galaxy.topo.graph.shortestPath(system, ship.itinerary!.last);
+            }
             fm.update();
             if (ship.playship) {
               fm.msgController.addMsg("New System: ${system.name}");

@@ -161,7 +161,7 @@ class PlanetsideController extends FugueController {
       } else {
         location.env.shop ??= Shop.random(location.env,1,fm.rnd);
       }
-      fm.menuController.showMenu(() => fm.menuFactory.createShopBuyMenu(location.env.shop!, ship: fm.playerShip),
+      fm.menuController.showMenu(() => fm.menuFactory.buildShopBuyMenu(location.env.shop!, ship: fm.playerShip),
           headerTxt: "${location.env.shop!.name}");
     }
   }
@@ -202,7 +202,7 @@ class PlanetsideController extends FugueController {
           shiplist: List.generate(fm.itemRng.nextInt(5) + 1, (i) =>
               Rng.generateShip(fm.player.system, fm.galaxy, fm.itemRng)));
       fm.menuController.showMenu(() =>
-          fm.menuFactory.createShopBuyMenu(loc.env.yard!, ship: fm.playerShip), headerTxt: "${loc.env.yard!.name}");
+          fm.menuFactory.buildShopBuyMenu(loc.env.yard!, ship: fm.playerShip), headerTxt: "${loc.env.yard!.name}");
     }
   }
 

@@ -74,6 +74,7 @@ class ScannerController extends FugueController {
       blocks.add(const TextBlock("No ship",GameColors.red,true));
     } else {
       blocks.add(TextBlock(ship.loc.toString(),GameColors.cyan,true));
+      if (ship.itinerary != null) blocks.add(TextBlock("To: ${ship.itinerary!.last.name}", GameColors.green, true));
       blocks.addAll(ship.status());
     }
     return blocks;

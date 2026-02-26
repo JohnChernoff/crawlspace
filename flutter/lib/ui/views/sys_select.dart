@@ -83,6 +83,7 @@ class SystemSelect extends StatelessWidget {
                 final isFirst = i == 0;
                 // Highlight matched prefix
                 final matchLen = prefix.length;
+                final selected = fm.menuController.selectedIndex == i;
                 return InkWell(
                   onTap: () => fm.menuController.systemCompleter?.complete(sys),
                   hoverColor: Colors.green.withValues(alpha: 0.08),
@@ -94,13 +95,20 @@ class SystemSelect extends StatelessWidget {
                           : Colors.transparent,
                       border: Border(
                         left: BorderSide(
-                          color: isFirst ? Colors.greenAccent : Colors.transparent,
+                          color: selected ? Colors.greenAccent : Colors.transparent,
                           width: 2,
                         ),
                       ),
                     ),
                     child: Row(
                       children: [
+                        if (selected)
+                          Text("> ",style: const TextStyle(
+                            fontFamily: 'JetBrainsMono',
+                            fontSize: 13,
+                            color: Colors.greenAccent,
+                            letterSpacing: 1.5,
+                          )),
                         // Matched prefix highlighted
                         if (matchLen > 0 && sys.name.length >= matchLen)
                           Text(

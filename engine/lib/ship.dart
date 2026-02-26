@@ -304,7 +304,7 @@ class Ship extends Item implements Locatable {
   List<TextBlock> status({bool tactical = false, bool showScannedShip = false, nebula = false}) {
     if (nebula || (tactical && loc.cell.hasHaz(Hazard.nebula))) return [TextBlock("In Nebula", GameColors.red, true)];
     List<TextBlock> blocks = [];
-    blocks.add(TextBlock(name,GameColors.green,true));
+    blocks.add(TextBlock(name,pilot.faction.color,true));
     blocks.add(TextBlock("${pilot.faction.name} ${shipClass.type.name}",pilot.faction.color,true));
     blocks.add(TextBlock("Hull: ${hullRemaining.toStringAsFixed(2)} ",GameColors.green,false));
     blocks.add(TextBlock("%: ${currentHullPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));

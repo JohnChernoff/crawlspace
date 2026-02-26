@@ -107,7 +107,7 @@ class MenuFactory {
     ];
   }
 
-  Menu createUninstallMenu(Ship ship) {
+  Menu buildUninstallMenu(Ship ship) {
     final systems = ship.systemControl.getInstalledSystems().toList();
     return <MenuEntry> [
       for (int i = 0; i < systems.length; i++)
@@ -116,7 +116,7 @@ class MenuFactory {
     ];
   }
 
-  Menu createInstallMenu(Ship ship) {
+  Menu buildInstallMenu(Ship ship) {
     final systems = ship.systemControl.uninstalledSystems.toList();
     return <MenuEntry> [
       for (int i = 0; i < systems.length; i++)
@@ -128,7 +128,7 @@ class MenuFactory {
     ];
   }
 
-  Menu createInstallSlotMenu(Ship ship, ShipSystem system) {
+  Menu buildInstallSlotMenu(Ship ship, ShipSystem system) {
     final slots = ship.systemControl.availableSlotsbySystem(system).map((s) => s.slot).toList();
     return <MenuEntry> [
       for (int i = 0; i < slots.length; i++)
@@ -137,20 +137,20 @@ class MenuFactory {
     ];
   }
 
-  Menu createShopBuyMenu(Shop shop, {Ship? ship}) {
+  Menu buildShopBuyMenu(Shop shop, {Ship? ship}) {
     final entries = <MenuEntry> [
       TextEntry(label: "Credits: ${fm.player.credits}"),
       for (int i = 0; i < shop.itemSlots.length; i++) slotEntry(shop.itemSlots.elementAt(i), letter(i), shop, ship)
     ];
     if (shop.type == ShopType.shipyard) {
-      entries.add(ActionEntry(letter: "z", label: "enter hangar", (m) => mc.showMenu(() => createHangarMenu(shop.location))));
+      entries.add(ActionEntry(letter: "z", label: "enter hangar", (m) => mc.showMenu(() => buildHangarMenu(shop.location))));
     } else {
-      entries.add(ActionEntry(letter: "s", label: "(s)ell", (m) => mc.showMenu(() => createShopSellMenu(shop, ship: ship))));
+      entries.add(ActionEntry(letter: "s", label: "(s)ell", (m) => mc.showMenu(() => buildShopSellMenu(shop, ship: ship))));
     }
     return entries;
   }
 
-  Menu createHangarMenu(SpaceEnvironment shop) {
+  Menu buildHangarMenu(SpaceEnvironment shop) {
     return <MenuEntry> [
       for (int i = 0; i < shop.hangar.length; i++) ValueEntry(
           letter: letter(i),
@@ -161,7 +161,7 @@ class MenuFactory {
   }
 
   //TODO: make player inventory like shops?
-  Menu createShopSellMenu(Shop shop, {Ship? ship}) { //TODO: filter by shop type
+  Menu buildShopSellMenu(Shop shop, {Ship? ship}) { //TODO: filter by shop type
     final installed = ship?.systemControl.getInstalledSystems() ?? [];
     final items = [
       ...ship?.inventory.where((i) => !installed.contains(i)) ?? [],
@@ -177,10 +177,17 @@ class MenuFactory {
   }
 
   Menu buildHyperspaceMenu(System system) {
-    return List.generate(system.links.length, (i) =>
-        ActionEntry(letter: letter(i), label: system.links.elementAt(i).shortString(fm.galaxy, showVisit: true),
-                (m) => fm.layerTransitController.newSystem(fm.player, system.links.elementAt(i)),exitAfter: true)
-    );
+    return List.generate(system.links.length, (i) {
+        final s = system.links.elementAt(i);
+        String path = ((fm.playerShip?.itinerary ?? []).contains(s))
+            ? " (${fm.playerShip!.itinerary!.length} to ${fm.playerShip!.itinerary!.last.name})"
+            : "";
+        return ActionEntry(letter: letter(i),
+            txtBlocks: [TextBlock("${s.shortString(fm.galaxy)} $path",
+                s.visited ? GameColors.gray : GameColors.green, true)],
+                (m) => fm.layerTransitController
+                    .newSystem(fm.player, system.links.elementAt(i)),exitAfter: true);
+    });
   }
 
   Menu buildSystemToggleMenu(Ship ship) {

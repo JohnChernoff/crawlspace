@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/ship_sys.dart';
+import '../galaxy/system.dart';
 import '../grid.dart';
 import '../location.dart';
 import '../menu.dart';
@@ -69,7 +70,7 @@ class PilotController extends FugueController {
   ResultMessage installSystem(Ship ship, ShipSystem system, {SystemSlot? slot}) {
     if (ship.inventory.contains(system)) {
       if (slot == null) {
-        fm.menuController.showMenu(() => fm.menuFactory.createInstallSlotMenu(ship,system),headerTxt: "Select Slot:");
+        fm.menuController.showMenu(() => fm.menuFactory.buildInstallSlotMenu(ship,system),headerTxt: "Select Slot:");
         return const ResultMessage("Select a slot", true);
       } else { //print("hmm");
         final result = ship.systemControl.installSystem(system, slot: slot);
@@ -156,6 +157,14 @@ class PilotController extends FugueController {
       } else { //TODO: avoid hazards (if possible)
         fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.rnd));
       }
+    }
+  }
+
+  void plotCourse(Pilot pilot,System system) {
+    Ship? ship = fm.shipRegistry.byPilot(pilot);
+    if (ship != null) {
+      ship.itinerary = fm.galaxy.topo.graph.path(pilot.system, system);
+      fm.msgController.addMsg("Course plotted: ${ship.itinerary!.map((s) => s.name).reduce((i,l) => "${l} - ${i}")}");
     }
   }
 

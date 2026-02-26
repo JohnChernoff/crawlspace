@@ -8,7 +8,8 @@ import 'general_input.dart';
 enum DepthViewOption {showAll,showClosest,toggle}
 
 class SystemSelectIntent extends Intent {
-  const SystemSelectIntent();
+  final bool unselect;
+  const SystemSelectIntent(this.unselect);
 }
 
 class DirectionIntent extends Intent {
@@ -160,10 +161,10 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         LogicalKeySet(LogicalKeyboardKey.clear):
         const LoiterIntent(),
 
-        LogicalKeySet(LogicalKeyboardKey.comma):
+        LogicalKeySet(LogicalKeyboardKey.period):
         const ImpulseIntent(true),
 
-        LogicalKeySet(LogicalKeyboardKey.period):
+        LogicalKeySet(LogicalKeyboardKey.comma):
         const ImpulseIntent(false),
 
         LogicalKeySet(LogicalKeyboardKey.keyL):
@@ -175,17 +176,17 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         LogicalKeySet(LogicalKeyboardKey.keyI):
         const OpenInventoryIntent(),
 
+        LogicalKeySet(LogicalKeyboardKey.keyA):
+        const ScannerSelectionIntent(true),
+
         LogicalKeySet(LogicalKeyboardKey.keyS):
+        const ScannerSelectionIntent(false),
+
+        LogicalKeySet(LogicalKeyboardKey.keyQ):
         const ScannerModeIntent(mode: null),
 
         LogicalKeySet(LogicalKeyboardKey.keyW):
         const ScannerModeIntent(mode: null, forwards: false),
-
-        LogicalKeySet(LogicalKeyboardKey.keyQ):
-        const ScannerSelectionIntent(true),
-
-        LogicalKeySet(LogicalKeyboardKey.keyA):
-        const ScannerSelectionIntent(false),
 
         LogicalKeySet(LogicalKeyboardKey.keyT):
         const ScannerTargetIntent(),
@@ -202,7 +203,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         LogicalKeySet(LogicalKeyboardKey.keyF):
         const FireIntent(),
 
-        LogicalKeySet(LogicalKeyboardKey.keyS, LogicalKeyboardKey.shift):
+        LogicalKeySet(LogicalKeyboardKey.backquote):
         const ScrapIntent(true),
 
         LogicalKeySet(LogicalKeyboardKey.keyJ):
@@ -220,8 +221,11 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         LogicalKeySet(LogicalKeyboardKey.quoteSingle):
         const ToggleSystemIntent(),
 
-        LogicalKeySet(LogicalKeyboardKey.digit8):
-        const SystemSelectIntent(),
+        LogicalKeySet(LogicalKeyboardKey.keyS, LogicalKeyboardKey.shift):
+        const SystemSelectIntent(false),
+
+        LogicalKeySet(LogicalKeyboardKey.keyU, LogicalKeyboardKey.shift):
+        const SystemSelectIntent(true),
       },
       actions: {
         ...generalActions,
@@ -329,9 +333,9 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
             onInvoke: (intent) {
               if (fm.playerShip != null) {
                 if (intent.remove) {
-                  fm.menuController.showMenu(() => fm.menuFactory.createUninstallMenu(fm.playerShip!));
+                  fm.menuController.showMenu(() => fm.menuFactory.buildUninstallMenu(fm.playerShip!));
                 } else {
-                  fm.menuController.showMenu(() => fm.menuFactory.createInstallMenu(fm.playerShip!));
+                  fm.menuController.showMenu(() => fm.menuFactory.buildInstallMenu(fm.playerShip!));
                 }
               }
               return null;
@@ -344,9 +348,13 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
             }
         ),
         SystemSelectIntent: CallbackAction<SystemSelectIntent>(
-            onInvoke: (_) {
-              print("Setting System Select Mode");
-              fm.menuController.selectSystem().then((s) => print("Selected: ${s?.name}"));
+            onInvoke: (intent) {
+              if (intent.unselect) {
+                fm.playerShip?.itinerary = null;
+                fm.update();
+              } else {
+                fm.menuController.selectSystem().then((s) { if (s != null) fm.pilotController.plotCourse(fm.player, s); });
+              }
               return null;
             }
         ),
