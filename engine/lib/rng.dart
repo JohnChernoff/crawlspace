@@ -9,6 +9,7 @@ import 'fugue_engine.dart';
 import 'galaxy/galaxy.dart';
 import 'galaxy/system.dart';
 import 'grid.dart';
+import 'item.dart';
 import 'location.dart';
 
 enum ColorName {
@@ -21,6 +22,44 @@ enum AnimalName {
   viper, falcon, shark, raven, wolf, bear, eagle, cobra, mantis, wasp,
   lynx, pike, hornet, badger, jackal, vulture, orca, panther, reaper, basilisk;
   String random(Random rnd) => AnimalName.values.elementAt(rnd.nextInt(ColorName.values.length)).name;
+}
+
+enum Adjective {
+  strange(1.2,.5),
+  odd(1.3,.5),
+  weird(1.5,.4),
+  humming(1.66,.33),
+  spinning(1.8,.3),
+  vibrating(2,.25),
+  oscillating(3,.25),
+  radiating(5,.2),
+  floating(1,.75),
+  inert(.75,.75),
+  rusty(.5,.5),
+  battered(.33,.5),
+  nondescript(.25,.5),
+  worthless(.1,.5);
+  final double multiplier;
+  final double rarity;
+  const Adjective(this.multiplier,this.rarity);
+}
+
+enum Flotsam {
+  cylinder(1, .5),
+  sphere(1.2, .5),
+  cube(1.1, .5),
+  apparatus(2, .3),
+  device(2.5, .25),
+  debris(0.5, .75),
+  component(1.5, .5),
+  datacell(3, .33),
+  fluxcapacitor(5, .2),
+  capsule(8, .16),
+  pod(12, .1),
+  dinghy(20, .05);
+  final double multiplier;
+  final double rarity;
+  const Flotsam(this.multiplier,this.rarity);
 }
 
 class Rng {
@@ -45,6 +84,32 @@ class Rng {
     }
 
     return p + s;
+  }
+
+  static Item randomArtifact(Random rnd, int maxPrice) {
+    final adjective = weightedRandom(
+      Map.fromEntries(Adjective.values.map((a) => MapEntry(a, a.rarity))),
+      rnd,
+      fallback: Adjective.nondescript,
+    );
+
+    final flotsam = weightedRandom(
+      Map.fromEntries(Flotsam.values.map((f) => MapEntry(f, f.rarity))),
+      rnd,
+      fallback: Flotsam.debris,
+    );
+
+    final baseCost = (adjective.multiplier * flotsam.multiplier * maxPrice * 0.1)
+        .round()
+        .clamp(1, maxPrice);
+    final rarity = adjective.rarity * flotsam.rarity;
+    final name = "${adjective.name} ${flotsam.name}";
+
+    return Item(
+      name[0].toUpperCase() + name.substring(1),
+      baseCost: baseCost,
+      rarity: rarity,
+    );
   }
 
   static const _consonants = [

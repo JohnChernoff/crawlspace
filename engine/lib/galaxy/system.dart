@@ -98,7 +98,8 @@ class System extends Level {
             Hazard.roid : (ionFactor > rnd.nextDouble() ? 1 : 0)
           };
           final c = Coord3D(x, y, z); //if (neb == 1) print("System: $name, neb: $neb -> $c");
-          cells.putIfAbsent(c, () => SectorCell(c,hazMap, rnd.nextInt(999999)));
+          final sectorCell = SectorCell(c,hazMap, rnd.nextInt(999999));
+          cells.putIfAbsent(c, () => sectorCell);
         }
       }
     }

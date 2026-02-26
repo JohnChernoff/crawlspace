@@ -2,6 +2,8 @@ import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 
+import 'color.dart';
+
 abstract interface class Locatable {
   SpaceLocation get loc;
 }
@@ -15,12 +17,13 @@ class SpaceEnvironment<T extends SpaceLocation> extends SpaceObject implements L
   double techLvl;
   Shop? shop, yard;
   final Set<Ship> hangar = {};
-  SpaceEnvironment(super.name,this.fedLvl,this.techLvl, {super.description, required T this.locale}); // : _loc = loc;
+  SpaceEnvironment(super.name,this.fedLvl,this.techLvl, {super.desc, required T this.locale}); // : _loc = loc;
 }
 
 class SpaceObject<T extends SpaceLocation> {
   final String name;
-  String? description;
+  String? desc;
   bool known = false;
-  SpaceObject(this.name,{this.description});
+  GameColor objColor;
+  SpaceObject(this.name,{this.desc,this.objColor = GameColors.white});
 }

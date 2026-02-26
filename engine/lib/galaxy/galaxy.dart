@@ -3,7 +3,11 @@ import 'package:crawlspace_engine/galaxy/fed_model.dart';
 import 'package:crawlspace_engine/galaxy/flow_model.dart';
 import 'package:crawlspace_engine/galaxy/topology.dart';
 import 'package:crawlspace_engine/location.dart';
+import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
+import '../impulse.dart';
+import '../item.dart';
+import '../rng.dart';
 import 'flow_field.dart';
 import '../fugue_engine.dart';
 import 'auth_kern.dart';
@@ -71,6 +75,10 @@ class Galaxy {
   late TechKernelField techKernel;
   late CommerceKernelField commerceKernel;
   late AuthorityKernelField fedKernel;
+  Map<SystemLocation,Set<Item>> treasureMap = {};
+  Item ancientFedArt1 = Item("Primitive Humanoid Communications Device",desc: "Something called an 'IPhone 27'",sellable: false);
+  Item ancientFedArt2 = Item("A glowing datastack",desc: "A datastack entitled 'Ancient Earth History (500 BC - 2500 AD)'",sellable: false);
+  Item ancientFedArt3 = Item("Ivory chess piece", desc: "A chess knight, floating in space. Odd.",sellable: false);
 
   Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
     fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
@@ -103,7 +111,21 @@ class Galaxy {
         s.addPlanets(this, rnd);
       }
     }
+
+    Set<Item> items = {ancientFedArt1,ancientFedArt2,ancientFedArt3};
+    for (int i=0; i<1000; i++) items.add(Rng.randomArtifact(rnd, 100000));
+    for (Item i in items) {
+      final loc = rndLoc(rnd);
+      treasureMap.putIfAbsent(loc, () => {}).add(i);
+      print("Adding to ${loc}: ${i.name}, ${i.baseCost}");
+    }
     maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
+  }
+
+  SystemLocation rndLoc(Random rnd) {
+    final system = getRandomSystem();
+    final sysCell = system.map.rndCell(rnd);
+    return SystemLocation(system,sysCell);
   }
 
   void _createMap() {

@@ -7,8 +7,9 @@ class Item extends SpaceObject {
   final int _baseCost;
   final double rarity;
   final int id;
+  final sellable;
 
-  Item(super.name, {required int baseCost, required this.rarity})
+  Item(super.name, {super.desc, int baseCost = 0, this.rarity = 0, this.sellable = true, super.objColor})
       : id = _idCounter++, _baseCost = baseCost;
 
   @override

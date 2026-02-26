@@ -19,6 +19,13 @@ sealed class SpaceLocation implements Locatable {
   Level get level => _level;
   GridCell get cell => _cell;
 
+  @override
+  bool operator ==(Object other) {
+    return other is SpaceLocation && other.domain == domain && other.cell.coord == cell.coord;
+  }
+  @override
+  int get hashCode => level.hashCode * cell.hashCode;
+
   SpaceLocation withCell(GridCell newCell);
 
   System get system {
@@ -43,13 +50,6 @@ sealed class SpaceLocation implements Locatable {
       return double.infinity;
     }
   }
-
-  @override
-  bool operator ==(Object other) {
-    return other is SpaceLocation && other.domain == domain && other.cell.coord == cell.coord;
-  }
-  @override
-  int get hashCode => level.hashCode * cell.hashCode;
 
   const SpaceLocation(this._level,this._cell);
 }

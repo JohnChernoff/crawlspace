@@ -104,13 +104,13 @@ class LayerTransitController extends FugueController {
           for (int y=0;y<size;y++) {
             for (int z=0;z<size;z++) {
               final c = Coord3D(x, y, z);
-
-              cells.putIfAbsent(c, () => ImpulseCell(c,{
-                    Hazard.nebula : fm.mapRng.nextDouble() < sectorNeb ? sectorNeb : 0,
-                    Hazard.ion : fm.mapRng.nextDouble() < sectorIon ? sectorIon : 0,
-                    Hazard.roid : sysLoc.cell.hazMap[Hazard.roid] ?? 0,
-                    Hazard.wake: c.isEdge(size) ? 1 : 0
-              }));
+              final cell = ImpulseCell(c,{
+                Hazard.nebula : fm.mapRng.nextDouble() < sectorNeb ? sectorNeb : 0,
+                Hazard.ion : fm.mapRng.nextDouble() < sectorIon ? sectorIon : 0,
+                Hazard.roid : sysLoc.cell.hazMap[Hazard.roid] ?? 0,
+                Hazard.wake: c.isEdge(size) ? 1 : 0
+              });
+              cells.putIfAbsent(c, () => cell);
             }
           }
         }
@@ -118,6 +118,11 @@ class LayerTransitController extends FugueController {
         if (sysLoc.cell.hasHaz(Hazard.roid)) PathGenerator.generate(impMap,4,0,fm.rnd, haz: Hazard.roid);
         impLevel = ImpulseLevel(impMap,sysLoc.cell);
         sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel);
+        if (fm.galaxy.treasureMap.containsKey(sysLoc)) {
+          for (final i in fm.galaxy.treasureMap[sysLoc]!) {
+            impMap.rndCell(fm.itemRng).items.add(i);
+          }
+        }
       }
       _enterImpulse(impLevel,playShip,cell: impLevel.map.cells.entries.firstWhere((c) => c.value.hazLevel == 0).value as ImpulseCell);
       fm.update();
