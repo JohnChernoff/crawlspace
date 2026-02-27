@@ -147,29 +147,14 @@ class Galaxy {
     flowFields[name] = field;
   }
 
-  void initFlowFields() { //
+  void initFlowFields() {
     final rumorPreset = FlowPreset<double>(
       edgeWeight: (a,b) => a.trafficGenHint == TrafficGenHint.hub ? 2.0 : 1.0, //TODO: use links directly or trafficAt
       decay: (s,v) => v * 0.97,
       source: (_) => 0.0,
     );
-
-    final fedPreset = FlowPreset<double>(
-      edgeWeight: (a,b) => 1.0,
-      decay: (s,v) => v * 0.999,
-      source: (s) => fedMod.fedPressure[s]! * 0.01,
-    );
-
     registerFlowField("rumors", FlowField(this,DoubleOps(),rumorPreset));
-    registerFlowField("fedSurveillance", FlowField(this,DoubleOps(),fedPreset));
-    //registerFlowField("trade", FlowField(this,DoubleOps(),null));
-    //registerFlowField("civFlow", CivFlowField(this, speciesiRegistry));
-
     flowScheduler.register("rumors", 1, rnd);     // every turn
-    flowScheduler.register("fedSurveillance", 10, rnd); // slower
-    //flowScheduler.register("trade", 100, rnd);   // very slow
-    //flowScheduler.register("civFlow", 50, rnd); // VERY slow
-
   }
 
   void computeKernels() {
@@ -271,6 +256,7 @@ class Galaxy {
 
   void playerCrime(System s, double loudness) {
     flowFields["rumors"]!.value[s] = flowFields["rumors"]!.val(s) + loudness;
+    heatMod.leakPlayerHeat(s, loudness);  // also update player heat map
   }
 
   Map<System, double> buildTechSources() {
@@ -293,7 +279,6 @@ class Galaxy {
   double trafficFor(System s) {
     return 0.4 * structuralTraffic(s) + 0.6 * economicTraffic(s);
   }
-
 
   System farthestSystem(System s) {
     return systems.reduce((a, b) =>
@@ -403,4 +388,18 @@ class Galaxy {
       int() => TrafficGenHint.normal,
     };
   }
+
+      final fedPreset = FlowPreset<double>(
+      edgeWeight: (a,b) => 1.0,
+      decay: (s,v) => v * 0.999,
+      source: (s) => fedMod.fedPressure[s]! * 0.01,
+    );
+
+        //registerFlowField("fedSurveillance", FlowField(this,DoubleOps(),fedPreset));
+    //registerFlowField("trade", FlowField(this,DoubleOps(),null));
+    //registerFlowField("civFlow", CivFlowField(this, speciesiRegistry));
+
+        //flowScheduler.register("fedSurveillance", 10, rnd); // slower
+    //flowScheduler.register("trade", 100, rnd);   // very slow
+    //flowScheduler.register("civFlow", 50, rnd); // VERY slow
  */

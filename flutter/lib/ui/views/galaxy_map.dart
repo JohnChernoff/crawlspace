@@ -3,6 +3,7 @@ import 'package:crawlspace_engine/agent.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
+import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -13,12 +14,14 @@ import '../../main.dart';
 import '../../options.dart';
 
 enum GalaxyMapLegend {
+  history,
   fed,
   tech,
   trade,
   species,
   star,
-  history,
+  surveillance,
+  rumors,
   //planets
 }
 
@@ -31,7 +34,7 @@ class GalaxyMap extends StatefulWidget {
 }
 
 class GalaxyMapState extends State<GalaxyMap> {
-  GalaxyMapLegend legend = GalaxyMapLegend.fed;
+  GalaxyMapLegend legend = GalaxyMapLegend.history;
   late final FugueGraph fugueGraph;
   late final ForceDirectedGraphController<System> _controller;
   late final FocusNode _focusNode; // Add this
@@ -118,9 +121,10 @@ class GalaxyMapState extends State<GalaxyMap> {
   }
 
   Widget systemShape(System sys) {
-    if (sys.homeworld != null) return starSystem(sys);
-    if (sys.planets.contains(widget.fugueModel.player.tradeTarget?.destination)) return diamondSystem(sys);
-    return boxSystem(sys);
+    final borderCol = (widget.fugueModel.player.system == sys) ? Colors.yellowAccent : null;
+    if (sys.homeworld != null) return starSystem(sys, hex: sys.homeworld! == StockSpecies.humanoid.species, borderCol: borderCol);
+    if (sys.planets.contains(widget.fugueModel.player.tradeTarget?.destination)) return diamondSystem(sys, borderCol: borderCol);
+    return boxSystem(sys, borderCol: borderCol);
   }
 
   @override
@@ -142,6 +146,9 @@ class GalaxyMapState extends State<GalaxyMap> {
           } else if (ev.logicalKey == LogicalKeyboardKey.keyQ) {
             _cycleLegend(false);
             return KeyEventResult.handled;
+          } else if (ev.logicalKey == LogicalKeyboardKey.space) {
+            widget.fugueModel.movementController.loiter();
+            setState(() {});
           }
           return KeyEventResult.ignored;
         },
@@ -175,53 +182,58 @@ class GalaxyMapState extends State<GalaxyMap> {
   }
 
   Widget fancyNode(System system) {
-    return switch (widget.fugueModel.agentAt(system)) {
+    return switch (widget.fugueModel.agentReport(system)) {
       AgentSystemReport.none => boxSystem(system),
       AgentSystemReport.lastKnown => starSystem(system),
       AgentSystemReport.current => starSystem(system, hex: true),
     };
   }
 
-  Widget boxSystem(System system) {
+  Widget boxSystem(System system, {Color? borderCol}) {
+    final color = systemColor(system);
     return Container(
         decoration: BoxDecoration(
-          color: systemColor(system),
-          borderRadius: widget.fugueModel.player.system != system ? const BorderRadius.all(Radius.elliptical(72,24)) : null,
+          color: color,
+          //borderRadius:  playSys ? const BorderRadius.all(Radius.elliptical(72,24)) : null,
+          border: Border.all(color: borderCol ?? color, width: 2)
         ),
         width: 128,
         height: 36,
         alignment: Alignment.center,
-        child: Text(system.name));
+        child: Text(system.name, style: TextStyle(color: constratingColor(color))));
   }
 
-  Widget starSystem(System system, {bool hex = false}) {
+  Widget starSystem(System system, {hex = false, Color? borderCol}) {
+    final color = systemColor(system);
     return CustomPaint(
-        painter: hex ? HexagramPainter(systemColor(system)) : PentagramPainter(systemColor(system)),
+        painter: hex
+            ? HexagramPainter(color,borderCol: borderCol)
+            : PentagramPainter(color,borderCol: borderCol),
         child: SizedBox(
           width: 255,
           height: 128,
           child: Center(
-            child: Text(system.name, style: const TextStyle(color: Colors.white)),
+            child: Text(system.name, style: TextStyle(color: constratingColor(color))),
           ),
         ));
   }
 
-  Widget diamondSystem(System system) {
+  Widget diamondSystem(System system, {Color? borderCol}) {
+    final color = systemColor(system);
     return CustomPaint(
-        painter: DiamondPainter(systemColor(system)),
+        painter: DiamondPainter(color,borderCol: borderCol),
         child: SizedBox(
           width: 255,
           height: 128,
           child: Center(
-            child: Text(system.name, style: const TextStyle(color: Colors.white)),
+            child: Text(system.name, style: TextStyle(color: constratingColor(color))),
           ),
         ));
   }
 
   Color systemColor(System system) {
     FugueEngine fm = widget.fugueModel;
-    Galaxy g = fm.galaxy;
-    if (fm.player.system == system) return Colors.yellow;
+    Galaxy g = fm.galaxy;  //if (fm.player.system == system) return Colors.yellow;
     if (fm.galaxy.fedHomeSystem == system) return Colors.white;
     return switch(legend) {
       GalaxyMapLegend.star => Color(system.starClass.color.argb),
@@ -229,9 +241,26 @@ class GalaxyMapState extends State<GalaxyMap> {
       GalaxyMapLegend.tech => graphColor(g.techKernel.val(system), red: 0, blue: 92), //green
       GalaxyMapLegend.trade => graphColor(g.techKernel.val(system)), //white
       GalaxyMapLegend.species => Color(g.civMod.systemSpeciesColor(system).argb),
-      GalaxyMapLegend.history => switch(fm.agentAt(system)) {
-        AgentSystemReport.none => system.visited ?  Colors.green : Colors.deepPurple,
-        AgentSystemReport.lastKnown => Colors.grey,
+      GalaxyMapLegend.surveillance => () {
+        final heatMap = g.heatMod.playerHeatMap;
+        final max = g.systems
+            .map((s) => heatMap[s] ?? 0.0)
+            .reduce((a, b) => a > b ? a : b);
+        final normalized = max > 0 ? (heatMap[system] ?? 0.0) / max : 0.0;
+        return graphColor(normalized, green: 0, blue: 0);
+      }(),
+      GalaxyMapLegend.rumors => () {
+        final max = g.systems
+            .map((s) => g.flowFields["rumors"]!.val(s) as double)
+            .reduce((a, b) => a > b ? a : b);
+        final normalized = max > 0
+            ? (g.flowFields["rumors"]!.val(system) as double) / max
+            : 0.0;
+        return graphColor(normalized, red: 128, blue: 0);
+      }(),
+      GalaxyMapLegend.history => switch(fm.agentReport(system)) {
+        AgentSystemReport.none => system.visited ?  Colors.lightBlue : Colors.deepPurple,
+        AgentSystemReport.lastKnown => Colors.orange,
         AgentSystemReport.current => Colors.red,
       }, //GalaxyMapLegend.planets =>
     };
@@ -246,16 +275,20 @@ class GalaxyMapState extends State<GalaxyMap> {
         blue ?? (invBlue ? i : c), 1);
   }
 
+  Color constratingColor(Color c) {
+    final luminance = 0.299 * c.r + 0.587 * c.g + 0.114 * c.b;
+    return luminance > 0.5 ? Colors.black : Colors.white;
+  }
 }
 
 class PentagramPainter extends CustomPainter {
   final Color color;
-
-  PentagramPainter(this.color);
+  final Color? borderCol;
+  PentagramPainter(this.color,{this.borderCol});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    Paint paint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
@@ -278,7 +311,17 @@ class PentagramPainter extends CustomPainter {
 
     path.close();
     canvas.drawPath(path, paint);
+
+    if (borderCol != null) {
+      paint = Paint()
+        ..strokeWidth = 2
+        ..color = borderCol!
+        ..style = PaintingStyle.stroke;
+      path.close();
+      canvas.drawPath(path, paint);
+    }
   }
+
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) => false;
@@ -286,12 +329,12 @@ class PentagramPainter extends CustomPainter {
 
 class HexagramPainter extends CustomPainter {
   final Color color;
-
-  HexagramPainter(this.color);
+  final Color? borderCol;
+  HexagramPainter(this.color,{this.borderCol});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    Paint paint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
@@ -316,6 +359,16 @@ class HexagramPainter extends CustomPainter {
 
     canvas.drawPath(triangle(0), paint);
     canvas.drawPath(triangle(pi), paint); // flipped triangle
+
+    if (borderCol != null) {
+      paint = Paint()
+        ..strokeWidth = 2
+        ..color = borderCol!
+        ..style = PaintingStyle.stroke;
+      canvas.drawPath(triangle(0), paint);
+      canvas.drawPath(triangle(pi), paint); // flipped triangle
+    }
+
   }
 
   @override
@@ -324,11 +377,12 @@ class HexagramPainter extends CustomPainter {
 
 class DiamondPainter extends CustomPainter {
   final Color color;
-  DiamondPainter(this.color);
+  final Color? borderCol;
+  DiamondPainter(this.color,{this.borderCol});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    Paint paint = Paint()
       ..color = color
       ..style = PaintingStyle.fill;
 
@@ -345,6 +399,15 @@ class DiamondPainter extends CustomPainter {
       ..close();
 
     canvas.drawPath(path, paint);
+
+    if (borderCol != null) {
+      paint = Paint()
+        ..strokeWidth = 2
+        ..color = borderCol!
+        ..style = PaintingStyle.stroke;
+      canvas.drawPath(path, paint);
+    }
+
   }
 
   @override

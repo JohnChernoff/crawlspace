@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/hazards.dart';
+import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
 import 'package:crawlspace_engine/pilot_reg.dart';
 import 'package:crawlspace_engine/ship_reg.dart';
@@ -62,7 +63,7 @@ class FugueEngine {
   final Galaxy galaxy;
   late Player player;
   int numAgents = 3;
-  final List<Agent> agents = [];
+  Iterable<Agent> get agents => _pilotRegistry.npcs.whereType<Agent>();
   late Random rnd,combatRng,mapRng,speciesRng,aiRng,itemRng, audioRnd; //TODO: remove rnd
   int auTick = 0;
   String get result => blownUp ? "blown up" : isVictorious ? "victorious" : "vanquished";
@@ -101,10 +102,6 @@ class FugueEngine {
     itemRng = Random(seed ^ 0xC0BFEED);
     combatRng = Random(seed ^ 0xABCDEF00);
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
-    for (int i=0;i<numAgents;i++) {
-      //agents.add(Agent("Agent ${Rng.generateName(rnd: rnd)}", mapRng, 25, sys: galaxy.fedHomeSystem, galaxy: galaxy));
-      //TODO: add ships, pilot locale
-    }
     Ship playShip = Ship("HMS Sebastian",
         shipClass: ShipClassType.hermes.shipclass,
         location: SystemLocation(farSys, farSys.map.rndCell(rnd)),
@@ -115,9 +112,26 @@ class FugueEngine {
         shield: Shield.fromStock(StockSystem.basicEnergon),
         weapons: [Weapon.fromStock(StockSystem.fedLaser3),Weapon.fromStock(StockSystem.plasmaCannon)],
         ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 50});
-    player = Player(playerName,mapRng, loc: AboardShip(playShip)); //playShip.pilot = player;
+    player = Player(playerName,loc: AboardShip(playShip)); //playShip.pilot = player;
     player.system.visited = true;
     addShip(playShip);
+    for (final persona in AgentPersonality.values) {
+        Ship agentShip = Ship("Agent ${persona.name}",
+            shipClass: ShipClassType.hermes.shipclass,
+            location: SystemLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCell(rnd)),
+            generator: PowerGenerator.fromStock(StockSystem.basicNuclear),
+            impEngine: Engine.fromStock(StockSystem.basicFedImpulse),
+            subEngine: Engine.fromStock(StockSystem.basicFedSublight),
+            hyperEngine: Engine.fromStock(StockSystem.basicFedHyperdrive),
+            shield: Shield.fromStock(StockSystem.basicEnergon),
+            weapons: [Weapon.fromStock(StockSystem.plasmaRay),Weapon.fromStock(StockSystem.plasmaCannon)],
+            ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 250});
+        final agent = Agent(persona.name,persona,loc: AboardShip(agentShip),galaxy: galaxy);
+        addShip(agentShip);
+    }
+    print(_shipRegistry.all);
+    print(_pilotRegistry.all);
+    print (activePilots);
     msgController.addMsg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
     update();
   }
@@ -143,23 +157,6 @@ class FugueEngine {
       if (formerShip != null) _shipRegistry.dock(ship, loc.env);
     }
     _shipRegistry.changePilot(ship, pilot);
-  }
-
-  AgentSystemReport agentAt(System system, {bool playerPerspective = true}) {
-    AgentSystemReport report = AgentSystemReport.none;
-    for (Agent a in agents) { //print("Checking Agent at ${a.system.name}, ${a.lastKnown?.name}, ${a.tracked}");
-      if (playerPerspective && a.lastKnown == system) {
-        if (a.tracked > 0) {
-          return AgentSystemReport.current;
-        } else {
-          report = AgentSystemReport.lastKnown;
-        }
-      }
-      else if (!playerPerspective && a.system == system) {
-        return AgentSystemReport.current;
-      }
-    }
-    return report;
   }
 
   void outOfEnergy() {
@@ -229,31 +226,14 @@ class FugueEngine {
 
   int jumps(List<System>? path) => (path?.length ?? 0) - 1;
 
-  void heat(int v, {System? sighted}) {
-    for (Agent agent in agents) {
-      agent.clueLvl = min(agent.clueLvl + v,100);
-      if (sighted != null) agent.sighted = sighted;
+  bool agentAt(System system) => _pilotRegistry.npcs.any((p) => p is Agent && p.system == system);
+  AgentSystemReport agentReport(System s) {
+    for (final agent in agents) {
+      final report = agent.playerReportFor(s);
+      if (report == AgentSystemReport.current) return AgentSystemReport.current;
+      if (report == AgentSystemReport.lastKnown) return AgentSystemReport.lastKnown;
     }
-    String heatAdj = switch(v) {
-      < 5 => "a bit",
-      < 12 => "significantly",
-      < 24 => "much",
-      int() => "massively"
-    };
-    msgController.addMsg("The galaxy just got $heatAdj more dangerous."); //(+$v)");
-  }
-
-  int currentHeat() {
-    return (agents.fold(0, (pv,e) => pv + e.clueLvl) / agents.length).floor();
-  }
-
-  void reportSighting(System s) {
-    for (var agent in agents) {
-      if (agent.clueLvl > rnd.nextInt(10)) {
-        agent.sighted = s;
-        agent.track(5); // 5 turns of confident pursuit
-      }
-    }
+    return AgentSystemReport.none;
   }
 
   Future<void> update({bool noWait = false}) async {
@@ -274,7 +254,7 @@ class FugueEngine {
     do {
       for (Pilot p in pilots) { //print("${p.name}'s turn");
         try {
-          p.tick();
+          p.tick(this);
           Ship? ship = getShip(p);
           if (ship != null && ship.loc.level == playerShip?.loc.level && player.locale is AboardShip) {
             pilotController.npcShipAct(ship);
@@ -284,7 +264,7 @@ class FugueEngine {
         }
       }
       auTick++;
-      player.tick();
+      player.tick(this);
       playShip?.tick(rnd: rnd);
     } while (!player.ready);
     if (playShip != null) {
@@ -295,8 +275,13 @@ class FugueEngine {
       for (final s in _shipRegistry.inLevel(playShip.loc.level).where((s) => s.npc)) playShip.detect(s);
     }
     update();
+    print("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}");
     return playerShip?.loc.domain == domain;
   }
+
+  void msg(String msg) => msgController.addMsg(msg);
+  void resultMsg(ResultMessage msg) => msgController.addResultMsg(msg);
+
 }
 
 enum DebugLevel {

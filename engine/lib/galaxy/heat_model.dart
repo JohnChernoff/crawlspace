@@ -51,6 +51,32 @@ class HeatModel extends GalaxySubMod {
     }
   }
 
+  void leakPlayerHeat(System origin, double strength) {
+    final queue = <System>[origin];
+    final visited = <System>{origin};
+    final dist = <System, int>{origin: 0};
+
+    while (queue.isNotEmpty) {
+      final s = queue.removeAt(0);
+      final d = dist[s]!;
+
+      final attenuation = exp(-d / 3.0);           // tighter radius than social heat
+      final fedAmp = galaxy.fedKernel.val(s);       // feds care more in core systems
+      final social = socialConductivity[s]!;         // gossip spreads faster in busy systems
+      final contribution = strength * attenuation * fedAmp * social;
+
+      playerHeatMap[s] = (playerHeatMap[s]! + contribution).clamp(0, 100);
+
+      for (final n in s.links) {
+        if (!visited.contains(n)) {
+          visited.add(n);
+          dist[n] = d + 1;
+          queue.add(n);
+        }
+      }
+    }
+  }
+
   void resetPlayerHeatMap() {
     playerHeatMap = { for (var s in systems) s : 0.0 };
     physicalHeat = { for (var s in systems) s : 0.0 };
@@ -59,7 +85,11 @@ class HeatModel extends GalaxySubMod {
 
   void decayHeat() {
     for (final s in systems) {
-      playerHeatMap[s] =  playerHeatMap[s]! * (1 - 0.001 * galaxy.fedMod.fedPressure[s]!);
+      //playerHeatMap[s] =  playerHeatMap[s]! * (1 - 0.001 * galaxy.fedMod.fedPressure[s]!);
+      // decay faster in lawless systems (feds don't maintain records)
+      // decay slower in core systems (feds have long memories)
+      final retention = 0.995 + galaxy.fedKernel.val(s) * 0.004;
+      playerHeatMap[s] = playerHeatMap[s]! * retention;
     }
   }
 

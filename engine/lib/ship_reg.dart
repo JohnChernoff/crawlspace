@@ -5,6 +5,7 @@ import 'location.dart';
 import 'object.dart';
 
 class ShipRegistry {
+  Set<Ship> get all => _all;
   final Set<Ship> _all = {};
   final Map<Pilot, Ship> _byPilot = {};
   final Map<Level, Set<Ship>> _byLevel = {};

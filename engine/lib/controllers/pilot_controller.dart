@@ -91,7 +91,7 @@ class PilotController extends FugueController {
     if (pilot == fm.player && actionType.risk > 0 && fm.rnd.nextInt(255) < fm.player.fedLevel(fm.galaxy)) {
       //msgController.addMsg("You have a bad feeling about this...");
       if (fm.rnd.nextInt(128) < (max(actionType.risk - (actionType.dna ? fm.player.dnaScram : 0),1))) {
-        fm.heat(actionType.heat);
+        //fm.heat(actionType.heat);
       }
     }
     final auts = ((actionAuts ?? actionType.baseAuts) * mod).round();

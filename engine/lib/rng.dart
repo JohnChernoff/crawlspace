@@ -283,7 +283,7 @@ class Rng {
 
   static Ship generateShip(System system, Galaxy galaxy, Random rnd) {
     final location = SystemLocation(system,system.map.rndCell(rnd));
-    final pilot = Pilot(Rng.generateName(rnd: rnd),rnd,hostile: true, loc: AtEnvironment.fromSystem(location), galaxy: galaxy);
+    final pilot = Pilot(Rng.generateName(rnd: rnd),rnd: rnd,hostile: true, loc: AtEnvironment.fromSystem(location), galaxy: galaxy);
     final level = max(0,1 - (galaxy.topo.distance(location.loc.system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps));
     final techLvl = max(1,(level * 10).round());
     glog("Faction: ${pilot.faction.name}, tech: $level, $techLvl");

@@ -82,7 +82,7 @@ class PlanetsideController extends FugueController {
         }
       }
     }
-    fm.heat(25,sighted: fm.player.system);
+    //fm.heat(25,sighted: fm.player.system);
   }
 
   void getTradeMission() {
@@ -117,7 +117,7 @@ class PlanetsideController extends FugueController {
   void spy() {
     for (Agent agent in fm.agents) {
       if (agent.tracked == 0) {
-        agent.track((fm.player.techLevel(fm.galaxy) / 8).floor() * (fm.techCheck(1) ? 2 : 1));
+        agent.tracked = ((fm.player.techLevel(fm.galaxy) / 8).floor() * (fm.techCheck(1) ? 2 : 1));
         List<System> path = fm.galaxy.topo.graph.shortestPath(fm.player.system, agent.system);
         fm.msgController.addMsg("${agent.name} is ${fm.jumps(path)} jumps away (tracking for ${agent.tracked} jumps)");
       }
@@ -169,11 +169,10 @@ class PlanetsideController extends FugueController {
   void drink(int pints, double strength, SpaceEnvironment env) {
     fm.player.drink(1, strength);
     double charChk = fm.player.attributes[AttribType.cha]! / 3;
-    print("Drink Strength: $strength");
-    print("Char Check: $charChk");
+    print("Drink Strength: $strength"); print("Char Check: $charChk");
     if (fm.aiRng.nextDouble() < charChk) {
       env.rapport += .1 * strength;
-      fm.msgController.addMsg(switch(env.rapport) {
+      fm.msg(switch(env.rapport) {
         > .8 => "The locals love you!",
         > .5 => "The locals seem to like you a lot.",
         > .2 => "The locals seem to like you a bit better.",
@@ -184,9 +183,25 @@ class PlanetsideController extends FugueController {
       final nearestTreasureSystem = fm.galaxy.treasureMap.keys
           .sorted((a,b) => fm.galaxy.topo.distance(a.system, fm.player.system)
           .compareTo(fm.galaxy.topo.distance(a.system, fm.player.system))).first;
-      fm.msgController.addMsg("Psst - there's treasure at ${nearestTreasureSystem.loc}");
+      fm.msg("Psst - there's treasure at ${nearestTreasureSystem.loc}");
     }
-
+    final security = env is Planet ? env.population : .5;
+    if (fm.aiRng.nextDouble() < ((fm.player.attributes[AttribType.con]! * security) * .5)) {
+      fm.msg("You pass out and are taken to the local jail to sleep it off.  Processing fee: 1000 credits.");
+      fm.player.transaction(TransactionType.jail, -1000);
+      fm.player.inebriation = 0;
+      if (fm.aiRng.nextDouble() < .5) { //env.fedLvl) {
+        fm.galaxy.playerCrime(fm.player.system, env.fedLvl * 5);
+        // Also spike fedSurveillance flow field directly at this system
+        //final surveillance = fm.galaxy.flowFields["fedSurveillance"]!;
+        //surveillance.value[system] = (surveillance.val(system) + env.fedLvl).clamp(0, 100);
+        fm.msg(switch(env.fedLvl) {
+          > .75 => "The authorities file a full report. The Feds will know you were here.",
+          > .4  => "The local constable logs your name. Someone might be watching.",
+          _     => "Word of your arrest spreads through the cantina...",
+        });
+      }
+    }
   }
 
   Planet? createTradePlanet(List<System> path,int steps) {

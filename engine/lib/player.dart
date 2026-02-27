@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/location.dart';
 
 import 'galaxy/galaxy.dart';
@@ -25,7 +26,7 @@ class Player extends Pilot {
   Set<Ship> fleet = {};
   double inebriation = 0;
 
-  Player(super.name,super.rnd, {required super.loc, super.galaxy, super.hostile = false});
+  Player(super.name,{required super.loc, super.galaxy, super.hostile = false});
 
   void drink(int pints, double strength) {
     final con = attributes[AttribType.con] ?? 0.5;
@@ -44,8 +45,8 @@ class Player extends Pilot {
     _     => "completely sober"
   };
 
-  void tick() {
-    super.tick();
+  void tick(FugueEngine fm) {
+    super.tick(fm);
     final con = attributes[AttribType.con] ?? 0.5;
     final decayRate = 0.005 + con * 0.02; // con 0 = 0.005, con 1 = 0.025
     inebriation = max(0, inebriation - decayRate);

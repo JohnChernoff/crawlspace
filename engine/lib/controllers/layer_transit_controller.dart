@@ -47,11 +47,6 @@ class LayerTransitController extends FugueController {
     if (newSystem(fm.player,system)) {
       //ship.warps.value--;
       fm.msgController.addMsg("*** EMERGENCY WARP ACTIVATED ***");
-      if (ship.playship) {
-        for (Agent agent in fm.agents) {
-          agent.clueLvl = 25;
-        }
-      }
     }
     fm.pilotController.action(ship.pilot,ActionType.warp);
   }
