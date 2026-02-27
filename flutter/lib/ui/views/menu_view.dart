@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/controllers/message_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
@@ -109,13 +111,15 @@ class MenuWidgetState extends State<MenuWidget> {
       );
   }
 
-  Widget menuMessageLog(Stream<IList<Message>> messageStream) {
+  Widget menuMessageLog(Stream<IList<Message>> messageStream, {numMsgs = 3}) {
     return StreamBuilder<IList<Message>>( //valueListenable: notifier,
         stream: messageStream,
         builder: (context, snapshot) {
-          if (snapshot.hasData) {
-            lastMessage = snapshot.data!.last.text;
-            return Text(lastMessage, style: textStyle);
+          if (snapshot.hasData ) {
+            final n = min(snapshot.data!.length,numMsgs);
+            return Column(verticalDirection: VerticalDirection.up, children: List.generate(n,(i) =>
+            Text(snapshot.data!.elementAt(snapshot.data!.length - (i+1)).text,
+                style: textStyle.copyWith(color: i==0 ? Colors.white : Colors.cyan))));
           } else {
             return SizedBox.shrink();
           }

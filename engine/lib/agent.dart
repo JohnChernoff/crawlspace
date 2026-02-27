@@ -25,8 +25,7 @@ class Agent extends Pilot {
 
   // Called each turn by the engine
   void tick(FugueEngine fm) {
-    super.tick(fm);
-    //final moves = movesPerTurn(fm.galaxy).round(); //TODO use this somehow
+    super.tick(fm);  //final moves = movesPerTurn(fm.galaxy).round(); //TODO use this somehow
     if (fm.aiRng.nextDouble() < .1) _move(fm);
   }
 
