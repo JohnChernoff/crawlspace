@@ -7,15 +7,29 @@ import 'fugue_controller.dart';
 
 class MessageController extends FugueController {
   final msgWorker = MessageQueueWorker();
-
+  int multiples = 0;
+  String prevMsg = "";
   MessageController(super.fm);
 
+  bool duplicateMsg(String msg) {
+    if (msg == prevMsg) {
+      multiples++;
+      msgWorker.removeLast();
+      return true;
+    }
+    multiples = 0;
+    prevMsg = msg;
+    return false;
+  }
+
   void addMsg(String txt, {int delay = 100, bool updateAfter = false, GameColor color = GameColors.white}) {
+    if (duplicateMsg(txt)) txt = "$txt (x${multiples})";
     msgWorker.addMsg(Message(text: txt, timestamp: fm.starDate(),color: color),delay: delay);
     if (updateAfter) fm.update();
   }
 
   void addResultMsg(ResultMessage rm, {int delay = 100, bool updateAfter = false, GameColor? color}) {
+    if (duplicateMsg(rm.msg)) rm = ResultMessage("${rm.msg}(x${multiples})",rm.success);
     msgWorker.addMsg(Message(text: rm.msg, timestamp: fm.starDate(),
         color: color ?? (rm.success ? GameColors.white: GameColors.red)),delay: delay);
     if (updateAfter) fm.update();
@@ -53,6 +67,10 @@ class MessageQueueWorker {
   void addMsg(Message msg, {int delay = 0}) {
     _queue.add(_QueuedMessage(msg, delay));
     _processQueue();
+  }
+
+  void removeLast() {
+    if (_messages.isNotEmpty) _messages = _messages.removeLast();
   }
 
   void _processQueue() {

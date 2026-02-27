@@ -10,7 +10,7 @@ class MenuController extends FugueController {
   final rootMenu = MenuContext(builder: () => []);
   late final List<MenuContext> menuStack = [rootMenu];
   MenuContext get currentMenu => menuStack.last;
-  InputMode _inputMode = InputMode.main; //get inputMode => currentMenu.mode;
+  InputMode _inputMode = InputMode.main; //TODO: put in FugueEngine?
   InputMode get inputMode => _inputMode;
   void set inputMode(InputMode mode) {
       final prevMode = _inputMode;

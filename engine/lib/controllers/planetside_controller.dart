@@ -168,16 +168,25 @@ class PlanetsideController extends FugueController {
 
   void drink(int pints, double strength, SpaceEnvironment env) {
     fm.player.drink(1, strength);
-    if (fm.aiRng.nextDouble() < (fm.player.attributes[AttribType.cha]! / 4)) {
+    double charChk = fm.player.attributes[AttribType.cha]! / 3;
+    print("Drink Strength: $strength");
+    print("Char Check: $charChk");
+    if (fm.aiRng.nextDouble() < charChk) {
       env.rapport += .1 * strength;
-      fm.msgController.addMsg("The locals seem to like you a bit better. (Rapport: ${env.rapport})");
+      fm.msgController.addMsg(switch(env.rapport) {
+        > .8 => "The locals love you!",
+        > .5 => "The locals seem to like you a lot.",
+        > .2 => "The locals seem to like you a bit better.",
+        _ => "Glurg..."
+      });
     }
-    if (fm.aiRng.nextDouble() < (env.rapport * .5)) {
+    if (fm.aiRng.nextDouble() < (env.rapport * .1)) {
       final nearestTreasureSystem = fm.galaxy.treasureMap.keys
           .sorted((a,b) => fm.galaxy.topo.distance(a.system, fm.player.system)
           .compareTo(fm.galaxy.topo.distance(a.system, fm.player.system))).first;
-      fm.msgController.addMsg("Psst - there's a treasure at ${nearestTreasureSystem.loc}");
+      fm.msgController.addMsg("Psst - there's treasure at ${nearestTreasureSystem.loc}");
     }
+
   }
 
   Planet? createTradePlanet(List<System> path,int steps) {

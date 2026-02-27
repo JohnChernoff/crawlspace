@@ -69,8 +69,8 @@ class Pilot implements Locatable {
       final factionMap = Map.fromEntries(factions.where((fa) => fa.species == species).map((f2) => MapEntry(f2, f2.relativeFreq)));
       faction = f ?? Rng.weightedRandom(factionMap, rnd, fallback: factions.first);
     }
-    for (final a in AttribType.values) attributes[a] = .25;
-    for (final skill in SkillType.values) skills[skill] = .5;
+    for (final a in AttribType.values) attributes[a] = .5;
+    for (final skill in SkillType.values) skills[skill] = .25;
   }
 
   double hostilityToward(Species s, CivModel civ) {
