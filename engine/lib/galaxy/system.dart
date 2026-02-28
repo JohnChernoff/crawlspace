@@ -11,7 +11,7 @@ import '../grid.dart';
 import '../hazards.dart';
 import '../impulse.dart';
 import '../planet.dart';
-import '../rng.dart';
+import '../rng/rng.dart';
 
 enum TrafficGenHint { normal, culDeSac, hub }
 

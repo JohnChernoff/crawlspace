@@ -1,6 +1,6 @@
 import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/controllers/menu_controller.dart';
-import 'package:crawlspace_engine/drinks.dart';
+import 'package:crawlspace_engine/rng/drinks.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/planet.dart';
@@ -113,6 +113,7 @@ class MenuFactory {
     ];
   }
 
+  //TODO: fix overflow
   Menu buildFooshamMenu(Pilot pilot, FooShamGame game) {
     return <MenuEntry> [
       for (int i = 0; i < game.throwList.list.length; i++)

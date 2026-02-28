@@ -3,7 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'item.dart';
 import 'pilot.dart';
-import 'rng.dart';
+import 'rng/rng.dart';
 import 'ship.dart';
 import 'stock_items/stock_pile.dart';
 import 'systems/ship_system.dart';

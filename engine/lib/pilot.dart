@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/player.dart';
-import 'package:crawlspace_engine/rng.dart';
+import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'agent.dart';

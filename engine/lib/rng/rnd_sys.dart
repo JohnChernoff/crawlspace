@@ -1,5 +1,5 @@
 import 'dart:math';
-import 'package:crawlspace_engine/rng.dart';
+import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/ship_sys.dart';
 import 'package:crawlspace_engine/stock_items/stock_ammo.dart';
@@ -13,7 +13,7 @@ import 'package:crawlspace_engine/systems/power.dart';
 import 'package:crawlspace_engine/systems/shields.dart';
 import 'package:crawlspace_engine/systems/ship_system.dart';
 import 'package:crawlspace_engine/systems/weapons.dart';
-import 'grid.dart';
+import '../grid.dart';
 
 class RndSystemInstaller {
 

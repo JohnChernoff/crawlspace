@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/object.dart';
-import 'package:crawlspace_engine/rnd_sys.dart';
+import 'package:crawlspace_engine/rng/rnd_sys.dart';
 import 'package:crawlspace_engine/ship_reg.dart';
 import 'package:crawlspace_engine/ship_sys.dart';
 import 'fugue_engine.dart';

@@ -8,7 +8,7 @@ import '../impulse.dart';
 import '../location.dart';
 import '../menu.dart';
 import '../pilot.dart';
-import '../rng.dart';
+import '../rng/rng.dart';
 import '../ship.dart';
 import '../systems/ship_system.dart';
 import '../systems/weapons.dart';

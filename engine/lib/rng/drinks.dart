@@ -12,8 +12,8 @@ import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/planet.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 
-import 'color.dart';
-import 'item.dart';
+import '../color.dart';
+import '../item.dart';
 
 class AlienDrink extends Item {
   final double strength; // 0–1, effect on pilot

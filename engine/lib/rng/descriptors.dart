@@ -1,6 +1,6 @@
 import 'dart:math';
 
-import 'planet.dart';
+import '../planet.dart';
 
 Random _rndDescriptor = Random();
 

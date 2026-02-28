@@ -1,7 +1,7 @@
 import 'dart:math' as math;
 import '../grid.dart';
 import '../item.dart';
-import '../rng.dart';
+import '../rng/rng.dart';
 import '../ship.dart';
 import '../stock_items/stock_ammo.dart';
 import '../stock_items/stock_lauchers.dart';

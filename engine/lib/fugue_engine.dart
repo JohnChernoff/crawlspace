@@ -25,7 +25,7 @@ import 'impulse.dart';
 import 'location.dart';
 import 'pilot.dart';
 import 'player.dart';
-import 'rng.dart';
+import 'rng/rng.dart';
 import 'ship.dart';
 import 'shop.dart';
 import 'stock_items/stock_pile.dart';

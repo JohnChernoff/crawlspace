@@ -2,10 +2,10 @@ import 'dart:math';
 
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/object.dart';
-import 'package:crawlspace_engine/rng.dart';
+import 'package:crawlspace_engine/rng/rng.dart';
 import 'color.dart';
-import 'descriptors.dart';
-import 'drinks.dart';
+import 'rng/descriptors.dart';
+import 'rng/drinks.dart';
 
 enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   const DistrictLvl(this.shortString);

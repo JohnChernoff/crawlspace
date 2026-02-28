@@ -5,7 +5,7 @@ import 'package:crawlspace_engine/galaxy/topology.dart';
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../item.dart';
-import '../rng.dart';
+import '../rng/rng.dart';
 import 'flow_field.dart';
 import '../fugue_engine.dart';
 import 'auth_kern.dart';
