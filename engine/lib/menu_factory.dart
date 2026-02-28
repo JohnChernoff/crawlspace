@@ -113,16 +113,16 @@ class MenuFactory {
     ];
   }
 
-  //TODO: fix overflow
   Menu buildFooshamMenu(Pilot pilot, FooShamGame game) {
     return <MenuEntry> [
-      for (int i = 0; i < game.throwList.list.length; i++)
+      TextEntry(txtBlocks: [TextBlock(game.currentScore(), GameColors.white, true)]),
+      if (game.winner == null) for (int i = 0; i < game.throwList.list.length; i++)
         ValueEntry(letter: letter(i),
             txtBlocks: [TextBlock("${game.throwList.list[i]} ${game.beatInfo(game.throwList.list[i])}", GameColors.green, true)],
             game.throwList.list[i], (t) {
               final result = game.playThrow(t);
-              fm.msgController.addMsg(result.toString()); //TODO: exit on game completion
-            },exitAfter: game.winner != null)
+              fm.msg(result.toString());
+            })
     ];
   }
 

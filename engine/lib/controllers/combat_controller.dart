@@ -37,7 +37,7 @@ class CombatController extends FugueController {
         } else {
           for (final result in results) {
             if (ship.targetShip != null) {
-              fm.msgController.addMsg("Firing weapon: ${result.weapon.name}");
+              fm.msgController.addMsg("${ship.name} fires weapon: ${result.weapon.name}");
               bool rangedMishap = false;
               if (result.weapon.usesAmmo) {
                 if (result.ammoWarn) {

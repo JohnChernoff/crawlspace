@@ -21,19 +21,12 @@ class FooShamResult {
     if (winThrow == loseThrow) {
       sb.write("$winThrow vs. $loseThrow... ");
       if (game.houseWinsOnTie) {
-        sb.writeln("house wins on a tie");
+        sb.write("house wins on a tie");
       } else {
-        sb.writeln("tie! No points.");
+        sb.write("tie! No points.");
       }
     } else {
-      sb.writeln("$winThrow beats $loseThrow");
-    }
-    if (game.winner != null) {
-      sb.write("${game.winner!.name} wins!");
-    } else {
-      for (final ps in game.scoreMap.entries) {
-        sb.writeln("${ps.key.name}: ${ps.value} points");
-      }
+      sb.write("$winThrow beats $loseThrow");
     }
     return sb.toString();
   }
@@ -136,6 +129,18 @@ class FooShamGame {
     for (String s in knownBeatMap[t] ?? []) sb.write("${s.substring(0,3)},");
     if (sb.isNotEmpty) return "(beats ${sb.toString().substring(0,sb.length-1)})";
     return "";
+  }
+
+  String currentScore() {
+    StringBuffer sb = StringBuffer();
+    if (winner != null) {
+      sb.write("${winner!.name} wins!");
+    } else {
+      for (final ps in scoreMap.entries) {
+        sb.write("${ps.key.name}: ${ps.value} points ");
+      }
+    }
+    return sb.toString();
   }
 
   void score(FooShamPlayer p) {
