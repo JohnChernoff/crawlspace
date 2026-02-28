@@ -178,7 +178,7 @@ enum StockSpecies {
           defWeight: .1, allValues: DamageType.values)
       ),
   ),
-  sklorpl(Species("Skorpl","Zarm",.25, xenomancy: .4,"S",graphCol: GameColors.orange,
+  edualx(Species("Edualx","Zarm",.25, xenomancy: .4,"S",graphCol: GameColors.orange,
       xenoWeights: WeightedTrait({XenomancySchool.antimatter: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.neutrino: .08},
@@ -270,7 +270,7 @@ final List<Faction> factions = [
       relativeFreq: .1, xeno: .5, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       color: GameColors.gold),
 
-  pirateFaction(StockSpecies.sklorpl.species),
+  pirateFaction(StockSpecies.edualx.species),
   pirateFaction(StockSpecies.lael.species),
   pirateFaction(StockSpecies.orblix.species),
   pirateFaction(StockSpecies.moveliean.species),

@@ -54,7 +54,6 @@ class Galaxy {
   String name;
   List<System> systems = [];
   NameGenerator nameGenerator;
-  //late Planet fedHomeWorld;
   late System fedHomeSystem, fed1,fed2,fed3;
   late int maxJumps;
   Map<System,double> hazardField = {};
@@ -92,6 +91,8 @@ class Galaxy {
     topo = GalaxyTopology(this);
     assignHomeworlds();
     civMod = CivModel(this);
+    civMod.generatePolitics(rnd);
+    civMod.debugPrintPoliticalMap();
     computeKernels();
     initFlowFields();
     fedMod = FederationModel(this);

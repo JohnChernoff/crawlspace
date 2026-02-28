@@ -8,7 +8,6 @@ import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'package:crawlspace_engine/systems/ship_system.dart';
 import 'foosham/foosham.dart';
-import 'foosham/throws.dart';
 import 'galaxy/system.dart';
 import 'menu.dart';
 import 'object.dart';
@@ -102,7 +101,7 @@ class MenuFactory {
   }
 
   Menu buildFooshamIntroMenu(Pilot pilot) {
-    final game = FooShamGame(ThrowList.rndList(fm.aiRng),fm.aiRng, difficulty: FooShamDifficulty.medium);
+    final game = FooShamGame(pilot.system,fm.aiRng, difficulty: FooShamDifficulty.medium, civMod: fm.galaxy.civMod);
     return <MenuEntry> [
       TextEntry(txtBlocks: [
         TextBlock("Welcome to Intergalactic Roshambo!", GameColors.green, true),
@@ -116,12 +115,13 @@ class MenuFactory {
   Menu buildFooshamMenu(Pilot pilot, FooShamGame game) {
     return <MenuEntry> [
       TextEntry(txtBlocks: [TextBlock(game.currentScore(), GameColors.white, true)]),
-      if (game.winner == null) for (int i = 0; i < game.throwList.list.length; i++)
+      if (game.winner == null) for (int i = 0; i < game.throwList.length; i++)
         ValueEntry(letter: letter(i),
-            txtBlocks: [TextBlock("${game.throwList.list[i]} ${game.beatInfo(game.throwList.list[i])}", GameColors.green, true)],
-            game.throwList.list[i], (t) {
+            txtBlocks: [TextBlock("${game.throwList[i]} ${game.beatInfo(game.throwList[i])}", GameColors.green, true)],
+            game.throwList[i], (t) {
               final result = game.playThrow(t);
               fm.msg(result.toString());
+              if (result.crowdReaction != null) fm.msg(result.crowdReaction!.message);
             })
     ];
   }

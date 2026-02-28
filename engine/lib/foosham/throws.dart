@@ -1,5 +1,18 @@
 import 'dart:math';
 
+import 'package:crawlspace_engine/stock_items/species.dart';
+
+const Map<String,StockSpecies> speciesThrows = {
+  "Planet" : StockSpecies.humanoid,
+  "Nebula" : StockSpecies.vorlon,
+  "Quasar" : StockSpecies.gersh,
+  "Star" : StockSpecies.lael,
+  "Black Hole" : StockSpecies.orblix,
+  "Asteroid" : StockSpecies.moveliean,
+  "Supernova" : StockSpecies.krakkar,
+  "Singularity" : StockSpecies.edualx
+};
+
 const List<String> zodThrows = [
   "Aquarius",  "Pieces",  "Aries",  "Taurus",  "Gemini",  "Cancer",  "Leo",
   "Virgo",  "Libra", "Scorpio",  "Sagittarius",  "Capricorn"
