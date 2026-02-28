@@ -20,6 +20,7 @@ class Planet extends SpaceEnvironment<SystemLocation> {
   double population; // 0–1
   double hazard = 0;     // 0–1 (dust, radiation, etc.)
   double weirdness = 0;
+  final bool homeworld;
 
   DistrictLvl tier(double v) {
     if (v < 0.3) return DistrictLvl.none;
@@ -29,6 +30,7 @@ class Planet extends SpaceEnvironment<SystemLocation> {
   }
 
   Planet(super.name,super.fedLvl,super.techLvl,Random rnd,{
+    this.homeworld = false,
     required super.locale,
     required this.industry,
     required this.commerce,

@@ -1,5 +1,4 @@
 import 'dart:math';
-
 import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/controllers/message_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';

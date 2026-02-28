@@ -3,6 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
+import 'package:crawlspace_engine/stock_items/stock_pile.dart';
 import '../agent.dart';
 import '../audio_service.dart';
 import '../descriptors.dart';
@@ -156,13 +157,17 @@ class PlanetsideController extends FugueController {
 
   void shop({ShopType? type, List<Ship>? shiplist}) {
     final location = fm.player.locale; if (location is AtEnvironment) {
+      final env = location.env;
+      final techLvl = (env is Planet && env.homeworld)
+          ? (maxTechLvl * env.techLvl).round()
+          : (fm.itemRng.nextDouble() * (maxTechLvl * env.techLvl)).round();
       if (type != null) {
-        location.env.shop ??= Shop(location.env,type,1,fm.rnd);
+        env.shop ??= Shop(env,type,techLvl,fm.rnd);
       } else {
-        location.env.shop ??= Shop.random(location.env,1,fm.rnd);
+        env.shop ??= Shop.random(env,techLvl,fm.rnd);
       }
-      fm.menuController.showMenu(() => fm.menuFactory.buildShopBuyMenu(location.env.shop!, ship: fm.playerShip),
-          headerTxt: "${location.env.shop!.name}");
+      fm.menuController.showMenu(() => fm.menuFactory.buildShopBuyMenu(env.shop!, ship: fm.playerShip),
+          headerTxt: "${env.shop!.name}");
     }
   }
 

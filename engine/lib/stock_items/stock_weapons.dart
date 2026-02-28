@@ -3,9 +3,9 @@ import '../systems/ship_system.dart';
 import '../systems/weapons.dart';
 
 final Map<StockSystem, WeaponData> stockWeapons = {
-  StockSystem.fedLaser1: WeaponData(
+  StockSystem.wepFedLaser1: WeaponData(
     systemData: ShipSystemData("Fed Laser Mk 1",
-        techLvl: StockSystem.fedLaser1.techLvl, rarity: StockSystem.fedLaser1.rarity,
+        techLvl: StockSystem.wepFedLaser1.techLvl, rarity: StockSystem.wepFedLaser1.rarity,
         mass: 10, baseCost: 100, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 1,
     dmgDiceSides: 60,
@@ -18,9 +18,9 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     accuracyRangeConfig: const RangeConfig(idealRange: 1.5, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .33),
   ),
 
-  StockSystem.fedLaser2: WeaponData(
+  StockSystem.wepFedLaser2: WeaponData(
     systemData: ShipSystemData("Fed Laser Mk 2",
-        techLvl: StockSystem.fedLaser2.techLvl, rarity: StockSystem.fedLaser2.rarity,
+        techLvl: StockSystem.wepFedLaser2.techLvl, rarity: StockSystem.wepFedLaser2.rarity,
         mass: 10, baseCost: 250, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 4,
     dmgDiceSides: 20,
@@ -33,9 +33,9 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     accuracyRangeConfig: const RangeConfig(idealRange: 1.5, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .25),
   ),
 
-  StockSystem.fedLaser3: WeaponData(
+  StockSystem.wepFedLaser3: WeaponData(
     systemData: ShipSystemData("Fed Laser Mk 3",
-        techLvl: StockSystem.fedLaser3.techLvl, rarity: StockSystem.fedLaser3.rarity,
+        techLvl: StockSystem.wepFedLaser3.techLvl, rarity: StockSystem.wepFedLaser3.rarity,
         mass: 10, baseCost: 500, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 5,
     dmgDiceSides: 25,
@@ -48,9 +48,9 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     accuracyRangeConfig: const RangeConfig(idealRange: 1.5, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .2),
   ),
 
-  StockSystem.plasmaRay: WeaponData(
+  StockSystem.wepPlasmaRay: WeaponData(
     systemData: ShipSystemData("Plasma Ray",
-        techLvl: StockSystem.plasmaRay.techLvl, rarity: StockSystem.plasmaRay.rarity,
+        techLvl: StockSystem.wepPlasmaRay.techLvl, rarity: StockSystem.wepPlasmaRay.rarity,
         mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 4,
     dmgDiceSides: 60,
@@ -63,9 +63,9 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .1),
   ),
 
-  StockSystem.gravRifle: WeaponData(
+  StockSystem.wepGravRifle: WeaponData(
     systemData: ShipSystemData("Gravimetric Pulse Rifle",
-        techLvl: StockSystem.gravRifle.techLvl, rarity: StockSystem.gravRifle.rarity,
+        techLvl: StockSystem.wepGravRifle.techLvl, rarity: StockSystem.wepGravRifle.rarity,
         mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6,
         slot: const SystemSlot(SystemSlotType.bauchmann,1)),
     dmgDice: 4,
@@ -79,9 +79,9 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .1),
   ),
 
-  StockSystem.vibraSlap: WeaponData(
+  StockSystem.wepVibraSlap: WeaponData(
     systemData: ShipSystemData("Cosmosonic Emitter",
-        techLvl: StockSystem.vibraSlap.techLvl, rarity: StockSystem.vibraSlap.rarity,
+        techLvl: StockSystem.wepVibraSlap.techLvl, rarity: StockSystem.wepVibraSlap.rarity,
         mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6,
         slot: const SystemSlot(SystemSlotType.sinclair,1)),
     dmgDice: 8,
@@ -95,9 +95,9 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 2, maxRange: 12, closeFalloff: .01, farFalloff: .05),
   ),
 
-  StockSystem.neuRad: WeaponData(
+  StockSystem.wepNeuRad: WeaponData(
     systemData: ShipSystemData("Neutronic Radiator",
-        techLvl: StockSystem.neuRad.techLvl, rarity: StockSystem.neuRad.rarity,
+        techLvl: StockSystem.wepNeuRad.techLvl, rarity: StockSystem.wepNeuRad.rarity,
         mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6,
         slot: const SystemSlot(SystemSlotType.sinclair,1)),
     dmgDice: 8,
@@ -111,9 +111,9 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .1),
   ),
 
-  StockSystem.thermalLance: WeaponData(
+  StockSystem.wepThermalLance: WeaponData(
     systemData: ShipSystemData("Thermal Lance",
-        techLvl: StockSystem.thermalLance.techLvl, rarity: StockSystem.thermalLance.rarity,
+        techLvl: StockSystem.wepThermalLance.techLvl, rarity: StockSystem.wepThermalLance.rarity,
         mass: 10, baseCost: 2000, baseRepairCost: 1.5, powerDraw: .9,
         slot: const SystemSlot(SystemSlotType.sinclair,1)),
     dmgDice: 4,

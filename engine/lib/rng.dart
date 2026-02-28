@@ -339,36 +339,100 @@ class WeightedPicker<T> {
 }
 
 class ShopNameGen {
-  static const Map<ShopType, List<String>> shopFlavors = {
-    ShopType.power:   ["Reactors", "Powerworks", "Fusion Emporium", "Core Depot"],
-    ShopType.engine:  ["Engines", "Driveworks", "Propulsion Guild", "Thrust Hall"],
-    ShopType.shield:  ["Shieldworks", "Deflector Forge", "Barrier Bazaar", "Wardens"],
-    ShopType.weapon:  ["Arsenal", "Armory", "Killmart", "Gun Cathedral"],
-    ShopType.launcher:["Launch Systems", "Missile Bay", "Tube Syndicate"],
-    ShopType.misc:    ["Bazaar", "Emporium", "Tech Curios", "Oddities"],
-    ShopType.shipyard: ["Shipyard"]
+  // Low-tech: gritty, salvage-yard vibes
+  // Mid-tech: corporate, functional
+  // High-tech: sleek, abstract, megacorp prestige
+  static const Map<ShopType, List<List<String>>> shopFlavors = {
+    ShopType.power: [
+      ["Fuel Shack", "Generator Yard", "Spark Hut"],           // 1–3
+      ["Reactors", "Powerworks", "Core Depot"],                // 4–6
+      ["Fusion Emporium", "Quantum Core", "Stellar Array"],    // 7–10
+    ],
+    ShopType.engine: [
+      ["Drive Shed", "Thruster Patch", "Burn Yard"],
+      ["Engines", "Driveworks", "Propulsion Guild"],
+      ["Thrust Hall", "Void Propulsion", "Singularity Drive"],
+    ],
+    ShopType.shield: [
+      ["Plate Shop", "Hull Patch", "Scrap Ward"],
+      ["Shieldworks", "Barrier Bazaar", "Deflector Forge"],
+      ["Phase Wardens", "Null Barrier", "Quantum Aegis"],
+    ],
+    ShopType.weapon: [
+      ["Guns", "Blasters", "The Rack"],
+      ["Arsenal", "Armory", "Killmart"],
+      ["Gun Cathedral", "Void Armaments", "Terminus Weapons"],
+    ],
+    ShopType.launcher: [
+      ["Tube Shack", "Missile Shed", "The Silo"],
+      ["Launch Systems", "Missile Bay"],
+      ["Tube Syndicate", "Orbital Payload", "Void Ordnance"],
+    ],
+    ShopType.misc: [
+      ["Junk Heap", "Odds & Ends", "The Pile"],
+      ["Bazaar", "Emporium", "Tech Curios"],
+      ["Oddities", "Quantum Curios", "Relic Exchange"],
+    ],
+    ShopType.shipyard: [
+      ["Shipyard"],
+      ["Shipyard", "Dry Dock"],
+      ["Shipyard", "Void Foundry", "Stellar Works"],
+    ],
   };
+
+  // Patterns skew toward grander structures at higher tech
+  static const List<List<String>> shopPatterns = [
+    // Low tech (1–3): simple, personal
+    [
+      "{alien}'s {flavor}",
+      "{alien} {flavor}",
+      "Old {alien} {flavor}",
+    ],
+    // Mid tech (4–6): corporate-ish
+    [
+      "{alien} {flavor}",
+      "The {alien} {flavor}",
+      "{alien}-{alien} {flavor}",
+      "{alien} & Sons {flavor}",
+    ],
+    // High tech (7–10): abstract, institutional
+    [
+      "{alien} {flavor}",
+      "{flavor} of {alien}",
+      "The {alien} {flavor}",
+      "{alien}-{alien} {flavor}",
+      "{megacorp} {flavor}",       // megacorps only appear at high tech
+    ],
+  ];
 
   static const List<String> megacorps = [
     "OmniDyne", "Hyperion", "CryoCore", "VoidStar", "Zenith Union", "NovaCorp"
   ];
 
-  static const List<String> shopPatterns = [
-    "{alien} {flavor}",
-    "{alien}'s {flavor}",
-    "The {alien} {flavor}",
-    "{alien}-{alien} {flavor}",
-    "{flavor} of {alien}",
-    "{alien} & Sons {flavor}",
-  ];
+  static int _tier(int techLvl) {
+    if (techLvl <= 3) return 0;
+    if (techLvl <= 6) return 1;
+    return 2;
+  }
 
-  static String generate(ShopType type, Random rnd) {
-    String alien = Rng.randomAlienName(rnd);
-    String flavor = shopFlavors[type]![rnd.nextInt(shopFlavors[type]!.length)];
-    String pattern = shopPatterns[rnd.nextInt(shopPatterns.length)];
+  static String generate(ShopType type, int techLvl, Random rnd) {
+    final tier = _tier(techLvl.clamp(1, 10));
+
+    final flavorList = shopFlavors[type]![tier];
+    final patternList = shopPatterns[tier];
+
+    final alien = Rng.randomAlienName(rnd);
+    final alien2 = Rng.randomAlienName(rnd);
+    final megacorp = megacorps[rnd.nextInt(megacorps.length)];
+    final flavor = flavorList[rnd.nextInt(flavorList.length)];
+    final pattern = patternList[rnd.nextInt(patternList.length)];
 
     return pattern
         .replaceAll("{alien}", alien)
+        .replaceAll("{alien2}", alien2)  // in case you want distinct doubles later
+        .replaceFirstMapped(RegExp(r'\{alien\}(?=.*\{alien\})'), (_) => alien)
+        .replaceAll("{alien}", alien2)   // second {alien} gets a different name
+        .replaceAll("{megacorp}", megacorp)
         .replaceAll("{flavor}", flavor);
   }
 }

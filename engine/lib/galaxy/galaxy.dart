@@ -102,7 +102,7 @@ class Galaxy {
     for (final s in systems) {
       s.map = s.createSystemMap(8,.02,.01,.001,rnd);
       if (s.homeworld != null) {
-        final homeWorld = Planet(s.homeworld!.homeWorld, 1, 1, rnd,
+        final homeWorld = Planet(s.homeworld!.homeWorld, 1, 1, rnd, homeworld: true,
             locale: SystemLocation(s, s.map.rndCell(rnd)), population: 1, industry: 1, commerce: 1);
         s.addPlanets(this, rnd, pList: [homeWorld]);
       } else {

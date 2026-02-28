@@ -3,9 +3,9 @@ import '../systems/weapons.dart';
 import 'stock_pile.dart';
 
 final Map<StockSystem, WeaponData> stockLaunchers = {
-  StockSystem.plasmaCannon:  WeaponData(
+  StockSystem.lchPlasmaCannon:  WeaponData(
     systemData: ShipSystemData("Plasma Cannon",
-        techLvl: StockSystem.plasmaCannon.techLvl, rarity: StockSystem.plasmaCannon.rarity,
+        techLvl: StockSystem.lchPlasmaCannon.techLvl, rarity: StockSystem.lchPlasmaCannon.rarity,
         mass: 10, baseCost: 7500, baseRepairCost: 1.5, powerDraw: .5,
         slot: const SystemSlot(SystemSlotType.bauchmann,1)),
     dmgDice: 0, dmgDiceSides: 0, dmgBase: 0,
@@ -20,9 +20,9 @@ final Map<StockSystem, WeaponData> stockLaunchers = {
     ammoType: AmmoType.slug,
   ),
 
-  StockSystem.fedTorpLauncher: WeaponData(
+  StockSystem.lchfedTorpLauncher: WeaponData(
     systemData: ShipSystemData("Fed Torp Mk 1",
-        techLvl: StockSystem.fedTorpLauncher.techLvl, rarity: StockSystem.fedTorpLauncher.rarity,
+        techLvl: StockSystem.lchfedTorpLauncher.techLvl, rarity: StockSystem.lchfedTorpLauncher.rarity,
         mass: 10, baseCost: 10000, baseRepairCost: 1.5, powerDraw: .5,
         slot: const SystemSlot(SystemSlotType.bauchmann,1)),
     dmgDice: 0, dmgDiceSides: 0, dmgBase: 0,

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'item.dart';
 import 'pilot.dart';
@@ -34,7 +35,7 @@ class Shop {
   SpaceEnvironment location;
 
   Shop(this.location,this.type,this.techLvl,Random rnd, {this.buysScrap = false, double avgQuantity = 12, List<Ship>? shiplist}) {
-    name = ShopNameGen.generate(type, rnd);
+    name = ShopNameGen.generate(type, techLvl, rnd);
     generateItems(rnd, avgQuantity: avgQuantity, shiplist: shiplist);
   }
 
@@ -110,19 +111,28 @@ class Shop {
     itemSlots.clear();
     int quantity = Rng.poissonRandom(avgQuantity);
     final itemSelection = switch(type) {
-      ShopType.power => generateInventory(quantity,[ShipSystemType.power],techLvl,rnd),
-      ShopType.engine => generateInventory(quantity,[ShipSystemType.engine],techLvl,rnd),
-      ShopType.shield => generateInventory(quantity,[ShipSystemType.shield],techLvl,rnd),
-      ShopType.weapon => generateInventory(quantity,[ShipSystemType.weapon],techLvl,rnd),
-      ShopType.launcher => generateInventory(quantity,[ShipSystemType.launcher],techLvl,rnd),
-      ShopType.misc => generateInventory(quantity,[ShipSystemType.power,ShipSystemType.engine],techLvl,rnd),
-      ShopType.shipyard => shiplist ?? [],
+      ShopType.power => generateSystemInventory(quantity,[ShipSystemType.power],techLvl,rnd),
+      ShopType.engine => generateSystemInventory(quantity,[ShipSystemType.engine],techLvl,rnd),
+      ShopType.shield => generateSystemInventory(quantity,[ShipSystemType.shield],techLvl,rnd),
+      ShopType.weapon => generateSystemInventory(quantity,[ShipSystemType.weapon],techLvl,rnd),
+      ShopType.launcher => generateSystemInventory(quantity,[ShipSystemType.launcher],techLvl,rnd),
+      ShopType.misc => generateSystemInventory(quantity,[ShipSystemType.power,ShipSystemType.engine],techLvl,rnd),
+      ShopType.shipyard => shiplist ?? <Item>[],
     };
-    for (final i in itemSelection) {
+    if (itemSelection.isEmpty) return; //argh
+    final List<Item> totalItemList = [];
+    while (totalItemList.length < quantity) {
+      final i = itemSelection.elementAt(rnd.nextInt(itemSelection.length));
+      final rarity =  i is StockSystem ? i.rarity : (i as Item).rarity;
+      if (rnd.nextDouble() < rarity) totalItemList.add(i is StockSystem ? i.createSystem() : i as Item);
+    }
+    while(itemSlots.map((s) => s.items.length).sum < quantity) {
       final slot = ShopSlot();
-      do {
-        slot.items.add(i);
-      } while (rnd.nextBool() && rnd.nextDouble() > i.rarity);
+      final item = totalItemList.removeLast();
+      slot.items.add(item);
+      if (item is ShipSystem) {
+        for (final sameItem in totalItemList.where((i) => i is ShipSystem && i.name == item.name)) slot.items.add(sameItem);
+      }
       itemSlots.add(slot);
     }
   }
@@ -144,3 +154,15 @@ class Shop {
 }
 
 
+/*
+    for (final i in itemSelection) {
+      final slot = ShopSlot();
+      do {
+        slot.items.add(i is StockSystem ? i.createSystem() : i as Item);
+      } while (rnd.nextBool() && rnd.nextDouble() > slot.items.first.rarity);
+      itemSlots.add(slot);
+    }
+    while(itemSlots.map((s) => s.items.length).sum < quantity) {
+      itemSlots.elementAt(rnd.nextInt(itemSlots.length)).
+    }
+ */

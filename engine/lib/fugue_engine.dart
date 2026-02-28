@@ -105,13 +105,13 @@ class FugueEngine {
     Ship playShip = Ship("HMS Sebastian",
         shipClass: ShipClassType.hermes.shipclass,
         location: SystemLocation(farSys, farSys.map.rndCell(rnd)),
-        generator: PowerGenerator.fromStock(StockSystem.basicNuclear),
-        impEngine: Engine.fromStock(StockSystem.basicFedImpulse),
-        subEngine: Engine.fromStock(StockSystem.basicFedSublight),
-        hyperEngine: Engine.fromStock(StockSystem.basicFedHyperdrive),
-        shield: Shield.fromStock(StockSystem.basicEnergon),
-        weapons: [Weapon.fromStock(StockSystem.fedLaser3),Weapon.fromStock(StockSystem.plasmaCannon)],
-        ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 50});
+        generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
+        impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
+        subEngine: Engine.fromStock(StockSystem.engBasicFedSub),
+        hyperEngine: Engine.fromStock(StockSystem.engBasicFedHyper),
+        shield: Shield.fromStock(StockSystem.shdBasicEnergon),
+        weapons: [Weapon.fromStock(StockSystem.wepFedLaser3),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
+        ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50});
     player = Player(playerName,loc: AboardShip(playShip)); //playShip.pilot = player;
     player.system.visited = true;
     addShip(playShip);
@@ -119,13 +119,13 @@ class FugueEngine {
         Ship agentShip = Ship("Agent ${persona.name}",
             shipClass: ShipClassType.hermes.shipclass,
             location: SystemLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCell(rnd)),
-            generator: PowerGenerator.fromStock(StockSystem.basicNuclear),
-            impEngine: Engine.fromStock(StockSystem.basicFedImpulse),
-            subEngine: Engine.fromStock(StockSystem.basicFedSublight),
-            hyperEngine: Engine.fromStock(StockSystem.basicFedHyperdrive),
-            shield: Shield.fromStock(StockSystem.basicEnergon),
-            weapons: [Weapon.fromStock(StockSystem.plasmaRay),Weapon.fromStock(StockSystem.plasmaCannon)],
-            ammo: {Ammo.fromStock(StockSystem.plasmaBall) : 250});
+            generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
+            impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
+            subEngine: Engine.fromStock(StockSystem.engBasicFedSub),
+            hyperEngine: Engine.fromStock(StockSystem.engBasicFedHyper),
+            shield: Shield.fromStock(StockSystem.shdBasicEnergon),
+            weapons: [Weapon.fromStock(StockSystem.wepPlasmaRay),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
+            ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 250});
         final agent = Agent(persona.name,persona,loc: AboardShip(agentShip),galaxy: galaxy);
         addShip(agentShip);
     }
@@ -275,7 +275,7 @@ class FugueEngine {
       for (final s in _shipRegistry.inLevel(playShip.loc.level).where((s) => s.npc)) playShip.detect(s);
     }
     update();
-    print("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}");
+    glog("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}");
     return playerShip?.loc.domain == domain;
   }
 

@@ -4,36 +4,36 @@ import '../systems/ship_system.dart';
 import 'stock_pile.dart';
 
 final Map<StockSystem, EngineData> stockEngines = {
-  StockSystem.basicFedImpulse: EngineData(
+  StockSystem.engBasicFedImp: EngineData(
       systemData: ShipSystemData("Mark I Fed Impulse Engine",
-      techLvl: StockSystem.basicFedImpulse.techLvl, rarity: StockSystem.basicFedImpulse.rarity,
+      techLvl: StockSystem.engBasicFedImp.techLvl, rarity: StockSystem.engBasicFedImp.rarity,
       mass: 80, baseCost: 300, baseRepairCost: 2, powerDraw: 5),
     domain: Domain.impulse,
     engineType: EngineType.fedMark1,
     efficiency: .5,
     baseAutPerUnitTraversal: 10,
   ),
-  StockSystem.basicFedSublight: EngineData(
+  StockSystem.engBasicFedSub: EngineData(
     systemData: ShipSystemData("Mark I Fed Sublight Engine",
-        techLvl: StockSystem.basicFedSublight.techLvl, rarity: StockSystem.basicFedSublight.rarity,
+        techLvl: StockSystem.engBasicFedSub.techLvl, rarity: StockSystem.engBasicFedSub.rarity,
         mass: 80, baseCost: 300, baseRepairCost: 2, powerDraw: 3.3),
     domain: Domain.system,
     engineType: EngineType.fedMark1,
     efficiency: .5,
     baseAutPerUnitTraversal: 10,
   ),
-  StockSystem.basicFedHyperdrive: EngineData(
+  StockSystem.engBasicFedHyper: EngineData(
     systemData: ShipSystemData("Mark I Fed Hyperdrive Engine",
-        techLvl: StockSystem.basicFedHyperdrive.techLvl, rarity: StockSystem.basicFedHyperdrive.rarity,
+        techLvl: StockSystem.engBasicFedHyper.techLvl, rarity: StockSystem.engBasicFedHyper.rarity,
         mass: 80, baseCost: 300, baseRepairCost: 2, powerDraw: 8),
     domain: Domain.hyperspace,
     engineType: EngineType.fedMark1,
     efficiency: .5,
     baseAutPerUnitTraversal: 10,
   ),
-  StockSystem.movSublight1: EngineData(
+  StockSystem.engMovSub1: EngineData(
     systemData: ShipSystemData("Mark I Movelian Hyperdrive Engine",
-        techLvl: StockSystem.movSublight1.techLvl, rarity: StockSystem.movSublight1.rarity,
+        techLvl: StockSystem.engMovSub1.techLvl, rarity: StockSystem.engMovSub1.rarity,
         mass: 80, baseCost: 1000, baseRepairCost: 2, powerDraw: 12),
     domain: Domain.system,
     engineType: EngineType.moevelian,

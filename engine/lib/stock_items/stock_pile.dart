@@ -6,39 +6,40 @@ import '../systems/shields.dart';
 import '../systems/ship_system.dart';
 import '../systems/weapons.dart';
 
+const maxTechLvl = 10;
 enum StockSystem {
-  basicFedImpulse(ShipSystemType.engine,1,.1),
-  basicFedSublight(ShipSystemType.engine,1,.1),
-  basicFedHyperdrive(ShipSystemType.engine,1,.1),
-  movSublight1(ShipSystemType.engine,1,.1),
+  engBasicFedImp(ShipSystemType.engine,1,.1),
+  engBasicFedSub(ShipSystemType.engine,1,.1),
+  engBasicFedHyper(ShipSystemType.engine,1,.1),
+  engMovSub1(ShipSystemType.engine,3,.25),
 
-  basicNuclear(ShipSystemType.power,1,.1),
-  zemlinsky(ShipSystemType.power,1,.1),
-  aojginx(ShipSystemType.power,1,.1),
-  gjellorny(ShipSystemType.power,1,.1),
-  bellauxfz(ShipSystemType.power,1,.1),
+  genBasicNuclear(ShipSystemType.power,1,.1),
+  genZemlinsky(ShipSystemType.power,2,.25),
+  genAojginx(ShipSystemType.power,4,.33),
+  genGjellorny(ShipSystemType.power,5,.5),
+  genBellauxfz(ShipSystemType.power,7,.75),
 
-  basicEnergon(ShipSystemType.shield,1,.1),
-  movEnergon(ShipSystemType.shield,1,.1),
-  cassat(ShipSystemType.shield,1,.1),
-  remlok(ShipSystemType.shield,1,.1),
-  ortegroq(ShipSystemType.shield,1,.1),
-  kevlop(ShipSystemType.shield,1,.1),
+  shdBasicEnergon(ShipSystemType.shield,1,.1),
+  shdMovEnergon(ShipSystemType.shield,2,.2),
+  shdCassat(ShipSystemType.shield,3,.5),
+  shdRemlok(ShipSystemType.shield,5,.66),
+  shdOrtegroq(ShipSystemType.shield,7,.75),
+  shdKevlop(ShipSystemType.shield,8,.9),
 
-  fedLaser1(ShipSystemType.weapon,1,.1),
-  fedLaser2(ShipSystemType.weapon,1,.1),
-  fedLaser3(ShipSystemType.weapon,1,.1),
-  plasmaRay(ShipSystemType.weapon,1,.1),
-  gravRifle(ShipSystemType.weapon,1,.1),
-  vibraSlap(ShipSystemType.weapon,1,.1),
-  neuRad(ShipSystemType.weapon,1,.1),
-  thermalLance(ShipSystemType.weapon,1,.1),
+  wepFedLaser1(ShipSystemType.weapon,1,.1),
+  wepFedLaser2(ShipSystemType.weapon,2,.1),
+  wepFedLaser3(ShipSystemType.weapon,3,.1),
+  wepPlasmaRay(ShipSystemType.weapon,4,.25),
+  wepGravRifle(ShipSystemType.weapon,5,.33),
+  wepVibraSlap(ShipSystemType.weapon,6,.5),
+  wepNeuRad(ShipSystemType.weapon,7,.75),
+  wepThermalLance(ShipSystemType.weapon,8,.75),
 
-  plasmaCannon(ShipSystemType.launcher,1,.1),
-  fedTorpLauncher(ShipSystemType.launcher,1,.1),
+  lchfedTorpLauncher(ShipSystemType.launcher,1,.1),
+  lchPlasmaCannon(ShipSystemType.launcher,2,.1),
 
-  plasmaBall(ShipSystemType.ammo,1,.1),
-  fedTorp(ShipSystemType.ammo,1,.1),
+  ammoFedTorp(ShipSystemType.ammo,1,.1),
+  ammoPlasmaBall(ShipSystemType.ammo,2,.1),
   ;
 
   final ShipSystemType type;
@@ -66,16 +67,17 @@ enum StockSystem {
 
 }
 
-List<Item> generateInventory(int n, List<ShipSystemType> types, int techLvl, Random rnd) {
+List<StockSystem> generateSystemInventory(int n, List<ShipSystemType> types, int techLvl, Random rnd) {
   final systems = getSystemsByTech(types, techLvl); //.map((e) => e.createSystem()).asList();
+  if (systems.isEmpty) return  techLvl > 0 ? generateSystemInventory(n, types, techLvl - 1, rnd) : [];
   final maxItems = min(n,systems.length);
-  List<Item> items = [];
+  List<StockSystem> items = [];
   Set<StockSystem> sysList = {};
   do {
     final system = systems.elementAt(rnd.nextInt(systems.length));
     if (rnd.nextDouble() > system.rarity) {
       if (sysList.add(system)) { //print("Stock: ${system.name}");
-        items.add(system.createSystem());
+        items.add(system);
       }
     }
   } while (items.length < maxItems);
@@ -83,4 +85,4 @@ List<Item> generateInventory(int n, List<ShipSystemType> types, int techLvl, Ran
 }
 
 Iterable<StockSystem> getSystemsByTech(List<ShipSystemType> types, int techLvl) =>
-    StockSystem.values.where((s) => types.contains(s.type) && s.techLvl >= techLvl);
+    StockSystem.values.where((s) => types.contains(s.type) && s.techLvl <= techLvl);
