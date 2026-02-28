@@ -1,5 +1,6 @@
 import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/controllers/menu_controller.dart';
+import 'package:crawlspace_engine/drinks.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/planet.dart';
@@ -75,21 +76,28 @@ class MenuFactory {
   Menu buildTavernMenu(SpaceEnvironment env) {
     return <MenuEntry> [
       TextEntry(txtBlocks: [TextBlock("Welcome to ${env.name}", GameColors.green, true)]),
-      ActionEntry(letter: "c", label: "Enter the Cantina", (m) => mc.showMenu(() => buildCatinaMenu(env))),
-      ActionEntry(letter: "f", label: "Play Foohsam", (m) =>  mc.showMenu(() => buildFooshamIntroMenu(fm.player))),
+      ActionEntry(letter: "c", label: "Enter the Cantina", (m) => mc.showMenu(() => buildCatinaMenu(env),level: MenuLevel.tavern)),
+      ActionEntry(letter: "f", label: "Play Foohsam", (m) =>  mc.showMenu(() => buildFooshamIntroMenu(fm.player),level: MenuLevel.mainFoosham)),
     ];
   }
 
   Menu buildCatinaMenu(SpaceEnvironment env) {
+    AlienDrink drink;
     double drinkStrength = fm.aiRng.nextDouble();
     if (env is Planet) {
+      drink = env.drink = env.drink ?? DrinkGen.generate(fm.galaxy, env, fm.itemRng, strength: drinkStrength);
       drinkStrength = ((1-fm.galaxy.civKernel.val(fm.player.system)) + ((1-env.techLvl + env.industry)/2))/2;
+    } else {
+      drink = AlienDrink("Space Grog", desc: "Generic Space Station Grog", baseCost: 5, strength: drinkStrength, potency: "unknown");
     }
+    //int drinkCost = 1 + (env.techLvl * 5).round();
     return <MenuEntry> [
+      fm.player.creditLine,
       TextEntry(txtBlocks: [TextBlock("Grog's Cantina", GameColors.green, true)]),
-      TextEntry(label: "You are currently: ${fm.player.inebriationLevel}"),
-      ActionEntry(letter: "1", label: "Order a drink", (m) => fm.planetsideController.drink(1, drinkStrength, env)),
-      ActionEntry(letter: "2", label: "Order a double", (m) => fm.planetsideController.drink(2, drinkStrength, env)),
+      TextEntry(txtBlocks: [TextBlock("Happy Hour Special: ",GameColors.white, false), TextBlock(drink.name, drink.objColor, true)]),
+      TextEntry(txtBlocks: [TextBlock("You are currently: ",GameColors.white, false), TextBlock(fm.player.inebriationLevel, GameColors.gray, true)]),
+      ActionEntry(letter: "1", label: "Order a drink", (m) => fm.planetsideController.drink(1, drink, env)),
+      ActionEntry(letter: "2", label: "Order a double", (m) => fm.planetsideController.drink(2, drink, env)),
     ];
   }
 

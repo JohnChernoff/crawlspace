@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/drinks.dart';
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
@@ -7,6 +8,7 @@ import 'package:crawlspace_engine/stock_items/stock_pile.dart';
 import '../agent.dart';
 import '../audio_service.dart';
 import '../descriptors.dart';
+import '../menu.dart';
 import '../pilot.dart';
 import '../planet.dart';
 import '../player.dart';
@@ -37,7 +39,8 @@ class PlanetsideController extends FugueController {
       if (planet.loc.level.homeworld == StockSpecies.humanoid.species) {
         fm.homecoming(home: true);
       } else {
-        fm.menuController.showMenu(() => fm.menuFactory.buildPlanetMenu(planet),headerTxt: planet.name, noExit: true);
+        fm.menuController.showMenu(() => fm.menuFactory.buildPlanetMenu(planet),
+            level: MenuLevel.planet, headerTxt: planet.name, noExit: true);
         fm.audioController.newTrack(newMood: MusicalMood.planet);
         fm.msgController.addMsg("Landing on ${planet.name}");
         fm.msgController.addMsg(planet.desc ?? "What a dump");
@@ -171,10 +174,16 @@ class PlanetsideController extends FugueController {
     }
   }
 
-  void drink(int pints, double strength, SpaceEnvironment env) {
-    fm.player.drink(1, strength);
+  void drink(int pints, AlienDrink drink, SpaceEnvironment env) {
+    if (!fm.player.transaction(TransactionType.drink, -drink.baseCost)) {
+      fm.msg("You can't afford a drink!"); return;
+    }
+    final cost = drink.baseCost * pints;
+    final strength = drink.strength * pints;
+    fm.msg("You pay ${cost} credits.");
+    fm.player.drink(strength);
     double charChk = fm.player.attributes[AttribType.cha]! / 3;
-    print("Drink Strength: $strength"); print("Char Check: $charChk");
+    //print("Drink Strength: $strength"); print("Char Check: $charChk");
     if (fm.aiRng.nextDouble() < charChk) {
       env.rapport += .1 * strength;
       fm.msg(switch(env.rapport) {
@@ -190,22 +199,35 @@ class PlanetsideController extends FugueController {
           .compareTo(fm.galaxy.topo.distance(a.system, fm.player.system))).first;
       fm.msg("Psst - there's treasure at ${nearestTreasureSystem.loc}");
     }
-    final security = env is Planet ? env.population : .5;
-    if (fm.aiRng.nextDouble() < ((fm.player.attributes[AttribType.con]! * security) * .5)) {
-      fm.msg("You pass out and are taken to the local jail to sleep it off.  Processing fee: 1000 credits.");
-      fm.player.transaction(TransactionType.jail, -1000);
+    final security = env is Planet ? (env.population + env.fedLvl) / 2.0 : 0.5;
+    final conResistance = fm.player.attributes[AttribType.con]! * 0.5;
+    final blackoutChance = (fm.player.inebriation - conResistance).clamp(0.0, 1.0);
+    if (fm.aiRng.nextDouble() < blackoutChance) {
       fm.player.inebriation = 0;
-      if (fm.aiRng.nextDouble() < .5) { //env.fedLvl) {
-        fm.galaxy.playerCrime(fm.player.system, env.fedLvl * 5);
-        // Also spike fedSurveillance flow field directly at this system
-        //final surveillance = fm.galaxy.flowFields["fedSurveillance"]!;
-        //surveillance.value[system] = (surveillance.val(system) + env.fedLvl).clamp(0, 100);
-        fm.msg(switch(env.fedLvl) {
-          > .75 => "The authorities file a full report. The Feds will know you were here.",
-          > .4  => "The local constable logs your name. Someone might be watching.",
-          _     => "Word of your arrest spreads through the cantina...",
-        });
+      final robChance  = 1.0 - security;
+      final fedChance  = security;
+      final totalChance = robChance + fedChance;
+      final roll = fm.aiRng.nextDouble() * totalChance;
+      if (roll < robChance) {
+        // Robbed — lawless outcome
+        final stolen = (fm.player.credits * (0.1 + fm.aiRng.nextDouble() * 0.3)).round();
+        fm.player.transaction(TransactionType.robbed, -stolen);
+        fm.msg("You wake up in an alley. Your pockets are lighter by $stolen credits.");
+      } else {
+        // Arrested — security outcome
+        fm.player.transaction(TransactionType.jail, -1000);
+        fm.msg("You pass out and are taken to the local jail to sleep it off. Processing fee: 1000 credits.");
+        //heat calc
+        if (fm.aiRng.nextDouble() < env.fedLvl) {
+          fm.galaxy.playerCrime(fm.player.system, env.fedLvl * 5);
+          fm.msg(switch(env.fedLvl) {
+            > .75 => "The authorities file a full report. The Feds will know you were here.",
+            > .4  => "The local constable logs your name. Someone might be watching.",
+            _     => "Word of your arrest spreads through the cantina...",
+          });
+        }
       }
+      fm.menuController.exitToLevel(MenuLevel.planet);
     }
   }
 

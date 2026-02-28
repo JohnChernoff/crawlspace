@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/rng.dart';
 import 'color.dart';
 import 'descriptors.dart';
+import 'drinks.dart';
 
 enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   const DistrictLvl(this.shortString);
@@ -18,9 +20,11 @@ class Planet extends SpaceEnvironment<SystemLocation> {
   double industry;   // 0–1
   double commerce;   // 0–1
   double population; // 0–1
+  late double wealth; //0-1
   double hazard = 0;     // 0–1 (dust, radiation, etc.)
   double weirdness = 0;
   final bool homeworld;
+  AlienDrink? drink;
 
   DistrictLvl tier(double v) {
     if (v < 0.3) return DistrictLvl.none;
@@ -43,6 +47,7 @@ class Planet extends SpaceEnvironment<SystemLocation> {
     desc = "$name is ${article(age.toString())} "
         "${getDescriptor(WordType.adj)} ${getDescriptor(WordType.noun)} "
         "with ${article(environment.toString())} climate.  Its chief exports include $export.";
+    wealth = Rng.biasedRndDouble(rnd, mean: (population + commerce) / 2, min: 0, max: 1);
   }
 
   Goods getRndExport() {

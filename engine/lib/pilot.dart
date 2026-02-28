@@ -22,7 +22,7 @@ enum SkillType {
   engineering,piloting,medicine,communications,combat
 }
 
-enum TransactionType {  shopBuy,shopSell,repair,fooshamWin,fooshamLose,jail,rollback }
+enum TransactionType {  shopBuy,shopSell,repair,fooshamWin,fooshamLose,drink,jail,robbed,bribe,rollback }
 
 class TransactionRecord {
   final TransactionType type;

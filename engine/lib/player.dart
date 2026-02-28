@@ -3,7 +3,9 @@ import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/location.dart';
 
+import 'color.dart';
 import 'galaxy/galaxy.dart';
+import 'menu.dart';
 import 'object.dart';
 import 'pilot.dart';
 import 'ship.dart';
@@ -28,10 +30,10 @@ class Player extends Pilot {
 
   Player(super.name,{required super.loc, super.galaxy, super.hostile = false});
 
-  void drink(int pints, double strength) {
+  void drink(double strength) {
     final con = attributes[AttribType.con] ?? 0.5;
     final resistance = 0.1 + con * 0.9;
-    inebriation = (inebriation + (pints * strength * (1 / resistance)) / 32).clamp(0, 1);
+    inebriation = (inebriation + (strength * (1 / resistance)) / 32).clamp(0, 1);
   }
 
   String get inebriationLevel => switch(inebriation) {
@@ -63,5 +65,7 @@ class Player extends Pilot {
     if (loc is AtEnvironment) return loc.env.techLvl;
     return g.techKernel.val(system);
   }
+
+  TextEntry get creditLine => TextEntry(txtBlocks: [TextBlock("Credits: ${credits}", GameColors.green, true)]);
 
 }

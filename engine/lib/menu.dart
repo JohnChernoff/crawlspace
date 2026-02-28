@@ -3,6 +3,8 @@ import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'controllers/menu_controller.dart';
 
+enum MenuLevel {main,planet,tavern,bar,mainFoosham,fooshamGame,shopMain,misc}
+
 typedef MenuBuilder = List<MenuEntry> Function();
 typedef VoidCallback = void Function();
 typedef BoolFn = bool Function();
@@ -11,6 +13,7 @@ typedef StringFn = String? Function();
 class MenuContext {
 
   MenuBuilder builder;
+  final MenuLevel level;
   final String headerTxt;
   final String nothingTxt;
   final int maxEntries;
@@ -22,6 +25,7 @@ class MenuContext {
   static const defMaxEntries = 12;
   static const defNoExit = false;
   static const defFirstEntry = 0;
+  static const defLevel = MenuLevel.misc;
 
   MenuContext({
     required this.builder,
@@ -30,15 +34,17 @@ class MenuContext {
     this.maxEntries = defMaxEntries,
     this.noExit = defNoExit,
     this.firstEntry = defFirstEntry,
+    this.level = defLevel
   });
 
-  factory MenuContext.fromBuilder(MenuBuilder b, {InputMode? m, String? ht, String? nt, int? me, bool? ne, int? fe}) =>
+  factory MenuContext.fromBuilder(MenuBuilder b, {InputMode? m, String? ht, String? nt, int? me, bool? ne, int? fe, MenuLevel? lvl}) =>
       MenuContext(builder: b,
           headerTxt: ht ?? defHeadTxt,
           nothingTxt: nt ?? defNothingTxt,
           maxEntries: me ?? defMaxEntries,
           noExit: ne ?? defNoExit,
-          firstEntry: fe ?? defFirstEntry
+          firstEntry: fe ?? defFirstEntry,
+          level: lvl ?? defLevel
       );
 }
 

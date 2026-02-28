@@ -51,6 +51,13 @@ class MenuController extends FugueController {
     return systemCompleter!.future;
   }
 
+  void exitToLevel(MenuLevel level) { //print(menuStack.map((s) => s.level.name));
+    if (menuStack.any((s) => s.level == level)) {
+      while (currentMenu.level != level) menuStack.removeLast();
+      rebuild();
+    }
+  }
+
   void exitMenu() { //print("Exit Menu called");
     if (menuStack.length > 1) menuStack.removeLast();
     if (menuStack.length > 1) {
@@ -72,8 +79,9 @@ class MenuController extends FugueController {
   }
 
   //return false if empty
-  bool showMenu(MenuBuilder builder, { InputMode? mode, String? headerTxt, String? nothingTxt, int? maxEntries, bool? noExit, int? firstEntry}) {
-    menuStack.add(MenuContext.fromBuilder(builder, m: mode, ht: headerTxt, nt: nothingTxt, me: maxEntries, ne: noExit, fe: firstEntry));
+  bool showMenu(MenuBuilder builder, {
+    InputMode? mode, String? headerTxt, String? nothingTxt, int? maxEntries, bool? noExit, int? firstEntry, MenuLevel? level}) {
+    menuStack.add(MenuContext.fromBuilder(builder, m: mode, ht: headerTxt, nt: nothingTxt, me: maxEntries, ne: noExit, fe: firstEntry, lvl: level));
     return _rebuildMenu();
   }
 
