@@ -56,7 +56,7 @@ class Pilot implements Locatable {
   bool hostile;
   bool safeMovement = true;
   Set<Hazard> safeList = { Hazard.nebula, Hazard.wake };
-  Map<Species, double> reputation = {}; // -1.0 hostile to 1.0 friendly
+  Map<Species, double> reputation = {}; // 0 hostile to 1.0 friendly
   bool get ready => auCooldown == 0;
   void tick(FugueEngine fm) => auCooldown = max(0,auCooldown - 1);
 
@@ -71,7 +71,7 @@ class Pilot implements Locatable {
       final species = galaxy != null
           ? Rng.weightedRandom(galaxy.civMod.civIntensity[locale.loc.system]!,pilotRnd, fallback: StockSpecies.humanoid.species)
           : StockSpecies.humanoid.species;  //print("Species: ${species.name}");
-      final factionMap = Map.fromEntries(factions.where((fa) => fa.species == species).map((f2) => MapEntry(f2, f2.relativeFreq)));
+      final factionMap = Map.fromEntries(factions.where((fa) => fa.species == species).map((f2) => MapEntry(f2, f2.strength)));
       faction = f ?? Rng.weightedRandom(factionMap, pilotRnd, fallback: factions.first);
     }
     for (final a in AttribType.values) attributes[a] = .5;

@@ -117,8 +117,23 @@ class Galaxy {
       final loc = rndLoc(rnd);
       treasureMap.putIfAbsent(loc, () => {}).add(i); //print("Adding to ${loc}: ${i.name}, ${i.baseCost}");
     }
+    for (final s in StockSpecies.values) {
+      final t = territory(s.species);
+      if (t.isNotEmpty) {
+        final sys = t.elementAt(rnd.nextInt(t.length));
+        final r = Relic("${s.species.name} relic", s.species);
+        treasureMap.putIfAbsent(SystemLocation(sys,sys.map.rndCell(rnd)), () => {}).add(r);
+      }
+    }
+    print(relicMap); print(relics);
     maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
   }
+
+  Iterable<Relic> get relics => relicMap
+      .expand((entry) => entry.value)
+      .whereType<Relic>();
+  Iterable<MapEntry<SystemLocation, Set<Item>>> get relicMap => treasureMap.entries.where((t) => t.value.any((i) => i is Relic));
+  Iterable<System> territory(Species species) => systems.where((s) => civMod.dominantSpecies(s) == species);
 
   SystemLocation rndLoc(Random rnd) {
     final system = getRandomSystem();

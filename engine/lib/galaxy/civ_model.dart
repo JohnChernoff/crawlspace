@@ -14,10 +14,46 @@ enum PoliticsMode {
 class CivModel extends GalaxySubMod {
   static const int minPositiveRelationships = 2; // minimum species each race respects (≥ 0.5)
   List<Species> get allSpecies => galaxy.allSpecies;
-  Map<Species,Map<Species,double>> politicalMap = {}; // 0 hostile to 1.0 friendly
   Map<System, Map<Species,double>> civIntensity = {};
   Map<System,double> techField = {};
   Map<System,double> commerceField = {};
+  Map<Species, Species> rivalries = {}; // store as field
+  // Stored — the ground truth
+  Map<Faction, Map<Species, double>> factionAttitudes = {};
+  Map<Species, Map<Species, double>>? _cachedPoliticalMap;
+
+
+  Map<Species, Map<Species, double>> get politicalMap {
+    return _cachedPoliticalMap ??= _computePoliticalMap();
+  }
+
+  Map<Species, Map<Species, double>> _computePoliticalMap() {
+    final map = <Species, Map<Species, double>>{};
+    for (final a in allSpecies) {
+      map[a] = {};
+      for (final b in allSpecies) {
+        if (a == b) {
+          map[a]![b] = 1.0;
+          continue;
+        }
+        final aFactions = factions.where((f) => f.species == a).toList();
+        if (aFactions.isEmpty) {
+          map[a]![b] = 0.5;
+          continue;
+        }
+        final totalStrength = aFactions.fold(0.0, (sum, f) => sum + f.strength);
+        double weightedSum = 0.0;
+        for (final faction in aFactions) {
+          final attitude = factionAttitudes[faction]?[b] ?? 0.5;
+          weightedSum += attitude * (faction.strength / totalStrength);
+        }
+        map[a]![b] = weightedSum.clamp(0.0, 1.0);
+      }
+    }
+    return map;
+  }
+
+  void _invalidatePoliticalMap() => _cachedPoliticalMap = null;
 
   CivModel(super.galaxy) {
     computeCivFields();
@@ -78,30 +114,145 @@ class CivModel extends GalaxySubMod {
   }
 
   void generatePolitics(Random rnd, {PoliticsMode mode = PoliticsMode.flux}) {
-    politicalMap = {};
+    factionAttitudes = {};
+    _invalidatePoliticalMap();
 
-    // Initialize empty maps for each species
-    for (final sp in allSpecies) {
-      politicalMap[sp] = {};
-      politicalMap[sp]![sp] = 1.0; // every species respects itself
-    }
+    // Pass 1 — dominant faction sets species baseline, others copy it
+    for (final a in allSpecies) {
+      final aFactions = factions.where((f) => f.species == a).toList();
+      if (aFactions.isEmpty) continue;
 
-    for (int i = 0; i < allSpecies.length; i++) {
-      for (int j = i + 1; j < allSpecies.length; j++) {
-        final a = allSpecies[i];
-        final b = allSpecies[j];
+      final dominant = aFactions.reduce((x, y) => x.strength > y.strength ? x : y);
 
-        final influence = _generateInfluence(a, b, rnd, mode: mode);
+      // Generate baseline from dominant faction's perspective
+      for (final b in allSpecies) {
+        if (b == a) continue;
+        factionAttitudes[dominant] ??= {};
+        factionAttitudes[dominant]![b] = _generateInfluence(a, b, rnd, mode: mode);
+      }
 
-        politicalMap[a]![b] = influence;
-        politicalMap[b]![a] = influence; // symmetric to start — could diverge later
+      // Other factions start from dominant's baseline
+      for (final faction in aFactions) {
+        if (faction == dominant) continue;
+        factionAttitudes[faction] = Map.of(factionAttitudes[dominant]!);
       }
     }
 
-    // Ensure at least a few strong relationships in each direction
-    // so the galaxy doesn't feel blandly neutral
-    _ensureDrama(rnd);
+    // Pass 2 — minority factions diverge based on militancy and dominance
+    for (final a in allSpecies) {
+      final aFactions = factions.where((f) => f.species == a).toList();
+      if (aFactions.isEmpty) continue;
+
+      final totalStrength = aFactions.fold(0.0, (sum, f) => sum + f.strength);
+      final dominant = aFactions.reduce((x, y) => x.strength > y.strength ? x : y);
+
+      for (final faction in aFactions) {
+        if (faction == dominant) continue; // dominant doesn't diverge
+        final dominance = faction.strength / totalStrength;
+        // Minority + high militancy = large divergence
+        final divergenceScale = (faction.militancy * (1.0 - dominance)).clamp(0.0, 1.0);
+
+        for (final b in allSpecies) {
+          if (b == a) continue;
+
+          // Fixed attitudes override random divergence — core faction identity
+          if (faction.fixedAttitudes.containsKey(b)) {
+            factionAttitudes[faction]![b] = faction.fixedAttitudes[b]!;
+            continue;
+          }
+
+          final baseline = factionAttitudes[faction]![b]!;
+          final divergence = (rnd.nextDouble() * 2 - 1) * divergenceScale * 0.4;
+          factionAttitudes[faction]![b] = (baseline + divergence).clamp(0.0, 1.0);
+        }
+      }
+    }
+
+    // Structural guarantees — operate on factionAttitudes via helper
+    _ensureFriendship(rnd);
     _ensureMinimumRespect(rnd);
+    rivalries = _generateRivalries(allSpecies, rnd);
+    _applyRivalryConstraints(rivalries, rnd);
+  }
+
+// Sets attitude for all factions of species a toward species b
+  void _setSpeciesAttitude(Species a, Species b, double v) {
+    for (final faction in factions.where((f) => f.species == a)) {
+      // Don't override fixed attitudes — they're core faction identity
+      if (!faction.fixedAttitudes.containsKey(b)) {
+        factionAttitudes[faction]?[b] = v;
+      }
+    }
+    _invalidatePoliticalMap();
+  }
+
+// Reads weighted average attitude of species a toward species b
+  double _getSpeciesAttitude(Species a, Species b) {
+    final aFactions = factions.where((f) => f.species == a).toList();
+    if (aFactions.isEmpty) return 0.5;
+    final totalStrength = aFactions.fold(0.0, (sum, f) => sum + f.strength);
+    if (totalStrength == 0) return 0.5;
+    double weightedSum = 0.0;
+    for (final faction in aFactions) {
+      weightedSum += (factionAttitudes[faction]?[b] ?? 0.5) * (faction.strength / totalStrength);
+    }
+    return weightedSum.clamp(0.0, 1.0);
+  }
+
+  void _ensureFriendship(Random rnd) {
+    final pairs = <List<Species>>[];
+    for (int i = 0; i < allSpecies.length; i++) {
+      for (int j = i + 1; j < allSpecies.length; j++) {
+        pairs.add([allSpecies[i], allSpecies[j]]);
+      }
+    }
+    pairs.shuffle(rnd);
+    for (int i = 0; i < 2; i++) {
+      final pair = pairs[i];
+      final v = 0.75 + rnd.nextDouble() * 0.2;
+      _setSpeciesAttitude(pair[0], pair[1], v);
+      _setSpeciesAttitude(pair[1], pair[0], v);
+    }
+  }
+
+  void _ensureMinimumRespect(Random rnd) {
+    for (final a in allSpecies) {
+      final others = allSpecies.where((b) => b != a).toList()..shuffle(rnd);
+      int respectCount = others.where((b) => _getSpeciesAttitude(a, b) >= 0.5).length;
+      for (final b in others) {
+        if (respectCount >= minPositiveRelationships) break;
+        if (_getSpeciesAttitude(a, b) < 0.5) {
+          final v = 0.5 + rnd.nextDouble() * 0.4;
+          _setSpeciesAttitude(a, b, v);
+          respectCount++;
+        }
+      }
+    }
+  }
+
+  void _applyRivalryConstraints(Map<Species, Species> rivalries, Random rnd) {
+    for (final entry in rivalries.entries) {
+      final hater = entry.key;
+      final hated = entry.value;
+      final current = _getSpeciesAttitude(hater, hated);
+      _setSpeciesAttitude(hater, hated, min(current, 0.25));
+      // Note: _setSpeciesAttitude already skips fixed attitudes
+      if (_getSpeciesAttitude(hated, hater) >= 0.5) {
+        _setSpeciesAttitude(hated, hater, 0.25 + rnd.nextDouble() * 0.24);
+      }
+    }
+  }
+
+  void degradePolitics(Random rnd, {double intensity = 0.05}) {
+    for (final faction in factions) {
+      for (final b in allSpecies) {
+        if (b == faction.species) continue;
+        final current = factionAttitudes[faction]?[b] ?? 0.5;
+        final drift = intensity * (0.5 + rnd.nextDouble() * 0.5);
+        factionAttitudes[faction]?[b] = (current - drift).clamp(0.0, 1.0);
+      }
+    }
+    _invalidatePoliticalMap();
   }
 
   double _generateInfluence(Species a, Species b, Random rnd, {required PoliticsMode mode}) {
@@ -138,70 +289,19 @@ class CivModel extends GalaxySubMod {
         .clamp(0.1, 0.9); // never fully certain in either direction
   }
 
-// Guarantees the galaxy has at least 2 strong alliances and 2 strong rivalries
-// Prevents everything clustering around 0.5
-  void _ensureDrama(Random rnd) {
-    final pairs = <List<Species>>[];
-    for (int i = 0; i < allSpecies.length; i++) {
-      for (int j = i + 1; j < allSpecies.length; j++) {
-        pairs.add([allSpecies[i], allSpecies[j]]);
-      }
-    }
-    pairs.shuffle(rnd);
-
-    // Force 2 strong friendships (0.75–0.95)
-    for (int i = 0; i < 2; i++) {
-      final pair = pairs[i];
-      final v = 0.75 + rnd.nextDouble() * 0.2;
-      politicalMap[pair[0]]![pair[1]] = v;
-      politicalMap[pair[1]]![pair[0]] = v;
-    }
-
-    // Force 2 strong rivalries (0.05–0.25)
-    for (int i = 2; i < 4; i++) {
-      final pair = pairs[i];
-      final v = 0.05 + rnd.nextDouble() * 0.2;
-      politicalMap[pair[0]]![pair[1]] = v;
-      politicalMap[pair[1]]![pair[0]] = v;
-    }
+  Map<Species, Species> _generateRivalries(List<Species> species, Random rnd) {
+    late List<Species> shuffled;
+    do {
+      shuffled = [...species]..shuffle(rnd);
+    } while (
+    Iterable.generate(species.length).any((i) => shuffled[i] == species[i])
+    );
+    return { for (int i = 0; i < species.length; i++) species[i]: shuffled[i] };
   }
 
-  void _ensureMinimumRespect(Random rnd) {
-    for (final a in allSpecies) {
-      final others = allSpecies.where((b) => b != a).toList()..shuffle(rnd);
-      int respectCount = politicalMap[a]!
-          .entries
-          .where((e) => e.key != a && e.value >= 0.5)
-          .length;
-      for (final b in others) {
-        if (respectCount >= minPositiveRelationships) break;
-        if ((politicalMap[a]?[b] ?? 0) < 0.5) {
-          final v = 0.5 + rnd.nextDouble() * 0.4;
-          politicalMap[a]![b] = v;
-          politicalMap[b]![a] = v;
-          respectCount++;
-        }
-      }
-    }
-  }
-
-// Called periodically during Reckoning mode as the entity's influence grows
-// Gradually pushes all relationships toward hostility
-  void degradePolitics(Random rnd, {double intensity = 0.05}) {
-    for (final a in allSpecies) {
-      for (final b in allSpecies) {
-        if (a == b) continue;
-        final current = politicalMap[a]![b]!;
-        // Drift toward hostility, with some noise
-        final drift = intensity * (0.5 + rnd.nextDouble() * 0.5);
-        politicalMap[a]![b] = (current - drift).clamp(0.0, 1.0);
-      }
-    }
-  }
-
-// Returns true if an anomaly exists between two species in a given system —
-// i.e. the FooSham table doesn't match what the political map predicts
-// Used to surface insurgency/intelligence opportunities to the player
+  // Returns true if an anomaly exists between two species in a given system —
+  // i.e. the FooSham table doesn't match what the political map predicts
+  // Used to surface insurgency/intelligence opportunities to the player
   bool detectAnomaly(System system, Species a, Species b, Map<String,Set<String>> observedBeatMap) {
     final expectedInfluence = localInfluence(system, a, b);
     final avatarA = speciesThrows.entries.firstWhereOrNull((e) => e.value.species == a)?.key;
@@ -284,6 +384,16 @@ class CivModel extends GalaxySubMod {
   }
 
   double _lerp(double a, double b, double t) => a + (b - a) * t;
+
+  void debugPrintRivalries() {
+    print('═' * 40);
+    print('RIVALRIES');
+    print('═' * 40);
+    for (final e in rivalries.entries) {
+      print('${e.key.name.padRight(20)} → ${e.value.name}');
+    }
+    print('═' * 40);
+  }
 
 }
 

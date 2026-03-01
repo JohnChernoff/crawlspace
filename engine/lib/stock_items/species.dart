@@ -68,6 +68,7 @@ class Species {
   final double range; //max influence range
   final double commerce; // boosts hubs/trade nodes
   final double courage; // reduces hazard penalties, increases combat willpower
+  final double militancy;
   final double tech;
   final double techFall; //tech influence modifier
   final double flexibility; //alliance mutability
@@ -86,6 +87,7 @@ class Species {
       this.desc = "Mostly Harmless",
       this.range = .5,
       this.courage = .5,
+      required this.militancy,
       this.flexibility = .5,
       this.xenomancy = .5,
       this.populationDensity = .5,
@@ -108,7 +110,10 @@ class Faction {
   final String name;
   final String desc;
   final GameColor color;
-  final double relativeFreq;
+  double strength;
+  double militancy;
+  final Map<Species, double> fixedAttitudes;
+  final isPirate;
   final double courage;
   final double flexibility;
   final double xenomancy;
@@ -123,13 +128,16 @@ class Faction {
   final WeightedTrait<AmmoDamageType> ammoDamageWeights; //null = all
 
   Faction(this.species,this.name,{
-    required this.relativeFreq,
+    required this.strength,
     this.desc = "Mostly Harmless",
     this.color = GameColors.white,
+    this.fixedAttitudes = const {},
+    this.isPirate = false,
     double? crg,
     double? flex,
     double? xeno,
     double? ranged,
+    double? militancy,
     WeightedTrait<XenomancySchool>? xWeights,
     WeightedTrait<ShipType>? shpWeights,
     WeightedTrait<PowerType>? pWeights,
@@ -138,6 +146,7 @@ class Faction {
     WeightedTrait<DamageType>? dWeights,
     WeightedTrait<AmmoDamageType>? aWeights,
   }) : courage = crg ?? species.courage,
+        militancy = militancy ?? species.militancy,
         flexibility = flex ?? species.flexibility,
         xenomancy = xeno ?? species.xenomancy,
         rangedProb = ranged ?? species.rangedProb,
@@ -158,6 +167,7 @@ class Faction {
 enum StockSpecies {
   humanoid(
       Species("Humanoid","Xaxle",.87,"H",graphCol: GameColors.white,
+        militancy: .5,
         xenoWeights: WeightedTrait({XenomancySchool.elemental: .9,},
             defWeight: .2, allValues: XenomancySchool.values),
         damageWeights: WeightedTrait({DamageType.etherial: .01},
@@ -165,6 +175,7 @@ enum StockSpecies {
       )
   ),
   vorlon(Species("Vorlon","Ubuntov",.33,"V",graphCol: GameColors.purple,
+        militancy: .7,
         xenoWeights: WeightedTrait({XenomancySchool.dark: .9,},
           defWeight: .1, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.etherial: .08},
@@ -172,6 +183,7 @@ enum StockSpecies {
       )
   ),
   gersh(Species("Greshplerglesnortz","Hew",.25, xenomancy: .1,"G",graphCol: GameColors.green,
+      militancy: .4,
       xenoWeights: WeightedTrait({XenomancySchool.gravimancy: .7,XenomancySchool.dark: .1},
           defWeight: .3, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.kinetic: .08, DamageType.etherial: 0},
@@ -179,6 +191,7 @@ enum StockSpecies {
       ),
   ),
   edualx(Species("Edualx","Zarm",.25, xenomancy: .4,"S",graphCol: GameColors.orange,
+      militancy: .2,
       xenoWeights: WeightedTrait({XenomancySchool.antimatter: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.neutrino: .08},
@@ -186,6 +199,7 @@ enum StockSpecies {
       ),
   ),
   lael(Species("Lael","Grenz",.25, xenomancy: .4,"L",graphCol: GameColors.gold,
+      militancy: .1,
       xenoWeights: WeightedTrait({XenomancySchool.chronomancy: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.sonic: .08},
@@ -193,6 +207,7 @@ enum StockSpecies {
     ),
   ),
   orblix(Species("Orblix","Bollox",.25, xenomancy: .4,"O",graphCol: GameColors.tan,
+      militancy: .33,
       xenoWeights: WeightedTrait({XenomancySchool.gravimancy: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.gravitron: .08},
@@ -200,6 +215,7 @@ enum StockSpecies {
     ),
   ),
   moveliean(Species("Moveliean","Movelia",.25, xenomancy: .4,"M",graphCol: GameColors.brown,
+      militancy: .66,
       xenoWeights: WeightedTrait({XenomancySchool.quantum: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.plasma: .08},
@@ -207,6 +223,7 @@ enum StockSpecies {
     ),
   ),
   krakkar(Species("Krakkar","Arkadyz",.25, xenomancy: .4,"K",graphCol: GameColors.coral,
+      militancy: .9,
       xenoWeights: WeightedTrait({XenomancySchool.astramancy: .7},
           defWeight: .2, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.plasma: .08},
@@ -237,37 +254,41 @@ enum FactionList {
 
 Faction? getFaction(FactionList factionEnum) => factions.firstWhereOrNull((f) => f.name == factionEnum.factionName);
 
-pirateFaction(Species species, {String? name,String? desc,double freq = .1}) =>
+pirateFaction(Species species, {String? name,String? desc,double strength = .1}) =>
     Faction(species, name ?? "${species.name} Pirate",desc: desc ?? "A dastardly ${species.name} pirate",color: species.graphCol, //darken?
-    relativeFreq: freq, shpWeights: WeightedTrait({ShipType.interceptor : .9},defWeight: .01,allValues: ShipType.values));
+    strength: strength, militancy: .95, isPirate: true,
+        shpWeights: WeightedTrait({ShipType.interceptor : .9},defWeight: .01,allValues: ShipType.values));
 
 final List<Faction> factions = [
   Faction(StockSpecies.humanoid.species, FactionList.fed.factionName, desc: FactionList.fed.desc,
-      relativeFreq: .8, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      strength: .8, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       color: GameColors.white),
 
   Faction(StockSpecies.humanoid.species, FactionList.fedReb.factionName, desc: FactionList.fedReb.desc,
-      relativeFreq: .2, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      strength: .2, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      fixedAttitudes: {StockSpecies.krakkar.species : .1},
       color: GameColors.lightBlue),
 
   pirateFaction(StockSpecies.humanoid.species),
 
   Faction(StockSpecies.vorlon.species, FactionList.vor.factionName, desc: FactionList.vor.desc,
-      relativeFreq: .67, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      strength: .67, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       color: GameColors.gray),
 
   Faction(StockSpecies.vorlon.species, FactionList.vorMystic.factionName, desc: FactionList.vorMystic.desc,
-      relativeFreq: .25, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      strength: .25, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      fixedAttitudes: {StockSpecies.edualx.species : .1},
       color: GameColors.darkGreen),
 
   pirateFaction(StockSpecies.vorlon.species, name: FactionList.soroj.factionName, desc: FactionList.soroj.desc),
 
   Faction(StockSpecies.gersh.species, FactionList.gersh.factionName, desc: FactionList.gersh.desc,
-      relativeFreq: .9, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      strength: .9, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
       color: GameColors.green),
 
   Faction(StockSpecies.gersh.species,FactionList.hagy.factionName, desc: FactionList.hagy.desc,
-      relativeFreq: .1, xeno: .5, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      strength: .1, xeno: .5, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      fixedAttitudes: {StockSpecies.vorlon.species : .8},
       color: GameColors.gold),
 
   pirateFaction(StockSpecies.edualx.species),

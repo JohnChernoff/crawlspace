@@ -1,3 +1,5 @@
+import 'package:crawlspace_engine/stock_items/species.dart';
+
 import 'object.dart';
 
 class Item extends SpaceObject {
@@ -16,3 +18,9 @@ class Item extends SpaceObject {
   String toString() => name;
 }
 
+class Relic extends Item {
+  Species species;
+  Relic(super.name, this.species, {super.sellable = false}) {
+    objColor = species.graphCol;
+  }
+}

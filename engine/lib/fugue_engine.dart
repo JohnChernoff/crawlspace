@@ -141,8 +141,8 @@ class FugueEngine {
     _pilotRegistry.add(ship.pilot);
   }
 
-  void populateSystem(System system, {int? numShips}) {
-    numShips ??= rnd.nextInt(3);
+  void populateSystem(System system, {int? numShips, int maxShips = 12}) {
+    numShips ??= (itemRng.nextDouble() * (galaxy.civKernel.val(system) * maxShips)).floor();
     print("Populating System: ${system.name}, ships: $numShips");
     for (int i = 0; i < numShips; i++) {
       addShip(Rng.generateShip(system, galaxy, itemRng));
