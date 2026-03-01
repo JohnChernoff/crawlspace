@@ -34,6 +34,11 @@ enum StockSystem {
   wepVibraSlap(ShipSystemType.weapon,6,.5),
   wepNeuRad(ShipSystemType.weapon,7,.75),
   wepThermalLance(ShipSystemType.weapon,8,.75),
+  wepQuarkSplitter(ShipSystemType.weapon,5,.75),
+  wepGammapult(ShipSystemType.weapon,8,.75),
+  wepCosmogripher(ShipSystemType.weapon,9,.75),
+  webSingularitron(ShipSystemType.weapon,99,.75),
+
 
   lchfedTorpLauncher(ShipSystemType.launcher,1,.1),
   lchPlasmaCannon(ShipSystemType.launcher,2,.1),

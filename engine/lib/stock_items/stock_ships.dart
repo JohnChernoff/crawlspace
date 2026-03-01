@@ -31,7 +31,7 @@ class ShipClass {
 }
 
 enum ShipType { //TODO: shipshapes
-  scout(0),skiff(.3),cruiser(.5),destroyer(.66),interceptor(.75),battleship(.9),flagship(1);
+  scout(0),skiff(.3),cruiser(.5),destroyer(.66),interceptor(.75),battleship(.9),flagship(.99);
   final double dangerLvl;
   const ShipType(this.dangerLvl);
 }
@@ -68,6 +68,21 @@ enum ShipClassType {
         ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
         ShipClassSlot(SystemSlot(SystemSlotType.nimrod,1),3),
         ShipClassSlot(SystemSlot(SystemSlotType.tanaka,1),1),
+      ],
+      5000)),
+  marduk(ShipClass("Marduk",ShipType.destroyer,
+      [
+        ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
+        ShipClassSlot(SystemSlot(SystemSlotType.nimrod,1),3),
+        ShipClassSlot(SystemSlot(SystemSlotType.smythe,1),1),
+      ],
+      5000)),
+  lynx(ShipClass("Lynx",ShipType.interceptor,
+      [
+        ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
+        ShipClassSlot(SystemSlot(SystemSlotType.nimrod,1),3),
+        ShipClassSlot(SystemSlot(SystemSlotType.tanaka,1),1),
+        ShipClassSlot(SystemSlot(SystemSlotType.smythe,2),4),
       ],
       5000)),
   balrog(ShipClass("Balrog",ShipType.battleship,
