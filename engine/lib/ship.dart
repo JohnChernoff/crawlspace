@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/rng/rnd_sys.dart';
@@ -303,11 +304,14 @@ class Ship extends Item implements Locatable {
   }
 
   List<TextBlock> status({bool tactical = false, bool showScannedShip = false, nebula = false}) {
+    final hostile = pilot.hostile;
     if (nebula || (tactical && loc.cell.hasHaz(Hazard.nebula))) return [TextBlock("In Nebula", GameColors.red, true)];
     List<TextBlock> blocks = [];
     blocks.add(TextBlock(name,pilot.faction.color,true));
     blocks.add(TextBlock("${pilot.faction.name} ${shipClass.type.name}",pilot.faction.color,true));
-    if (pilot.faction.isPirate) blocks.add(TextBlock("*** Pirate ***",GameColors.red,true));
+    if (pilot.faction.isPirate) blocks.add(TextBlock("*** Pirate ***",GameColors.red,true)); else {
+      if (tactical) blocks.add(TextBlock("${(hostile ? 'hostile' : 'peaceful')} ",GameColors.gray,true));
+    }
     blocks.add(TextBlock("Hull: ${hullRemaining.toStringAsFixed(2)} ",GameColors.green,false));
     blocks.add(TextBlock("%: ${currentHullPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
     blocks.add(TextBlock("Shields: ${systemControl.currentShieldStrength.toStringAsFixed(2)}, ",GameColors.green,false));

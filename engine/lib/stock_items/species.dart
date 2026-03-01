@@ -273,6 +273,7 @@ final List<Faction> factions = [
 
   Faction(StockSpecies.vorlon.species, FactionList.vor.factionName, desc: FactionList.vor.desc,
       strength: .67, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      fixedAttitudes: {StockSpecies.humanoid.species : .5},
       color: GameColors.gray),
 
   Faction(StockSpecies.vorlon.species, FactionList.vorMystic.factionName, desc: FactionList.vorMystic.desc,

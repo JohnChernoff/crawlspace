@@ -295,9 +295,9 @@ class Rng {
         shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,rnd);
       }
     }
-    print("Ship Type: $shipType");
+    //print("Ship Type: $shipType");
     final shipClassType = ShipClassType.values.firstWhereOrNull((t) => t.shipclass.type == shipType) ?? ShipClassType.mentok;
-    print("Ship Type: $shipClassType");
+    //print("Ship Type: $shipClassType");
     Ship ship = Ship("HMS ${randomAlienName(rnd)}",pilot: pilot, location: location, shipClass: shipClassType.shipclass);
     ship.rndSystemInstaller.installRndPower(techLvl, rnd);
     ship.rndSystemInstaller.installRndEngine(Domain.impulse, techLvl, rnd);

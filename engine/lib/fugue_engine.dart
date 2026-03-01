@@ -143,12 +143,12 @@ class FugueEngine {
 
   void populateSystem(System system, {int? numShips, int maxShips = 8}) {
     numShips ??= (itemRng.nextDouble() * (galaxy.civKernel.val(system) * maxShips)).floor();
-    print("Populating System: ${system.name}, ships: $numShips");
+    //print("Populating System: ${system.name}, ships: $numShips");
     for (int i = 0; i < numShips; i++) {
       addShip(Rng.generateShip(system, galaxy, itemRng));
     }
     final numPirates = (itemRng.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
-    print("Adding pirates: $numPirates");
+    //print("Adding pirates: $numPirates");
     for (int i = 0; i < numPirates; i++) {
       addShip(Rng.generateShip(system, galaxy, itemRng, isPirate: true));
     }
@@ -260,9 +260,14 @@ class FugueEngine {
       for (Pilot p in pilots) { //print("${p.name}'s turn");
         try {
           p.tick(this);
-          Ship? ship = getShip(p);
-          if (ship != null && ship.loc.level == playerShip?.loc.level && player.locale is AboardShip) {
-            pilotController.npcShipAct(ship);
+          Ship? ship = shipRegistry.byPilot(p);
+          if (ship != null) {
+            final loc = ship.loc;
+            if (loc.level == playerShip?.loc.level && player.locale is AboardShip) {
+              pilotController.npcShipAct(ship);
+            } else if (loc is ImpulseLocation) {
+              ship.move(loc.systemLoc, shipRegistry);
+            }
           }
         } on ConcurrentModificationError {
           glog("Skipping: ${p.name}",error: true);

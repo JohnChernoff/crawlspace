@@ -128,8 +128,7 @@ class LayerTransitController extends FugueController {
         fm.msgController.addMsg("Entering impulse...");
         for (final ship in ships) {
           final h = ship.pilot.hostilityToward(fm.player.faction.species, fm.galaxy.civMod);
-          final isHostile = ship.pilot.isHostile(fm.player.faction.species, fm.galaxy.civMod, fm.aiRng);
-          fm.msgController.addMsg("${ship.name}${isHostile ? "(hostile)" : "(friendly)"} (${h.toStringAsFixed(2)}) is here");
+          fm.msgController.addMsg("${ship.name}${ship.pilot.hostile ? "(hostile)" : "(friendly)"} (${h.toStringAsFixed(2)}) is here");
           if (ship != playShip) _enterImpulse(impLevel,ship);
         }
       } on ConcurrentModificationError {
@@ -170,7 +169,7 @@ class LayerTransitController extends FugueController {
     final impLoc = ship.loc;
     if (impLoc is ImpulseLocation) {
       final ships = fm.shipRegistry.inLevel(impLoc.level);
-      if (ship == fm.playerShip && ships.length > 1 && ships.any((s) => s.pilot.isHostile(fm.player.faction.species, fm.galaxy.civMod, fm.aiRng))) {
+      if (ship == fm.playerShip && ships.length > 1 && ships.any((s) => s.pilot.hostile)) {
         if (ship.impEscape) {
           ships.forEach((s) => _exitImpulse(s, impLoc));
         } else {

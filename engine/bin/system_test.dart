@@ -14,5 +14,4 @@ void main() {
   for (final ship in engine.shipRegistry.all) {
     print("${ship.shipClass.name}: ${ship.systemControl.getInstalledSystems(types: [ShipSystemType.weapon]).map((s) => s.name)}");
   }
-
 }

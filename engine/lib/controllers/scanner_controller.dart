@@ -120,8 +120,7 @@ class ScannerController extends FugueController {
     fm.update();
   }
 
-  void targetScannedObject(GridCell? cell) {
-    print("Targeting: ${cell?.coord}");
+  void targetScannedObject(GridCell? cell) { //print("Targeting: ${cell?.coord}");
     final scannedCell = cell ?? currentScanSelection;
     if (scannedCell == null || !currentScan.contains(scannedCell)) return;
     Ship? playShip = fm.playerShip; if (playShip != null) {

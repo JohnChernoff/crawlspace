@@ -59,6 +59,7 @@ class Pilot implements Locatable {
   Map<Species, double> reputation = {}; // -1 hostile to 1.0 friendly
   bool get ready => auCooldown == 0;
   bool? _hostile;
+  bool get hostile => _hostile ?? false;
 
   void tick(FugueEngine fm) => auCooldown = max(0,auCooldown - 1);
 
@@ -84,23 +85,28 @@ class Pilot implements Locatable {
     for (final skill in SkillType.values) skills[skill] = .25;
   }
 
-  bool isHostile(Species s, CivModel civ, Random rnd, {bool? hostility, reset = false}) {
+  bool setHostilityToPlayer(FugueEngine fm, {bool? hostility, reset = false}) {
     if (_hostile == null || reset) {
       if (hostility != null) {
         _hostile = hostility;
       } else {
-        final h = hostilityToward(s, civ);
-        if (h < .75) _hostile = false;
+        if (faction.isPirate) _hostile = true;
         else {
-          _hostile = (rnd.nextDouble() < (h * .75)); //TODO: tie into game difficulty?
+          final h = hostilityToward(fm.player.faction.species, fm.galaxy.civMod);
+          if (h < .75) _hostile = false;
+          else {
+            _hostile = (fm.aiRng.nextDouble() < (h * .75)); //TODO: tie into game difficulty?
+          }
         }
+        print("Setting hostility: ${faction.name} -> player = ${_hostile}, pirate: ${faction.isPirate}");
       }
     }
     return _hostile!;
   }
 
-  double hostilityToward(Species s, CivModel civ) { //higher = more hostile
-    final baseline = 1-(civ.factionAttitudes[faction]?[s] ?? 0.5);
+  double hostilityToward(Species s, CivModel civ) {
+    final baseline = (civ.factionAttitudes[faction]?[s] ?? 0.5); //higher = more hostile?
+    print("${faction.name} -> ${s.name}, baseline: $baseline");
     final rep = reputation[s] ?? 0.0;
     return (baseline - rep).clamp(0, 1);
   }
