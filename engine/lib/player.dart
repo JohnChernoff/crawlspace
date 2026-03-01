@@ -28,7 +28,7 @@ class Player extends Pilot {
   Set<Ship> fleet = {};
   double inebriation = 0;
 
-  Player(super.name,{required super.loc, super.galaxy, super.hostile = false});
+  Player(super.name,{required super.loc, super.galaxy});
 
   void drink(double strength) {
     final con = attributes[AttribType.con] ?? 0.5;

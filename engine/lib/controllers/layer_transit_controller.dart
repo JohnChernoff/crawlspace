@@ -1,5 +1,4 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
-import '../agent.dart';
 import '../audio_service.dart';
 import '../coord_3d.dart';
 import '../grid.dart';
@@ -35,10 +34,7 @@ class LayerTransitController extends FugueController {
     final star = cell.starClass; if (star == null) {
       fm.msgController.addMsg("No star!"); return;
     }
-    final system = ship.loc.level; if (system is! System) {
-      fm.msgController.addMsg("No system?!"); return;
-    }
-    fm.menuController.showMenu(() => fm.menuFactory.buildHyperspaceMenu(system), headerTxt: "Hyperspace");
+    fm.menuController.showMenu(() => fm.menuFactory.buildHyperspaceMenu(ship.loc.system), headerTxt: "Hyperspace");
   }
 
   void emergencyWarp(Ship ship) {
@@ -131,7 +127,9 @@ class LayerTransitController extends FugueController {
       try {
         fm.msgController.addMsg("Entering impulse...");
         for (final ship in ships) {
-          fm.msgController.addMsg("${ship.name} is here");
+          final h = ship.pilot.hostilityToward(fm.player.faction.species, fm.galaxy.civMod);
+          final isHostile = ship.pilot.isHostile(fm.player.faction.species, fm.galaxy.civMod, fm.aiRng);
+          fm.msgController.addMsg("${ship.name}${isHostile ? "(hostile)" : "(friendly)"} (${h.toStringAsFixed(2)}) is here");
           if (ship != playShip) _enterImpulse(impLevel,ship);
         }
       } on ConcurrentModificationError {
@@ -172,7 +170,7 @@ class LayerTransitController extends FugueController {
     final impLoc = ship.loc;
     if (impLoc is ImpulseLocation) {
       final ships = fm.shipRegistry.inLevel(impLoc.level);
-      if (ship == fm.playerShip && ships.length > 1) {
+      if (ship == fm.playerShip && ships.length > 1 && ships.any((s) => s.pilot.isHostile(fm.player.faction.species, fm.galaxy.civMod, fm.aiRng))) {
         if (ship.impEscape) {
           ships.forEach((s) => _exitImpulse(s, impLoc));
         } else {
@@ -180,7 +178,7 @@ class LayerTransitController extends FugueController {
           return;
         }
       } else {
-        _exitImpulse(ship, impLoc);
+        _exitImpulse(ship, impLoc); //TODO: return all friendly ships to system travel as well?
       }
       fm.audioController.newTrack(newMood: MusicalMood.space);
       fm.pilotController.action(ship.pilot, ActionType.movement);

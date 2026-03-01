@@ -307,6 +307,7 @@ class Ship extends Item implements Locatable {
     List<TextBlock> blocks = [];
     blocks.add(TextBlock(name,pilot.faction.color,true));
     blocks.add(TextBlock("${pilot.faction.name} ${shipClass.type.name}",pilot.faction.color,true));
+    if (pilot.faction.isPirate) blocks.add(TextBlock("*** Pirate ***",GameColors.red,true));
     blocks.add(TextBlock("Hull: ${hullRemaining.toStringAsFixed(2)} ",GameColors.green,false));
     blocks.add(TextBlock("%: ${currentHullPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
     blocks.add(TextBlock("Shields: ${systemControl.currentShieldStrength.toStringAsFixed(2)}, ",GameColors.green,false));

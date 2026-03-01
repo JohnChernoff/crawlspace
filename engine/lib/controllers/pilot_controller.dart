@@ -116,7 +116,7 @@ class PilotController extends FugueController {
     if (pilot.ready) { //print("${ship.name}'s turn...");
       final playLoc = fm.playerShip != null ? ship.detect(fm.playerShip!) : null;
       if (playLoc != null &&
-          pilot.hostile &&
+          pilot.isHostile(fm.player.faction.species,fm.galaxy.civMod,fm.aiRng) &&
           fm.shipRegistry.inLevel(ship.loc.level).contains(fm.playerShip)) {
         ship.targetShip = fm.playerShip;
         final loc = ship.loc; if (loc is ImpulseLocation) {

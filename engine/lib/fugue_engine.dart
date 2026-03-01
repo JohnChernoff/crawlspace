@@ -141,11 +141,16 @@ class FugueEngine {
     _pilotRegistry.add(ship.pilot);
   }
 
-  void populateSystem(System system, {int? numShips, int maxShips = 12}) {
+  void populateSystem(System system, {int? numShips, int maxShips = 8}) {
     numShips ??= (itemRng.nextDouble() * (galaxy.civKernel.val(system) * maxShips)).floor();
     print("Populating System: ${system.name}, ships: $numShips");
     for (int i = 0; i < numShips; i++) {
       addShip(Rng.generateShip(system, galaxy, itemRng));
+    }
+    final numPirates = (itemRng.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
+    print("Adding pirates: $numPirates");
+    for (int i = 0; i < numPirates; i++) {
+      addShip(Rng.generateShip(system, galaxy, itemRng, isPirate: true));
     }
   }
 

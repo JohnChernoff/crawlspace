@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/player.dart';
@@ -53,14 +54,15 @@ class Pilot implements Locatable {
   int hp;
   int auCooldown = 0;
   ActionType? lastAct;
-  bool hostile;
   bool safeMovement = true;
   Set<Hazard> safeList = { Hazard.nebula, Hazard.wake };
-  Map<Species, double> reputation = {}; // 0 hostile to 1.0 friendly
+  Map<Species, double> reputation = {}; // -1 hostile to 1.0 friendly
   bool get ready => auCooldown == 0;
+  bool? _hostile;
+
   void tick(FugueEngine fm) => auCooldown = max(0,auCooldown - 1);
 
-  Pilot(this.name,{Random? rnd, required PilotLocale loc, Galaxy? galaxy, Faction? f, this.hp = 32, this.hostile = true}) {
+  Pilot(this.name,{Random? rnd, required PilotLocale loc, Galaxy? galaxy, Faction? f, this.hp = 32, isPirate = false}) {
     locale = loc;
     if (this is Player) { //FactionList.values.forEach((f) => print(f.factionName)); print(FactionList.values);
       faction = getFaction(FactionList.fedReb)!;
@@ -71,15 +73,34 @@ class Pilot implements Locatable {
       final species = galaxy != null
           ? Rng.weightedRandom(galaxy.civMod.civIntensity[locale.loc.system]!,pilotRnd, fallback: StockSpecies.humanoid.species)
           : StockSpecies.humanoid.species;  //print("Species: ${species.name}");
-      final factionMap = Map.fromEntries(factions.where((fa) => fa.species == species).map((f2) => MapEntry(f2, f2.strength)));
-      faction = f ?? Rng.weightedRandom(factionMap, pilotRnd, fallback: factions.first);
+      if (isPirate) {
+        faction = factions.firstWhereOrNull((f) => f.species == species && f.isPirate) ?? factions.firstWhere((t) => t.isPirate);
+      } else {
+        final factionMap = Map.fromEntries(factions.where((fa) => fa.species == species).map((f2) => MapEntry(f2, f2.strength)));
+        faction = f ?? Rng.weightedRandom(factionMap, pilotRnd, fallback: factions.first);
+      }
     }
     for (final a in AttribType.values) attributes[a] = .5;
     for (final skill in SkillType.values) skills[skill] = .25;
   }
 
-  double hostilityToward(Species s, CivModel civ) {
-    final baseline = civ.politicalMap[faction.species]?[s] ?? 0.5;
+  bool isHostile(Species s, CivModel civ, Random rnd, {bool? hostility, reset = false}) {
+    if (_hostile == null || reset) {
+      if (hostility != null) {
+        _hostile = hostility;
+      } else {
+        final h = hostilityToward(s, civ);
+        if (h < .75) _hostile = false;
+        else {
+          _hostile = (rnd.nextDouble() < (h * .75)); //TODO: tie into game difficulty?
+        }
+      }
+    }
+    return _hostile!;
+  }
+
+  double hostilityToward(Species s, CivModel civ) { //higher = more hostile
+    final baseline = 1-(civ.factionAttitudes[faction]?[s] ?? 0.5);
     final rep = reputation[s] ?? 0.0;
     return (baseline - rep).clamp(0, 1);
   }
