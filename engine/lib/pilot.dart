@@ -6,6 +6,7 @@ import 'package:crawlspace_engine/player.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
+import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import 'agent.dart';
 import 'controllers/pilot_controller.dart';
 import 'galaxy/civ_model.dart';
@@ -20,7 +21,7 @@ enum AttribType {
 }
 
 enum SkillType {
-  engineering,piloting,medicine,communications,combat
+  engineering,piloting,xeno,communications,combat
 }
 
 enum TransactionType {  shopBuy,shopSell,repair,fooshamWin,fooshamLose,drink,jail,robbed,bribe,rollback }
@@ -60,6 +61,11 @@ class Pilot implements Locatable {
   bool get ready => auCooldown == 0;
   bool? _hostile;
   bool get hostile => _hostile ?? false;
+  final Map<XenomancySchool,double> xenoSkills = {};
+  final List<XenomancySpell> spellBook = [XenomancySpell.foldSpace];
+  final Map<String,XenomancySpell> knownSpells = {
+    "f" : XenomancySpell.foldSpace
+  };
 
   void tick(FugueEngine fm) => auCooldown = max(0,auCooldown - 1);
 

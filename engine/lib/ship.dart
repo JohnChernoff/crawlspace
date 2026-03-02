@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/galaxy/galaxy.dart';
+import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/rng/rnd_sys.dart';
@@ -82,11 +82,13 @@ class Ship extends Item implements Locatable {
   Map<Ship,SpaceLocation> lastKnown = {};
   HullType hullType;
   bool get inNebula => loc.cell.hasHaz(Hazard.nebula);
-  bool get impEscape => false;
   List<ShipSystemType> multiSystems = [ShipSystemType.engine,ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.ammo,ShipSystemType.quarters];
   late ShipSystemControl systemControl;
   late RndSystemInstaller rndSystemInstaller;
   List<System>? itinerary;
+  double xenoMatter = 0;
+  Map<ShipEffect,int> effectMap = {};
+  late XenoController xenoControl = XenoController(this);
 
   Ship(super.name, {
     this.owner,
@@ -287,7 +289,7 @@ class Ship extends Item implements Locatable {
           if (rnd != null && rss.currentEnergy < 1) {
             recharge = (rnd.nextInt(rss.avgRecoveryTime) == 0) ? recharge : 0;
           }
-          rss.recharge(recharge);
+          if (recharge > 0) rss.recharge(recharge);
         }
         totalRecharge += recharge;
       }
@@ -299,14 +301,26 @@ class Ship extends Item implements Locatable {
     } //print("$name: Net energy per tick: ${recharge - totalBurn}");
     if (!dryRun) {
       for (final w in systemControl.getWeapons()) if (w.cooldown > 0) w.cooldown--;
+      xenoMatter = min(shipClass.maxXeno,
+          xenoMatter + (systemControl.engine?.xenoGen ?? 0.0));
+      for (final effect in effectMap.entries) {
+        effectMap[effect.key] = max(effect.value - 1,0);
+      }
     }
     return totalRecharge - totalBurn;
   }
+
+  void applyEffect(ShipEffect effect, int duration) {
+    effectMap[effect] = duration + (effectMap[effect] ?? 0);
+  }
+
+  bool getEffect(ShipEffect effect) => (effectMap[effect] ?? 0) > 0;
 
   List<TextBlock> status({bool tactical = false, bool showScannedShip = false, nebula = false}) {
     final hostile = pilot.hostile;
     if (nebula || (tactical && loc.cell.hasHaz(Hazard.nebula))) return [TextBlock("In Nebula", GameColors.red, true)];
     List<TextBlock> blocks = [];
+    blocks.addAll(dumpEffects());
     blocks.add(TextBlock(name,pilot.faction.color,true));
     blocks.add(TextBlock("${pilot.faction.name} ${shipClass.type.name}",pilot.faction.color,true));
     if (pilot.faction.isPirate) blocks.add(TextBlock("*** Pirate ***",GameColors.red,true)); else {
@@ -321,6 +335,7 @@ class Ship extends Item implements Locatable {
       blocks.add(TextBlock("%: ${systemControl.currentEnergyPercentage.round().toStringAsFixed(2)}",GameColors.lightBlue,true));
       blocks.add(TextBlock("Energy Rate: ${tick(dryRun: true).round().toStringAsFixed(2)}",GameColors.green,true));
     }
+    blocks.add(TextBlock("Xeno Matter: ${xenoMatter.toStringAsFixed(2)}",GameColors.orange,true));
     for (final s in systemControl.getInstalledSystems()) {
       bool cooldown = s is Weapon && s.cooldown > 0;
       final color = cooldown ? GameColors.red : GameColors.white;
@@ -341,8 +356,15 @@ class Ship extends Item implements Locatable {
       blocks.add(const TextBlock("Scanning Ship: ", GameColors.orange, true));
       blocks.addAll(targetShip!.status(tactical: true));
     }
-
     return blocks;
+  }
+
+  List<TextBlock> dumpEffects() {
+      final map = effectMap.entries.where((e) => e.value > 0).map(((m) => m.key));
+      return List.generate(map.length, (i) {
+        final effect = map.elementAt(i);
+        return TextBlock(effect.statusString, effect.color, true);
+      });
   }
 
   String dump({shop = false}) {

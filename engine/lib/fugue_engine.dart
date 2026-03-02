@@ -40,6 +40,11 @@ class TextBlock {
   final bool newline;
   final GameColor color;
   const TextBlock(this.txt,this.color,this.newline);
+  static List<TextBlock> letterMenuEntry(String letter, List<TextBlock> blocks,
+      {GameColor letterColor = GameColors.white}) => [
+    TextBlock("($letter) ", letterColor, false),
+    ...blocks,
+  ];
 }
 
 //cargo systems?  passengers, smuggling? cloaking systems?
@@ -64,7 +69,7 @@ class FugueEngine {
   late Player player;
   int numAgents = 3;
   Iterable<Agent> get agents => _pilotRegistry.npcs.whereType<Agent>();
-  late Random rnd,combatRng,mapRng,speciesRng,aiRng,itemRng, audioRnd; //TODO: remove rnd
+  late Random rnd,combatRng,mapRng,speciesRng,aiRng,effectRnd,itemRng, audioRnd; //TODO: remove rnd
   int auTick = 0;
   String get result => blownUp ? "blown up" : isVictorious ? "victorious" : "vanquished";
   bool get blownUp => (getShip(player)?.hullRemaining ?? 1) <= 0;
@@ -99,8 +104,9 @@ class FugueEngine {
     mapRng = Random(seed ^0xBBBBBBB);
     speciesRng = Random(seed ^ 0xC0FFEE);
     aiRng = Random(seed ^ 0xBADC0DE);
-    itemRng = Random(seed ^ 0xC0BFEED);
-    combatRng = Random(seed ^ 0xABCDEF00);
+    itemRng = Random(seed ^ 0xFEED);
+    effectRnd = Random(seed ^ 0xBEAD);
+    combatRng = Random(seed ^ 0xABCDEF);
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
     Ship playShip = Ship("HMS Sebastian",
         shipClass: ShipClassType.hermes.shipclass,

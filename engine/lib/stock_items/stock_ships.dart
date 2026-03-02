@@ -26,8 +26,8 @@ class ShipClass {
   final String name;
   final ShipType type;
   final List<ShipClassSlot> slots;
-  final double maxMass;
-  const ShipClass(this.name,this.type,this.slots,this.maxMass);
+  final double maxMass, maxXeno;
+  const ShipClass(this.name,this.type,this.slots,this.maxMass, this.maxXeno);
 }
 
 enum ShipType { //TODO: shipshapes
@@ -55,28 +55,28 @@ enum ShipClassType {
   mentok(ShipClass("Mentok",ShipType.scout,
       [ShipClassSlot(SystemSlot(SystemSlotType.generic,1),8)],
       500
-  )),
+  ,4)),
   hermes(ShipClass("Hermes",ShipType.skiff,
       [
         ShipClassSlot(SystemSlot(SystemSlotType.generic,1),6),
         ShipClassSlot(SystemSlot(SystemSlotType.tanaka,1),1),
         ShipClassSlot(SystemSlot(SystemSlotType.sinclair,1),1),
       ],
-      750)),
+      750,6)),
   orion(ShipClass("Orion",ShipType.cruiser,
       [
         ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
         ShipClassSlot(SystemSlot(SystemSlotType.nimrod,1),3),
         ShipClassSlot(SystemSlot(SystemSlotType.tanaka,1),1),
       ],
-      5000)),
+      5000,9)),
   marduk(ShipClass("Marduk",ShipType.destroyer,
       [
         ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
         ShipClassSlot(SystemSlot(SystemSlotType.nimrod,1),3),
         ShipClassSlot(SystemSlot(SystemSlotType.smythe,1),1),
       ],
-      5000)),
+      5000,12)),
   lynx(ShipClass("Lynx",ShipType.interceptor,
       [
         ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
@@ -84,7 +84,7 @@ enum ShipClassType {
         ShipClassSlot(SystemSlot(SystemSlotType.tanaka,1),1),
         ShipClassSlot(SystemSlot(SystemSlotType.smythe,2),4),
       ],
-      5000)),
+      5000,16)),
   balrog(ShipClass("Balrog",ShipType.battleship,
       [
         ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
@@ -92,7 +92,7 @@ enum ShipClassType {
         ShipClassSlot(SystemSlot(SystemSlotType.tanaka,2),1),
         ShipClassSlot(SystemSlot(SystemSlotType.gregoriev,1),1),
       ],
-      7500)),
+      7500,8)),
   galaxy(ShipClass("Galaxy",ShipType.flagship,
       [
         ShipClassSlot(SystemSlot(SystemSlotType.generic,1),4),
@@ -100,7 +100,7 @@ enum ShipClassType {
         ShipClassSlot(SystemSlot(SystemSlotType.sinclair,2),4),
       ],
       10000
-  ));
+  ,24));
   final ShipClass shipclass;
   const ShipClassType(this.shipclass);
 }

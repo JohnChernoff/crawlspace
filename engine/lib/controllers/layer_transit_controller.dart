@@ -1,3 +1,4 @@
+import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import '../audio_service.dart';
 import '../coord_3d.dart';
@@ -170,7 +171,7 @@ class LayerTransitController extends FugueController {
     if (impLoc is ImpulseLocation) {
       final ships = fm.shipRegistry.inLevel(impLoc.level);
       if (ship == fm.playerShip && ships.length > 1 && ships.any((s) => s.pilot.hostile)) {
-        if (ship.impEscape) {
+        if (ship.getEffect(ShipEffect.folding)) {
           ships.forEach((s) => _exitImpulse(s, impLoc));
         } else {
           fm.msgController.addMsg("You cannot accelerate to system travel with hostile vessels in the area");

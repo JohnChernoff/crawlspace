@@ -15,12 +15,21 @@ class ShipSystemControl {
   List<SlotAssignment> systemMap = [];
   Map<Ammo,int> ammoMap = {};
 
+  ShipSystemControl(this.ship) {
+    for (final classSlot in ship.shipClass.slots) {
+      for (int i=0;i<classSlot.num;i++) { //print("$name: Installing: ${classSlot.slot}");
+        systemMap.add(SlotAssignment(classSlot.slot,null));
+      }
+    }
+  }
+
   Iterable<SlotAssignment> get slots => systemMap;
   int ammoFor(Ammo a) => ammoMap[a] ?? 0;
   Iterable<({Ammo ammo, int count})> get ammo => ammoMap.entries.map((a) => (ammo: a.key, count: a.value));
   Iterable<ShipSystem> get uninstalledSystems => ship.inventory.whereType<ShipSystem>().where((s) => !isInstalled(s));
   Iterable<SlotAssignment> get vacantSlots => systemMap.where((sys) => sys.system == null);
 
+  Engine? get engine => getEngine(ship.loc.domain);
   Engine? getEngine(Domain domain, {activeOnly = true}) {
     return getInstalledSystems().whereType<Engine>().where((s) => s.domain == domain && (!activeOnly || s.active)).firstOrNull;
   }
@@ -77,14 +86,6 @@ class ShipSystemControl {
   Iterable<ShipSystem> getInstalledSystems({List<ShipSystemType>? types}) {
     if (types != null) return systemMap.where((s) => types.contains(s.system?.type)).map((i) => i.system!);
     return systemMap.where((s) => (s.system != null)).map((i) => i.system!);
-  }
-
-  ShipSystemControl(this.ship) {
-    for (final classSlot in ship.shipClass.slots) {
-      for (int i=0;i<classSlot.num;i++) { //print("$name: Installing: ${classSlot.slot}");
-        systemMap.add(SlotAssignment(classSlot.slot,null));
-      }
-    }
   }
 
   void removeSystem(ShipSystem sys) {

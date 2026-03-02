@@ -12,6 +12,7 @@ enum StockSystem {
   engBasicFedSub(ShipSystemType.engine,1,.1),
   engBasicFedHyper(ShipSystemType.engine,1,.1),
   engMovSub1(ShipSystemType.engine,3,.25),
+  engVorImp1(ShipSystemType.engine,5,.5),
 
   genBasicNuclear(ShipSystemType.power,1,.1),
   genZemlinsky(ShipSystemType.power,2,.25),

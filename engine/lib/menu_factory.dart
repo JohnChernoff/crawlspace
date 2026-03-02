@@ -6,6 +6,7 @@ import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/planet.dart';
 import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
+import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import 'package:crawlspace_engine/systems/ship_system.dart';
 import 'foosham/foosham.dart';
 import 'galaxy/system.dart';
@@ -34,8 +35,25 @@ class MenuFactory {
     return ShopItemEntry(letter: ltr, label: "empty inventory slot", null, (e) => {}, shopper: ship?.pilot ?? fm.player); //shouldn't occur
   }
 
-  Menu buildInventoryMenu(Ship ship, {VoidCallback? action}) {
-    print("Inventory: ${ship.allInventory}");
+  Menu buildXenoMenu(Pilot pilot, {void Function(XenomancySpell spell)? action}) {
+    return List.generate(pilot.knownSpells.length,(i) {
+      final spell = pilot.knownSpells.entries.elementAt(i);
+      final ship = fm.shipRegistry.byPilot(pilot);
+      final chance = ship?.xenoControl.effectProb(spell.value) ?? 0;
+      final noMatter = spell.value.matterCost > (ship?.xenoMatter ?? 0);
+      final blocks = [
+        TextBlock(spell.value.spellName, GameColors.white, false),
+        TextBlock(", ${spell.value.matterCost} xm ", GameColors.white, false),
+        TextBlock("(${(chance * 100).round()}%) ", GameColors.green, !noMatter)
+      ];
+      if (action != null) return ValueEntry(letter: spell.key, txtBlocks: blocks, spell.value, action,
+          disabledReason: () => noMatter ? "Insufficient Xeno Matter" : null
+      );
+      else return TextEntry(txtBlocks: blocks);
+    });
+  }
+
+  Menu buildInventoryMenu(Ship ship, {VoidCallback? action}) { //print("Inventory: ${ship.allInventory}");
     return List.generate(ship.allInventory.length,(i) {
       final shipItem = ship.allInventory.elementAt(i);
       String itemStr = (shipItem is ShipSystem && ship.systemControl.isInstalled(shipItem))

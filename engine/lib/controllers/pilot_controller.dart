@@ -49,6 +49,19 @@ class PilotController extends FugueController {
     }
   }
 
+  void castEffect(Pilot pilot) {
+    final ship = fm.shipRegistry.byPilot(pilot);
+    if (ship != null) {
+      fm.menuController.showMenu(
+          () => fm.menuFactory.buildXenoMenu(pilot, action: (s) {
+            final result = ship.xenoControl.generateEffect(s, fm.effectRnd);
+            fm.msg(result.msg);
+          }),
+          headerTxt: "Effects: "
+      );
+    }
+  }
+
   void showToggleSystemMenu(Ship ship) {
     fm.menuController.showMenu(headerTxt: "Toggle System", () => fm.menuFactory.buildSystemToggleMenu(ship));
   }
@@ -126,7 +139,7 @@ class PilotController extends FugueController {
                 final idealCells = ship.loc.level.map.cells.values
                     .where((c) => (playLoc.dist(c: c) - r).abs() < 1.5) //TODO: tweak acceptable range
                     .sorted((c1,c2) => ship.distance(c: c1.coord).compareTo(ship.distance(c: c2.coord)));
-                ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.rnd);
+                ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.rnd); //print(ship.currentPath);
               } else {
                 if (playLoc != fm.playerShip!.loc) {
                   //print("${ship.name} cannot find ${fm.playerShip!.name}"); //TODO: fallback strategy
@@ -150,7 +163,7 @@ class PilotController extends FugueController {
         }
       }
       if (ship.currentPath.isNotEmpty) {
-        final result = fm.movementController.moveShip(ship, ship.currentPath.removeAt(0).coord);
+        final result = fm.movementController.moveShip(ship, ship.currentPath.removeAt(0).coord); //print(result);
         if (result == MoveResult.impCollision) { //fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.rnd));
           action(pilot, ActionType.movement, actionAuts: 10);
         }

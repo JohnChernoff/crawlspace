@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/stock_items/stock_ships.dart';
-import 'package:crawlspace_engine/stock_items/xeno.dart';
+import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import 'package:crawlspace_engine/systems/engines.dart';
 import 'package:crawlspace_engine/systems/power.dart';
 import 'package:crawlspace_engine/systems/shields.dart';

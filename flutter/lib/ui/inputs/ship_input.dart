@@ -7,6 +7,10 @@ import 'general_input.dart';
 
 enum DepthViewOption {showAll,showClosest,toggle}
 
+class XenoIntent extends Intent {
+  const XenoIntent();
+}
+
 class SystemSelectIntent extends Intent {
   final bool unselect;
   const SystemSelectIntent(this.unselect);
@@ -224,6 +228,8 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         LogicalKeySet(LogicalKeyboardKey.keyS, LogicalKeyboardKey.shift):
         const SystemSelectIntent(false),
 
+        LogicalKeySet(LogicalKeyboardKey.keyZ, LogicalKeyboardKey.shift):
+        const XenoIntent(),
       },
       actions: {
         ...generalActions,
@@ -355,6 +361,12 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
               if (fm.playerShip != null) {
                 fm.menuController.showMenu(() => fm.menuFactory.buildInventoryMenu(fm.playerShip!),headerTxt: "Inventory");
               }
+              return null;
+            }
+        ),
+        XenoIntent: CallbackAction<XenoIntent>(
+            onInvoke: (_) {
+              fm.pilotController.castEffect(fm.player);
               return null;
             }
         ),

@@ -1,3 +1,5 @@
+import 'package:crawlspace_engine/controllers/xeno_controller.dart';
+
 import '../coord_3d.dart';
 import '../grid.dart';
 import '../ship.dart';
@@ -29,7 +31,7 @@ class MovementController extends FugueController {
       }
     }
     final dist = ship.loc.cell.coord.distance(destination.coord);
-    Engine? engine = ship.systemControl.getEngine(ship.loc.domain);
+    Engine? engine = ship.systemControl.engine;
     if (engine == null) return MoveResult.noEngine;
     if (!engine.active) return MoveResult.inactiveEngine; //engine.active = true; //auto activate
     final auts = (engine.baseAutPerUnitTraversal * dist).round(); //print("Auts: $auts");
@@ -37,12 +39,18 @@ class MovementController extends FugueController {
     if (!ship.systemControl.burnEnergy(energyRequired)) {
       return MoveResult.outOfEnergy;
     }
-    ship.move(ship.loc.withCell(destination),fm.shipRegistry); //fm.glog("Moving ${ship.name} => $destination");
-    final ships = fm.shipRegistry.atCell(destination);
-    if (ship.loc.domain == Domain.system && ships.length > 1 && ships.contains(fm.playerShip)) {
-      fm.layerTransitController.createAndEnterImpulse(); //action?
-      return MoveResult.impEnter;
+
+    final playerEncounter = fm.shipRegistry.atCell(destination).contains(fm.playerShip);
+    if (playerEncounter && fm.playerShip!.getEffect(ShipEffect.folding)) {
+      fm.msg("${ship.name} is rejected from your folded space!");
+    } else {
+      ship.move(ship.loc.withCell(destination),fm.shipRegistry); //fm.glog("Moving ${ship.name} => $destination");
+      if (ship.loc.domain == Domain.system && playerEncounter) { print("Entering impulse...");
+        fm.layerTransitController.createAndEnterImpulse(); //action?
+        return MoveResult.impEnter;
+      }
     }
+
     fm.pilotController.action(ship.pilot, ActionType.movement,actionAuts: auts);
     return MoveResult.moved;
   }

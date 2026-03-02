@@ -73,7 +73,13 @@ class MenuWidgetState extends State<MenuWidget> {
                   List<TextBlock> blocks = [];
                   if (txtBlocks.isNotEmpty) {
                     if (letter != null) blocks.add(TextBlock(" $letter ", GameColors.white, false));
-                    blocks.addAll(txtBlocks);
+                    if (isEnabled) {
+                      blocks.addAll(txtBlocks);
+                    }
+                    else {
+                      blocks.addAll(txtBlocks.map((b) => TextBlock(b.txt, GameColors.gray, b.newline)));
+                      blocks.add(TextBlock(disabledString, GameColors.gray, true));
+                    }
                   }
                   final txtStyle = TextStyle(color: isEnabled ? Colors.white : Colors.grey, fontSize: textStyle.fontSize, height: 1.5);
                   final menuItem = blocks.isNotEmpty

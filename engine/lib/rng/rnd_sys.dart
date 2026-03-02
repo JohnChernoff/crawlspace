@@ -22,7 +22,7 @@ class RndSystemInstaller {
   const RndSystemInstaller(this.ship,this.sysCtl);
 
   //TODO: sort by techLvl
-  bool installRndEngine(Domain domain, int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install $domain engine <= techlvl $techLvl...");
+  bool installRndEngine(Domain domain, int techLvl, Random rnd, {maxAttempts = 100}) { //print("Attempting to install $domain engine <= techlvl $techLvl...");
     int attempts = 0;
     while (sysCtl.getEngine(domain) == null && attempts++ < maxAttempts) { //print("Engine weights: ${pilot.faction.engineWeights.normalized}");
       final engineType = Rng.weightedRandom(ship.pilot.faction.engineWeights.normalized,rnd); //print("Engine Type: $engineType");
@@ -33,7 +33,7 @@ class RndSystemInstaller {
         sysCtl.installSystem(Engine.fromStock(engineList.elementAt(rnd.nextInt(engineList.length)).key));
       }
     }
-    return sysCtl.getEngine(domain) != null ? true : techLvl > 0 ? installRndPower(0, rnd) : false;
+    return sysCtl.getEngine(domain, activeOnly: false) != null ? true : techLvl > 1 ? installRndEngine(domain, 1, rnd) : false;
   }
 
   bool installRndPower(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install power generator <= techlvl $techLvl...");
@@ -44,7 +44,7 @@ class RndSystemInstaller {
           v.key.techLvl <= techLvl && sysCtl.availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
       if (powerList.isNotEmpty) sysCtl.installSystem(PowerGenerator.fromStock(powerList.elementAt(rnd.nextInt(powerList.length)).key));
     }
-    return sysCtl.getInstalledSystems(types: [ShipSystemType.power]).isNotEmpty ? true : techLvl > 0 ? installRndPower(0, rnd) : false;
+    return sysCtl.getInstalledSystems(types: [ShipSystemType.power]).isNotEmpty ? true : techLvl > 1 ? installRndPower(1, rnd) : false;
   }
 
   bool installRndShield(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install shield <= techlvl $techLvl...");
@@ -55,7 +55,7 @@ class RndSystemInstaller {
           v.key.techLvl <= techLvl && sysCtl.availableSlots(v.value.systemData.slot,v.key.type).isNotEmpty);
       if (shieldList.isNotEmpty) sysCtl.installSystem(Shield.fromStock(shieldList.elementAt(rnd.nextInt(shieldList.length)).key));
     }
-    return sysCtl.getInstalledSystems(types: [ShipSystemType.shield]).isNotEmpty ? true : techLvl > 0 ? installRndShield(0, rnd) : false;
+    return sysCtl.getInstalledSystems(types: [ShipSystemType.shield]).isNotEmpty ? true : techLvl > 1 ? installRndShield(1, rnd) : false;
   }
 
   bool installRndWeapon(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install weapon <= techlvl $techLvl...");

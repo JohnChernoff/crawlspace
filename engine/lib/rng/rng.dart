@@ -286,7 +286,7 @@ class Rng {
     final pilot = Pilot(Rng.generateName(rnd: rnd),rnd: rnd, loc: AtEnvironment.fromSystem(location), galaxy: galaxy, isPirate: isPirate);
     final level = max(0,1 - (galaxy.topo.distance(location.loc.system, galaxy.findHomeworld(pilot.faction.species)) / galaxy.maxJumps));
     final techLvl = max(1,(level * 10).round()); //TODO: something more sophisticated?
-    print("Faction: ${pilot.faction.name}, tech: $level, $techLvl");
+    //print("Faction: ${pilot.faction.name}, tech: $level, $techLvl");
     ShipType shipType = Rng.weightedRandom(pilot.faction.shipWeights.normalized,rnd);
     while (level < shipType.dangerLvl) {
       if (rnd.nextDouble() < shipType.dangerLvl) {

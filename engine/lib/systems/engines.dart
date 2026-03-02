@@ -1,3 +1,4 @@
+import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import '../grid.dart';
 import '../stock_items/stock_engines.dart';
 import '../stock_items/stock_pile.dart';
@@ -15,13 +16,11 @@ enum EngineEgo {
 }
 
 enum EngineType {
-  xaxilian({Domain.hyperspace,Domain.system,Domain.impulse}),
-  moevelian({Domain.hyperspace,Domain.system,Domain.impulse}),
-  fedMark1({Domain.hyperspace,Domain.system,Domain.impulse}),
-  fedMark2({Domain.hyperspace,Domain.system,Domain.impulse}),
-  krakkarian({Domain.hyperspace,Domain.system,Domain.impulse});
-  final Set<Domain> domains;
-  const EngineType(this.domains);
+  quantum,
+  nuclear,
+  etherial,
+  gravimetric,
+  antimatter;
 }
 
 class Engine extends ShipSystem {
@@ -30,6 +29,8 @@ class Engine extends ShipSystem {
   Domain domain;
   EngineType engineType;
   EngineEgo ego;
+  double xenoGen; //per AUT
+  Map<XenomancySchool,int> xenoBonus;
 
   @override
   ShipSystemType get type => ShipSystemType.engine;
@@ -42,6 +43,8 @@ class Engine extends ShipSystem {
     required this.domain,
     required this.engineType,
     this.ego = EngineEgo.none,
+    this.xenoGen = .025,
+    this.xenoBonus = const {},
     required this.baseAutPerUnitTraversal,
     required this.efficiency,
     required super.baseCost,
@@ -62,6 +65,8 @@ class Engine extends ShipSystem {
       repairDifficulty: data.systemData.repairDifficulty,
       rarity: data.systemData.rarity,
       //
+      xenoGen: data.xenoGen,
+      xenoBonus: data.xenoBonus,
       domain: data.domain,
       engineType: data.engineType,
       ego: data.ego,
@@ -78,6 +83,8 @@ class EngineData {
   final Domain domain;
   final EngineType engineType;
   final EngineEgo ego;
+  final double xenoGen;
+  final Map<XenomancySchool,int> xenoBonus;
 
   const EngineData({
     required this.systemData,
@@ -85,6 +92,8 @@ class EngineData {
     required this.efficiency,
     required this.domain,
     required this.engineType,
+    this.xenoGen = .025,
+    this.xenoBonus = const {},
     this.ego = EngineEgo.none
   });
 }
