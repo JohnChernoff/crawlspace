@@ -1,11 +1,11 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:crawlspace_engine/grid.dart';
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import '../color.dart';
+import '../effects.dart';
 import '../fugue_engine.dart';
 
 enum ShipEffect {

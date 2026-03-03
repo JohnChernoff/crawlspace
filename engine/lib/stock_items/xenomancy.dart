@@ -22,7 +22,7 @@ enum XenomancySpell {
   leap("Quantum Leap","Qleap",[XenomancySchool.quantum],
       level: 1, matterCost: 1, timeout: 50, flags: [XenoFlags.trans]),
   firecloud("Fire Cloud","FCloud",[XenomancySchool.elemental],
-      level: 2, matterCost: 2, timeout: 10,flags: [XenoFlags.damage, XenoFlags.aoe]),
+      level: 2, matterCost: 2, timeout: 100,flags: [XenoFlags.damage, XenoFlags.aoe]),
   invisibility("Dark Cloak","Invis",[XenomancySchool.dark],
       level: 3, matterCost: 3,timeout: 500, flags: []),
   quarkblast("Quarkblast","QBlast",[XenomancySchool.antimatter],

@@ -281,14 +281,14 @@ class Ship extends Item implements Locatable {
   bool okMass(double m) => availableMass > m;
 
   //TODO: handle power outages?
-  double tick({Random? rnd, dryRun = false}) { //print("Tick... $dryRun");
+  double tick({FugueEngine? fm, dryRun = false}) { //print("Tick... $dryRun");
     double totalRecharge = 0, totalBurn = 0;
     for (final rss in systemControl.rechargables) {
       if (rss.currentEnergy < rss.currentMaxEnergy) { //print(rss.name); print(rss.rechargeRate);
         double recharge = rss.currentMaxEnergy * rss.rechargeRate * (1-rss.damage);
         if (!dryRun) {
-          if (rnd != null && rss.currentEnergy < 1) {
-            recharge = (rnd.nextInt(rss.avgRecoveryTime) == 0) ? recharge : 0;
+          if (fm != null && rss.currentEnergy < 1) {
+            recharge = (fm.aiRng.nextInt(rss.avgRecoveryTime) == 0) ? recharge : 0;
           }
           if (recharge > 0) rss.recharge(recharge);
         }
@@ -300,11 +300,14 @@ class Ship extends Item implements Locatable {
       if (!dryRun) systemControl.burnEnergy(e);
       totalBurn += e;
     } //print("$name: Net energy per tick: ${recharge - totalBurn}");
-    if (!dryRun) {
+    if (!dryRun && fm != null) {
       for (final w in systemControl.getWeapons()) if (w.cooldown > 0) w.cooldown--;
       xenoMatter = min(shipClass.maxXeno,
           xenoMatter + (systemControl.engine?.xenoGen ?? 0.0));
       effectMap.tickAll();
+      for (final effect in loc.cell.effects.allActive) {
+        effect.apply(this,fm);
+      }
     }
     return totalRecharge - totalBurn;
   }

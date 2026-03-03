@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:crawlspace_engine/grid.dart';
 import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
@@ -309,7 +310,10 @@ class FugueEngine {
       }
       auTick++;
       player.tick(this);
-      playShip?.tick(rnd: rnd);
+      playShip?.tick(fm: this);
+      for (final cell in player.loc.level.map.cells.values) {
+        cell.effects.tickAll();
+      }
     } while (!player.ready);
     if (playShip != null) {
       final playMap = playShip.loc.level.map; if (playMap is ImpulseMap) {

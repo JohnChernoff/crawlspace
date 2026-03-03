@@ -1,5 +1,11 @@
 import 'dart:math';
 
+import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/ship.dart';
+import 'package:crawlspace_engine/systems/weapons.dart';
+
+import 'color.dart';
+
 class EffectMap<T extends Enum> {
   Map<T,int> _effectMap = {};
   Map<T,int> get map => _effectMap;
@@ -25,4 +31,20 @@ class EffectMap<T extends Enum> {
   }
   bool removeEffect(T effect) => _effectMap.remove(effect) != null;
   void removeAllEffects() => _effectMap.clear();
+}
+
+enum CellEffect {
+  flux(GameColors.gray),
+  fire(GameColors.red);
+  final GameColor effectColor;
+  const CellEffect(this.effectColor);
+
+  apply(Ship ship, FugueEngine fm, {avgAuts = 10}) {
+    if (fm.effectRnd.nextInt(avgAuts) == 0) {
+      if (this == CellEffect.fire) {
+        final dmg = fm.effectRnd.nextInt(80);
+        fm.combatController.damage(ship, dmg, DamageType.fire, details: "(firecloud)");
+      }
+    }
+  }
 }

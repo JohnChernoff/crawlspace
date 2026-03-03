@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/systems/weapons.dart';
 import '../coord_3d.dart';
 import '../impulse.dart';
 import '../ship.dart';
@@ -57,8 +58,7 @@ class CombatController extends FugueController {
                 if (result.dmg <= 0) {
                   fm.msgController.addMsg("${ship.name} misses!");
                 } else {
-                  fm.msgController.addMsg("${ship.targetShip} takes ${result.dmg} damage");
-                  if (ship.targetShip!.takeDamage(result.dmg.roundToDouble(),result.weapon.dmgType)) explode(ship.targetShip!);
+                  damage(ship.targetShip!,result.dmg,result.weapon.dmgType);
                 }
               }
               fm.pilotController.action(ship.pilot, ActionType.combat, actionAuts: 1); //or result.minCool?
@@ -69,6 +69,11 @@ class CombatController extends FugueController {
         fm.msgController.addMsg("Wrong firing domain");
       }
     }
+  }
+
+  void damage(Ship ship, int dmg, DamageType dmgType, {String? details}) {
+    fm.msgController.addMsg("${ship.name} takes ${dmg} damage ${details != null ? details : ''}");
+    if (ship.takeDamage(dmg.roundToDouble(),dmgType)) explode(ship);
   }
 
   void explode(Ship ship) {

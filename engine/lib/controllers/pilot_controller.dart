@@ -124,7 +124,7 @@ class PilotController extends FugueController {
 
   void npcShipAct(Ship ship) {
     if (ship == fm.playerShip) return;
-    ship.tick(rnd: fm.rnd);
+    ship.tick(fm: fm);
     Pilot pilot = ship.pilot; //print(pilot.name);
     if (pilot == nobody) return;
     if (pilot.ready) { //print("${ship.name}'s turn...");

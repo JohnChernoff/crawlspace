@@ -10,13 +10,6 @@ import 'ship.dart';
 
 enum Domain {hyperspace,system,impulse}
 
-enum CellEffect {
-  flux(GameColors.gray),
-  fire(GameColors.red);
-  final GameColor effectColor;
-  const CellEffect(this.effectColor);
-}
-
 abstract class Level {
   Domain get domain;
   GridCell? upperLevel;
