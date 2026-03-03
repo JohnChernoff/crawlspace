@@ -59,7 +59,7 @@ class AsciiViewState extends State<AsciiView> {
     });
   }
 
-  Widget asciiView() {
+  Widget asciiView({twoShipScan = false}) {
     return ColoredBox(color: Colors.black,child: Column(children: [
         Expanded(child: Row(children: [
           Expanded(flex: 2, child:
@@ -67,7 +67,7 @@ class AsciiViewState extends State<AsciiView> {
           ),
           if (currentView == ViewType.normal) Expanded(child: TextBlockWidget(widget.fugueModel.scannerController.scannerText())),
           if (currentView == ViewType.normal) Expanded(child: TextBlockWidget(widget.fugueModel.scannerController.statusText())),
-          if (currentView == ViewType.normal && widget.fugueModel.playerShip?.targetShip != null) Expanded(
+          if (currentView == ViewType.normal && twoShipScan && widget.fugueModel.playerShip?.targetShip != null) Expanded(
               child: TextBlockWidget(widget.fugueModel.playerShip!.targetShip!.status(tactical: true,
                   nebula: widget.fugueModel.playerShip!.inNebula)))
         ])),

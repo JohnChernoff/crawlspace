@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:crawlspace_engine/fugue_engine.dart';
+
 import 'color.dart';
 import 'grid.dart';
 import 'impulse.dart';
@@ -18,20 +20,19 @@ enum Hazard {
   final GameColor color;
   const Hazard(this.name,this.shortName,this.glyph,this.domains,this.color);
 
-  String? effectPerTurn(Ship ship, int turns, Random rnd) {
+  String? effectPerTurn(Ship ship, int turns, FugueEngine fm) {
     final cell = ship.loc.cell;
-    if (rnd.nextDouble() < (cell.hazMap[this] ?? 0)) {
+    if (fm.effectRnd.nextDouble() < (cell.hazMap[this] ?? 0)) {
       if (this == Hazard.ion) {
         final system = ship.systemControl.getInstalledSystems().elementAt(
-            rnd.nextInt(ship.systemControl.getInstalledSystems().length));
-        final dmg = (rnd.nextDouble() * (cell is ImpulseCell ? .025 : .01)) * turns;
+            fm.effectRnd.nextInt(ship.systemControl.getInstalledSystems().length));
+        final dmg = (fm.effectRnd.nextDouble() * (cell is ImpulseCell ? .025 : .01)) * turns;
         system.takeDamage(dmg);
         return "${ship.name} takes ${(dmg * 100).round()}% ion damage to ${system.name}...";
       }
       if (this == Hazard.roid) {
-        final dmg = rnd.nextInt(cell is ImpulseCell ? 10 : 40) * turns;
-        ship.takeDamage(dmg as double, DamageType.kinetic);
-        return "${ship.name} takes ${dmg.round()} asteroid damage...";
+        final dmg = fm.effectRnd.nextInt(cell is ImpulseCell ? 10 : 40) * turns;
+        fm.combatController.damage(ship, dmg, DamageType.kinetic, details: "(asteroid)");
       }
     }
     return null;

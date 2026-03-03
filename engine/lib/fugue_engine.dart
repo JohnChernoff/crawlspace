@@ -74,7 +74,7 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1p";
+  final String version = "0.1q";
   final Galaxy galaxy;
   late Player player;
   int numAgents = 3;
@@ -110,8 +110,7 @@ class FugueEngine {
 
   List<InputMode> _inputStack = [InputMode.main];
   InputMode get inputMode => _inputStack.last;
-  void setInputMode(InputMode mode, {noUpdate = false}) {
-    print("Setting input mode: $mode");
+  void setInputMode(InputMode mode, {noUpdate = false}) { //print("Setting input mode: $mode");
     if (inputMode != mode) {
       _inputStack.add(mode);
       if (!noUpdate) {

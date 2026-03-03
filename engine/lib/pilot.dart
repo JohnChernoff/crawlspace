@@ -24,7 +24,7 @@ enum SkillType {
   engineering,piloting,xeno,communications,combat
 }
 
-enum TransactionType {  shopBuy,shopSell,repair,fooshamWin,fooshamLose,drink,jail,robbed,bribe,rollback }
+enum TransactionType {  shopBuy,shopSell,repair,fooshamWin,fooshamPlay,drink,jail,robbed,bribe,rollback }
 
 class TransactionRecord {
   final TransactionType type;
@@ -47,6 +47,7 @@ class Pilot implements Locatable {
   }
   late PilotLocale _locale;
   System get system => locale.loc.system;
+  SpaceEnvironment? get env => locale is SpaceEnvironment ? locale as SpaceEnvironment : null;
   int credits = 10000;
   List<TransactionRecord> transRec = [];
   late Faction faction;

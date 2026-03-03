@@ -181,15 +181,15 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         const OpenInventoryIntent(),
 
         LogicalKeySet(LogicalKeyboardKey.keyA):
-        const ScannerSelectionIntent(true),
-
-        LogicalKeySet(LogicalKeyboardKey.keyS):
         const ScannerSelectionIntent(false),
 
         LogicalKeySet(LogicalKeyboardKey.keyQ):
+        const ScannerSelectionIntent(true),
+
+        LogicalKeySet(LogicalKeyboardKey.keyA, LogicalKeyboardKey.shift):
         const ScannerModeIntent(mode: null),
 
-        LogicalKeySet(LogicalKeyboardKey.keyW):
+        LogicalKeySet(LogicalKeyboardKey.keyQ, LogicalKeyboardKey.shift):
         const ScannerModeIntent(mode: null, forwards: false),
 
         LogicalKeySet(LogicalKeyboardKey.keyT):

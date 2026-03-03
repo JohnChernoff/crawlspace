@@ -42,8 +42,7 @@ class Planet extends SpaceEnvironment<SystemLocation> {
     weirdness = rnd.nextDouble();
     age = PlanetAge.values.elementAt(rnd.nextInt(PlanetAge.values.length));
     environment = EnvType.values.elementAt(rnd.nextInt(EnvType.values.length));
-    export = Goods.values.elementAt(rnd.nextInt(Goods.values.length));
-    known = true;
+    export = Goods.values.elementAt(rnd.nextInt(Goods.values.length)); //known = true;
     desc = "$name is ${article(age.toString())} "
         "${getDescriptor(WordType.adj)} ${getDescriptor(WordType.noun)} "
         "with ${article(environment.toString())} climate.  Its chief exports include $export.";

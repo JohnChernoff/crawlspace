@@ -31,8 +31,8 @@ class SectorCell extends GridCell {
   @override
   String toString() {
     StringBuffer sb = StringBuffer(super.toString());
-    if (starClass != null) sb.write(", Class ${starClass?.name} Star");
-    if (planet != null) sb.write(", ${planet!.shortString()}");
+    if (starClass != null) sb.write("Class ${starClass?.name} Star");
+    if (planet != null) sb.write("${planet!.shortString()}");
     return sb.toString();
   }
 

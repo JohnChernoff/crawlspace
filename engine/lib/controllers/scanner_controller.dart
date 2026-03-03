@@ -44,6 +44,7 @@ class ScannerController extends FugueController {
   int currentScannedShipIndex = 0;
   bool showAllCellsOnZPlane = true;
   TargetPathMode targetPathMode = TargetPathMode.direct;
+  bool autoTarget = true;
 
   List<GridCell> get targetPath {
     final playShip = fm.playerShip; if (playShip != null && playShip.targetShip != null && playShip.canScan(playShip.targetShip!.loc.cell)) {
@@ -60,18 +61,20 @@ class ScannerController extends FugueController {
   }
 
   List<TextBlock> statusText() {
+    final abbrev = fm.playerShip?.targetShip != null;
     List<TextBlock> blocks = [];
-    blocks.add(TextBlock("Mode: ${fm.inputMode.name}",GameColors.white,true));
-    blocks.add(TextBlock("Tick: ${fm.auTick / 100}",GameColors.brown,true));
-    blocks.add(TextBlock("Credits: ${fm.player.credits}",GameColors.khaki,true));
-    final mainSpecies = fm.galaxy.civMod.dominantSpecies(fm.player.locale.loc.system)!;
-    int dist = fm.galaxy.topo.distance(fm.player.locale.loc.system, fm.galaxy.findHomeworld(mainSpecies));
-    blocks.add(TextBlock("${mainSpecies.name} Space ($dist)",mainSpecies.graphCol,true));
-
+    if (!abbrev) {
+      blocks.add(TextBlock("Mode: ${fm.inputMode.name}",GameColors.white,true));
+      blocks.add(TextBlock("Tick: ${fm.auTick / 100}",GameColors.brown,true));
+      blocks.add(TextBlock("Credits: ${fm.player.credits}",GameColors.khaki,true));
+      final mainSpecies = fm.galaxy.civMod.dominantSpecies(fm.player.locale.loc.system)!;
+      int dist = fm.galaxy.topo.distance(fm.player.locale.loc.system, fm.galaxy.findHomeworld(mainSpecies));
+      blocks.add(TextBlock("${mainSpecies.name} Space ($dist)",mainSpecies.graphCol,true));
+    }
     Ship? ship = fm.playerShip; if (ship == null) {
       blocks.add(const TextBlock("No ship",GameColors.red,true));
     } else {
-      blocks.add(TextBlock(ship.loc.toString(),GameColors.cyan,true));
+      if (!abbrev) blocks.add(TextBlock(ship.loc.toString(),GameColors.cyan,true));
       if (ship.itinerary != null) blocks.add(TextBlock("To: ${ship.itinerary!.last.name}", GameColors.green, true));
       blocks.addAll(ship.status());
     }
@@ -84,18 +87,19 @@ class ScannerController extends FugueController {
     blocks.add(const TextBlock("Scanner mode: ",GameColors.white,false));
     blocks.add(TextBlock(scannerMode.name, scannerMode.color, true));
     Ship? ship = fm.playerShip; if (ship == null) {
-      blocks.add(const TextBlock("?", GameColors.red, true));
+      return [TextBlock("?", GameColors.red, true)];
     } else if (ship.inNebula) {
       return [TextBlock("In Nebula", GameColors.red, true)];
     } else {
       final cells = ship.loc.level.map.cells.values
           .where((c) => c.scannable(mode ?? scannerMode,fm.shipRegistry))
-          .sorted((c1,c2) => c1.coord.distance(ship.loc.cell.coord).compareTo(c2.coord.distance(ship.loc.cell.coord)));
-      for (GridCell cell in cells) {
+          .sorted((c1,c2) => c1.coord.distance(ship.loc.cell.coord).compareTo(c2.coord.distance(ship.loc.cell.coord)))
+          .sorted((a,b) => fm.shipRegistry.atCell(b).length.compareTo(fm.shipRegistry.atCell(a).length));
+      for (final cell in cells) {
         if (!cell.isEmpty(fm.shipRegistry)) {
-          blocks.add(TextBlock(cell.toScannerString(fm.shipRegistry), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
           currentScan.add(cell);
         }
+        blocks.add(TextBlock(cell.toScannerString(fm.shipRegistry), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
       }
     }
     return blocks;
@@ -111,6 +115,7 @@ class ScannerController extends FugueController {
           if (newIndex >= currentScan.length) newIndex = 0;
           if (newIndex < 0) newIndex = currentScan.length - 1;
           currentScanSelection = currentScan.elementAt(newIndex);
+          if (autoTarget) targetScannedObject(currentScanSelection);
           break;
         }
       }
@@ -122,7 +127,7 @@ class ScannerController extends FugueController {
     final scannedCell = cell ?? currentScanSelection;
     if (scannedCell == null || !currentScan.contains(scannedCell)) return;
     Ship? playShip = fm.playerShip; if (playShip != null) {
-      final ships = fm.shipRegistry.atCell(scannedCell).toList();
+      final ships = fm.shipRegistry.atCell(scannedCell).where((s) => s.npc).toList();
       if (ships.length > 1) {
         currentScannedShipIndex++;
         if (currentScannedShipIndex >= ships.length) currentScannedShipIndex = 0;

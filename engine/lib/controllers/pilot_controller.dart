@@ -113,7 +113,7 @@ class PilotController extends FugueController {
     pilot.lastAct = actionType;
     Ship? ship = fm.getShip(pilot); if (ship != null) {
       for (final h in ship.loc.cell.hazMap.entries) {
-        final msg = h.key.effectPerTurn(ship, auts, fm.rnd);
+        final msg = h.key.effectPerTurn(ship, auts, fm);
         if (msg != null) fm.msgController.addMsg(msg);
       }
     }

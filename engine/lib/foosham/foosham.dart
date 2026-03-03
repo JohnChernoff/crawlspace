@@ -66,6 +66,8 @@ class FooShamGame {
   late final Species? culture;
 
   FooShamGame(this.system,this.rnd, {ThrowList? customList, this.difficulty = FooShamDifficulty.easy, this.civMod}) {
+    //print("Creating foosham game");
+
     speciesMode = customList == null;
     culture = speciesMode ? civMod!.cantinaCulture(system,rnd) : null;
     throwList = customList?.list ?? speciesThrows.entries.map((t) => t.key).toList();

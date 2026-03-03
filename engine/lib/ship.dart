@@ -314,13 +314,16 @@ class Ship extends Item implements Locatable {
 
   bool activeEffect(ShipEffect effect) => effectMap.isActive(effect);
 
-  List<TextBlock> status({bool tactical = false, bool showScannedShip = false, nebula = false}) {
+  List<TextBlock> status({bool tactical = false, bool showScannedShip = true, nebula = false}) {
+    final abbrev = !tactical && targetShip != null;
     final hostile = pilot.hostile;
     if (nebula || (tactical && loc.cell.hasHaz(Hazard.nebula))) return [TextBlock("In Nebula", GameColors.red, true)];
     List<TextBlock> blocks = [];
     blocks.addAll(dumpEffects());
-    blocks.add(TextBlock(name,pilot.faction.color,true));
-    blocks.add(TextBlock("${pilot.faction.name} ${shipClass.type.name}",pilot.faction.color,true));
+    if (!abbrev) {
+      blocks.add(TextBlock(name,pilot.faction.color,true));
+      blocks.add(TextBlock("${pilot.faction.name} ${shipClass.type.name}",pilot.faction.color,true));
+    }
     if (pilot.faction.isPirate) blocks.add(TextBlock("*** Pirate ***",GameColors.red,true)); else {
       if (tactical) blocks.add(TextBlock("${(hostile ? 'hostile' : 'peaceful')} ",GameColors.gray,true));
     }
@@ -344,7 +347,7 @@ class Ship extends Item implements Locatable {
         blocks.add(TextBlock("${s.ammo!.name}: ${systemControl.ammoFor(s.ammo!)}",GameColors.coral,true));
       }
     }
-    if (!tactical) {
+    if (!tactical && !abbrev) {
       blocks.add(TextBlock("Remaining capacity: ${availableMass.toStringAsFixed(2)}", GameColors.gray, true));
       blocks.add(TextBlock("Total scrap value: ${scrapVal.toStringAsFixed(2)}", GameColors.gray, true));
     }

@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/ship_reg.dart';
-import 'color.dart';
 import 'controllers/scanner_controller.dart';
 import 'coord_3d.dart';
 import 'effects.dart';
@@ -17,7 +16,6 @@ abstract class Level {
   Level({this.upperLevel});
 }
 
-//if (ships.isNotEmpty && (countPlayer || ships.length > 2 || ships.first.npc)) return true;
 abstract class GridCell {
   final Coord3D coord;
   final Map<Hazard,double> hazMap;
@@ -31,11 +29,12 @@ abstract class GridCell {
 
   String toScannerString(ShipRegistry reg) {
     StringBuffer sb = StringBuffer(toString());
-    for (final haz in hazMap.entries.where((h) => h.key != Hazard.wake)) {
-      if (haz.value > 0) sb.write(", ${haz.key.shortName}: ${haz.value.toStringAsFixed(2)}"); //else sb.write("?");
-    }
-    for (Ship ship in reg.atCell(this)) sb.write("\n$ship");
-    return sb.toString();
+    final hazards = hazMap.entries.where((h) => h.key != Hazard.wake && h.value > 0);
+    for (final haz in hazards) sb.write("${haz.key.shortName}: ${haz.value.toStringAsFixed(2)} ");
+    final ships = reg.atCell(this);
+    if (ships.length > 1 || sb.length > 0) for (Ship ship in ships) sb.write("\n$ship");
+    else if (ships.length == 1) sb.write("${ships.first}");
+    return "$coord $sb";
   }
 
   bool scannable(ScannerMode mode, ShipRegistry reg);
@@ -43,9 +42,7 @@ abstract class GridCell {
   bool hasHaz(Hazard h) => hazMap.containsKey(h) && hazMap[h]! > 0;
 
   @override
-  String toString() {
-    return "$coord";
-  }
+  String toString() => "";
 }
 
 class Grid<T extends GridCell> { //Map<GridCell,Set<Ship>> shipMap = {};
