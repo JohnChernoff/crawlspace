@@ -38,9 +38,11 @@ class FooShamResult {
 }
 
 enum FooShamDifficulty {
-  easy,
-  medium,
-  hard;
+  easy(.1),
+  medium(.33),
+  hard(.6);
+  final double punishChance;
+  const FooShamDifficulty(this.punishChance);
 }
 
 enum FooShamMode {
@@ -94,7 +96,7 @@ class FooShamGame {
     }
   }
 
-  bool calcBeat(String t1, String t2, {Species? culture}) {
+  bool calcBeat(String t1, String t2, {Species? culture,double noiseAmplitude = 0.15}) {
     if (speciesMode && civMod != null) {
       if (culture == null) return rnd.nextBool();
 
@@ -117,8 +119,13 @@ class FooShamGame {
       final respectS1 = civMod!.politicalMap[culture]?[s1] ?? 0.5;
       final respectS2 = civMod!.politicalMap[culture]?[s2] ?? 0.5;
       final diff = (respectS1 - respectS2).clamp(-1.0, 1.0);
-      final probability = 0.5 + diff * 0.2; // higher respect = wins more often
-      return rnd.nextDouble() < probability;
+      final noise = (rnd.nextDouble() * 2 - 1) * noiseAmplitude;
+      bool beats = (diff + noise) > 0;
+      if (beats != diff > 0) {
+        print("${respectS1.toStringAsFixed(2)} vs ${respectS2.toStringAsFixed(2)}");
+        print("$t1 - $t2 = ${diff.toStringAsFixed(2)}, ${noiseAmplitude.toStringAsFixed(2)}, $beats");
+      }
+      return beats;
     }
     return rnd.nextBool();
   }
@@ -161,39 +168,20 @@ class FooShamGame {
 
     return FooShamResult(winThrow, loseThrow, this, crowdReaction: reaction);
   }
+
   String _getHouseThrow() {
     if (turn <= 1) return rndThrow;
-    switch(difficulty) {
-      case FooShamDifficulty.easy:
-        return rndThrow;
+    var mostFrequent = playerThrowFrequency.entries
+        .reduce((a, b) => a.value > b.value ? a : b).key;
+    print("Expecting: $mostFrequent");
+    var counters = knownBeatMap.entries
+        .where((e) => e.value.contains(mostFrequent))
+        .map((e) => e.key)
+        .toList();
 
-      case FooShamDifficulty.medium:
-      // Pick the most frequent player throw, then counter it 50% of the time
-        var mostFrequent = playerThrowFrequency.entries
-            .reduce((a, b) => a.value > b.value ? a : b).key;
-        print("Expecting: $mostFrequent");
-        var counters = knownBeatMap.entries
-            .where((e) => e.value.contains(mostFrequent))
-            .map((e) => e.key)
-            .toList();
-
-        return (counters.isNotEmpty && rnd.nextDouble() < 0.5)
-            ? counters[rnd.nextInt(counters.length)]
-            : rndThrow;
-
-      case FooShamDifficulty.hard:
-      // Same logic as medium but 66% of the time
-        var mostFrequent = playerThrowFrequency.entries
-            .reduce((a, b) => a.value > b.value ? a : b).key;
-        var counters = knownBeatMap.entries
-            .where((e) => e.value.contains(mostFrequent))
-            .map((e) => e.key)
-            .toList();
-
-        return (counters.isNotEmpty && rnd.nextDouble() < 0.66)
-            ? counters[rnd.nextInt(counters.length)]
-            : rndThrow;
-    }
+    return (counters.isNotEmpty && rnd.nextDouble() < difficulty.punishChance)
+        ? counters[rnd.nextInt(counters.length)]
+        : rndThrow;
   }
 
   String get rndThrow => throwList.elementAt(rnd.nextInt(throwList.length));

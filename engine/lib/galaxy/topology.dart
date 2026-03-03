@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/sub_model.dart';
@@ -20,7 +21,7 @@ class GalaxyTopology extends GalaxySubMod {
   int distance(System a, System b) {
     final dist = distCache[a]?[b];
     if (dist == null) {
-      glog("Warning: cannot find distance cache for systems: ${a.name},${b.name}"); //return distCache[a]![b]!;
+      glog("Warning: cannot find distance cache for systems: ${a.name},${b.name}", error: true); //return distCache[a]![b]!;
       return 999999;
     } else return dist;
   }
@@ -48,12 +49,11 @@ class GalaxyTopology extends GalaxySubMod {
 
   Map<System, int> _bfsDistances(System start) {
     final dist = <System, int>{start: 0};
-    final queue = <System>[start];
+    final queue = Queue<System>()..add(start);
 
     while (queue.isNotEmpty) {
-      final cur = queue.removeLast();
+      final cur = queue.removeFirst();  // true FIFO
       final d = dist[cur]! + 1;
-
       for (final n in cur.links) {
         if (!dist.containsKey(n)) {
           dist[n] = d;
@@ -64,21 +64,3 @@ class GalaxyTopology extends GalaxySubMod {
     return dist;
   }
 }
-
-/*
-Map<System, int> bfsDistances(System start) {
-  final dist = <System, int>{};
-  final q = <System>[start];
-  dist[start] = 0;
-
-  while (q.isNotEmpty) {
-    final s = q.removeAt(0);
-    for (final n in s.links) {
-      if (!dist.containsKey(n)) {
-        dist[n] = dist[s]! + 1;
-        q.add(n);
-      }
-    }
-  }
-  return dist;
-} */

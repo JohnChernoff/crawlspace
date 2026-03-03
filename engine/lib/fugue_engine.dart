@@ -165,7 +165,8 @@ class FugueEngine {
     print(_shipRegistry.all);
     print(_pilotRegistry.all);
     print (activePilots);
-    msgController.addMsg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
+    msg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
+    msg("You are ${galaxy.maxJumps} jumps away from Mentos.");
     update();
   }
 

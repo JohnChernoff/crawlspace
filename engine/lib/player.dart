@@ -69,7 +69,4 @@ class Player extends Pilot {
     if (loc is AtEnvironment) return loc.env.techLvl;
     return g.techKernel.val(system);
   }
-
-  TextEntry get creditLine => TextEntry(txtBlocks: [TextBlock("Credits: ${credits}", GameColors.green, true)]);
-
 }

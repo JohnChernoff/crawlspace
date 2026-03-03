@@ -46,7 +46,7 @@ enum LawLevel { core, regulated, frontier, lawless }
 
 class Galaxy {
   static const int density = 25;
-  static const int maxSystems = 250;
+  static const int maxSystems = 360;
   static const int avgPlanets = 3, maxPlanets = 6;
   static const int avgLinks = 3, maxLinks = 9;
   final allSpecies = StockSpecies.values.map((s) => s.species).toList();

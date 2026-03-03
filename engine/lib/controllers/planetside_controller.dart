@@ -270,26 +270,32 @@ class PlanetsideController extends FugueController {
     fm.menuController.showMenu(() => fm.menuFactory.buildSystemRepairMenu(ship), headerTxt: "Pick System");
   }
 
-  void tryHullRepair(Ship ship, double percent, {double discount = 1}) {
+  int tryHullRepair(Ship ship, double percent, {double discount = 1, dryRun = false}) {
     int repairing = (ship.hullDamage * percent).round();
-    int cost = (repairing * ship.hullType.baseRepairCost).round(); //TODO: add hull mods
-    if (fm.player.transaction(TransactionType.repair, -cost)) {
-      ship.hullDamage -= repairing;
-      fm.msgController.addMsg("Repaired $repairing damage ($cost credits)");
-    } else {
-      fm.msgController.addMsg("Sorry, you can't afford that.");
+    int cost = (repairing * ship.hullType.baseRepairCost * discount).round(); //TODO: add hull mods
+    if (!dryRun) {
+      if (fm.player.transaction(TransactionType.repair, -cost)) {
+        ship.hullDamage -= repairing;
+        fm.msgController.addMsg("Repaired $repairing damage ($cost credits)");
+      } else {
+        fm.msgController.addMsg("Sorry, you can't afford that.");
+      }
     }
+    return cost;
   }
 
-  void trySystemRepair(Ship ship, ShipSystem system, double percent, {double discount = 1}) {
+  int trySystemRepair(Ship ship, ShipSystem system, double percent, {double discount = 1, dryRun = false}) {
     double repairing = min(system.damage,percent);
-    int cost = ((repairing  * 100) *  system.baseRepairCost).round(); //TODO: add system mods
-    if (fm.player.transaction(TransactionType.repair, -cost)) {
-      system.repair(percent);
-      fm.msgController.addMsg("Repaired ${(repairing * 100).round()}% damage ($cost credits)");
-    } else {
-      fm.msgController.addMsg("Sorry, you can't afford that.");
+    int cost = ((repairing  * 100) *  system.baseRepairCost * discount).round(); //TODO: add system mods
+    if (!dryRun) {
+      if (fm.player.transaction(TransactionType.repair, -cost)) {
+        system.repair(percent);
+        fm.msgController.addMsg("Repaired ${(repairing * 100).round()}% damage ($cost credits)");
+      } else {
+        fm.msgController.addMsg("Sorry, you can't afford that.");
+      }
     }
+    return cost;
   }
 
 }

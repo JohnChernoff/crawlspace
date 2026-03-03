@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/controllers/menu_controller.dart';
 import 'package:crawlspace_engine/rng/drinks.dart';
@@ -110,7 +112,6 @@ class MenuFactory {
     } else {
       drink = AlienDrink("Space Grog", desc: "Generic Space Station Grog", baseCost: 5, strength: drinkStrength, potency: "unknown");
     }
-    //int drinkCost = 1 + (env.techLvl * 5).round();
     return <MenuEntry> [
       fm.player.creditLine,
       TextEntry(txtBlocks: [TextBlock("Grog's Cantina", GameColors.green, true)]),
@@ -122,7 +123,8 @@ class MenuFactory {
   }
 
   Menu buildFooshamIntroMenu(Pilot pilot) {
-    final stakes = ((pilot.env?.techLvl ?? .5) * 1000).round();
+    print("Env: ${pilot.tech}");
+    final stakes = (pilot.tech * 1000).round();
     return <MenuEntry> [
       fm.player.creditLine,
       TextEntry(txtBlocks: [
@@ -261,29 +263,34 @@ class MenuFactory {
 
   Menu buildRepairMenu({required Ship ship, ShipSystem? sys}) {
     final desc = sys == null ? "hull" : sys.name;
+    double discount = (1-ship.pilot.tech) * 5;
+    repairCost(double percent) => (sys == null
+        ? fm.planetsideController.tryHullRepair(ship, percent,discount: discount,dryRun: true)
+        : fm.planetsideController.trySystemRepair(ship, sys, percent, discount: discount, dryRun: true));
+    strCost(double percent) => "(${repairCost(percent)}cr)";
     return [
-      TextEntry(label: "Credits: ${fm.player.credits}"),
+      ship.pilot.creditLine,
       sys == null
           ? TextEntry(label: "Hull Damage: ${ship.hullDamage.round()}")
           : TextEntry(label: "${sys.name} Damage: ${sys.dmgTxt}"),
-      ActionEntry(letter: "1", label: "repair 1% of $desc", (m) => sys != null
-          ? fm.planetsideController.trySystemRepair(ship,sys,.01)
-          : fm.planetsideController.tryHullRepair(ship,.01)),
-      ActionEntry(letter: "5", label: "repair 5% of $desc", (m) => sys != null
-          ? fm.planetsideController.trySystemRepair(ship,sys,.05)
-          : fm.planetsideController.tryHullRepair(ship,.05)),
-      ActionEntry(letter: "t", label: "repair 10% of $desc", (m) => sys != null
-          ? fm.planetsideController.trySystemRepair(ship,sys,.1)
-          : fm.planetsideController.tryHullRepair(ship,.1)),
-      ActionEntry(letter: "q", label: "repair 25% of $desc", (m) => sys != null
-          ? fm.planetsideController.trySystemRepair(ship,sys,.25)
-          : fm.planetsideController.tryHullRepair(ship,.25)),
-      ActionEntry(letter: "h", label: "repair 50% of $desc", (m) => sys != null
-          ? fm.planetsideController.trySystemRepair(ship,sys,.5)
-          : fm.planetsideController.tryHullRepair(ship,.5)),
-      ActionEntry(letter: "a", label: "repair 100% of $desc", (m) => sys != null
-          ? fm.planetsideController.trySystemRepair(ship,sys,1)
-          : fm.planetsideController.tryHullRepair(ship,1)),
+      ActionEntry(letter: "1", label: "repair 1% of $desc ${strCost(.01)}", (m) => sys != null
+          ? fm.planetsideController.trySystemRepair(ship,sys,.01,discount: discount)
+          : fm.planetsideController.tryHullRepair(ship,.01,discount: discount)),
+      ActionEntry(letter: "5", label: "repair 5% of $desc ${strCost(.05)}", (m) => sys != null
+          ? fm.planetsideController.trySystemRepair(ship,sys,.05,discount: discount)
+          : fm.planetsideController.tryHullRepair(ship,.05,discount: discount)),
+      ActionEntry(letter: "t", label: "repair 10% of $desc ${strCost(.1)}", (m) => sys != null
+          ? fm.planetsideController.trySystemRepair(ship,sys,.1,discount: discount)
+          : fm.planetsideController.tryHullRepair(ship,.1,discount: discount)),
+      ActionEntry(letter: "q", label: "repair 25% of $desc ${strCost(.25)}", (m) => sys != null
+          ? fm.planetsideController.trySystemRepair(ship,sys,.25,discount: discount)
+          : fm.planetsideController.tryHullRepair(ship,.25,discount: discount)),
+      ActionEntry(letter: "h", label: "repair 50% of $desc ${strCost(.5)}", (m) => sys != null
+          ? fm.planetsideController.trySystemRepair(ship,sys,.5,discount: discount)
+          : fm.planetsideController.tryHullRepair(ship,.5,discount: discount)),
+      ActionEntry(letter: "a", label: "repair 100% of $desc ${strCost(1)}", (m) => sys != null
+          ? fm.planetsideController.trySystemRepair(ship,sys,1,discount: discount)
+          : fm.planetsideController.tryHullRepair(ship,1,discount: discount)),
     ];
   }
 

@@ -8,11 +8,13 @@ import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import 'agent.dart';
+import 'color.dart';
 import 'controllers/pilot_controller.dart';
 import 'galaxy/civ_model.dart';
 import 'galaxy/galaxy.dart';
 import 'hazards.dart';
 import 'location.dart';
+import 'menu.dart';
 import 'object.dart';
 import 'galaxy/system.dart';
 
@@ -47,7 +49,9 @@ class Pilot implements Locatable {
   }
   late PilotLocale _locale;
   System get system => locale.loc.system;
-  SpaceEnvironment? get env => locale is SpaceEnvironment ? locale as SpaceEnvironment : null;
+  AtEnvironment? get _env => locale is AtEnvironment ? locale as AtEnvironment : null;
+  double get tech => _env?.env.techLvl ?? .5;
+  double get fed => _env?.env.fedLvl ?? .5;
   int credits = 10000;
   List<TransactionRecord> transRec = [];
   late Faction faction;
@@ -129,5 +133,7 @@ class Pilot implements Locatable {
   bool rollBack() {
     return (transRec.isNotEmpty && transaction(TransactionType.rollback,-transRec.last.credits));
   }
+
+  TextEntry get creditLine => TextEntry(txtBlocks: [TextBlock("Credits: ${credits}", GameColors.green, true)]);
 
 }

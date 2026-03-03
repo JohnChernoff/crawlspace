@@ -16,7 +16,7 @@ enum HullType {
     HullResistance(DamageType.sonic,.5),
   ],6.6);
   final List<HullResistance> resistances;
-  final double baseRepairCost; //in kilos
+  final double baseRepairCost;
   const HullType(this.resistances,this.baseRepairCost);
 }
 
