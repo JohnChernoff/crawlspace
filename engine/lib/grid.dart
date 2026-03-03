@@ -1,12 +1,21 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/ship_reg.dart';
+import 'color.dart';
 import 'controllers/scanner_controller.dart';
 import 'coord_3d.dart';
+import 'effects.dart';
 import 'hazards.dart';
 import 'ship.dart';
 
 enum Domain {hyperspace,system,impulse}
+
+enum CellEffect {
+  flux(GameColors.gray),
+  fire(GameColors.red);
+  final GameColor effectColor;
+  const CellEffect(this.effectColor);
+}
 
 abstract class Level {
   Domain get domain;
@@ -19,7 +28,10 @@ abstract class Level {
 abstract class GridCell {
   final Coord3D coord;
   final Map<Hazard,double> hazMap;
+  final EffectMap<CellEffect> effects = EffectMap();
+
   GridCell(this.coord,this.hazMap);
+
   bool isEmpty(ShipRegistry reg, {countPlayer = true});
   void clearHazard(Hazard haz) => hazMap.remove(haz);
   void clearHazards() => hazMap.clear();

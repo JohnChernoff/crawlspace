@@ -47,6 +47,15 @@ class TextBlock {
   ];
 }
 
+enum InputMode {
+  main(false),
+  target(false),
+  menu(true),
+  system(false);
+  final bool showMenu;
+  const InputMode(this.showMenu);
+}
+
 //cargo systems?  passengers, smuggling? cloaking systems?
 //hyperspace landing spot?   Graph not detecting player location?
 //TODO: add music, add launchers, one shield/generator per ship, Galaxy menu/refresh log, themed tavern games/activities
@@ -97,6 +106,24 @@ class FugueEngine {
   late final ScannerController scannerController = ScannerController(this);
   late final AudioController audioController = AudioController(NullAudioService(),audioRnd);
   final ShopOptions shopOptions = ShopOptions();
+
+  List<InputMode> _inputStack = [InputMode.main];
+  InputMode get inputMode => _inputStack.last;
+  void setInputMode(InputMode mode, {noUpdate = false}) {
+    print("Setting input mode: $mode");
+    if (inputMode != mode) {
+      _inputStack.add(mode);
+      if (!noUpdate) {
+        update(dummyMsg: true);
+      }
+    }
+  }
+  void exitInputMode() {
+    if (_inputStack.length > 1) {
+      _inputStack.removeLast();
+      update(dummyMsg: true);
+    }
+  }
 
   FugueEngine(this.galaxy,String playerName,{seed = 0}) {
     rnd = Random(seed);
@@ -247,7 +274,8 @@ class FugueEngine {
     return AgentSystemReport.none;
   }
 
-  Future<void> update({bool noWait = false}) async {
+  Future<void> update({bool noWait = false, bool dummyMsg = false}) async {
+    if (dummyMsg) msgController.addDummyMsg();
     if (noWait || !msgController.msgWorker.isProcessing || msgController.msgWorker.processNotifier.isCompleted) { //print("Updating...");
       _notify();
     } else { //print("Waiting on message queue...");

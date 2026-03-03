@@ -17,15 +17,24 @@ enum XenomancySchool {
 }
 
 enum XenomancySpell {
-  foldSpace("Fold Space","FSpace",[XenomancySchool.gravimancy],1,4,250,[XenoFlags.escape]),
-  leap("Quantum Leap","Qleap",[XenomancySchool.quantum],1,1,50,[XenoFlags.trans]),
-  firecloud("Fire Cloud","FCloud",[XenomancySchool.elemental],2,2,10,[]),
-  invisibility("Dark Cloak","Invis",[XenomancySchool.dark],3,3,500,[]),
-  quarkblast("Quarkblast","QBlast",[XenomancySchool.antimatter],1,2,10,[XenoFlags.targeted]),
-  starburst("Starburst","SBurst",[XenomancySchool.astramancy],2,3,50,[XenoFlags.directional]),
-  flux("Mass Flux","MFlux",[XenomancySchool.gravimancy],3,4,10,[XenoFlags.aoe]),
-  slow("Slow","Slow",[XenomancySchool.chronomancy],3,5,10,[XenoFlags.targeted]),
-  phaseShift("Phase Shift: Summon Alien","PS_Alien",[XenomancySchool.chronomancy],4,8,100,[XenoFlags.summoning],
+  foldSpace("Fold Space","FSpace",[XenomancySchool.gravimancy],
+      level: 1, matterCost: 4,timeout: 250, flags: [XenoFlags.escape]),
+  leap("Quantum Leap","Qleap",[XenomancySchool.quantum],
+      level: 1, matterCost: 1, timeout: 50, flags: [XenoFlags.trans]),
+  firecloud("Fire Cloud","FCloud",[XenomancySchool.elemental],
+      level: 2, matterCost: 2, timeout: 10,flags: [XenoFlags.damage, XenoFlags.aoe]),
+  invisibility("Dark Cloak","Invis",[XenomancySchool.dark],
+      level: 3, matterCost: 3,timeout: 500, flags: []),
+  quarkblast("Quarkblast","QBlast",[XenomancySchool.antimatter],
+      level: 1, matterCost: 2, timeout: 10, flags: [XenoFlags.targeted]),
+  starburst("Starburst","SBurst",[XenomancySchool.astramancy],
+      level: 2, matterCost: 3, timeout: 50, flags: [XenoFlags.directional]),
+  flux("Mass Flux","MFlux",[XenomancySchool.gravimancy],
+      level: 3, matterCost: 4, timeout: 10,flags: [XenoFlags.aoe]),
+  slow("Slow","Slow",[XenomancySchool.chronomancy],
+      level: 3, matterCost: 5, timeout: 10, flags: [XenoFlags.targeted]),
+  phaseShift("Phase Shift: Summon Alien","PS_Alien",[XenomancySchool.chronomancy],
+      level: 4,matterCost: 8, timeout: 100, flags: [XenoFlags.summoning],
       instability: .5, domain: Domain.system)
   ;
   final List<XenomancySchool> schools;
@@ -34,6 +43,7 @@ enum XenomancySpell {
   final List<XenoFlags> flags;
   final Domain domain;
   final double instability;
-  const XenomancySpell(this.spellName,this.shortName,this.schools,this.level,this.matterCost, this.timeout,this.flags, {
+  const XenomancySpell(this.spellName,this.shortName,this.schools, {
+    required this.level, required this.matterCost, required this.timeout, required this.flags,
     this.instability = .1, this.domain = Domain.impulse});
 }

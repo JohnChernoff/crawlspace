@@ -89,15 +89,16 @@ class _AsciiGridState extends State<AsciiGrid> {
     final targetPath = widget.fugueModel.scannerController.targetPath;
     for (int z = 0; z < map.size; z++) {
       final cell = map.cells[Coord3D(x,y,z)]!;
+      final uiTarget = widget.fugueModel.inputMode == InputMode.target && widget.fugueModel.player.targetLoc?.cell == cell;
       final scanned = scannedCell?.coord == cell.coord && playship.canScan(cell);
       final inTargetPath = targetPath.contains(cell);
       if (showAllCellsOnZPlane) {
-        cellWidgets.add(GridCellWidget(cell,size,shipsAt(cell),playship, scanned: scanned, invert: invert,
+        cellWidgets.add(GridCellWidget(cell,size,shipsAt(cell),playship, scanned: scanned, invert: invert, uiTarget: uiTarget,
             reg: widget.fugueModel.shipRegistry, inTargetPath: inTargetPath));
       }
       else {
         if (scannedCell?.coord == cell.coord) { //print("Adding scanned coord: ${cell.coord}");
-          cellWidgets.add(GridCellWidget(cell,size,shipsAt(scannedCell!), playship, scanned: scanned, invert: invert,
+          cellWidgets.add(GridCellWidget(cell,size,shipsAt(scannedCell!), playship, scanned: scanned, invert: invert, uiTarget: uiTarget,
               reg: widget.fugueModel.shipRegistry, inTargetPath: inTargetPath));
         } else {
           if (shipCoord == cell.coord) {
@@ -113,8 +114,9 @@ class _AsciiGridState extends State<AsciiGrid> {
       }
     }
     if (!showAllCellsOnZPlane && (cellWidgets.isEmpty || cellWidgets.first.cell.coord.distance(shipCoord) > closestCell.coord.distance(shipCoord))) {
+      final uiTarget = widget.fugueModel.inputMode == InputMode.target && widget.fugueModel.player.targetLoc?.cell == closestCell;
       cellWidgets.add(GridCellWidget(closestCell,size,shipsAt(closestCell), playship,
-        reg: widget.fugueModel.shipRegistry, invert: invert,));
+        reg: widget.fugueModel.shipRegistry, invert: invert, uiTarget: uiTarget));
       //if (cellWidgets.length > 1) print("adding closest coord: ${closestCell.coord}");
     } else {
       cellWidgets.sort((a, b) => a.cell.coord.z.compareTo(b.cell.coord.z)); // IMPORTANT: back → front

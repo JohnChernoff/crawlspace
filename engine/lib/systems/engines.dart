@@ -30,7 +30,8 @@ class Engine extends ShipSystem {
   EngineType engineType;
   EngineEgo ego;
   double xenoGen; //per AUT
-  Map<XenomancySchool,int> xenoBonus;
+  Map<XenomancySchool,int> xenoCastBonus;
+  Map<XenomancySchool,int> xenoPowerBonus;
 
   @override
   ShipSystemType get type => ShipSystemType.engine;
@@ -44,7 +45,8 @@ class Engine extends ShipSystem {
     required this.engineType,
     this.ego = EngineEgo.none,
     this.xenoGen = .025,
-    this.xenoBonus = const {},
+    this.xenoCastBonus = const {},
+    this.xenoPowerBonus = const {},
     required this.baseAutPerUnitTraversal,
     required this.efficiency,
     required super.baseCost,
@@ -66,7 +68,7 @@ class Engine extends ShipSystem {
       rarity: data.systemData.rarity,
       //
       xenoGen: data.xenoGen,
-      xenoBonus: data.xenoBonus,
+      xenoCastBonus: data.xenoCastBonus,
       domain: data.domain,
       engineType: data.engineType,
       ego: data.ego,
@@ -84,7 +86,9 @@ class EngineData {
   final EngineType engineType;
   final EngineEgo ego;
   final double xenoGen;
-  final Map<XenomancySchool,int> xenoBonus;
+  final Map<XenomancySchool,int> xenoCastBonus;
+  final Map<XenomancySchool,int> xenoPowerBonus;
+
 
   const EngineData({
     required this.systemData,
@@ -93,7 +97,8 @@ class EngineData {
     required this.domain,
     required this.engineType,
     this.xenoGen = .025,
-    this.xenoBonus = const {},
+    this.xenoCastBonus = const {},
+    this.xenoPowerBonus = const {},
     this.ego = EngineEgo.none
   });
 }

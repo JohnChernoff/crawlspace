@@ -1,4 +1,5 @@
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
+import 'package:crawlspace_engine/location.dart';
 
 import '../coord_3d.dart';
 import '../grid.dart';
@@ -11,6 +12,16 @@ enum MoveResult {moved,impCollision,impEnter,noEngine,inactiveEngine,outOfEnergy
 
 class MovementController extends FugueController {
   MovementController(super.fm);
+
+  void vectorTarget(Coord3D v) {
+    final loc = fm.player.targetLoc;
+    if (loc == null) return;
+    final destCell = loc.cell.coord.add(v);
+    if (loc.level.map.cells.containsKey(destCell)) {
+      fm.player.targetLoc = loc.withCell(loc.level.map.cells[destCell]!);
+      fm.update();
+    }
+  }
 
   MoveResult vectorShip(Ship ship, Coord3D v) {
     return moveShip(ship, ship.loc.cell.coord.add(v));
@@ -41,7 +52,7 @@ class MovementController extends FugueController {
     }
 
     final playerEncounter = fm.shipRegistry.atCell(destination).contains(fm.playerShip);
-    if (playerEncounter && fm.playerShip!.getEffect(ShipEffect.folding)) {
+    if (playerEncounter && fm.playerShip!.activeEffect(ShipEffect.folding)) {
       fm.msg("${ship.name} is rejected from your folded space!");
     } else {
       ship.move(ship.loc.withCell(destination),fm.shipRegistry); //fm.glog("Moving ${ship.name} => $destination");

@@ -10,14 +10,6 @@ class MenuController extends FugueController {
   final rootMenu = MenuContext(builder: () => []);
   late final List<MenuContext> menuStack = [rootMenu];
   MenuContext get currentMenu => menuStack.last;
-  InputMode _inputMode = InputMode.main; //TODO: put in FugueEngine?
-  InputMode get inputMode => _inputMode;
-  void set inputMode(InputMode mode) {
-      final prevMode = _inputMode;
-      _inputMode = mode;
-      fm.msgController.addDummyMsg();
-      if (_inputMode != prevMode) fm.update();
-  }
   String get currentMenuTitle => currentMenu.headerTxt;
   List<MenuEntry> _currentPage = [];
   List<MenuEntry> get selectionList => _currentPage;
@@ -39,13 +31,13 @@ class MenuController extends FugueController {
   MenuController(super.fm);
 
   Future<System?> selectSystem() {
-    if (inputMode != InputMode.system) {
+    if (fm.inputMode != InputMode.system) {
       systemCompleter = Completer();
-      final prevMode = inputMode;
-      inputMode = InputMode.system;
+      final prevMode = fm.inputMode;
+      fm.setInputMode(InputMode.system);
       return systemCompleter!.future.whenComplete(() {
         systemSearchPrefix = "";
-        inputMode = prevMode;
+        fm.setInputMode(prevMode);
       });
     }
     return systemCompleter!.future;
@@ -63,7 +55,7 @@ class MenuController extends FugueController {
     if (menuStack.length > 1) {
       _rebuildMenu();
     } else {
-      inputMode = InputMode.main; //TODO: what about if/when main isn't the root?
+      fm.setInputMode(InputMode.main); //TODO: what about if/when main isn't the root?
       //print("Back to main");
     }
     fm.update(noWait: true);
@@ -116,7 +108,7 @@ class MenuController extends FugueController {
       }
     }
 
-    _inputMode = InputMode.menu;
+    fm.setInputMode(InputMode.menu,noUpdate: true);
     final start = ctx.firstEntry;
     final end = min(start + ctx.maxEntries, full.length);
     final page = full.sublist(start, end);

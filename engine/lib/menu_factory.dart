@@ -40,13 +40,15 @@ class MenuFactory {
       final spell = pilot.knownSpells.entries.elementAt(i);
       final ship = fm.shipRegistry.byPilot(pilot);
       final chance = ship?.xenoControl.effectProb(spell.value) ?? 0;
+      final power = ship?.xenoControl.calcPower(spell.value) ?? 0;
       final noMatter = spell.value.matterCost > (ship?.xenoMatter ?? 0);
       final blocks = [
         TextBlock(spell.value.spellName, GameColors.white, false),
         TextBlock(", ${spell.value.matterCost} xm ", GameColors.white, false),
-        TextBlock("(${(chance * 100).round()}%) ", GameColors.green, !noMatter)
+        TextBlock("(${(power * 100).round()}%) ", GameColors.green, false),
+        TextBlock("(${(chance * 100).round()}%) ", GameColors.neonBlue, !noMatter)
       ];
-      if (action != null) return ValueEntry(letter: spell.key, txtBlocks: blocks, spell.value, action,
+      if (action != null) return ValueEntry(letter: spell.key, txtBlocks: blocks, spell.value, action, exitBefore: true,
           disabledReason: () => noMatter ? "Insufficient Xeno Matter" : null
       );
       else return TextEntry(txtBlocks: blocks);

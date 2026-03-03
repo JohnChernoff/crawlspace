@@ -51,7 +51,7 @@ final Map<StockSystem, EngineData> stockEngines = {
     efficiency: .9,
     baseAutPerUnitTraversal: 8,
     xenoGen: .25,
-    xenoBonus: {XenomancySchool.dark : 2}
+    xenoCastBonus: {XenomancySchool.dark : 2}
   ),
 
 };

@@ -48,25 +48,18 @@ class MenuContext {
       );
 }
 
-enum InputMode {
-  main(false),
-  menu(true),
-  system(false);
-  final bool showMenu;
-  const InputMode(this.showMenu);
-}
-
 abstract class MenuEntry {
   final String? letter;
   final String? label;
   final List<TextBlock> txtBlocks;
-  final bool exitAfter;
+  final bool exitBefore,exitAfter;
   final String? Function() disabledReason;
   bool get enabled => disabledReason() == null;
 
   MenuEntry({this.letter,
         this.label,
         this.txtBlocks = const [],
+        this.exitBefore = false,
         this.exitAfter = false,
         StringFn? disabledReason,
       }) : disabledReason = disabledReason ?? (() => null);
@@ -83,14 +76,17 @@ class TextEntry extends MenuEntry {
 class ActionEntry extends MenuEntry {
   final void Function(MenuController) action;
 
-  ActionEntry(this.action,{super.letter, super.label, super.txtBlocks, super.exitAfter, super.disabledReason});
+  ActionEntry(this.action,{super.letter, super.label, super.txtBlocks, super.exitBefore, super.exitAfter, super.disabledReason});
 
   @override
   void activate(MenuController mc) {
     if (enabled) {
+      if (exitBefore) mc.exitMenu();
       action(mc); // run first
-      if (exitAfter) mc.exitMenu();
-      else mc.rebuild(); // mc.fm.update(noWait: true);
+      if (!exitBefore) {
+        if (exitAfter) mc.exitMenu();
+        else mc.rebuild();
+      }
     }
   }
 }
@@ -99,14 +95,17 @@ class ValueEntry<T> extends MenuEntry {
   final T value;
   final void Function(T) onSelect;
 
-  ValueEntry(this.value, this.onSelect, {super.letter, super.label, super.txtBlocks, super.exitAfter, super.disabledReason});
+  ValueEntry(this.value, this.onSelect, {super.letter, super.label, super.txtBlocks, super.exitBefore, super.exitAfter, super.disabledReason});
 
   @override
   void activate(MenuController mc) {
     if (enabled) {
+      if (exitBefore) mc.exitMenu();
       onSelect(value);
-      if (exitAfter) mc.exitMenu();
-      else mc.rebuild(); //mc.fm.update(noWait: true);
+      if (!exitBefore) {
+        if (exitAfter) mc.exitMenu();
+        else mc.rebuild();
+      }
     }
   }
 }

@@ -171,7 +171,7 @@ class LayerTransitController extends FugueController {
     if (impLoc is ImpulseLocation) {
       final ships = fm.shipRegistry.inLevel(impLoc.level);
       if (ship == fm.playerShip && ships.length > 1 && ships.any((s) => s.pilot.hostile)) {
-        if (ship.getEffect(ShipEffect.folding)) {
+        if (ship.activeEffect(ShipEffect.folding)) {
           ships.forEach((s) => _exitImpulse(s, impLoc));
         } else {
           fm.msgController.addMsg("You cannot accelerate to system travel with hostile vessels in the area");

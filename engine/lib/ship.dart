@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
+import 'package:crawlspace_engine/effects.dart';
 import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/rng/rnd_sys.dart';
@@ -87,7 +88,7 @@ class Ship extends Item implements Locatable {
   late RndSystemInstaller rndSystemInstaller;
   List<System>? itinerary;
   double xenoMatter = 0;
-  Map<ShipEffect,int> effectMap = {};
+  EffectMap<ShipEffect> effectMap = EffectMap();
   late XenoController xenoControl = XenoController(this);
 
   Ship(super.name, {
@@ -303,18 +304,12 @@ class Ship extends Item implements Locatable {
       for (final w in systemControl.getWeapons()) if (w.cooldown > 0) w.cooldown--;
       xenoMatter = min(shipClass.maxXeno,
           xenoMatter + (systemControl.engine?.xenoGen ?? 0.0));
-      for (final effect in effectMap.entries) {
-        effectMap[effect.key] = max(effect.value - 1,0);
-      }
+      effectMap.tickAll();
     }
     return totalRecharge - totalBurn;
   }
 
-  void applyEffect(ShipEffect effect, int duration) {
-    effectMap[effect] = duration + (effectMap[effect] ?? 0);
-  }
-
-  bool getEffect(ShipEffect effect) => (effectMap[effect] ?? 0) > 0;
+  bool activeEffect(ShipEffect effect) => effectMap.isActive(effect);
 
   List<TextBlock> status({bool tactical = false, bool showScannedShip = false, nebula = false}) {
     final hostile = pilot.hostile;
@@ -360,7 +355,7 @@ class Ship extends Item implements Locatable {
   }
 
   List<TextBlock> dumpEffects() {
-      final map = effectMap.entries.where((e) => e.value > 0).map(((m) => m.key));
+      final map = effectMap.map.entries.where((e) => e.value > 0).map(((m) => m.key));
       return List.generate(map.length, (i) {
         final effect = map.elementAt(i);
         return TextBlock(effect.statusString, effect.color, true);

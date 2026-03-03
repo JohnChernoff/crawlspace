@@ -66,8 +66,8 @@ class ToggleShipSystemIntent extends Intent {
   const ToggleShipSystemIntent();
 }
 
-class AwaitIntent extends Intent {
-  const AwaitIntent();
+class AwaitOrConfirmIntent extends Intent {
+  const AwaitOrConfirmIntent();
 }
 
 class PursueIntent extends Intent {
@@ -199,7 +199,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         const ScannerTargetModeIntent(),
 
         LogicalKeySet(LogicalKeyboardKey.enter):
-        const AwaitIntent(),
+        const AwaitOrConfirmIntent(),
 
         LogicalKeySet(LogicalKeyboardKey.numpadAdd):
         const PursueIntent(),
@@ -236,7 +236,11 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         DirectionIntent: CallbackAction<DirectionIntent>(
           onInvoke: (intent) { //print("Moving ship");
             if (fm.playerShip != null) {
-              fm.pilotController.move(fm.playerShip!, Coord3D(intent.dx, intent.dy, intent.dz), vector: true);
+              if (fm.inputMode == InputMode.main) {
+                fm.pilotController.move(fm.playerShip!, Coord3D(intent.dx, intent.dy, intent.dz), vector: true);
+              } else if (fm.inputMode == InputMode.target) {
+                fm.movementController.vectorTarget(Coord3D(intent.dx, intent.dy, intent.dz));
+              }
             }
             return null;
           },
@@ -296,9 +300,14 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
            return null;
           }
         ),
-        AwaitIntent: CallbackAction<AwaitIntent>(
+        AwaitOrConfirmIntent: CallbackAction<AwaitOrConfirmIntent>(
             onInvoke: (_) {
-              fm.combatController.awaitNextWeapon(fm.playerShip);
+              if (fm.inputMode == InputMode.main) {
+                fm.combatController.awaitNextWeapon(fm.playerShip);
+              } else if (fm.inputMode == InputMode.target) {
+                fm.exitInputMode();
+                fm.playerShip?.xenoControl.targetCompleter?.complete(fm.player.targetLoc);
+              }
               return null;
             }
         ),

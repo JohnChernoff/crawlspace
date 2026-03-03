@@ -61,9 +61,7 @@ class ScannerController extends FugueController {
 
   List<TextBlock> statusText() {
     List<TextBlock> blocks = [];
-    if (debugLevel.level < DebugLevel.Info.level ) {
-      blocks.add(TextBlock("Mode: ${fm.menuController.inputMode.name}",GameColors.white,true));
-    }
+    blocks.add(TextBlock("Mode: ${fm.inputMode.name}",GameColors.white,true));
     blocks.add(TextBlock("Tick: ${fm.auTick / 100}",GameColors.brown,true));
     blocks.add(TextBlock("Credits: ${fm.player.credits}",GameColors.khaki,true));
     final mainSpecies = fm.galaxy.civMod.dominantSpecies(fm.player.locale.loc.system)!;

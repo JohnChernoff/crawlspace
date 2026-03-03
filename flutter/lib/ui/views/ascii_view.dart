@@ -26,8 +26,8 @@ class AsciiViewState extends State<AsciiView> {
   Widget build(BuildContext context) { //print(widget.fugueModel.menuController.inputStack);
     return currentView == ViewType.galaxy
         ? GalaxyMap(widget.fugueModel)
-        : buildInputLayer(child: switch(widget.fugueModel.menuController.inputMode) {
-          InputMode.main =>  asciiView(),
+        : buildInputLayer(child: switch(widget.fugueModel.inputMode) {
+          InputMode.main || InputMode.target =>  asciiView(),
           InputMode.menu => menuView(),
           InputMode.system => SystemSelect(widget.fugueModel),
         }, fugueModel: widget.fugueModel);
@@ -111,8 +111,8 @@ class TextBlockWidget extends StatelessWidget {
 }
 
 Widget buildInputLayer({required Widget child, required FugueEngine fugueModel}) =>
-  switch (fugueModel.menuController.inputMode) {
-     InputMode.main => ShipInput(child,fugueModel),
+  switch (fugueModel.inputMode) {
+     InputMode.main || InputMode.target => ShipInput(child,fugueModel),
      InputMode.menu => MenuInput(child,fugueModel),
      InputMode.system => SystemInput(child, fugueModel, raw: true)
 };

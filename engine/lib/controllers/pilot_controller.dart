@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/ship_sys.dart';
 import '../galaxy/system.dart';
@@ -54,8 +55,8 @@ class PilotController extends FugueController {
     if (ship != null) {
       fm.menuController.showMenu(
           () => fm.menuFactory.buildXenoMenu(pilot, action: (s) {
-            final result = ship.xenoControl.generateEffect(s, fm.effectRnd);
-            fm.msg(result.msg);
+            final result = ship.xenoControl.generateEffect(s,fm);
+            if (result != XenoResult.success) fm.msg(result.msg);
           }),
           headerTxt: "Effects: "
       );

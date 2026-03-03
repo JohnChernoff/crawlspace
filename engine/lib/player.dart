@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/location.dart';
+import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 
 import 'color.dart';
 import 'galaxy/galaxy.dart';
@@ -28,7 +29,10 @@ class Player extends Pilot {
   Set<Ship> fleet = {};
   double inebriation = 0;
 
-  Player(super.name,{required super.loc, super.galaxy});
+  Player(super.name,{required super.loc, super.galaxy}) {
+    knownSpells["f"] = XenomancySpell.foldSpace;
+    knownSpells["c"] = XenomancySpell.firecloud;
+  }
 
   void drink(double strength) {
     final con = attributes[AttribType.con] ?? 0.5;

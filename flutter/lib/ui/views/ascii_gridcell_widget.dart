@@ -10,6 +10,7 @@ import '../../options.dart';
 
 class GridCellWidget extends StatefulWidget {
   final double size;
+  final bool uiTarget;
   final bool scanned;
   final bool targeted;
   final bool inTargetPath;
@@ -19,7 +20,7 @@ class GridCellWidget extends StatefulWidget {
   final bool invert;
   final ShipRegistry reg;
   const GridCellWidget(this.cell,this.size,this.ships,this.playShip,
-      {super.key, required this.reg, this.inTargetPath = false, this.targeted = false, this.scanned = false, this.invert = false});
+      {super.key, required this.reg, this.inTargetPath = false, this.targeted = false, this.scanned = false, this.invert = false, this.uiTarget = false});
 
   bool get sameDepth => (cell.coord.z - playShip.loc.cell.coord.z).abs() == 0;
   bool get sameDepthAndNotEmpty => sameDepth && !cell.isEmpty(reg);
@@ -90,20 +91,28 @@ class GridCellWidgetState extends State<GridCellWidget> {
 
     //if (widget.inTargetPath) stack.add(Text("□", style: style));
 
-    final hazards = cell.hazMap.entries
-        .where((e) => e.value > 0 && e.key != Hazard.wake)
-        .map((e) => e.key)
-        .toList();
+    if (widget.uiTarget) {
+      stack.add(Text("X", style: widget.special ? style : style.copyWith(color: Colors.white)));
+    }
 
-    if (widget.invert) {
-      if (hazards.isEmpty) {
-        stack.add(Text(".", style: style.copyWith(color: widget.sameDepth ? Colors.white : Colors.cyan)));
-      } else {
-        stack.add(Text("#", style: widget.special ? style : style.copyWith(color: Color(hazards.first.color.argb))));
-      }
-    } else if (hazards.isNotEmpty) {
+    if (cell.effects.anyActive) {
+      final effect = cell.effects.allActive.first; //TODO: deal with multiples somehow
+      stack.add(Text("#", style: widget.special ? style : style.copyWith(color: Color(effect.effectColor.argb))));
+    } else {
+      final hazards = cell.hazMap.entries
+          .where((e) => e.value > 0 && e.key != Hazard.wake)
+          .map((e) => e.key)
+          .toList();
+      if (widget.invert) {
+        if (hazards.isEmpty) {
+          stack.add(Text(".", style: style.copyWith(color: widget.sameDepth ? Colors.white : Colors.cyan)));
+        } else {
+          stack.add(Text("#", style: widget.special ? style : style.copyWith(color: Color(hazards.first.color.argb))));
+        }
+      } else if (hazards.isNotEmpty) {
         final hazardGlyph = _getHazardGlyph(hazards);
         stack.add(Text(hazardGlyph, style: style));
+      }
     }
 
     if (cell is SectorCell) {

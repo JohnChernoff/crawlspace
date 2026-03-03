@@ -63,9 +63,8 @@ class Pilot implements Locatable {
   bool get hostile => _hostile ?? false;
   final Map<XenomancySchool,double> xenoSkills = {};
   final List<XenomancySpell> spellBook = [XenomancySpell.foldSpace];
-  final Map<String,XenomancySpell> knownSpells = {
-    "f" : XenomancySpell.foldSpace
-  };
+  final Map<String,XenomancySpell> knownSpells = {};
+  SpaceLocation? targetLoc;
 
   void tick(FugueEngine fm) => auCooldown = max(0,auCooldown - 1);
 
