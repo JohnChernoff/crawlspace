@@ -2,9 +2,42 @@ import 'dart:async';
 import 'dart:math';
 import 'package:collection/collection.dart';
 import '../fugue_engine.dart';
-import '../galaxy/system.dart';
 import '../menu.dart';
+import '../object.dart';
 import 'fugue_controller.dart';
+
+class AlphaCompleter<T extends Nameable> {
+  Completer<T?>? _completer;
+  void complete() => _completer?.complete(selection);
+  void abort() => _completer?.complete(null);
+  int selectedIndex = 0;
+  String _searchPrefix = "";
+  String get searchPrefix => _searchPrefix;
+  void set searchPrefix(String pfx) {
+    _searchPrefix = pfx;
+    selectedIndex = 0;
+  }
+  List<T> get getCurrentList => list
+      .where((s) => s.name.toLowerCase().startsWith(_searchPrefix.toLowerCase()))
+      .sorted((a,b) => a.name.compareTo(b.name)) //TODO: other sorts
+      .toList();
+  T? get selection => getCurrentList.elementAtOrNull(selectedIndex);
+  List<T> list;
+  AlphaCompleter(this.list);
+
+  Future<T?> request(FugueEngine fm) {
+    final prevMode = fm.inputMode;
+    if (_completer == null || _completer!.isCompleted) {
+      _completer = Completer();
+      selectedIndex = 0;
+      _searchPrefix = "";
+      fm.setInputMode(InputMode.alphaSelect);
+    }
+    return _completer!.future.whenComplete(() {
+      fm.setInputMode(prevMode);
+    });
+  }
+}
 
 class MenuController extends FugueController {
   final rootMenu = MenuContext(builder: () => []);
@@ -13,34 +46,15 @@ class MenuController extends FugueController {
   String get currentMenuTitle => currentMenu.headerTxt;
   List<MenuEntry> _currentPage = [];
   List<MenuEntry> get selectionList => _currentPage;
-
-  String _systemSearchPrefix = "";
-  String get systemSearchPrefix => _systemSearchPrefix;
-  void set systemSearchPrefix(String pfx) {
-    _systemSearchPrefix = pfx;
-    fm.menuController.selectedIndex = 0;
-  }
-  Completer<System?>? systemCompleter;
-  List<System> get selectedSystems => fm.galaxy.systems
-      .where((s) => s.name.toLowerCase().startsWith(systemSearchPrefix.toLowerCase()))
-      .sorted((a,b) => a.name.compareTo(b.name)) //TODO: other sorts
-      .toList();
-  int selectedIndex = 0;
-  System? get selectedSystem => selectedSystems.elementAtOrNull(selectedIndex);
+  List<AlphaCompleter> _compStack = [];
+  AlphaCompleter? get currAlphaComp => _compStack.lastOrNull;
 
   MenuController(super.fm);
 
-  Future<System?> selectSystem() {
-    if (fm.inputMode != InputMode.system) {
-      systemCompleter = Completer();
-      final prevMode = fm.inputMode;
-      fm.setInputMode(InputMode.system);
-      return systemCompleter!.future.whenComplete(() {
-        systemSearchPrefix = "";
-        fm.setInputMode(prevMode);
-      });
-    }
-    return systemCompleter!.future;
+  Future<T?> getAlphaList<T extends Nameable>(List<T> list) {
+    final completer = AlphaCompleter<T>(list);
+    _compStack.add(completer);
+    return completer.request(fm);
   }
 
   void exitToLevel(MenuLevel level) { //print(menuStack.map((s) => s.level.name));

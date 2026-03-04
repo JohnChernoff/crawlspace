@@ -51,7 +51,7 @@ enum InputMode {
   main(false),
   target(false),
   menu(true),
-  system(false);
+  alphaSelect(false);
   final bool showMenu;
   const InputMode(this.showMenu);
 }

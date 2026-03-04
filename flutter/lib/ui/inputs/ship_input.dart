@@ -16,6 +16,11 @@ class SystemSelectIntent extends Intent {
   const SystemSelectIntent(this.unselect);
 }
 
+class GoodsSelectIntent extends Intent {
+  final bool unselect;
+  const GoodsSelectIntent(this.unselect);
+}
+
 class DirectionIntent extends Intent {
   final int dx,dy,dz;
   const DirectionIntent(this.dx,this.dy,this.dz);
@@ -228,6 +233,9 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         LogicalKeySet(LogicalKeyboardKey.keyS, LogicalKeyboardKey.shift):
         const SystemSelectIntent(false),
 
+        LogicalKeySet(LogicalKeyboardKey.keyG, LogicalKeyboardKey.shift):
+        const GoodsSelectIntent(false),
+
         LogicalKeySet(LogicalKeyboardKey.keyZ, LogicalKeyboardKey.shift):
         const XenoIntent(),
       },
@@ -360,7 +368,15 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
                 fm.playerShip?.itinerary = null;
                 fm.update();
               } else {
-                fm.menuController.selectSystem().then((s) { if (s != null) fm.pilotController.plotCourse(fm.player, s); });
+                fm.menuController.getAlphaList(fm.galaxy.systems).then((s) { if (s != null) fm.pilotController.plotCourse(fm.player, s); });
+              }
+              return null;
+            }
+        ),
+        GoodsSelectIntent: CallbackAction<GoodsSelectIntent>(
+            onInvoke: (_) {
+              if (fm.playerShip != null) {
+                fm.menuController.getAlphaList(fm.galaxy.tradeMod.goodsSources.keys.toList()).then((g) => fm.msg(g?.name ?? ""));
               }
               return null;
             }

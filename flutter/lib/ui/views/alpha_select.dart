@@ -1,14 +1,17 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/galaxy/system.dart';
 import 'package:flutter/material.dart';
 
-class SystemSelect extends StatelessWidget {
+class AlphaSelect extends StatelessWidget {
   final FugueEngine fm;
-  const SystemSelect(this.fm, {super.key});
+  const AlphaSelect(this.fm, {super.key});
 
   @override
   Widget build(BuildContext context) {
-    final sysList = fm.menuController.selectedSystems;
-    final prefix = fm.menuController.systemSearchPrefix;
+    final alphaComp = fm.menuController.currAlphaComp;
+    if (alphaComp == null) return SizedBox.shrink();
+    final alphaList = alphaComp.getCurrentList;
+    final prefix = alphaComp.searchPrefix;
     return Container(
       color: Colors.black,
       child: Column(
@@ -51,7 +54,7 @@ class SystemSelect extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
             child: Text(
-              "${sysList.length} SYSTEM${sysList.length != 1 ? 'S' : ''} FOUND",
+              "${alphaList.length} SYSTEM${alphaList.length != 1 ? 'S' : ''} FOUND",
               style: TextStyle(
                 fontFamily: 'JetBrainsMono',
                 fontSize: 10,
@@ -63,7 +66,7 @@ class SystemSelect extends StatelessWidget {
 
           // System list
           Expanded(
-            child: sysList.isEmpty
+            child: alphaList.isEmpty
                 ? Center(
               child: Text(
                 "NO MATCH",
@@ -77,15 +80,15 @@ class SystemSelect extends StatelessWidget {
             )
                 : ListView.builder(
               padding: const EdgeInsets.symmetric(vertical: 4),
-              itemCount: sysList.length,
+              itemCount: alphaList.length,
               itemBuilder: (context, i) {
-                final sys = sysList[i];
+                final selection = alphaList[i];
                 final isFirst = i == 0;
                 // Highlight matched prefix
                 final matchLen = prefix.length;
-                final selected = fm.menuController.selectedIndex == i;
+                final selected = alphaComp.selectedIndex == i;
                 return InkWell(
-                  onTap: () => fm.menuController.systemCompleter?.complete(sys),
+                  onTap: () => alphaComp.complete(),
                   hoverColor: Colors.green.withValues(alpha: 0.08),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
@@ -110,9 +113,9 @@ class SystemSelect extends StatelessWidget {
                             letterSpacing: 1.5,
                           )),
                         // Matched prefix highlighted
-                        if (matchLen > 0 && sys.name.length >= matchLen)
+                        if (matchLen > 0 && selection.name.length >= matchLen)
                           Text(
-                            sys.name.substring(0, matchLen).toUpperCase(),
+                            selection.name.substring(0, matchLen).toUpperCase(),
                             style: const TextStyle(
                               fontFamily: 'JetBrainsMono',
                               fontSize: 13,
@@ -122,7 +125,7 @@ class SystemSelect extends StatelessWidget {
                           ),
                         // Rest of name
                         Text(
-                          sys.name.substring(matchLen).toUpperCase(),
+                          selection.name.substring(matchLen).toUpperCase(),
                           style: TextStyle(
                             fontFamily: 'JetBrainsMono',
                             fontSize: 13,
@@ -132,20 +135,20 @@ class SystemSelect extends StatelessWidget {
                         ),
                         const Spacer(),
                         // Fed/tech indicators
-                        _SystemIndicator(
+                        if (selection is System) _SystemIndicator(
                           label: "F",
-                          value: fm.galaxy.fedKernel.val(sys),
+                          value: fm.galaxy.fedKernel.val(selection),
                           color: Colors.blue.shade300,
                         ),
                         const SizedBox(width: 8),
-                        _SystemIndicator(
+                        if (selection is System) _SystemIndicator(
                           label: "T",
-                          value: fm.galaxy.techKernel.val(sys),
+                          value: fm.galaxy.techKernel.val(selection),
                           color: Colors.green.shade300,
                         ),
                         const SizedBox(width: 8),
                         // Homeworld marker
-                        if (sys.homeworld != null)
+                        if (selection is System && selection.homeworld != null)
                           Padding(
                             padding: const EdgeInsets.only(left: 8),
                             child: Text(
@@ -157,7 +160,7 @@ class SystemSelect extends StatelessWidget {
                             ),
                           ),
                         // Visited marker
-                        if (sys.visited)
+                        if (selection is System && selection.visited)
                           Padding(
                             padding: const EdgeInsets.only(left: 6),
                             child: Text(

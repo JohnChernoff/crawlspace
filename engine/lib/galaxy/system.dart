@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/location.dart';
+import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/sector.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../color.dart';
@@ -33,7 +34,7 @@ class SystemMap extends Grid<SectorCell> {
   SystemMap(super.size, super.cells);
 }
 
-class System extends Level {
+class System extends Level implements Nameable {
   @override
   Domain get domain => Domain.system;
   String name;

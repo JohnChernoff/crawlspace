@@ -3,6 +3,10 @@ import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'color.dart';
 
+abstract interface class Nameable {
+  String get name;
+}
+
 abstract interface class Locatable {
   SpaceLocation get loc;
 }
@@ -27,7 +31,7 @@ class SpaceEnvironment<T extends SpaceLocation> extends SpaceObject implements L
       {super.desc, required T this.locale});
 }
 
-class SpaceObject {
+class SpaceObject implements Nameable {
   final String name;
   String?   desc;
   bool      known    = false;

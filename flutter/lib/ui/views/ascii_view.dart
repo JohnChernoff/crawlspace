@@ -1,11 +1,11 @@
 import 'dart:ui';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_flutter/main.dart';
-import 'package:crawlspace_flutter/ui/views/sys_select.dart';
+import 'package:crawlspace_flutter/ui/views/alpha_select.dart';
 import 'package:flutter/material.dart';
 import '../inputs/menu_input.dart';
 import '../inputs/ship_input.dart';
-import '../inputs/system_input.dart';
+import '../inputs/alpha_select_input.dart';
 import 'ascii_grid.dart';
 import 'galaxy_map.dart';
 import 'menu_view.dart';
@@ -28,7 +28,7 @@ class AsciiViewState extends State<AsciiView> {
         : buildInputLayer(child: switch(widget.fugueModel.inputMode) {
           InputMode.main || InputMode.target =>  asciiView(),
           InputMode.menu => menuView(),
-          InputMode.system => SystemSelect(widget.fugueModel),
+          InputMode.alphaSelect => AlphaSelect(widget.fugueModel),
         }, fugueModel: widget.fugueModel);
   }
 
@@ -113,5 +113,5 @@ Widget buildInputLayer({required Widget child, required FugueEngine fugueModel})
   switch (fugueModel.inputMode) {
      InputMode.main || InputMode.target => ShipInput(child,fugueModel),
      InputMode.menu => MenuInput(child,fugueModel),
-     InputMode.system => SystemInput(child, fugueModel, raw: true)
+     InputMode.alphaSelect => SystemInput(child, fugueModel, raw: true)
 };

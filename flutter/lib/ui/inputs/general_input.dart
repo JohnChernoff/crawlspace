@@ -49,7 +49,7 @@ mixin GeneralInputMixin {
     LogicalKeySet(LogicalKeyboardKey.keyH, LogicalKeyboardKey.shift):
     const HelpIntent(),
 
-    LogicalKeySet(LogicalKeyboardKey.keyG, LogicalKeyboardKey.shift):
+    LogicalKeySet(LogicalKeyboardKey.keyM, LogicalKeyboardKey.shift):
     ViewSelection(currentView == ViewType.galaxy ? ViewType.normal : ViewType.galaxy),
 
     LogicalKeySet(LogicalKeyboardKey.space):
