@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/galaxy/fed_model.dart';
 import 'package:crawlspace_engine/galaxy/flow_model.dart';
 import 'package:crawlspace_engine/galaxy/topology.dart';
+import 'package:crawlspace_engine/galaxy/trade_model.dart';
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../item.dart';
@@ -76,6 +77,15 @@ class Galaxy {
   Item ancientFedArt1 = Item("Primitive Humanoid Communications Device",desc: "Something called an 'IPhone 27'",sellable: false);
   Item ancientFedArt2 = Item("A glowing datastack",desc: "A datastack entitled 'Ancient Earth History (500 BC - 2500 AD)'",sellable: false);
   Item ancientFedArt3 = Item("Ivory chess piece", desc: "A chess knight, floating in space. Odd.",sellable: false);
+  late TradeModel tradeMod;
+
+  // Static (computed at gen, recomputed on tickCentury)
+  //late TradeKernelField supplyField;    // per-commodity supply gradient
+  //late TradeKernelField demandField;    // per-commodity demand gradient
+
+// Dynamic (ticking forward)
+// flowFields["tradeFlow"] — actual goods moving along routes
+// flowFields["priceSignal"] — price information diffusing through gossip
 
   Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
     fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
@@ -110,6 +120,8 @@ class Galaxy {
         s.addPlanets(this, rnd);
       }
     }
+
+    tradeMod = TradeModel(this);
 
     Set<Item> items = {ancientFedArt1,ancientFedArt2,ancientFedArt3};
     for (int i=0; i<1000; i++) items.add(Rng.randomArtifact(rnd, 100000));

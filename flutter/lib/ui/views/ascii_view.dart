@@ -1,6 +1,5 @@
 import 'dart:ui';
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_flutter/main.dart';
 import 'package:crawlspace_flutter/ui/views/sys_select.dart';
 import 'package:flutter/material.dart';

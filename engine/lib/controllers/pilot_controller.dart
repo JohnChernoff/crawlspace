@@ -83,7 +83,7 @@ class PilotController extends FugueController {
   }
 
   ResultMessage installSystem(Ship ship, ShipSystem system, {SystemSlot? slot}) {
-    if (ship.inventory.contains(system)) {
+    if (ship.inventory.all.contains(system)) {
       if (slot == null) {
         fm.menuController.showMenu(() => fm.menuFactory.buildInstallSlotMenu(ship,system),headerTxt: "Select Slot:");
         return const ResultMessage("Select a slot", true);
@@ -236,6 +236,10 @@ class PilotController extends FugueController {
       ? fm.menuFactory.buildUninstallMenu(ship)
       : fm.menuFactory.buildInstallMenu(ship)); //show menu anyhow
     if (!available) fm.msgController.addMsg("No available system");
+  }
+
+  void hailShip(Ship ship) {
+
   }
 }
 

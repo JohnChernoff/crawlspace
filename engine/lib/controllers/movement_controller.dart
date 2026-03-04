@@ -1,6 +1,4 @@
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
-import 'package:crawlspace_engine/location.dart';
-
 import '../coord_3d.dart';
 import '../grid.dart';
 import '../ship.dart';

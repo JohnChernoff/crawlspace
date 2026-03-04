@@ -5,7 +5,6 @@ import 'package:crawlspace_engine/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'package:crawlspace_engine/stock_items/stock_ships.dart';
 import '../coord_3d.dart';
-import '../fugue_engine.dart';
 import '../galaxy/galaxy.dart';
 import '../galaxy/system.dart';
 import '../grid.dart';
@@ -348,43 +347,46 @@ class ShopNameGen {
   // Low-tech: gritty, salvage-yard vibes
   // Mid-tech: corporate, functional
   // High-tech: sleek, abstract, megacorp prestige
-  static const Map<ShopType, List<List<String>>> shopFlavors = {
-    ShopType.power: [
+  static const Map<SystemShopType, List<List<String>>> shopFlavors = {
+    SystemShopType.power: [
       ["Fuel Shack", "Generator Yard", "Spark Hut"],           // 1–3
       ["Reactors", "Powerworks", "Core Depot"],                // 4–6
       ["Fusion Emporium", "Quantum Core", "Stellar Array"],    // 7–10
     ],
-    ShopType.engine: [
+    SystemShopType.engine: [
       ["Drive Shed", "Thruster Patch", "Burn Yard"],
       ["Engines", "Driveworks", "Propulsion Guild"],
       ["Thrust Hall", "Void Propulsion", "Singularity Drive"],
     ],
-    ShopType.shield: [
+    SystemShopType.shield: [
       ["Plate Shop", "Hull Patch", "Scrap Ward"],
       ["Shieldworks", "Barrier Bazaar", "Deflector Forge"],
       ["Phase Wardens", "Null Barrier", "Quantum Aegis"],
     ],
-    ShopType.weapon: [
+    SystemShopType.weapon: [
       ["Guns", "Blasters", "The Rack"],
       ["Arsenal", "Armory", "Killmart"],
       ["Gun Cathedral", "Void Armaments", "Terminus Weapons"],
     ],
-    ShopType.launcher: [
+    SystemShopType.launcher: [
       ["Tube Shack", "Missile Shed", "The Silo"],
       ["Launch Systems", "Missile Bay"],
       ["Tube Syndicate", "Orbital Payload", "Void Ordnance"],
     ],
-    ShopType.misc: [
+    SystemShopType.misc: [
       ["Junk Heap", "Odds & Ends", "The Pile"],
       ["Bazaar", "Emporium", "Tech Curios"],
       ["Oddities", "Quantum Curios", "Relic Exchange"],
     ],
-    ShopType.shipyard: [
+  };
+
+  /*
+      SystemShopType.shipyard: [
       ["Shipyard"],
       ["Shipyard", "Dry Dock"],
       ["Shipyard", "Void Foundry", "Stellar Works"],
     ],
-  };
+   */
 
   // Patterns skew toward grander structures at higher tech
   static const List<List<String>> shopPatterns = [
@@ -421,7 +423,7 @@ class ShopNameGen {
     return 2;
   }
 
-  static String generate(ShopType type, int techLvl, Random rnd) {
+  static String generate(SystemShopType type, int techLvl, Random rnd) {
     final tier = _tier(techLvl.clamp(1, 10));
 
     final flavorList = shopFlavors[type]![tier];

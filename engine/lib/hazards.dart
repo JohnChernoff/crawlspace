@@ -1,6 +1,4 @@
-import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
-
 import 'color.dart';
 import 'grid.dart';
 import 'impulse.dart';

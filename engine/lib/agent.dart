@@ -75,7 +75,7 @@ class Agent extends Pilot {
   // --- Strategist: intercept likely escape routes via rumor clusters ---
   System _strategistPick(FugueEngine fm) {
     final rumors = fm.galaxy.flowFields["rumors"]!;
-    final heat = fm.galaxy.heatMod.playerHeatMap;
+    //final heat = fm.galaxy.heatMod.playerHeatMap;
 
     // score = rumor activity * fed amplification - proximity penalty
     // (tries to get ahead of the player rather than follow)

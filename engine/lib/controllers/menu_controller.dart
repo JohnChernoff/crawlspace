@@ -139,7 +139,7 @@ class MenuController extends FugueController {
     _currentPage = page; //assert(page.every((e) => e is MenuEntry));
 
     fm.update();
-    glog(menuStack.map((m)=>m.headerTxt).join(" > "),level: DebugLevel.Info);
+    glog(menuStack.map((m)=>m.headerTxt).join(" > "));
     return true;
   }
 

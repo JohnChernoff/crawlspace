@@ -26,18 +26,23 @@ class ShipSystemControl {
   Iterable<SlotAssignment> get slots => systemMap;
   int ammoFor(Ammo a) => ammoMap[a] ?? 0;
   Iterable<({Ammo ammo, int count})> get ammo => ammoMap.entries.map((a) => (ammo: a.key, count: a.value));
-  Iterable<ShipSystem> get uninstalledSystems => ship.inventory.whereType<ShipSystem>().where((s) => !isInstalled(s));
+  Iterable<ShipSystem> get uninstalledSystems => ship.inventory.all.whereType<ShipSystem>().where((s) => !isInstalled(s));
   Iterable<SlotAssignment> get vacantSlots => systemMap.where((sys) => sys.system == null);
 
   Engine? get engine => getEngine(ship.loc.domain);
   Engine? getEngine(Domain domain, {activeOnly = true}) {
     return getInstalledSystems().whereType<Engine>().where((s) => s.domain == domain && (!activeOnly || s.active)).firstOrNull;
   }
-  Shield? getShield({activeOnly = true}) => getInstalledSystems().whereType<Shield>().where((s) => (!activeOnly || s.active)).firstOrNull;
-  PowerGenerator? getPower({activeOnly = true}) => getInstalledSystems().whereType<PowerGenerator>().where((s) => (!activeOnly || s.active)).firstOrNull;
+
+  Shield? getShield({activeOnly = true}) => getShields(activeOnly: activeOnly).firstOrNull;
   Iterable<Shield> getShields({activeOnly = true}) => getInstalledSystems().whereType<Shield>().where((s) => (!activeOnly || s.active));
+
+  PowerGenerator? getPower({activeOnly = true}) => getPowers(activeOnly: activeOnly).firstOrNull;
   Iterable<PowerGenerator> getPowers({activeOnly = true}) => getInstalledSystems().whereType<PowerGenerator>().where((s) => (!activeOnly || s.active));
+
+  Weapon? get primaryWeapon => availableWeapons.sorted((w1,w2) => w1.baseCost - w2.baseCost).firstOrNull;
   Iterable<Weapon> getWeapons({activeOnly = true}) => getInstalledSystems().whereType<Weapon>().where((s) => (!activeOnly || s.active));
+
   Iterable<RechargableShipSystem> get rechargables => getInstalledSystems().whereType<RechargableShipSystem>().where((s) => s.active);
   Iterable<ShipSystem> get activeSystems => getInstalledSystems().where((s) => s.active);
   bool duplicateInstallation(ShipSystem s) => !ship.multiSystems.contains(s.type) && getInstalledSystems().any((sys) => sys.type == s.type);
@@ -53,7 +58,6 @@ class ShipSystemControl {
   double get currentShieldStrength => ship.multiSystems.contains(ShipSystemType.shield)
       ? getShields().where((s) => s.currentEnergy > 0).firstOrNull?.currentEnergy ?? 0
       : getShield()?.currentEnergy ?? 0;
-  Weapon? get primaryWeapon => availableWeapons.sorted((w1,w2) => w1.baseCost - w2.baseCost).firstOrNull;
 
   bool ammoOK(Weapon weapon) => ammoMap.containsKey(weapon.ammo) && ammoMap[weapon.ammo]! > 0;
 
@@ -89,7 +93,7 @@ class ShipSystemControl {
   }
 
   void removeSystem(ShipSystem sys) {
-    systemMap.removeWhere((s) => s.system == sys);
+    systemMap.firstWhereOrNull((s) => s.system == sys)?.system = null;
   }
 
   InstallResult installSystem(ShipSystem system, {SystemSlot? slot}) {

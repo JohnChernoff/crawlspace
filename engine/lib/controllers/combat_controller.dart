@@ -3,7 +3,6 @@ import 'package:crawlspace_engine/systems/weapons.dart';
 import '../coord_3d.dart';
 import '../impulse.dart';
 import '../ship.dart';
-import '../systems/ship_system.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 

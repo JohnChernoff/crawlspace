@@ -86,7 +86,7 @@ class LayerTransitController extends FugueController {
     if (playShip.loc is! SystemLocation) {
       fm.msgController.addMsg("Error: ship not at system level"); return;
     }
-    glog("Creating impulse map..."); //Entering")
+    glog("Creating impulse map...",level: DebugLevel.Fine); //Entering")
     int size = gridSize; //ship gridsize?
     ImpulseLevel impLevel;
     SpaceLocation sysLoc = playShip.loc;
@@ -133,7 +133,7 @@ class LayerTransitController extends FugueController {
           if (ship != playShip) _enterImpulse(impLevel,ship);
         }
       } on ConcurrentModificationError {
-        glog("fark");
+        glog("fark",error: true);
       }
     }
   }

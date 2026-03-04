@@ -44,10 +44,9 @@ class FireResult {
 }
 
 class Scrap extends Item {
-  double mass;
   bool jettisonable;
   Scrap(super.name, {
-    required this.mass,
+    required super.mass,
     this.jettisonable = true,
     required super.baseCost,
     super.rarity = .01,
@@ -72,14 +71,14 @@ class Ship extends Item implements Locatable {
   double hullDamage = 0;
   int minCool = 0;
   int impulseMapSize = 8;
-  Set<Item> inventory = {};
-  List<Item> get allInventory => [...inventory, ...scrapHeap];
+  Inventory inventory = Inventory();
+  InventoryView<Scrap> get scrapHeap => inventory.filterType<Scrap>();
+  InventoryView get cargo => inventory.filter((i) => i is! ShipSystem || !systemControl.isInstalled(i));
   bool get playship => pilot is Player;
   bool get npc => !playship;
   Ship? targetShip;
   Coord3D? targetCoord;
   List<GridCell> currentPath = [];
-  List<Scrap> scrapHeap = [];
   Map<Ship,SpaceLocation> lastKnown = {};
   HullType hullType;
   bool get inNebula => loc.cell.hasHaz(Hazard.nebula);
@@ -147,7 +146,7 @@ class Ship extends Item implements Locatable {
   }
 
   bool addToInventory(Item i) {
-    if (i is ShipSystem && availableMass < i.mass) return false;
+    if (availableMass < i.mass) return false;
     inventory.add(i);
     return true;
   }
@@ -162,21 +161,22 @@ class Ship extends Item implements Locatable {
   }
   bool canScan(GridCell cell) => !(loc.cell.hasHaz(Hazard.nebula) || cell.hasHaz(Hazard.nebula));
 
-  double get scrapVal => scrapHeap.fold<double>(0.0, (sum, i) => sum + i.baseCost);
+  double get scrapVal => scrapHeap.all.fold<double>(0.0, (sum, i) => sum + i.baseCost);
 
   //TODO: some ship system to improve this?
   bool addScrap(ShipSystem s, {double scrapFact = 20, double scrapVal = 20}) {
     double m = s.mass/scrapFact;
       if (availableMass > m) {
-        scrapHeap.add(Scrap("scrapped ${s.name}", mass: m, baseCost: (s.baseCost / scrapVal).round()));
+        inventory.add(Scrap("scrapped ${s.name}", mass: m, baseCost: (s.baseCost / scrapVal).round()));
         return true;
       } return false;
   }
 
   Scrap? jettisonScrap() {
-    if (scrapHeap.isNotEmpty) {
-      scrapHeap.sort((a,b) => a.costEffectiveness.compareTo(b.costEffectiveness));
-      return scrapHeap.removeAt(0);
+    if (scrapHeap.all.isNotEmpty) {
+      final s = scrapHeap.all.toList().sorted((a,b) => a.costEffectiveness.compareTo(b.costEffectiveness)).firstOrNull;
+      if (s != null && inventory.remove(s)) return s;
+      return null;
     }
     return null;
   }
@@ -207,8 +207,6 @@ class Ship extends Item implements Locatable {
     double s = hullStrength;
     return (s > 0 ? hullRemaining/s : 0) * 100;
   }
-
-
 
   double repairHull(double amount) {
     double prevDam = hullDamage;
@@ -273,8 +271,7 @@ class Ship extends Item implements Locatable {
     for (final a in systemControl.ammo) {
       m += a.count * a.ammo.mass;
     }
-    m += scrapHeap.fold<double>(0.0, (sum, i) => sum + i.mass);
-    return inventory.whereType<ShipSystem>().fold<double>(0.0, (sum, s) => sum + s.mass) + m;
+    return inventory.all.fold<double>(0.0, (sum, s) => sum + s.mass) + m;
   }
 
   double get availableMass => shipClass.maxMass - currentMass;

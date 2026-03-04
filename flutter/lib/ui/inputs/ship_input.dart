@@ -368,7 +368,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         OpenInventoryIntent: CallbackAction<OpenInventoryIntent>(
             onInvoke: (_) {
               if (fm.playerShip != null) {
-                fm.menuController.showMenu(() => fm.menuFactory.buildInventoryMenu(fm.playerShip!),headerTxt: "Inventory");
+                fm.menuController.showMenu(() => fm.menuFactory.buildInventoryMenu(fm.playerShip!.inventory, shop: false),headerTxt: "Inventory");
               }
               return null;
             }

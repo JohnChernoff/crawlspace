@@ -1,12 +1,8 @@
 import 'dart:math';
-
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
-
-import 'color.dart';
 import 'galaxy/galaxy.dart';
-import 'menu.dart';
 import 'object.dart';
 import 'pilot.dart';
 import 'ship.dart';

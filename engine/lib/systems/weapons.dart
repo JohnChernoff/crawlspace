@@ -237,7 +237,6 @@ class Ammo extends Item {
   final double avgDamage;
   final double volitity;
   final AmmoEgo ego;
-  final double mass;
   final int splashRad;
   final double splashFalloff;
   final int enchantment;
@@ -252,7 +251,7 @@ class Ammo extends Item {
     this.splashFalloff = .5,
     this.volitity = .9,
     this.ego = AmmoEgo.none,
-    this.mass = 1.0,
+    super.mass = 0.1,
     this.enchantment= 0,
     this.maxEnchantment = 9,
     super.rarity = .01,

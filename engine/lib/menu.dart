@@ -2,6 +2,7 @@ import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'controllers/menu_controller.dart';
+import 'item.dart';
 
 enum MenuLevel {main,planet,tavern,bar,mainFoosham,fooshamGame,shopMain,misc}
 
@@ -117,7 +118,7 @@ class ShopItemEntry<T> extends ValueEntry<T> {
   String? Function() get disabledReason => () => !canAfford ? "Can't afford" : null;
 
   bool get canAfford {   // TODO: use shop to determine actual cost
-    final v = value; if (v is ShopSlot) {
+    final v = value; if (v is ItemSlot) {
       final cost = v.items.firstOrNull?.baseCost ?? 0;
       return shopper.credits >= cost;
     }

@@ -158,19 +158,28 @@ class PlanetsideController extends FugueController {
     }
   }
 
-  void shop({ShopType? type, List<Ship>? shiplist}) {
+  void market() {
+    final location = fm.player.locale; if (location is AtEnvironment) {
+      final env = location.env;
+      env.market ??= Market(env as Planet, fm.galaxy, fm.itemRng);
+      fm.menuController.showMenu(() => fm.menuFactory.buildShopBuyMenu(env.market!, ship: fm.playerShip),
+          headerTxt: "${env.market?.name}");
+    }
+  }
+
+  void systemShop({SystemShopType? type}) { //, List<Ship>? shiplist
     final location = fm.player.locale; if (location is AtEnvironment) {
       final env = location.env;
       final techLvl = (env is Planet && env.homeworld)
           ? (maxTechLvl * env.techLvl).round()
           : (fm.itemRng.nextDouble() * (maxTechLvl * env.techLvl)).round();
       if (type != null) {
-        env.shop ??= Shop(env,type,techLvl,fm.rnd);
+        env.sysShop ??= SystemShop(env,type,techLvl,fm.rnd);
       } else {
-        env.shop ??= Shop.random(env,techLvl,fm.rnd);
+        env.sysShop ??= SystemShop.random(env,techLvl,fm.rnd);
       }
-      fm.menuController.showMenu(() => fm.menuFactory.buildShopBuyMenu(env.shop!, ship: fm.playerShip),
-          headerTxt: "${env.shop!.name}");
+      fm.menuController.showMenu(() => fm.menuFactory.buildShopBuyMenu(env.sysShop!, ship: fm.playerShip),
+          headerTxt: "${env.sysShop?.name}");
     }
   }
 
@@ -249,7 +258,7 @@ class PlanetsideController extends FugueController {
 
   void enterShipyard() {
     final loc = fm.player.locale; if (loc is AtEnvironment) {
-      loc.env.yard ??= Shop(loc.env, ShopType.shipyard, 1, fm.rnd,
+      loc.env.yard ??= ShipYard(loc.env, 1, fm.rnd,
           shiplist: List.generate(fm.itemRng.nextInt(5) + 1, (i) =>
               Rng.generateShip(fm.player.system, fm.galaxy, fm.itemRng)));
       fm.menuController.showMenu(() =>

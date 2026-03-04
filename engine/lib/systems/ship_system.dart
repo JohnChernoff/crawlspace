@@ -82,7 +82,6 @@ class SystemSlot {
 abstract class ShipSystem extends Item {
   ShipSystemType get type;
   final SystemSlot slot;
-  final double mass; //kilos
   final double baseRepairCost; //credits per 1% repair
   String get dmgTxt => "${(damage * 100).round()}";
   double damage; //% damaged
@@ -105,7 +104,8 @@ abstract class ShipSystem extends Item {
     this.repairDifficulty = .5,
     this.stability = .8,
     this.slot = const SystemSlot(SystemSlotType.generic,1),
-    required this.mass,
+    required super.mass,
+    super.volume = 1,
     required this.powerDraw,
   });
 

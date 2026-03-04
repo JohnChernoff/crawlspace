@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:crawlspace_engine/grid.dart';
 import 'package:crawlspace_engine/hazards.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
@@ -74,7 +73,7 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1q";
+  final String version = "0.1q2";
   final Galaxy galaxy;
   late Player player;
   int numAgents = 3;
@@ -159,7 +158,7 @@ class FugueEngine {
             shield: Shield.fromStock(StockSystem.shdBasicEnergon),
             weapons: [Weapon.fromStock(StockSystem.wepPlasmaRay),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
             ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 250});
-        final agent = Agent(persona.name,persona,loc: AboardShip(agentShip),galaxy: galaxy);
+        Agent(persona.name,persona,loc: AboardShip(agentShip),galaxy: galaxy);
         addShip(agentShip);
     }
     print(_shipRegistry.all);
@@ -323,7 +322,8 @@ class FugueEngine {
       for (final s in _shipRegistry.inLevel(playShip.loc.level).where((s) => s.npc)) playShip.detect(s);
     }
     update();
-    glog("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}");
+    glog("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}",
+        level: DebugLevel.Fine);
     return playerShip?.loc.domain == domain;
   }
 
@@ -340,7 +340,7 @@ enum DebugLevel {
 
 DebugLevel debugLevel = DebugLevel.Info;
 
-void glog(String msg, {bool error = false, DebugLevel level = DebugLevel.Debug}) {
+void glog(String msg, {bool error = false, DebugLevel level = DebugLevel.Info}) {
   if (level.level >= debugLevel.level) print(msg);
   assert(() {
     if (error) throw AssertionError(msg);
