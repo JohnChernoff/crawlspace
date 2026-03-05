@@ -182,9 +182,7 @@ class Ship extends Item implements Locatable {
   }
 
   void jettisonItem(Item i) {
-    if (i is Scrap) {
-      scrapHeap.remove(i);
-    } else if (inventory.remove(i) && i is ShipSystem) {
+    if (inventory.remove(i) && i is ShipSystem) {
       systemControl.removeSystem(i);
     }
   }

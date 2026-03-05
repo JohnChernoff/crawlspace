@@ -34,6 +34,11 @@ class SlotData {
   final int? marketPrice;
   final int? buyBackPrice;
   const SlotData({this.maxItems = 99, this.marketPrice, this.buyBackPrice});
+  SlotData copyWith({int? maxItems, int? marketPrice, int? buyBackPrice}) => SlotData(
+    maxItems: maxItems ?? this.maxItems,
+    marketPrice: marketPrice ?? this.marketPrice,
+    buyBackPrice: buyBackPrice ?? this.buyBackPrice,
+  );
 }
 
 class ItemSlot<T extends Item> {
@@ -122,7 +127,8 @@ class Inventory<T extends Item> {
   Inventory<S> filterType<S extends T>() {
     final result = Inventory<S>();
     for (final item in all.whereType<S>()) {
-      result.add(item, data: (getSlot(item) as ItemSlot<S>?)?.data);
+      final slot = getSlot(item);
+      result.add(item, data: slot?.data.copyWith());
     }
     return result;
   }
