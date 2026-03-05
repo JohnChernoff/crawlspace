@@ -120,8 +120,8 @@ class TradeModel extends GalaxySubMod {
       final homeSystem   = galaxy.findHomeworld(stockSpecies.species);
 
       // Candidate planets: within radius, has planets, dominant species matches
-      final candidates = _nearbyPlanets(homeSystem, _speciesGoodsSourceRadius)
-          .where((p) => _dominantSpeciesAt(p) == stockSpecies.species)
+      final candidates = nearbyPlanets(homeSystem, _speciesGoodsSourceRadius)
+          .where((p) => dominantSpeciesAt(p) == stockSpecies.species)
           .toList();
 
       if (candidates.isEmpty) {
@@ -161,7 +161,7 @@ class TradeModel extends GalaxySubMod {
   void _seedHouseSpecials(Random rnd) {
     for (final system in systems) {
       for (final planet in system.planets) {
-        final dominant = _dominantStockSpeciesAt(planet);
+        final dominant = dominantStockSpeciesAt(planet);
         if (dominant == null) continue;
 
         // House specials use planet weirdness heavily — they're idiosyncratic
@@ -317,7 +317,7 @@ class TradeModel extends GalaxySubMod {
   // Price of a universal at a planet — thin band, distance-modulated
   int universalPriceAt(UniversalCommodity commodity, Planet planet) {
     final hasSupply  = planetSupply[planet]?.contains(commodity) ?? false;
-    final nearestDist = _nearestSourceDist(commodity, planet);
+    final nearestDist = nearestSourceDist(commodity, planet);
     return commodity.priceAt(hasLocalSupply: hasSupply, distFromSource: nearestDist);
   }
 
@@ -364,7 +364,7 @@ class TradeModel extends GalaxySubMod {
     return exp(-sharpness * dist / radius).clamp(0.0, 1.0);
   }
 
-  List<Planet> _nearbyPlanets(System origin, int maxDist) {
+  List<Planet> nearbyPlanets(System origin, int maxDist) {
     final result = <Planet>[];
     for (final system in systems) {
       final d = galaxy.topo.distance(origin, system);
@@ -373,11 +373,11 @@ class TradeModel extends GalaxySubMod {
     return result;
   }
 
-  Species? _dominantSpeciesAt(Planet p) =>
+  Species? dominantSpeciesAt(Planet p) =>
       galaxy.civMod.dominantSpecies(p.locale.system);
 
-  StockSpecies? _dominantStockSpeciesAt(Planet p) {
-    final sp = _dominantSpeciesAt(p);
+  StockSpecies? dominantStockSpeciesAt(Planet p) {
+    final sp = dominantSpeciesAt(p);
     if (sp == null) return null;
     try {
       return StockSpecies.values.firstWhere((s) => s.species == sp);
@@ -386,7 +386,7 @@ class TradeModel extends GalaxySubMod {
     }
   }
 
-  int _nearestSourceDist(UniversalCommodity commodity, Planet planet) {
+  int nearestSourceDist(UniversalCommodity commodity, Planet planet) {
     int nearest = galaxy.maxJumps;
     for (final entry in planetSupply.entries) {
       if (entry.value.contains(commodity)) {

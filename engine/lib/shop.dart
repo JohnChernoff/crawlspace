@@ -50,6 +50,7 @@ abstract class Shop {
   // Shared logic — subclasses override buyItem() to control what they accept.
 
   TransactionResult sellItem(Item item, {Ship? ship, Pilot? shiplessPilot}) {
+    //print("Selling item: $item");
     if (!inventory.hasItem(item)) return TransactionResult.inventoryError;
     final pilot = ship?.pilot ?? shiplessPilot;
     if (pilot == null || pilot == nobody) return TransactionResult.wtf;

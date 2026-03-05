@@ -6,6 +6,7 @@ import 'package:crawlspace_engine/controllers/audio_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_flutter/ui/views/ascii_view.dart';
+import 'package:crawlspace_flutter/ui/views/galaxy_map.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -21,7 +22,7 @@ system shapes
  */
 
 enum ViewType {normal,textOnly,galaxy}
-
+GalaxyMapLegend galaxyMapLegend = GalaxyMapLegend.history;
 ViewType currentView = ViewType.normal;
 
 final AudioPlayer fuguePlayer = AudioPlayer();

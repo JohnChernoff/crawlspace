@@ -4,7 +4,7 @@ import 'package:crawlspace_engine/shop.dart';
 import 'color.dart';
 
 abstract interface class Nameable {
-  String get name;
+  String get selectionName;
 }
 
 abstract interface class Locatable {
@@ -33,6 +33,7 @@ class SpaceEnvironment<T extends SpaceLocation> extends SpaceObject implements L
 
 class SpaceObject implements Nameable {
   final String name;
+  String get selectionName => name;
   String?   desc;
   bool      known    = false;
   GameColor objColor;

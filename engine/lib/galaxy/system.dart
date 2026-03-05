@@ -38,6 +38,7 @@ class System extends Level implements Nameable {
   @override
   Domain get domain => Domain.system;
   String name;
+  String get selectionName => name;
   Set<System> links = HashSet();
   List<Planet> planets = []; //TODO: change to SpaceObject
   bool starOne, blackHole;

@@ -18,8 +18,8 @@ class AlphaCompleter<T extends Nameable> {
     selectedIndex = 0;
   }
   List<T> get getCurrentList => list
-      .where((s) => s.name.toLowerCase().startsWith(_searchPrefix.toLowerCase()))
-      .sorted((a,b) => a.name.compareTo(b.name)) //TODO: other sorts
+      .where((s) => s.selectionName.toLowerCase().startsWith(_searchPrefix.toLowerCase()))
+      .sorted((a,b) => a.selectionName.compareTo(b.selectionName)) //TODO: other sorts
       .toList();
   T? get selection => getCurrentList.elementAtOrNull(selectedIndex);
   List<T> list;
@@ -48,6 +48,7 @@ class MenuController extends FugueController {
   List<MenuEntry> get selectionList => _currentPage;
   List<AlphaCompleter> _compStack = [];
   AlphaCompleter? get currAlphaComp => _compStack.lastOrNull;
+  Nameable? selectedItem;
 
   MenuController(super.fm);
 

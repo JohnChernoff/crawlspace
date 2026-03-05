@@ -22,23 +22,6 @@ class MenuFactory {
   String letter(int i) => mc.letter(i);
   const MenuFactory(this.fm);
 
-  ShopItemEntry slotEntry(ItemSlot slot, String ltr, Shop shop, Ship? ship) {
-    if (slot.items.isNotEmpty) {
-      return ShopItemEntry(
-        letter: ltr,
-        label: slot.label(shop: true),
-        slot, (shopSlot) => mc.confirm("Purchase?", () {
-          fm.msgController.addMsg(shop.transactionSell(shopSlot, ship: ship));
-        }),
-        shopper: ship?.pilot ?? fm.player,
-        exitAfter: false,
-      );
-    }
-    return ShopItemEntry(
-        letter: ltr, label: "empty inventory slot", null,
-            (e) => {}, shopper: ship?.pilot ?? fm.player);
-  }
-
   Menu buildHyperspaceMenu(System system) {
     return List.generate(system.links.length, (i) {
       final s = system.links.elementAt(i);
@@ -217,7 +200,7 @@ class MenuFactory {
 
   Menu buildShopBuyMenu(Shop shop, {Ship? ship}) {
     final pilot = ship?.pilot ?? fm.player;
-    final menu = buildInventoryMenu(shop.inventory,action: (i) => shop.sellItem(i));
+    final menu = buildInventoryMenu(shop.inventory,action: (i) => fm.msg(shop.transactionSell(i, ship: ship)));
     menu.insert(0, pilot.creditLine);
     if (shop is Market) menu.insert(1, TextEntry(label: "Buying: ${shop.buyListSummary()}"));
     if (shop is ShipYard) {                              // ← changed

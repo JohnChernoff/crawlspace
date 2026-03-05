@@ -113,9 +113,9 @@ class AlphaSelect extends StatelessWidget {
                             letterSpacing: 1.5,
                           )),
                         // Matched prefix highlighted
-                        if (matchLen > 0 && selection.name.length >= matchLen)
+                        if (matchLen > 0 && selection.selectionName.length >= matchLen)
                           Text(
-                            selection.name.substring(0, matchLen).toUpperCase(),
+                            selection.selectionName.substring(0, matchLen).toUpperCase(),
                             style: const TextStyle(
                               fontFamily: 'JetBrainsMono',
                               fontSize: 13,
@@ -125,7 +125,7 @@ class AlphaSelect extends StatelessWidget {
                           ),
                         // Rest of name
                         Text(
-                          selection.name.substring(matchLen).toUpperCase(),
+                          selection.selectionName.substring(matchLen).toUpperCase(),
                           style: TextStyle(
                             fontFamily: 'JetBrainsMono',
                             fontSize: 13,

@@ -1,12 +1,19 @@
 import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/galaxy/goods.dart';
+import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_flutter/main.dart';
+import 'package:crawlspace_flutter/ui/views/galaxy_map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'general_input.dart';
 
 enum DepthViewOption {showAll,showClosest,toggle}
-
+enum ItemViewOption {
+  goods,
+  commodities
+}
 class XenoIntent extends Intent {
   const XenoIntent();
 }
@@ -16,9 +23,9 @@ class SystemSelectIntent extends Intent {
   const SystemSelectIntent(this.unselect);
 }
 
-class GoodsSelectIntent extends Intent {
-  final bool unselect;
-  const GoodsSelectIntent(this.unselect);
+class AlphaSelectIntent extends Intent {
+  final ItemViewOption itemViewOption;
+  const AlphaSelectIntent(this.itemViewOption);
 }
 
 class DirectionIntent extends Intent {
@@ -234,7 +241,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         const SystemSelectIntent(false),
 
         LogicalKeySet(LogicalKeyboardKey.keyG, LogicalKeyboardKey.shift):
-        const GoodsSelectIntent(false),
+        const AlphaSelectIntent(ItemViewOption.commodities),
 
         LogicalKeySet(LogicalKeyboardKey.keyZ, LogicalKeyboardKey.shift):
         const XenoIntent(),
@@ -373,10 +380,16 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
               return null;
             }
         ),
-        GoodsSelectIntent: CallbackAction<GoodsSelectIntent>(
-            onInvoke: (_) {
+        AlphaSelectIntent: CallbackAction<AlphaSelectIntent>(
+            onInvoke: (intent) {
               if (fm.playerShip != null) {
-                fm.menuController.getAlphaList(fm.galaxy.tradeMod.goodsSources.keys.toList()).then((g) => fm.msg(g?.name ?? ""));
+                final list = UniversalCommodity.values;
+                //fm.galaxy.tradeMod.goodsSources.keys.toList();
+                fm.menuController.getAlphaList(list).then((g) {
+                  fm.menuController.selectedItem = g;
+                  galaxyMapLegend = GalaxyMapLegend.goods;
+                  currentView = ViewType.galaxy;
+                });
               }
               return null;
             }

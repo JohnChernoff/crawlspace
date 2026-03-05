@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/rng/descriptors.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/item.dart';
@@ -51,7 +52,7 @@ enum StatType {
 // supplyEnvs: environments that produce this commodity naturally.
 // demandDrivers: which stats push demand above baseline.
 
-enum UniversalCommodity {
+enum UniversalCommodity implements Nameable {
   neutronium(
     8, 22,
     supplyEnvs: [EnvType.volcanic, EnvType.toxic],
@@ -116,6 +117,7 @@ enum UniversalCommodity {
   final List<EnvType> supplyEnvs;
   final Map<StatType, double> demandDrivers;
   final String desc;
+  String get selectionName => name;
 
   const UniversalCommodity(
       this.priceFloor,

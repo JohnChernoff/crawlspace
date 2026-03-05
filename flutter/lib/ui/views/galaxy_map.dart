@@ -2,7 +2,9 @@ import 'dart:math';
 import 'package:crawlspace_engine/agent.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
+import 'package:crawlspace_engine/galaxy/goods.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
+import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -22,6 +24,7 @@ enum GalaxyMapLegend {
   star,
   surveillance,
   rumors,
+  goods,
   //planets
 }
 
@@ -34,7 +37,7 @@ class GalaxyMap extends StatefulWidget {
 }
 
 class GalaxyMapState extends State<GalaxyMap> {
-  GalaxyMapLegend legend = GalaxyMapLegend.history;
+  GalaxyMapLegend legend = galaxyMapLegend; //initialize from main.dart
   late final FugueGraph fugueGraph;
   late final ForceDirectedGraphController<System> _controller;
   late final FocusNode _focusNode; // Add this
@@ -47,6 +50,7 @@ class GalaxyMapState extends State<GalaxyMap> {
     fugueGraph = FugueGraph(widget.fugueModel.galaxy);
     _controller = ForceDirectedGraphController(graph: fugueGraph.graph, minScale: .001, maxScale: 5);
     _controller.scale = .1;
+    _rebuildCache();
     _rebuildGraph();
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       _controller.needUpdate();
@@ -70,6 +74,7 @@ class GalaxyMapState extends State<GalaxyMap> {
   }
 
   void _cycleLegend(bool forwards) {
+    _rebuildCache();
     setState(() {
       if (forwards) {
         if (legend.index < GalaxyMapLegend.values.length - 1) {
@@ -104,6 +109,80 @@ class GalaxyMapState extends State<GalaxyMap> {
         );
       },
     );
+  }
+
+  final Map<GalaxyMapLegend, Map<System, double>> _legendCache = {};
+  GalaxyMapLegend? _cachedLegend;
+  UniversalCommodity? _cachedCommodity;
+  final Map<System, double> _cachedItemVals = {};
+
+  void _rebuildCache() {
+    final g = widget.fugueModel.galaxy;
+
+    // surveillance
+    final heatMap = g.heatMod.playerHeatMap;
+    final heatMax = g.systems
+        .map((s) => heatMap[s] ?? 0.0)
+        .reduce(max);
+    _legendCache[GalaxyMapLegend.surveillance] = {
+      for (final s in g.systems)
+        s: heatMax > 0 ? (heatMap[s] ?? 0.0) / heatMax : 0.0
+    };
+
+    // rumors
+    final rumorMax = g.systems
+        .map((s) => g.flowFields["rumors"]!.val(s) as double)
+        .reduce(max);
+    _legendCache[GalaxyMapLegend.rumors] = {
+      for (final s in g.systems)
+        s: rumorMax > 0
+            ? (g.flowFields["rumors"]!.val(s) as double) / rumorMax
+            : 0.0
+    };
+  }
+
+  void _rebuildItemValCache(UniversalCommodity commodity, {log = true}) {
+    if (_cachedCommodity == commodity) return; // already cached
+    _cachedCommodity = commodity;
+    _cachedItemVals.clear();
+
+    final g = widget.fugueModel.galaxy;
+
+    // compute all system prices
+    final allPrices = <System, double>{};
+    for (final system in g.systems) {
+      final sysPrices = system.planets.map((p) {
+        final hasSupply = g.tradeMod.planetSupply[p]
+            ?.contains(commodity) ?? false;
+        final dist = g.tradeMod.nearestSourceDist(commodity, p);
+        return commodity.priceAt(
+            hasLocalSupply: hasSupply,
+            distFromSource: dist).toDouble();
+      }).toList();
+      if (sysPrices.isNotEmpty) {
+        allPrices[system] = sysPrices.reduce((a, b) => a + b) / sysPrices.length;
+      }
+    }
+
+    // normalize
+    if (allPrices.isEmpty) return;
+    final minPrice = allPrices.values.reduce(min);
+    final maxPrice = allPrices.values.reduce(max);
+    for (final entry in allPrices.entries) {
+      if (log) {
+        _cachedItemVals[entry.key] = maxPrice > minPrice
+            ? log(entry.value - minPrice + 1) / log(maxPrice - minPrice + 1)
+            : 0.5;
+      } else {
+        _cachedItemVals[entry.key] = maxPrice > minPrice ? (entry.value - minPrice) / (maxPrice - minPrice) : 0.5;
+      }
+    }
+  }
+
+  double itemVal(Nameable? nameable, System system) {
+    if (nameable == null || nameable is! UniversalCommodity) return 0.0;
+    _rebuildItemValCache(nameable);
+    return _cachedItemVals[system] ?? 0.0;
   }
 
   Color avgColor(List<Color> colors) {
@@ -236,28 +315,16 @@ class GalaxyMapState extends State<GalaxyMap> {
     Galaxy g = fm.galaxy;  //if (fm.player.system == system) return Colors.yellow;
     if (fm.galaxy.fedHomeSystem == system) return Colors.white;
     return switch(legend) {
+      GalaxyMapLegend.goods => graphColor(itemVal(fm.menuController.selectedItem,system)),
       GalaxyMapLegend.star => Color(system.starClass.color.argb),
       GalaxyMapLegend.fed => graphColor(g.fedKernel.val(system), red: 128, green: 0), //blue
       GalaxyMapLegend.tech => graphColor(g.techKernel.val(system), red: 0, blue: 92), //green
       GalaxyMapLegend.trade => graphColor(g.techKernel.val(system)), //white
       GalaxyMapLegend.species => Color(g.civMod.systemSpeciesColor(system).argb),
-      GalaxyMapLegend.surveillance => () {
-        final heatMap = g.heatMod.playerHeatMap;
-        final max = g.systems
-            .map((s) => heatMap[s] ?? 0.0)
-            .reduce((a, b) => a > b ? a : b);
-        final normalized = max > 0 ? (heatMap[system] ?? 0.0) / max : 0.0;
-        return graphColor(normalized, green: 0, blue: 0);
-      }(),
-      GalaxyMapLegend.rumors => () {
-        final max = g.systems
-            .map((s) => g.flowFields["rumors"]!.val(s) as double)
-            .reduce((a, b) => a > b ? a : b);
-        final normalized = max > 0
-            ? (g.flowFields["rumors"]!.val(system) as double) / max
-            : 0.0;
-        return graphColor(normalized, red: 128, blue: 0);
-      }(),
+      GalaxyMapLegend.surveillance =>
+          graphColor(_legendCache[GalaxyMapLegend.surveillance]?[system] ?? 0.0, green: 0, blue: 0),
+      GalaxyMapLegend.rumors =>
+          graphColor(_legendCache[GalaxyMapLegend.rumors]?[system] ?? 0.0, red: 128, blue: 0),
       GalaxyMapLegend.history => switch(fm.agentReport(system)) {
         AgentSystemReport.none => system.visited ?  Colors.lightBlue : Colors.deepPurple,
         AgentSystemReport.lastKnown => Colors.orange,
