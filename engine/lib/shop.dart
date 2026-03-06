@@ -118,18 +118,18 @@ class SystemShop extends Shop {
   final bool buysScrap;
 
   SystemShop(super.location, this.type, this.techLvl, Random rnd,
-      {this.buysScrap = false, double avgQuantity = 12}) {
+      {this.buysScrap = false, double avgQuantity = 12, required Galaxy galaxy}) {
     name = ShopNameGen.generateSystem(type, techLvl, rnd);
-    _generateItems(rnd, avgQuantity: avgQuantity);
+    _generateItems(galaxy, rnd, avgQuantity: avgQuantity);
   }
 
   factory SystemShop.random(SpaceEnvironment loc, int tech, Random rnd,
-      {bool scrap = false}) {
+      {bool scrap = false, required Galaxy galaxy}) {
     final t = SystemShopType.values[rnd.nextInt(SystemShopType.values.length)];
-    return SystemShop(loc, t, tech, rnd, buysScrap: scrap);
+    return SystemShop(loc, t, tech, rnd, buysScrap: scrap, galaxy: galaxy);
   }
 
-  void _generateItems(Random rnd, {double avgQuantity = 12}) {
+  void _generateItems(Galaxy g, Random rnd, {double avgQuantity = 12}) {
     final quantity   = Rng.poissonRandom(avgQuantity);
     final sysTypes   = switch (type) {
       SystemShopType.power    => [ShipSystemType.power],
@@ -140,7 +140,9 @@ class SystemShop extends Shop {
       SystemShopType.misc     => [ShipSystemType.power, ShipSystemType.engine],
     };
 
-    final itemSelection = generateSystemInventory(quantity, sysTypes, techLvl, rnd);
+    final itemSelection = generateSystemInventory(quantity, sysTypes, techLvl, rnd,
+        availableCorps: g.corpMod.activeCorporations(location.loc.system),
+        militaryAvailable: g.corpMod.militaryAvailable(location.loc.system));
     if (itemSelection.isEmpty) return;
 
     while (inventory.count < quantity) {

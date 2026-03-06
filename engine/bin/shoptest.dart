@@ -8,8 +8,9 @@ void main() {
   final engine = FugueEngine(Galaxy("Testlandia"), "Zug", seed: Random().nextInt(999999));
   final planets = engine.galaxy.systems.where((s) => s.planets.isNotEmpty).map((ps) => ps.planets.first);
   for (int i=0; i<10; i++) {
-    Shop shop = SystemShop(planets.elementAt(Random().nextInt(planets.length)),SystemShopType.misc,Random().nextInt(maxTechLvl-1)+1,engine.rnd);
-    print(shop.name); //print(shop.techLvl);
+    SystemShop shop = SystemShop(galaxy: engine.galaxy,
+        planets.elementAt(Random().nextInt(planets.length)),SystemShopType.misc,Random().nextInt(maxTechLvl-1)+1,engine.rnd);
+    print(shop.name); print(shop.techLvl); print(shop.location.loc.system);
     for (final slot in shop.inventory.slots) {
       print("${slot.items.first}: ${slot.items.length}");
     }

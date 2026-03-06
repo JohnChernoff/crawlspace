@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:crawlspace_engine/stock_items/corps.dart';
+
 import '../item.dart';
 import '../systems/engines.dart';
 import '../systems/power.dart';
@@ -31,17 +33,17 @@ enum StockSystem {
   wepFedLaser2(ShipSystemType.weapon,2,.1),
   wepFedLaser3(ShipSystemType.weapon,3,.1),
   wepPlasmaRay(ShipSystemType.weapon,4,.25),
-  wepGravRifle(ShipSystemType.weapon,5,.33),
-  wepVibraSlap(ShipSystemType.weapon,6,.5),
-  wepNeuRad(ShipSystemType.weapon,7,.75),
-  wepThermalLance(ShipSystemType.weapon,8,.75),
-  wepQuarkSplitter(ShipSystemType.weapon,5,.75),
-  wepGammapult(ShipSystemType.weapon,8,.75),
-  wepCosmogripher(ShipSystemType.weapon,9,.75),
-  webSingularitron(ShipSystemType.weapon,99,.75),
+  wepGravRifle(ShipSystemType.weapon,5,.33, manufacturer: Corporation.bauchmann),
+  wepVibraSlap(ShipSystemType.weapon,6,.5, manufacturer: Corporation.sinclair),
+  wepNeuRad(ShipSystemType.weapon,7,.75, manufacturer: Corporation.sinclair),
+  wepThermalLance(ShipSystemType.weapon,8,.75, manufacturer: Corporation.sinclair),
+  wepQuarkSplitter(ShipSystemType.weapon,5,.75, manufacturer: Corporation.salazar),
+  wepGammapult(ShipSystemType.weapon,8,.75, manufacturer: Corporation.salazar),
+  wepCosmogripher(ShipSystemType.weapon,9,.75, manufacturer: Corporation.sinclair),
+  webSingularitron(ShipSystemType.weapon,99,.75, manufacturer: Corporation.sinclair),
 
-  lchfedTorpLauncher(ShipSystemType.launcher,1,.1),
-  lchPlasmaCannon(ShipSystemType.launcher,2,.1),
+  lchfedTorpLauncher(ShipSystemType.launcher,1,.1, manufacturer: Corporation.bauchmann),
+  lchPlasmaCannon(ShipSystemType.launcher,2,.1, manufacturer: Corporation.bauchmann),
 
   ammoFedTorp(ShipSystemType.ammo,1,.1),
   ammoPlasmaBall(ShipSystemType.ammo,2,.1),
@@ -50,7 +52,8 @@ enum StockSystem {
   final ShipSystemType type;
   final int techLvl;
   final double rarity;
-  const StockSystem(this.type,this.techLvl, this.rarity);
+  final Corporation manufacturer;
+  const StockSystem(this.type,this.techLvl, this.rarity, {this.manufacturer = Corporation.genCorp});
 
   Item createSystem() => switch(type) {
       ShipSystemType.power => PowerGenerator.fromStock(this),
@@ -77,9 +80,15 @@ enum StockSystem {
 
 }
 
-List<StockSystem> generateSystemInventory(int n, List<ShipSystemType> types, int techLvl, Random rnd) {
-  final systems = getSystemsByTech(types, techLvl); //.map((e) => e.createSystem()).asList();
-  if (systems.isEmpty) return  techLvl > 0 ? generateSystemInventory(n, types, techLvl - 1, rnd) : [];
+List<StockSystem> generateSystemInventory(
+    int n, List<ShipSystemType> types, int techLvl, Random rnd,
+    {List<Corporation>? availableCorps, bool militaryAvailable = false}) {
+  final systems = getSystemsByTech(types, techLvl,
+      availableCorps: availableCorps, militaryAvailable: militaryAvailable);
+  if (systems.isEmpty) return techLvl > 0
+      ? generateSystemInventory(n, types, techLvl - 1, rnd,
+      availableCorps: availableCorps, militaryAvailable: militaryAvailable)
+      : [];
   final maxItems = min(n,systems.length);
   List<StockSystem> items = [];
   Set<StockSystem> sysList = {};
@@ -94,5 +103,12 @@ List<StockSystem> generateSystemInventory(int n, List<ShipSystemType> types, int
   return items;
 }
 
-Iterable<StockSystem> getSystemsByTech(List<ShipSystemType> types, int techLvl) =>
-    StockSystem.values.where((s) => types.contains(s.type) && s.techLvl <= techLvl);
+Iterable<StockSystem> getSystemsByTech(
+    List<ShipSystemType> types, int techLvl,
+    {List<Corporation>? availableCorps, bool militaryAvailable = false}) =>
+    StockSystem.values.where((s) =>
+    types.contains(s.type) &&
+        s.techLvl <= techLvl &&
+        (availableCorps == null || availableCorps.contains(s.manufacturer)) &&
+        (militaryAvailable || s.manufacturer.tierFor(s.type) != CorpTier.military)
+    );

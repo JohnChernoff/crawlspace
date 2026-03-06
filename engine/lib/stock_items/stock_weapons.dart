@@ -1,13 +1,10 @@
-import 'package:crawlspace_engine/stock_items/corps.dart';
-
 import 'stock_pile.dart';
 import '../systems/ship_system.dart';
 import '../systems/weapons.dart';
 
 final Map<StockSystem, WeaponData> stockWeapons = {
   StockSystem.wepFedLaser1: WeaponData(
-    systemData: ShipSystemData("Fed Laser Mk 1",
-        techLvl: StockSystem.wepFedLaser1.techLvl, rarity: StockSystem.wepFedLaser1.rarity,
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Fed Laser Mk 1",
         mass: 10, baseCost: 100, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 1,
     dmgDiceSides: 60,
@@ -21,8 +18,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepFedLaser2: WeaponData(
-    systemData: ShipSystemData("Fed Laser Mk 2",
-        techLvl: StockSystem.wepFedLaser2.techLvl, rarity: StockSystem.wepFedLaser2.rarity,
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Fed Laser Mk 2",
         mass: 10, baseCost: 250, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 4,
     dmgDiceSides: 20,
@@ -36,8 +32,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepFedLaser3: WeaponData(
-    systemData: ShipSystemData("Fed Laser Mk 3",
-        techLvl: StockSystem.wepFedLaser3.techLvl, rarity: StockSystem.wepFedLaser3.rarity,
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Fed Laser Mk 3",
         mass: 10, baseCost: 500, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 5,
     dmgDiceSides: 25,
@@ -51,8 +46,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepPlasmaRay: WeaponData(
-    systemData: ShipSystemData("Plasma Ray",
-        techLvl: StockSystem.wepPlasmaRay.techLvl, rarity: StockSystem.wepPlasmaRay.rarity,
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Plasma Ray",
         mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 4,
     dmgDiceSides: 60,
@@ -66,10 +60,8 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepGravRifle: WeaponData(
-    systemData: ShipSystemData("Gravimetric Pulse Rifle",
-        techLvl: StockSystem.wepGravRifle.techLvl, rarity: StockSystem.wepGravRifle.rarity,
-        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6,
-        manufacturer: Corporation.bauchmann),
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Gravimetric Pulse Rifle",
+        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6),
     dmgDice: 4,
     dmgDiceSides: 24,
     dmgBase: 16,
@@ -82,10 +74,8 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepVibraSlap: WeaponData(
-    systemData: ShipSystemData("Cosmosonic Emitter",
-        techLvl: StockSystem.wepVibraSlap.techLvl, rarity: StockSystem.wepVibraSlap.rarity,
-        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6,
-        manufacturer: Corporation.sinclair),
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Cosmosonic Emitter",
+        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6),
     dmgDice: 8,
     dmgDiceSides: 24,
     dmgBase: 32,
@@ -98,10 +88,8 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepNeuRad: WeaponData(
-    systemData: ShipSystemData("Neutronic Radiator",
-        techLvl: StockSystem.wepNeuRad.techLvl, rarity: StockSystem.wepNeuRad.rarity,
-        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6,
-        manufacturer: Corporation.sinclair),
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Neutronic Radiator",
+        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6),
     dmgDice: 8,
     dmgDiceSides: 32,
     dmgBase: 24,
@@ -114,10 +102,8 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepThermalLance: WeaponData(
-    systemData: ShipSystemData("Thermal Lance",
-        techLvl: StockSystem.wepThermalLance.techLvl, rarity: StockSystem.wepThermalLance.rarity,
-        mass: 10, baseCost: 2000, baseRepairCost: 1.5, powerDraw: .9,
-        manufacturer: Corporation.sinclair),
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Thermal Lance",
+        mass: 10, baseCost: 2000, baseRepairCost: 1.5, powerDraw: .9),
     dmgDice: 4,
     dmgDiceSides: 160,
     dmgBase: 50,
@@ -130,10 +116,8 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepQuarkSplitter: WeaponData(
-    systemData: ShipSystemData("Quark Splitter",
-        techLvl: StockSystem.wepQuarkSplitter.techLvl, rarity: StockSystem.wepQuarkSplitter.rarity,
-        mass: 10, baseCost: 80000, baseRepairCost: 5, powerDraw: 1.2,
-        manufacturer: Corporation.salazar),
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Quark Splitter",
+        mass: 10, baseCost: 80000, baseRepairCost: 5, powerDraw: 1.2),
     dmgDice: 3,
     dmgDiceSides: 512,
     dmgBase: 50,
@@ -146,10 +130,8 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepGammapult: WeaponData(
-    systemData: ShipSystemData("Gammapult",
-        techLvl: StockSystem.wepGammapult.techLvl, rarity: StockSystem.wepGammapult.rarity,
-        mass: 10, baseCost: 2000, baseRepairCost: 5, powerDraw: 1.7,
-        manufacturer: Corporation.salazar),
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Gammapult",
+        mass: 10, baseCost: 2000, baseRepairCost: 5, powerDraw: 1.7),
     dmgDice: 4,
     dmgDiceSides: 255,
     dmgBase: 92,
@@ -162,10 +144,8 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepCosmogripher: WeaponData(
-    systemData: ShipSystemData("Cosmogripher",
-        techLvl: StockSystem.wepCosmogripher.techLvl, rarity: StockSystem.wepCosmogripher.rarity,
-        mass: 10, baseCost: 2000, baseRepairCost: 5, powerDraw: 2.25,
-        manufacturer: Corporation.sinclair),
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Cosmogripher",
+        mass: 10, baseCost: 2000, baseRepairCost: 5, powerDraw: 2.25),
     dmgDice: 5,
     dmgDiceSides: 255,
     dmgBase: 50,
@@ -179,10 +159,8 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
 
   StockSystem.webSingularitron: WeaponData(
-    systemData: ShipSystemData("Singularitron",
-        techLvl: StockSystem.webSingularitron.techLvl, rarity: StockSystem.webSingularitron.rarity,
-        mass: 10, baseCost: 200000, baseRepairCost: 5, powerDraw: 5,
-        manufacturer: Corporation.sinclair),
+    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Singularitron",
+        mass: 10, baseCost: 200000, baseRepairCost: 5, powerDraw: 5),
     dmgDice: 8,
     dmgDiceSides: 1280,
     dmgBase: 250,

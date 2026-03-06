@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 import '../item.dart';
+import '../stock_items/stock_pile.dart';
 
 enum ShipSystemType {
   weapon(3),
@@ -107,17 +108,16 @@ class ShipSystemData {
   final double stability;
   final double repairDifficulty;
 
-  const ShipSystemData(this.name,{
-    this.manufacturer = Corporation.genCorp,
+  ShipSystemData.fromStock(StockSystem stock, this.name, {
     required this.mass,
     required this.baseCost,
     required this.baseRepairCost,
     required this.powerDraw,
-    this.rarity = .1,
-    this.techLvl = 1,
-    this.enhancement = 0,
-    this.maxEnhancement = 9,
     this.stability = .8,
     this.repairDifficulty = .5,
-  });
+    this.enhancement = 0,
+    this.maxEnhancement = 9,
+  }) : techLvl = stock.techLvl,
+        rarity = stock.rarity,
+        manufacturer = stock.manufacturer;
 }

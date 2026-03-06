@@ -118,6 +118,9 @@ class Species {
       this.ammoDamageWeights,
       this.rangedProb = .5,
   });
+
+  @override
+  String toString() => name;
 }
 
 class Faction {

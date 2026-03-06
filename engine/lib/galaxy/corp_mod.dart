@@ -1,9 +1,7 @@
 import 'dart:math';
-
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/galaxy/sub_model.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
-
 import '../rng/rng.dart';
 import '../stock_items/corps.dart';
 import '../stock_items/species.dart';
@@ -12,55 +10,49 @@ import 'corp_kern.dart';
 
 class CorpMod extends GalaxySubMod {
   final Map<Corporation, CorpKernelField> kernels = {};
+  final Map<Species,Map<Corporation,System>> headquarters = {};
 
   CorpMod(super.galaxy) {
+    for (final species in galaxy.allSpecies) {
+      final speciesCorps = Corporation.values
+          .where((c) => c.stockSpecies.species == species)
+          .toList();
+      if (speciesCorps.isEmpty) continue;
+
+      // find the "anchor" corp — first one, seeded to homeworld
+      final anchor = speciesCorps.first;
+      final homeSystem = galaxy.findHomeworld(species);
+
+      headquarters[species] = {anchor: homeSystem};
+
+      // spread remaining corps across systems dominated by this species
+      final speciesSystems = galaxy.systems
+          .where((s) => galaxy.civMod.dominantSpecies(s) == species)
+          .toList();
+
+      galaxy.spreadAssign(speciesCorps, headquarters[species]!, speciesSystems);
+    }
     _initKernels();
   }
+
+  System? getHQSystem(Corporation c) => headquarters[c.stockSpecies.species]?[c];
+  Corporation? getHQ(System sys) => headquarters.values.expand((v) => v.entries.where((s) => s.value == sys)).firstOrNull?.key;
 
   void _initKernels() {
     for (final corp in Corporation.values) {
       // spread tuned by corp character:
       // specialists (gregoriev, tanaka) = tight kernel
       // universals (smythe, genCorp) = wide kernel
-      final spread = _spreadFor(corp);
       kernels[corp] = CorpKernelField(
         galaxy, corp,
-        kernel: (d) => exp(-d / spread),
+        kernel: (d) => exp(-d / corp.spread),
       );
-      final home = _homeSystem(corp);
+      final home = getHQSystem(corp);
       if (home != null) {
         kernels[corp]!.recompute({home: 1.0});
       }
     }
   }
-
-  double _spreadFor(Corporation corp) => switch(corp) {
-    Corporation.genCorp  => 12.0,  // ubiquitous
-    Corporation.smythe   => 10.0,  // wide market
-    Corporation.nimrod   => 8.0,   // broad but not universal
-    Corporation.sinclair => 7.0,
-    Corporation.bauchmann => 7.0,
-    Corporation.lopez    => 6.0,
-    Corporation.salazar  => 6.0,
-    Corporation.rimbaud  => 5.0,
-    Corporation.tanaka   => 3.0,   // niche specialist
-    Corporation.gregoriev => 3.0,  // niche specialist
-  };
-
-  // tie corp homeworlds to species homeworlds or fed systems
-  // adjust to taste
-  System? _homeSystem(Corporation corp) => switch(corp) {
-    Corporation.genCorp   => galaxy.fedHomeSystem,
-    Corporation.smythe    => galaxy.fed1,
-    Corporation.sinclair  => galaxy.fed2,
-    Corporation.bauchmann => galaxy.fed3,
-    Corporation.rimbaud   => galaxy.findHomeworld(StockSpecies.humanoid.species),
-    Corporation.salazar   => galaxy.findHomeworld(StockSpecies.krakkar.species),
-    Corporation.nimrod    => galaxy.findHomeworld(StockSpecies.vorlon.species),
-    Corporation.lopez     => galaxy.findHomeworld(StockSpecies.gersh.species),
-    Corporation.tanaka    => galaxy.findHomeworld(StockSpecies.lael.species),
-    Corporation.gregoriev => galaxy.findHomeworld(StockSpecies.orblix.species),
-  };
 
   // ── Influence ─────────────────────────────────────────────────────────────
 
@@ -98,14 +90,12 @@ class CorpMod extends GalaxySubMod {
 
   BrandSupport brandSupport(Corporation a, Corporation b) {
     if (a == b) return BrandSupport.native;
-    final aSupportsB = a.brandRelations[b];
-    final bSupportsA = b.brandRelations[a];
-    return _better(aSupportsB, bSupportsA) ?? BrandSupport.needsAdapter;
+    final aSupportsB = a.getRelations(b);
+    final bSupportsA = b.getRelations(a);
+    return _better(aSupportsB, bSupportsA);
   }
 
-  BrandSupport? _better(BrandSupport? a, BrandSupport? b) {
-    if (a == null) return b;
-    if (b == null) return a;
+  BrandSupport _better(BrandSupport a, BrandSupport b) {
     return a.index < b.index ? a : b;
   }
 
@@ -131,9 +121,7 @@ class CorpMod extends GalaxySubMod {
     return Rng.weightedRandom(weights, rnd);
   }
 
-  bool militaryAvailable(System system) =>
-      galaxy.fedKernel.val(system) > 0.6 ||
-          galaxy.fedKernel.val(system) > 0.7;
+  bool militaryAvailable(System system) => galaxy.fedKernel.val(system) > 0.7;
 
   // ── GalaxyMapLegend support ───────────────────────────────────────────────
 

@@ -1,5 +1,6 @@
 import 'package:crawlspace_engine/stock_items/species.dart';
-
+import '../color.dart';
+import '../object.dart';
 import '../systems/ship_system.dart';
 
 enum BrandSupport { native, trustedPartner, compatible, thirdParty, needsAdapter } //null: needsAdapter
@@ -12,8 +13,11 @@ enum CorpTier {
   const CorpTier(this.costMultiplier);
 }
 
-enum Corporation {
+enum Corporation implements Nameable {
   genCorp(
+      color: GameColors.green,
+      stockSpecies: StockSpecies.humanoid,
+      spread: 16.0,
       corpName: "GenCorp",
       lore: "GenCorp, Your one stop slot shop",
       products: {
@@ -31,6 +35,9 @@ enum Corporation {
       brandRelations: {}),
 
   rimbaud(
+      color: GameColors.red,
+      stockSpecies: StockSpecies.humanoid,
+      spread: 9.0,
       corpName: "Rimbaud Universal",
       lore: "Stellar Service since Stardate 599.431",
       products: {
@@ -42,6 +49,9 @@ enum Corporation {
       }),
 
   salazar(
+      color: GameColors.yellow,
+      stockSpecies: StockSpecies.humanoid,
+      spread: 6.0,
       corpName: "Salazar and Suns",
       lore: "Power you can trust",
       products: {
@@ -53,6 +63,9 @@ enum Corporation {
       }),
 
   bauchmann(
+      color: GameColors.white,
+      stockSpecies: StockSpecies.humanoid,
+      spread: 8.0,
       corpName: "Bauchmann Unlimited",
       lore: "To Infinity and Back",
       products: {
@@ -67,6 +80,9 @@ enum Corporation {
       }),
 
   nimrod(
+      color: GameColors.purple,
+      stockSpecies: StockSpecies.humanoid,
+      spread: 5.0,
       corpName: "Nimrod Galactics",
       lore: "Think Nimrod",
       products: {
@@ -82,6 +98,9 @@ enum Corporation {
       }),
 
   lopez(
+      color: GameColors.orange,
+      stockSpecies: StockSpecies.humanoid,
+      spread: 6.0,
       corpName: "Lopez LLC",
       lore: "Automation made Affordable",
       products: {
@@ -95,6 +114,9 @@ enum Corporation {
       }),
 
   smythe(
+      color: GameColors.gray,
+      stockSpecies: StockSpecies.humanoid,
+      spread: 10.0,
       corpName: "Smythe Industries",
       lore: "The Best of All Worlds",
       products: {
@@ -116,6 +138,9 @@ enum Corporation {
       }),
 
   sinclair(
+      color: GameColors.blue,
+      stockSpecies: StockSpecies.humanoid,
+      spread: 7.0,
       corpName: "Sinclair Corp",
       lore: "Peak Performance",
       products: {
@@ -132,6 +157,9 @@ enum Corporation {
       }),
 
   tanaka(
+      color: GameColors.neonPink,
+      stockSpecies: StockSpecies.humanoid,
+      spread: 3.0,
       corpName: "Tanaka Engineering",
       lore: "Quasar Consistency",  // fixed spelling :)
       products: {
@@ -140,6 +168,9 @@ enum Corporation {
       brandRelations: {}),
 
   gregoriev(
+      color: GameColors.brown,
+      stockSpecies: StockSpecies.humanoid,
+      spread: 3.0,
       corpName: "Gregoriev",
       lore: "Premium Protection",
       products: {
@@ -147,7 +178,11 @@ enum Corporation {
       },
       brandRelations: {});
 
+  String get selectionName => corpName;
+  final StockSpecies stockSpecies;
+  final GameColor color;
   final String corpName, lore;
+  final double spread;
   final Map<Corporation, BrandSupport> _brandRelations;
   final Map<ShipSystemType, CorpTier> products;
   final Map<Species,double> speciesRelations = const {};
@@ -156,6 +191,9 @@ enum Corporation {
       : _brandRelations[corp] ?? BrandSupport.needsAdapter;
 
   const Corporation({
+    required this.stockSpecies,
+    required this.color,
+    required this.spread,
     required this.corpName,
     required this.lore,
     required this.products,
@@ -164,4 +202,5 @@ enum Corporation {
 
   CorpTier? tierFor(ShipSystemType category) => products[category];
   bool makes(ShipSystemType category) => products.containsKey(category);
+
 }

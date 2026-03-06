@@ -20,8 +20,7 @@ class ShipSystemControl {
   ShipSystemControl(this.ship) {
     print(ship.name);
     print(ship.shipClass.name);
-    for (final classSlot in ship.shipClass.slots.all) {
-      print("Adding slot: ${classSlot.name}");
+    for (final classSlot in ship.shipClass.slots.all) { //print("Adding slot: ${classSlot.name}");
       systemMap.add(SlotAssignment(classSlot,null));
     }
   }

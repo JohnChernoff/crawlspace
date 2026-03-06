@@ -4,7 +4,6 @@ import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/sector.dart';
-import 'package:crawlspace_engine/stock_items/species.dart';
 import '../color.dart';
 import '../coord_3d.dart';
 import 'galaxy.dart';
@@ -47,13 +46,12 @@ class System extends Level implements Nameable {
   bool visited = false;
   bool connected;
   StellarClass starClass;
-  Species? homeworld;
   Map<SectorCell,ImpulseLevel> impMapCache = {};
   double anomaly;
   Map <Hazard,double> hazMap = {};
 
   System(this.name,this.starClass,Random rnd,
-      {this.blackHole = false,this.starOne = false, this.trafficGenHint = TrafficGenHint.normal, this.connected = false, this.homeworld})
+      {this.blackHole = false,this.starOne = false, this.trafficGenHint = TrafficGenHint.normal, this.connected = false})
       : anomaly = 0.7 + rnd.nextDouble() * 0.6;
 
   bool addLink(System sys, {linkback = false, required bool update}) { //modify tech/fed levels?
@@ -150,6 +148,7 @@ class System extends Level implements Nameable {
         Rng.betaRnd(rnd, fed, 15),
         Rng.betaRnd(rnd, tech, 12),
         rnd,
+        species: Rng.weightedRandom(g.civMod.civIntensity[this]!, rnd),
         locale: loc,
         population: Rng.betaRnd(rnd, res, 20),
         commerce: Rng.betaRnd(rnd, comm, 10),

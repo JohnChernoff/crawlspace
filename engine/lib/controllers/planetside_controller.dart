@@ -36,7 +36,7 @@ class PlanetsideController extends FugueController {
     }
     fm.player.locale = AtEnvironment(planet);
     if (fm.pilotController.action(fm.player,ActionType.planetLand)) {
-      if (planet.loc.level.homeworld == StockSpecies.humanoid.species) {
+      if (planet.homeworld && planet.species == StockSpecies.humanoid.species) {
         fm.homecoming(home: true);
       } else {
         fm.menuController.showMenu(() => fm.menuFactory.buildPlanetMenu(planet),
@@ -174,9 +174,9 @@ class PlanetsideController extends FugueController {
           ? (maxTechLvl * env.techLvl).round()
           : (fm.itemRng.nextDouble() * (maxTechLvl * env.techLvl)).round();
       if (type != null) {
-        env.sysShop ??= SystemShop(env,type,techLvl,fm.rnd);
+        env.sysShop ??= SystemShop(env,type,techLvl,fm.rnd, galaxy: fm.galaxy);
       } else {
-        env.sysShop ??= SystemShop.random(env,techLvl,fm.rnd);
+        env.sysShop ??= SystemShop.random(env,techLvl,fm.rnd, galaxy: fm.galaxy);
       }
       fm.menuController.showMenu(() => fm.menuFactory.buildShopBuyMenu(env.sysShop!, ship: fm.playerShip),
           headerTxt: "${env.sysShop?.name}");

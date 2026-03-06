@@ -1,4 +1,6 @@
 import 'dart:math';
+import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/galaxy/corp_mod.dart';
 import 'package:crawlspace_engine/galaxy/fed_model.dart';
 import 'package:crawlspace_engine/galaxy/flow_model.dart';
 import 'package:crawlspace_engine/galaxy/topology.dart';
@@ -78,6 +80,7 @@ class Galaxy {
   Item ancientFedArt2 = Item("A glowing datastack",desc: "A datastack entitled 'Ancient Earth History (500 BC - 2500 AD)'",sellable: false);
   Item ancientFedArt3 = Item("Ivory chess piece", desc: "A chess knight, floating in space. Odd.",sellable: false);
   late TradeModel tradeMod;
+  late CorpMod corpMod;
 
   // Static (computed at gen, recomputed on tickCentury)
   //late TradeKernelField supplyField;    // per-commodity supply gradient
@@ -88,8 +91,7 @@ class Galaxy {
 // flowFields["priceSignal"] — price information diffusing through gossip
 
   Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
-    fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, homeworld: StockSpecies.humanoid.species,
-        trafficGenHint: TrafficGenHint.hub);
+    fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub);
     fed1 = System("Movelia", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub);
     fed2 = System("Sargon", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.normal);
     fed3 = System("Javalix", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.culDeSac);
@@ -99,12 +101,12 @@ class Galaxy {
     glog("Galaxy gen took ${t1.difference(t0).inMilliseconds} ms",level: DebugLevel.Highest);
 
     topo = GalaxyTopology(this);
-    assignHomeworlds();
     civMod = CivModel(this);
     civMod.generatePolitics(rnd);
     civMod.debugPrintPoliticalMap();
     computeKernels();
     initFlowFields();
+    corpMod = CorpMod(this);
     fedMod = FederationModel(this);
     heatMod = HeatModel(this);
     getRandomLinkableSystem(fedHomeSystem)?.starOne = true;
@@ -112,8 +114,9 @@ class Galaxy {
 
     for (final s in systems) {
       s.map = s.createSystemMap(8,.02,.01,.001,rnd);
-      if (s.homeworld != null) {
-        final homeWorld = Planet(s.homeworld!.homeWorld, 1, 1, rnd, homeworld: true,
+      final species = getHomeworldSpecies(s);
+      if (species != null) {
+        final homeWorld = Planet(species.homeWorld, 1, 1, rnd, homeworld: true, species: species,
             locale: SystemLocation(s, s.map.rndCell(rnd)), population: 1, industry: 1, commerce: 1);
         s.addPlanets(this, rnd, pList: [homeWorld]);
       } else {
@@ -253,34 +256,31 @@ class Galaxy {
     return StellarClass.values.last; // Fallback (should never happen)
   }
 
-  void assignHomeworlds() {
-    final homeSystems = <System>[fedHomeSystem];
-
-    for (final species in allSpecies.skip(1)) {
-      final candidates = systems.where((s) => s.homeworld == null).toList();
-
+  void spreadAssign<T>(List<T> list, Map<T,System> map, List<System> sysList) {
+    if (map.isEmpty) {
+      glog("Warning: attempting to generate a spread map without an anchor",error: true);
+      return;
+    }
+    for (final t in list.where((k) => !map.containsKey(k))) {
+      final candidates = sysList.where((s) => !map.containsValue(s)).toList();
       (System, int)? best;
-
       for (final c in candidates) {
-        final d = homeSystems
-            .map((h) => topo.distance(h, c))
+        final d = map.values
+            .map((s) => topo.distance(s, c))
             .reduce(min);
 
         if (best == null || d > best.$2) {
           best = (c, d);
         }
       }
-
-      best!.$1.homeworld = species;
-      homeSystems.add(best.$1);
-      glog("Adding home system: ${species.name} -> ${best.$1.name}");
+      map[t] = best!.$1;
     }
+    print("Spread Map: $map");
   }
 
   int minDist(Iterable<System> systems, System system) => systems
       .map((h) => topo.distance(h, system))
       .reduce(min);
-
 
   void playerCrime(System s, double loudness) {
     flowFields["rumors"]!.value[s] = flowFields["rumors"]!.val(s) + loudness;
@@ -313,7 +313,9 @@ class Galaxy {
     ((topo.distance(s,a) > topo.distance(s, b)) ? a : b));
   }
 
-  System findHomeworld(Species s) => systems.firstWhere((system) => system.homeworld == s);
+  System findHomeworld(Species s) => civMod.homeworlds[s]!;
+
+  Species? getHomeworldSpecies(System s) => civMod.homeworlds.entries.firstWhereOrNull((e) => e.value == s)?.key;
 
   int discoveredSystems() => systems.where((s) => s.visited).length;
 

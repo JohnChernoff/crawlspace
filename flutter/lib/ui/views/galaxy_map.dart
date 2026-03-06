@@ -5,6 +5,7 @@ import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/goods.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
 import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/stock_items/corps.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -24,7 +25,8 @@ enum GalaxyMapLegend {
   star,
   surveillance,
   rumors,
-  goods,
+  corp,
+  selection,
   //planets
 }
 
@@ -75,6 +77,8 @@ class GalaxyMapState extends State<GalaxyMap> {
 
   void _cycleLegend(bool forwards) {
     _rebuildCache();
+    _cachedType = null; // force _cachedItemVals to rebuild on next render
+    _cachedItemVals.clear();
     setState(() {
       if (forwards) {
         if (legend.index < GalaxyMapLegend.values.length - 1) {
@@ -98,7 +102,10 @@ class GalaxyMapState extends State<GalaxyMap> {
       nodesBuilder: (context, sys) =>
       fugueOptions.getBool(FugueOption.fancyGraph)
           ? fancyNode(sys)
-          : systemShape(sys),
+          : systemShape(sys,
+          hw: widget.fugueModel.galaxy.getHomeworldSpecies(sys),
+          hq: widget.fugueModel.galaxy.corpMod.getHQ(sys)
+      ),
       edgesBuilder: (context, a, b, distance) {
         return Container(
           width: distance,
@@ -113,7 +120,7 @@ class GalaxyMapState extends State<GalaxyMap> {
 
   final Map<GalaxyMapLegend, Map<System, double>> _legendCache = {};
   GalaxyMapLegend? _cachedLegend;
-  UniversalCommodity? _cachedCommodity;
+  Nameable? _cachedType;
   final Map<System, double> _cachedItemVals = {};
 
   void _rebuildCache() {
@@ -141,13 +148,24 @@ class GalaxyMapState extends State<GalaxyMap> {
     };
   }
 
-  void _rebuildItemValCache(UniversalCommodity commodity, {log = true}) {
-    if (_cachedCommodity == commodity) return; // already cached
-    _cachedCommodity = commodity;
+  void _rebuildItemValCache(Nameable nameable) {
+    if (_cachedType == nameable) return; // already cached
+    _cachedType = nameable;
     _cachedItemVals.clear();
-
     final g = widget.fugueModel.galaxy;
+    if (nameable is UniversalCommodity) cacheUniversalCommodity(g, nameable);
+    if (nameable is Corporation) cacheCorpInfluence(g, nameable);
 
+  }
+
+  void cacheCorpInfluence(Galaxy g, Corporation c) {
+    final influence = g.corpMod.normalizedInfluence(c);
+    print(influence);
+    _cachedItemVals.clear();
+    _cachedItemVals.addAll(influence);
+  }
+
+  void cacheUniversalCommodity(Galaxy g, UniversalCommodity commodity, {log = true}) {
     // compute all system prices
     final allPrices = <System, double>{};
     for (final system in g.systems) {
@@ -179,8 +197,8 @@ class GalaxyMapState extends State<GalaxyMap> {
     }
   }
 
-  double itemVal(Nameable? nameable, System system) {
-    if (nameable == null || nameable is! UniversalCommodity) return 0.0;
+  double getVal(Nameable? nameable, System system) {
+    if (nameable == null) return 0.0;
     _rebuildItemValCache(nameable);
     return _cachedItemVals[system] ?? 0.0;
   }
@@ -199,15 +217,21 @@ class GalaxyMapState extends State<GalaxyMap> {
     );
   }
 
-  Widget systemShape(System sys) {
+  Widget systemShape(System sys, {Species? hw, Corporation? hq}) {
     final borderCol = (widget.fugueModel.player.system == sys) ? Colors.yellowAccent : null;
-    if (sys.homeworld != null) return starSystem(sys, hex: sys.homeworld! == StockSpecies.humanoid.species, borderCol: borderCol);
+    if (hw != null) {
+      return hw == StockSpecies.humanoid.species
+          ? diamondSystem(sys, borderCol: borderCol)
+          : starSystem(sys, hex: false, borderCol: borderCol);
+    }
+    if (hq != null) return starSystem(sys, hex: true, borderCol: borderCol);
     if (sys.planets.contains(widget.fugueModel.player.tradeTarget?.destination)) return diamondSystem(sys, borderCol: borderCol);
     return boxSystem(sys, borderCol: borderCol);
   }
 
   @override
   Widget build(BuildContext context) {
+    final selection = widget.fugueModel.menuController.selectedItem?.selectionName;
     return Focus(
         focusNode: _focusNode,
         autofocus: true,
@@ -251,6 +275,7 @@ class GalaxyMapState extends State<GalaxyMap> {
           });
         },
         child: Column(children: [
+          if (selection != null && legend == GalaxyMapLegend.selection) Text("Selection: $selection",style: TextStyle(color: Colors.white)),
           Text("Graph Legend: ${legend.name} (q/w to cycle, esc to exit)",style: TextStyle(color: Colors.white)),
           Expanded(child: Container(decoration: const BoxDecoration(
               image: DecorationImage(image: AssetImage("img/galaxy.jpg"),fit: BoxFit.fill)
@@ -315,7 +340,8 @@ class GalaxyMapState extends State<GalaxyMap> {
     Galaxy g = fm.galaxy;  //if (fm.player.system == system) return Colors.yellow;
     if (fm.galaxy.fedHomeSystem == system) return Colors.white;
     return switch(legend) {
-      GalaxyMapLegend.goods => graphColor(itemVal(fm.menuController.selectedItem,system)),
+      GalaxyMapLegend.selection => graphColor(getVal(fm.menuController.selectedItem,system)),
+      GalaxyMapLegend.corp => Color(g.corpMod.dominantCorp(system)?.color.argb ?? 0),
       GalaxyMapLegend.star => Color(system.starClass.color.argb),
       GalaxyMapLegend.fed => graphColor(g.fedKernel.val(system), red: 128, green: 0), //blue
       GalaxyMapLegend.tech => graphColor(g.techKernel.val(system), red: 0, blue: 92), //green

@@ -148,11 +148,11 @@ class AlphaSelect extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         // Homeworld marker
-                        if (selection is System && selection.homeworld != null)
+                        if (selection is System && fm.galaxy.getHomeworldSpecies(selection) != null)
                           Padding(
                             padding: const EdgeInsets.only(left: 8),
                             child: Text(
-                              "✦",
+                              fm.galaxy.getHomeworldSpecies(selection)!.glyph,
                               style: TextStyle(
                                 fontSize: 11,
                                 color: Colors.amber.shade400,

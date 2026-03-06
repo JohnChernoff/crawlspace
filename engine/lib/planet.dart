@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
+import 'package:crawlspace_engine/stock_items/species.dart';
 import 'color.dart';
 import 'galaxy/goods.dart';
 import 'rng/descriptors.dart';
@@ -24,6 +25,7 @@ class Planet extends SpaceEnvironment<SystemLocation> {
   double hazard   = 0;
   double weirdness = 0;
   final bool homeworld;
+  Species species;
   AlienDrink? drink;
 
   // ── Trade state ────────────────────────────────────────────────────────────
@@ -75,6 +77,7 @@ class Planet extends SpaceEnvironment<SystemLocation> {
   }
 
   Planet(super.name, super.fedLvl, super.techLvl, Random rnd, {
+    required this.species,
     this.homeworld = false,
     required super.locale,
     required this.industry,

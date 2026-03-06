@@ -1,9 +1,6 @@
-import 'dart:math';
 import 'package:crawlspace_engine/galaxy/kern_field.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
-import 'package:crawlspace_engine/ship_sys.dart';
 import '../stock_items/corps.dart';
-import 'galaxy.dart';
 
 class CorpKernelField extends KernelField {
   final Corporation corp;

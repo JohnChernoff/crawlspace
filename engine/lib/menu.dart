@@ -1,6 +1,5 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/pilot.dart';
-import 'package:crawlspace_engine/shop.dart';
 import 'controllers/menu_controller.dart';
 import 'item.dart';
 

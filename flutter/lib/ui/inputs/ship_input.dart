@@ -3,17 +3,19 @@ import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/goods.dart';
 import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/stock_items/corps.dart';
 import 'package:crawlspace_flutter/main.dart';
 import 'package:crawlspace_flutter/ui/views/galaxy_map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'general_input.dart';
 
-enum DepthViewOption {showAll,showClosest,toggle}
-enum ItemViewOption {
-  goods,
-  commodities
+enum AlphaSelectionType {
+  universalGoods,
+  corporations
 }
+
+enum DepthViewOption {showAll,showClosest,toggle}
 class XenoIntent extends Intent {
   const XenoIntent();
 }
@@ -24,8 +26,8 @@ class SystemSelectIntent extends Intent {
 }
 
 class AlphaSelectIntent extends Intent {
-  final ItemViewOption itemViewOption;
-  const AlphaSelectIntent(this.itemViewOption);
+  final AlphaSelectionType selectionType;
+  const AlphaSelectIntent(this.selectionType);
 }
 
 class DirectionIntent extends Intent {
@@ -241,7 +243,10 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         const SystemSelectIntent(false),
 
         LogicalKeySet(LogicalKeyboardKey.keyG, LogicalKeyboardKey.shift):
-        const AlphaSelectIntent(ItemViewOption.commodities),
+        const AlphaSelectIntent(AlphaSelectionType.universalGoods),
+
+        LogicalKeySet(LogicalKeyboardKey.keyC, LogicalKeyboardKey.shift):
+        const AlphaSelectIntent(AlphaSelectionType.corporations),
 
         LogicalKeySet(LogicalKeyboardKey.keyZ, LogicalKeyboardKey.shift):
         const XenoIntent(),
@@ -382,15 +387,15 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ),
         AlphaSelectIntent: CallbackAction<AlphaSelectIntent>(
             onInvoke: (intent) {
-              if (fm.playerShip != null) {
-                final list = UniversalCommodity.values;
-                //fm.galaxy.tradeMod.goodsSources.keys.toList();
-                fm.menuController.getAlphaList(list).then((g) {
-                  fm.menuController.selectedItem = g;
-                  galaxyMapLegend = GalaxyMapLegend.goods;
-                  currentView = ViewType.galaxy;
-                });
-              }
+              List<Nameable> list = switch(intent.selectionType) {
+                AlphaSelectionType.universalGoods => UniversalCommodity.values,
+                AlphaSelectionType.corporations => Corporation.values,
+              };
+             fm.menuController.getAlphaList(list).then((g) {
+                fm.menuController.selectedItem = g;
+                galaxyMapLegend = GalaxyMapLegend.selection;
+                currentView = ViewType.galaxy;
+              });
               return null;
             }
         ),

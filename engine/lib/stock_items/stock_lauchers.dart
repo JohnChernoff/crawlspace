@@ -1,15 +1,11 @@
-import 'package:crawlspace_engine/stock_items/corps.dart';
-
 import '../systems/ship_system.dart';
 import '../systems/weapons.dart';
 import 'stock_pile.dart';
 
 final Map<StockSystem, WeaponData> stockLaunchers = {
   StockSystem.lchPlasmaCannon:  WeaponData(
-    systemData: ShipSystemData("Plasma Cannon",
-        techLvl: StockSystem.lchPlasmaCannon.techLvl, rarity: StockSystem.lchPlasmaCannon.rarity,
-        mass: 10, baseCost: 7500, baseRepairCost: 1.5, powerDraw: .5,
-        manufacturer: Corporation.bauchmann),
+    systemData: ShipSystemData.fromStock(StockSystem.lchPlasmaCannon,"Plasma Cannon",
+        mass: 10, baseCost: 7500, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 0, dmgDiceSides: 0, dmgBase: 0,
     dmgType: DamageType.plasma,
     dmgMult: 1,
@@ -23,10 +19,8 @@ final Map<StockSystem, WeaponData> stockLaunchers = {
   ),
 
   StockSystem.lchfedTorpLauncher: WeaponData(
-    systemData: ShipSystemData("Fed Torp Mk 1",
-        techLvl: StockSystem.lchfedTorpLauncher.techLvl, rarity: StockSystem.lchfedTorpLauncher.rarity,
-        mass: 10, baseCost: 10000, baseRepairCost: 1.5, powerDraw: .5,
-        manufacturer: Corporation.bauchmann),
+    systemData: ShipSystemData.fromStock(StockSystem.lchfedTorpLauncher,"Fed Torp Mk 1",
+        mass: 10, baseCost: 10000, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 0, dmgDiceSides: 0, dmgBase: 0,
     dmgType: DamageType.kinetic,
     dmgMult: 2,

@@ -14,9 +14,10 @@ enum PoliticsMode {
 class CivModel extends GalaxySubMod {
   static const int minPositiveRelationships = 2; // minimum species each race respects (≥ 0.5)
   List<Species> get allSpecies => galaxy.allSpecies;
-  Map<System, Map<Species,double>> civIntensity = {};
-  Map<System,double> techField = {};
-  Map<System,double> commerceField = {};
+  final Map<Species,System> homeworlds = {};
+  final Map<System, Map<Species,double>> civIntensity = {};
+  final Map<System,double> techField = {};
+  final Map<System,double> commerceField = {};
   Map<Species, Species> rivalries = {}; // store as field
   // Stored — the ground truth
   Map<Faction, Map<Species, double>> factionAttitudes = {};
@@ -56,6 +57,8 @@ class CivModel extends GalaxySubMod {
   void _invalidatePoliticalMap() => _cachedPoliticalMap = null;
 
   CivModel(super.galaxy) {
+    homeworlds[StockSpecies.humanoid.species] = galaxy.fedHomeSystem;
+    galaxy.spreadAssign(allSpecies, homeworlds, galaxy.systems);
     computeCivFields();
   }
 
@@ -63,7 +66,7 @@ class CivModel extends GalaxySubMod {
     for (final s in systems) {
       civIntensity[s] = {};
       for (final sp in allSpecies) {
-        final d = distance(galaxy.findHomeworld(sp), s);
+        final d = distance(homeworlds[sp]!, s);
         civIntensity[s]![sp] = exp(-d / (sp.propagation * 10)) * sp.populationDensity;
       }
       civIntensity[s] = normalize(civIntensity[s]!);
