@@ -1,9 +1,9 @@
 import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/galaxy/goods.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
+import 'package:crawlspace_engine/stock_items/goods.dart';
 import 'package:crawlspace_flutter/main.dart';
 import 'package:crawlspace_flutter/ui/views/galaxy_map.dart';
 import 'package:flutter/material.dart';

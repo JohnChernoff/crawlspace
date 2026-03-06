@@ -4,9 +4,9 @@ import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'color.dart';
-import 'galaxy/goods.dart';
+import 'stock_items/goods.dart';
 import 'rng/descriptors.dart';
-import 'rng/drinks.dart';
+import 'rng/drinks_gen.dart';
 
 enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   const DistrictLvl(this.shortString);

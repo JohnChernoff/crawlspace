@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/rng/drinks.dart';
+import 'package:crawlspace_engine/rng/drinks_gen.dart';
 import 'package:crawlspace_engine/location.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';

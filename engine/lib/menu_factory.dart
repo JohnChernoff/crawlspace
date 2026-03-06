@@ -1,7 +1,7 @@
 import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/controllers/menu_controller.dart';
 import 'package:crawlspace_engine/item.dart';
-import 'package:crawlspace_engine/rng/drinks.dart';
+import 'package:crawlspace_engine/rng/drinks_gen.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/pilot.dart';
 import 'package:crawlspace_engine/planet.dart';

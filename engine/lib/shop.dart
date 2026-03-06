@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/object.dart';
-import 'galaxy/goods.dart';
+import 'stock_items/goods.dart';
 import 'item.dart';
 import 'pilot.dart';
 import 'planet.dart';

@@ -13,7 +13,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/stock_items/species.dart';
 
-import '../galaxy/goods.dart';
+import '../stock_items/goods.dart';
 
 class GoodsGen {
 

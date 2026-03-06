@@ -2,10 +2,10 @@ import 'dart:math';
 import 'package:crawlspace_engine/agent.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
-import 'package:crawlspace_engine/galaxy/goods.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
 import 'package:crawlspace_engine/object.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
+import 'package:crawlspace_engine/stock_items/goods.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -159,8 +159,7 @@ class GalaxyMapState extends State<GalaxyMap> {
   }
 
   void cacheCorpInfluence(Galaxy g, Corporation c) {
-    final influence = g.corpMod.normalizedInfluence(c);
-    print(influence);
+    final influence = g.corpMod.normalizedInfluence(c); //print(influence);
     _cachedItemVals.clear();
     _cachedItemVals.addAll(influence);
   }

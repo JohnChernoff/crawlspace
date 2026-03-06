@@ -22,7 +22,7 @@ import 'package:crawlspace_engine/galaxy/system.dart';
 
 import '../fugue_engine.dart';
 import '../rng/goods_gen.dart';
-import 'goods.dart';
+import '../stock_items/goods.dart';
 
 // ── How far from homeworld a species special is likely to be produced ─────────
 const int _speciesGoodsSourceRadius = 4; // systems
