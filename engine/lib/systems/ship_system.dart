@@ -1,87 +1,47 @@
 import 'dart:math';
-
+import 'package:crawlspace_engine/stock_items/corps.dart';
 import '../item.dart';
 
-class ShipClassSlot {
-  final SystemSlot slot;
-  final int num;
-  const ShipClassSlot(this.slot,this.num);
-}
-
 enum ShipSystemType {
-  weapon,launcher,shield,engine,quarters,power,powerConverter,sensor,ammo,unknown;
+  weapon(3),
+  launcher(3.5),
+  engine(2.5),
+  shield(2),
+  power(1.5),
+  emitter(1.25),
+  converter(1),
+  sensor(.75),
+  quarters(.5),
+  scrapper(.25),
+  ammo(.16), //handled separately in system control
+  adapter(.1),
+  unknown(0);
+  final costMultiplier;
+  const ShipSystemType(this.costMultiplier);
 }
 
-enum SystemSlotType {
-  unknown([],[],0),
-  generic([],ShipSystemType.values,100),
-  //engine,pow,conv
-  rimbaud([],[ShipSystemType.engine,ShipSystemType.power,ShipSystemType.powerConverter],250),
-  //weapon,pow,conv
-  salazar([],[ShipSystemType.weapon,ShipSystemType.power,ShipSystemType.powerConverter],300),
-  //weapon,shield,pow,conv
-  bauchmann([],[ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.shield,ShipSystemType.power,ShipSystemType.powerConverter],500),
-  //rimbaud * weapon,shield
-  nimrod([SystemSlotType.rimbaud],[ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.shield],650),
-  //salazar * power
-  lopez([SystemSlotType.salazar],[ShipSystemType.power],750),
-  //generic * weapon,shield
-  smythe([SystemSlotType.generic],[ShipSystemType.weapon,ShipSystemType.shield],1000),
-  //bauchman,smythe
-  sinclair([SystemSlotType.bauchmann,SystemSlotType.smythe],ShipSystemType.values,2000),
-  //generic * engine
-  tanaka([SystemSlotType.generic, SystemSlotType.rimbaud],[ShipSystemType.engine],5000),
-  //shield
-  gregoriev([],[ShipSystemType.shield],9000);
-
-  final List<SystemSlotType> supportedSlots;
-  final List<ShipSystemType> supportedTypes;
-  final int baseCost;
-  const SystemSlotType(this.supportedSlots, this.supportedTypes, this.baseCost);
-
-  SystemSlotType? supports(SystemSlotType type, [Set<SystemSlotType>? visited]) {
-    visited ??= {};
-    if (visited.contains(this)) return null; // cycle detection
-    visited.add(this);
-    if (this == type) return this;
-    for (final s in supportedSlots) {
-      final result = s.supports(type, visited);
-      if (result != null) return result;
-    }
-    return null;
-  }
-}
-
-class SystemSlot {
-  final SystemSlotType type;
-  final int generation; //mark
-  const SystemSlot(this.type,this.generation);
-
-  bool supports(SystemSlot slot, ShipSystemType type, {ignoreGenerations = false}) {
-    if (slot.type == type) {
-      if (ignoreGenerations || (generation >= slot.generation)) {
-        return this.type.supportedTypes.contains(type);
-      }
-    }
-    else { // Inherited compatibility: generation doesn't matter
-      final s = this.type.supports(slot.type);
-      if (s != null) {
-        return s.supportedTypes.contains(type);
-      }
-    }
-    return false;
-  }
-  bool supportsSystem(ShipSystem s, {ignoreGenerations = false}) => supports(s.slot,s.type);
+class SystemSlot with Itemizable {
+  final ShipSystemType systemType;
+  final Corporation manufacturer;
+  double get costMultiplier => (manufacturer.tierFor(systemType)?.costMultiplier ?? 0) * systemType.costMultiplier;
+  bool supportsSystem(ShipSystem sys) => supports(sys.type, sys.manufacturer);
+  bool supports(ShipSystemType type, Corporation corp) => systemType == type &&
+      manufacturer.getRelations(corp) != BrandSupport.needsAdapter;
+  const SystemSlot(this.systemType,this.manufacturer);
 
   @override
-  String toString() {
-    return "${type.name}, gen: $generation";
-  }
+  String get name => "${systemType.name} (${manufacturer.corpName})";
+  String supportString(ShipSystem sys) => systemType != sys.type
+      ? "Unsupported System"
+      : manufacturer.getRelations(sys.manufacturer).name;
+  String labelFor(ShipSystem sys) => "$name (${supportString(sys)})";
 }
 
 abstract class ShipSystem extends Item {
+  String get name => "${super.name} (${manufacturer.corpName})";
   ShipSystemType get type;
-  final SystemSlot slot;
+  String get shopDesc => this.toString();
+  final Corporation manufacturer;
   final double baseRepairCost; //credits per 1% repair
   String get dmgTxt => "${(damage * 100).round()}";
   double damage; //% damaged
@@ -103,7 +63,7 @@ abstract class ShipSystem extends Item {
     this.maxEnhancement = 9,
     this.repairDifficulty = .5,
     this.stability = .8,
-    this.slot = const SystemSlot(SystemSlotType.generic,1),
+    this.manufacturer = Corporation.genCorp,
     required super.mass,
     super.volume = 1,
     required this.powerDraw,
@@ -130,14 +90,12 @@ abstract class ShipSystem extends Item {
   }
 
   @override
-  String toString() {
-    return "${super.toString()}, slot: $slot";
-  }
+  String toString() => name;
 }
 
 class ShipSystemData {
   final String name;
-  final SystemSlot slot;
+  final Corporation manufacturer;
   final double mass; //kilos
   final int techLvl;
   final double rarity;
@@ -150,7 +108,7 @@ class ShipSystemData {
   final double repairDifficulty;
 
   const ShipSystemData(this.name,{
-    this.slot = const SystemSlot(SystemSlotType.generic, 1),
+    this.manufacturer = Corporation.genCorp,
     required this.mass,
     required this.baseCost,
     required this.baseRepairCost,

@@ -37,7 +37,7 @@ class Engine extends ShipSystem {
   ShipSystemType get type => ShipSystemType.engine;
 
   Engine(super.name, {
-    super.slot,
+    super.manufacturer,
     super.rarity,
     super.stability,
     super.repairDifficulty,
@@ -58,7 +58,7 @@ class Engine extends ShipSystem {
     EngineData data = stockEngines[stock]!;
     return Engine(
       data.systemData.name,
-      slot: data.systemData.slot,
+      manufacturer: data.systemData.manufacturer,
       mass: data.systemData.mass,
       powerDraw: data.systemData.powerDraw,
       stability: data.systemData.stability,

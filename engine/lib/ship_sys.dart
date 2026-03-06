@@ -1,11 +1,13 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/ship.dart';
+import 'package:crawlspace_engine/stock_items/corps.dart';
 import 'package:crawlspace_engine/systems/engines.dart';
 import 'package:crawlspace_engine/systems/power.dart';
 import 'package:crawlspace_engine/systems/shields.dart';
 import 'package:crawlspace_engine/systems/ship_system.dart';
 import 'package:crawlspace_engine/systems/weapons.dart';
+import 'fugue_engine.dart';
 import 'grid.dart';
 
 enum InstallResult {success,unsupported,duplicate}
@@ -16,10 +18,11 @@ class ShipSystemControl {
   Map<Ammo,int> ammoMap = {};
 
   ShipSystemControl(this.ship) {
-    for (final classSlot in ship.shipClass.slots) {
-      for (int i=0;i<classSlot.num;i++) { //print("$name: Installing: ${classSlot.slot}");
-        systemMap.add(SlotAssignment(classSlot.slot,null));
-      }
+    print(ship.name);
+    print(ship.shipClass.name);
+    for (final classSlot in ship.shipClass.slots.all) {
+      print("Adding slot: ${classSlot.name}");
+      systemMap.add(SlotAssignment(classSlot,null));
     }
   }
 
@@ -48,11 +51,15 @@ class ShipSystemControl {
   bool duplicateInstallation(ShipSystem s) => !ship.multiSystems.contains(s.type) && getInstalledSystems().any((sys) => sys.type == s.type);
   bool isInstalled(ShipSystem s) => getInstalledSystems().contains(s);
   Iterable<SlotAssignment> exactSlots(SystemSlot s) => vacantSlots.where((as) => as.slot == s).toList();
-  Iterable<SlotAssignment> availableSlots(SystemSlot slot, ShipSystemType type) => vacantSlots.where((i) => i.slot.supports(slot,type));
+  Iterable<SlotAssignment> availableSlots(ShipSystemType type,Corporation corp) => vacantSlots.where((i) => i.slot.supports(type,corp));
   Iterable<SlotAssignment> availableSlotsbySystem(ShipSystem s) => vacantSlots.where((vs) => canInstall(s,vs) == InstallResult.success);
   InstallResult canInstall(ShipSystem s, SlotAssignment assignment) {
     if (duplicateInstallation(s)) return InstallResult.duplicate;
-    if (assignment.slot.supportsSystem(s)) return  InstallResult.success;
+    glog("Checking if ${s.name},${s.type},${s.manufacturer} can be installed at: "
+        "${assignment.system},${assignment.slot.systemType},${assignment.slot.manufacturer}",level: DebugLevel.Finer);
+    if (assignment.slot.supports(s.type,s.manufacturer)) {
+      return InstallResult.success;
+    }
     return InstallResult.unsupported;
   }
   double get currentShieldStrength => ship.multiSystems.contains(ShipSystemType.shield)
@@ -106,7 +113,7 @@ class ShipSystemControl {
       }
     } else {
       final slots = exactSlots(slot).toList();
-      if (slots.isNotEmpty && slots.first.slot.supportsSystem(system)) {
+      if (slots.isNotEmpty && slots.first.slot.supports(system.type,system.manufacturer)) {
         slots.first.system = system;
         return InstallResult.success;
       }

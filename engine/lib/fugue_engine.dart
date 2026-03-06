@@ -73,7 +73,7 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1q2";
+  final String version = "0.1q3";
   final Galaxy galaxy;
   late Player player;
   int numAgents = 3;
@@ -135,7 +135,7 @@ class FugueEngine {
     combatRng = Random(seed ^ 0xABCDEF);
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
     Ship playShip = Ship("HMS Sebastian",
-        shipClass: ShipClassType.hermes.shipclass,
+        shipClass: ShipClass.fromEnum(ShipClassType.hermes),
         location: SystemLocation(farSys, farSys.map.rndCell(rnd)),
         generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
         impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
@@ -149,7 +149,7 @@ class FugueEngine {
     addShip(playShip);
     for (final persona in AgentPersonality.values) {
         Ship agentShip = Ship("Agent ${persona.name}",
-            shipClass: ShipClassType.hermes.shipclass,
+            shipClass: ShipClass.fromEnum(ShipClassType.galaxy),
             location: SystemLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCell(rnd)),
             generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
             impEngine: Engine.fromStock(StockSystem.engBasicFedImp),

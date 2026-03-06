@@ -58,7 +58,7 @@ class Ship extends Item implements Locatable {
   @override
   SpaceLocation get loc => _loc;
   @override
-  int get baseCost => shipClass.slots.map((s) => s.slot.type.baseCost).sum + shipClass.maxMass.round();
+  int get baseCost => inventory.all.map((i) => i.baseCost).sum + shipClass.maxMass.round();
   @override
   String get shopDesc => dump(shop: true);
   SpaceLocation _loc;
@@ -71,7 +71,7 @@ class Ship extends Item implements Locatable {
   double hullDamage = 0;
   int minCool = 0;
   int impulseMapSize = 8;
-  Inventory inventory = Inventory();
+  Inventory<Item> inventory = Inventory();
   InventoryView<Scrap> get scrapHeap => inventory.filterType<Scrap>();
   InventoryView get cargo => inventory.filter((i) => i is! ShipSystem || !systemControl.isInstalled(i));
   bool get playship => pilot is Player;

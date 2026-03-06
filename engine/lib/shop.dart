@@ -40,7 +40,7 @@ class CommodityItem extends Item {
 
 abstract class Shop {
   late String name;
-  Inventory inventory = Inventory();
+  Inventory<Item> inventory = Inventory();
   int credits = 10000;
   SpaceEnvironment location;
 

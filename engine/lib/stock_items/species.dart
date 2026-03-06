@@ -8,6 +8,21 @@ import 'package:crawlspace_engine/systems/power.dart';
 import 'package:crawlspace_engine/systems/shields.dart';
 import 'package:crawlspace_engine/systems/weapons.dart';
 
+enum ShipPrefs {
+  all({}),
+  standard({
+    ShipType.scout: 1,
+    ShipType.skiff: .8,
+    ShipType.cruiser: .6,
+    ShipType.destroyer: .4,
+    ShipType.interceptor: .3,
+    ShipType.battleship: .2,
+    ShipType.flagship: .1
+  });
+  final Map<ShipType,double> shipWeights;
+  const ShipPrefs(this.shipWeights);
+}
+
 class WeightedTrait<T extends Enum> {
   final Map<T, double> _map;
   final List<T> allValues;

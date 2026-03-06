@@ -10,6 +10,7 @@ import '../stock_items/stock_weapons.dart';
 import 'ship_system.dart';
 
 enum DamageType {
+  none,
   kinetic, //*** earth/material
   photonic, //shield centric damage *** elemental
   plasma, //great against shields, fire against hull *** elec
@@ -19,6 +20,7 @@ enum DamageType {
   gravitron, //pulls ship towards/away when damage is dealt
   neutrino, //ignores shields
   etherial, //random damage
+  all
 }
 
 enum WeaponEgo {
@@ -105,7 +107,7 @@ class Weapon extends ShipSystem {
     required super.baseRepairCost,
     required super.powerDraw,
     required super.mass,
-    super.slot,
+    super.manufacturer,
     super.rarity,
     super.stability,
     super.repairDifficulty
@@ -115,7 +117,7 @@ class Weapon extends ShipSystem {
     WeaponData data = stockWeapons[stock] ?? stockLaunchers[stock]!;
     return Weapon(
       data.systemData.name,
-      slot: data.systemData.slot,
+      manufacturer: data.systemData.manufacturer,
       mass: data.systemData.mass,
       powerDraw: data.systemData.powerDraw,
       stability: data.systemData.stability,

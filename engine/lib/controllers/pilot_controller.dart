@@ -90,9 +90,9 @@ class PilotController extends FugueController {
       } else { //print("hmm");
         final result = ship.systemControl.installSystem(system, slot: slot);
         if (result == InstallResult.success) {
-          return ResultMessage("Installed at slot: $slot",true);
+          return ResultMessage("Installed at slot: ${slot.name}",true);
         } else {
-          return ResultMessage("${result.name} slot: $slot",false);
+          return ResultMessage("${result.name} slot: ${slot.name}",false);
         }
       }
     }

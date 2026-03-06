@@ -57,8 +57,10 @@ class MenuFactory {
   }
 
   Menu buildInventoryMenu(InventoryView view, {shop = true, void Function(Item item)? action}) { //print("Inventory: ${ship.allInventory}");
-    return List.generate(view.slots.length,(i) {
-      final slot = view.slots.elementAt(i);
+    final items = view.items;
+    return List.generate(items.slots.length,(i) {
+      final slot = items.slots.elementAt(i);
+      print ("Inventory slot: ${slot.slotName}");
       if (action != null) return ValueEntry(letter: mc.letter(i), label: slot.label(shop: shop), slot.item, (m) => action(m));
       else return TextEntry(label: slot.label(shop: shop));
     });
@@ -162,7 +164,7 @@ class MenuFactory {
     final systems = ship.systemControl.getInstalledSystems().toList();
     return <MenuEntry> [
       for (int i = 0; i < systems.length; i++)
-        ValueEntry(letter: letter(i),label: "${systems[i].name} , ${systems[i].slot}", systems[i],
+        ValueEntry(letter: letter(i),label: systems[i].toString(), systems[i],
                 (system) => fm.msgController.addResultMsg(fm.pilotController.uninstallSystem(system, ship)),exitAfter: true)
     ];
   }
@@ -171,11 +173,20 @@ class MenuFactory {
     final systems = ship.systemControl.uninstalledSystems.toList();
     return <MenuEntry> [
       for (int i = 0; i < systems.length; i++)
-        ValueEntry(letter: letter(i), label: "${systems[i].name} , ${systems[i].slot}", systems[i],
+        ValueEntry(letter: letter(i), label: systems[i].toString(), systems[i],
                 (system) => fm.pilotController.installSystem(ship, system),
             exitAfter: false, disabledReason: () => (ship.systemControl.availableSlotsbySystem(systems[i]).isEmpty
                 ? "No available slot"
                 : null))
+    ];
+  }
+
+  Menu buildInstallSlotMenu(Ship ship, ShipSystem system) {
+    final slots = ship.systemControl.availableSlotsbySystem(system).map((s) => s.slot).toList();
+    return <MenuEntry> [
+      for (int i = 0; i < slots.length; i++)
+        ValueEntry(letter: letter(i), label: "${slots[i].labelFor(system)}", slots[i],
+                (slot) => fm.msgController.addResultMsg(fm.pilotController.installSystem(ship, system, slot: slot)), exitAfter: true)
     ];
   }
 
@@ -186,15 +197,6 @@ class MenuFactory {
           label: shop.hangar.elementAt(i).shopDesc,
           shop.hangar.elementAt(i),
               (m) => fm.newShip(fm.player, shop.hangar.elementAt(i)),exitAfter: true)
-    ];
-  }
-
-  Menu buildInstallSlotMenu(Ship ship, ShipSystem system) {
-    final slots = ship.systemControl.availableSlotsbySystem(system).map((s) => s.slot).toList();
-    return <MenuEntry> [
-      for (int i = 0; i < slots.length; i++)
-        ValueEntry(letter: letter(i), label: "${slots[i]}", slots[i],
-                (slot) => fm.msgController.addResultMsg(fm.pilotController.installSystem(ship, system, slot: slot)), exitAfter: true)
     ];
   }
 
@@ -220,7 +222,7 @@ class MenuFactory {
   Menu buildShopSellMenu(Shop shop, {required Ship ship}) {
     // Markets only accept items on their buy list
     final items = (shop is Market)
-        ? ship.cargo.filter((i) => shop.canBuy(i))
+        ? ship.cargo.filterType<Item>().filter((i) => shop.canBuy(i))
         : ship.cargo;
 
     final menu = buildInventoryMenu(items,action: (i) => fm.msgController.addMsg(

@@ -40,7 +40,6 @@ enum StockSystem {
   wepCosmogripher(ShipSystemType.weapon,9,.75),
   webSingularitron(ShipSystemType.weapon,99,.75),
 
-
   lchfedTorpLauncher(ShipSystemType.launcher,1,.1),
   lchPlasmaCannon(ShipSystemType.launcher,2,.1),
 
@@ -60,15 +59,20 @@ enum StockSystem {
       ShipSystemType.weapon => Weapon.fromStock(this),
       ShipSystemType.launcher => Weapon.fromStock(this),
       ShipSystemType.ammo => Ammo.fromStock(this),
-
-      // TODO: Handle this case.
-      ShipSystemType.quarters => throw UnimplementedError(),
-      // TODO: Handle this case.
-      ShipSystemType.powerConverter => throw UnimplementedError(),
-      // TODO: Handle this case.
-      ShipSystemType.sensor => throw UnimplementedError(),
-      // TODO: Handle this case.
-      ShipSystemType.unknown => throw UnimplementedError()
+  // TODO: Handle this case.
+    ShipSystemType.quarters => throw UnimplementedError(),
+  // TODO: Handle this case.
+    ShipSystemType.converter => throw UnimplementedError(),
+  // TODO: Handle this case.
+    ShipSystemType.sensor => throw UnimplementedError(),
+  // TODO: Handle this case.
+    ShipSystemType.unknown => throw UnimplementedError(),
+  // TODO: Handle this case.
+    ShipSystemType.emitter => throw UnimplementedError(),
+  // TODO: Handle this case.
+    ShipSystemType.scrapper => throw UnimplementedError(),
+  // TODO: Handle this case.
+    ShipSystemType.adapter => throw UnimplementedError(),
   };
 
 }

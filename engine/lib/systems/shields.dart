@@ -1,10 +1,25 @@
+import 'package:crawlspace_engine/systems/weapons.dart';
 import '../stock_items/stock_pile.dart';
 import '../stock_items/stock_shields.dart';
 import 'power.dart';
 import 'ship_system.dart';
 
+class Resistance {
+  final level;
+  final DamageType type;
+  const Resistance(this.type,{this.level = 1});
+  static const none = Resistance(DamageType.none);
+}
+
 enum ShieldType {
-  fusion, fission, energon, gravimetric, nullSpace, darkMatter
+  fusion({Resistance(DamageType.kinetic)}),
+  fission({Resistance(DamageType.ion)}),
+  energon({Resistance(DamageType.photonic)}),
+  gravimetric({Resistance(DamageType.gravitron)}),
+  nullSpace({Resistance(DamageType.etherial)}),
+  darkMatter({Resistance(DamageType.neutrino),Resistance(DamageType.fire),Resistance(DamageType.plasma)});
+  final Set<Resistance> resists;
+  const ShieldType(this.resists);
 }
 
 enum ShieldEgo {
@@ -28,7 +43,7 @@ class Shield extends RechargableShipSystem {
     required super.baseRepairCost,
     required super.powerDraw,
     required super.mass,
-    super.slot,
+    super.manufacturer,
     super.rarity,
     super.stability,
     super.repairDifficulty,
@@ -38,7 +53,7 @@ class Shield extends RechargableShipSystem {
     ShieldData data = stockShields[stock]!;
     return Shield(
       data.systemData.name,
-      slot: data.systemData.slot,
+      manufacturer: data.systemData.manufacturer,
       mass: data.systemData.mass,
       powerDraw: data.systemData.powerDraw,
       stability: data.systemData.stability,

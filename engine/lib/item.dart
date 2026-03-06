@@ -2,7 +2,14 @@ import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'object.dart';
 
-class Item extends SpaceObject {
+mixin Itemizable {
+  String get name;
+  int get baseCost => 0;
+  String get shopDesc => name;
+  bool eq(Itemizable i) => i.name == name;
+}
+
+class Item extends SpaceObject with Itemizable {
   int get baseCost => _baseCost;
   String get shopDesc => name;
   static int _idCounter = 0;
@@ -16,7 +23,6 @@ class Item extends SpaceObject {
   Item(super.name, {super.desc, int baseCost = 0, this.rarity = 0, this.mass = .01, this.volume = .01, this.sellable = true, super.objColor})
       : id = _idCounter++, _baseCost = baseCost;
 
-  bool eq(Item i) => i.name == name;
 
   @override
   String toString() => name;
@@ -41,7 +47,7 @@ class SlotData {
   );
 }
 
-class ItemSlot<T extends Item> {
+class ItemSlot<T extends Itemizable> {
   final Inventory<T> inv;
   final SlotData data;
   final List<T> _items;
@@ -78,9 +84,9 @@ class ItemSlot<T extends Item> {
   }
 }
 
-typedef InventoryView<T extends Item> = Inventory<T>;
+typedef InventoryView<T extends Itemizable> = Inventory<T>;
 
-class Inventory<T extends Item> {
+class Inventory<T extends Itemizable> {
   int maxSlots = 99;
   final List<ItemSlot<T>> _slots;
   List<ItemSlot<T>> get slots => _slots;
@@ -123,6 +129,8 @@ class Inventory<T extends Item> {
     }
     return result;
   }
+
+  Inventory<Item> get items => filter((i) => i is Item) as Inventory<Item>;
 
   Inventory<S> filterType<S extends T>() {
     final result = Inventory<S>();

@@ -295,9 +295,9 @@ class Rng {
       }
     }
     //print("Ship Type: $shipType");
-    final shipClassType = ShipClassType.values.firstWhereOrNull((t) => t.shipclass.type == shipType) ?? ShipClassType.mentok;
+    final shipClassType = ShipClassType.values.firstWhereOrNull((t) => t.type == shipType) ?? ShipClassType.mentok;
     //print("Ship Type: $shipClassType");
-    Ship ship = Ship("HMS ${randomAlienName(rnd)}",pilot: pilot, location: location, shipClass: shipClassType.shipclass);
+    Ship ship = Ship("HMS ${randomAlienName(rnd)}",pilot: pilot, location: location, shipClass: ShipClass.fromEnum(shipClassType));
     ship.rndSystemInstaller.installRndPower(techLvl, rnd);
     ship.rndSystemInstaller.installRndEngine(Domain.impulse, techLvl, rnd);
     ship.rndSystemInstaller.installRndEngine(Domain.system, techLvl, rnd); //no hyperspace
