@@ -103,7 +103,7 @@ class ActivatorFactory {
 
   static Activator generateXenoScroll(XenomancySchool school, double quality) {
     return Activator.fromStock(StockActivator.statEnhanceScroll, (fm,pilot) {
-      pilot.xenoSkills[school] = min(1,pilot.xenoSkills[school]! + quality * .2);
+      pilot.setXeno(school,pilot.xenoSkill(school) + (quality * .2));
       fm.msg("You feel ${school.enhanceStr}");
       return true;
     },

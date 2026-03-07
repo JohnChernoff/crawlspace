@@ -15,6 +15,12 @@ enum AlphaSelectionType {
   corporations
 }
 
+enum InventoryType {
+  display,
+  use,
+  info
+}
+
 enum DepthViewOption {showAll,showClosest,toggle}
 class XenoIntent extends Intent {
   const XenoIntent();
@@ -36,7 +42,8 @@ class DirectionIntent extends Intent {
 }
 
 class OpenInventoryIntent extends Intent {
-  const OpenInventoryIntent();
+  final InventoryType type;
+  const OpenInventoryIntent(this.type);
 }
 
 class InstallationIntent extends Intent {
@@ -192,7 +199,10 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         const HyperSpaceIntent(),
 
         LogicalKeySet(LogicalKeyboardKey.keyI):
-        const OpenInventoryIntent(),
+        const OpenInventoryIntent(InventoryType.display),
+
+        LogicalKeySet(LogicalKeyboardKey.keyU):
+        const OpenInventoryIntent(InventoryType.use),
 
         LogicalKeySet(LogicalKeyboardKey.keyA):
         const ScannerSelectionIntent(false),
@@ -400,9 +410,14 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
             }
         ),
         OpenInventoryIntent: CallbackAction<OpenInventoryIntent>(
-            onInvoke: (_) {
-              if (fm.playerShip != null) {
-                fm.menuController.showMenu(() => fm.menuFactory.buildInventoryMenu(fm.playerShip!.inventory, shop: false),headerTxt: "Inventory");
+            onInvoke: (intent) {
+              if (intent.type == InventoryType.display) {
+                if (fm.playerShip != null) {
+                  fm.menuController.showMenu(() => fm.menuFactory
+                      .buildInventoryMenu(fm.playerShip!.inventory, shop: false),headerTxt: "Inventory");
+                }
+              } else if (intent.type == InventoryType.use) {
+                fm.menuController.showMenu(() => fm.menuFactory.buildInventoryUseMenu(fm.player));
               }
               return null;
             }

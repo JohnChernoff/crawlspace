@@ -74,7 +74,9 @@ class Pilot implements Locatable {
   bool get ready => auCooldown == 0;
   bool? _hostile;
   bool get hostile => _hostile ?? false;
-  final Map<XenomancySchool,double> xenoSkills = {};
+  final Map<XenomancySchool,double> _xenoSkills = {};
+  void setXeno(XenomancySchool school, double x) => _xenoSkills[school] = x.clamp(0,1);
+  double xenoSkill(XenomancySchool school) => _xenoSkills[school] ?? 0;
   final List<XenomancySpell> spellBook = [XenomancySpell.foldSpace];
   final Map<String,XenomancySpell> knownSpells = {};
   SpaceLocation? targetLoc;

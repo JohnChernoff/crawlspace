@@ -1,3 +1,4 @@
+import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/models/sub_model.dart';
 import '../../item.dart';
 import '../../rng/rng.dart';
@@ -47,6 +48,11 @@ class TreasureModel extends GalaxySubMod {
         treasureMap.putIfAbsent(loc, () => {}).add(activator);
       }
     }
+
+    final startingSystem = galaxy.farthestSystem(galaxy.fedHomeSystem);
+    final loc = SystemLocation(startingSystem, startingSystem.map.cells[Coord3D(5,5,5)]!);
+    treasureMap.putIfAbsent(loc, () => {}).add(ActivatorFactory.generate(StockActivator.xenoEnhanceScroll, .5, galaxy.rnd,
+        species: StockSpecies.vorlon.species));
   }
 
 }

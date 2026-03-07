@@ -22,6 +22,16 @@ class MenuFactory {
   String letter(int i) => mc.letter(i);
   const MenuFactory(this.fm);
 
+  Menu buildInventoryUseMenu(Pilot pilot) {
+    final ship = fm.shipRegistry.byPilot(pilot);
+    if (ship != null) {
+      final menu = ship.inventory.filterType<Activator>();
+      return menu.isEmpty ? [TextEntry(label: "No usable items")] : buildInventoryMenu(menu,
+          action: (i) => (i as Activator).activate(fm, pilot),shop: false);
+    }
+    return [];
+  }
+
   Menu buildHyperspaceMenu(System system) {
     return List.generate(system.links.length, (i) {
       final s = system.links.elementAt(i);
@@ -59,8 +69,7 @@ class MenuFactory {
   Menu buildInventoryMenu(InventoryView view, {shop = true, void Function(Item item)? action}) { //print("Inventory: ${ship.allInventory}");
     final items = view.items;
     return List.generate(items.slots.length,(i) {
-      final slot = items.slots.elementAt(i);
-      print ("Inventory slot: ${slot.slotName}");
+      final slot = items.slots.elementAt(i); //print ("Inventory slot: ${slot.slotName}");
       if (action != null) return ValueEntry(letter: mc.letter(i), label: slot.label(shop: shop), slot.item, (m) => action(m));
       else return TextEntry(label: slot.label(shop: shop));
     });

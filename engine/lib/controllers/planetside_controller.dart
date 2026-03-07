@@ -202,7 +202,7 @@ class PlanetsideController extends FugueController {
         _ => "Glurg..."
       });
     }
-    if (fm.aiRng.nextDouble() < .25) { //(env.rapport * .1)) {
+    if (fm.aiRng.nextDouble() < .25) { //(env.rapport * .1)) { //TODO: debug settings
       final nearestTreasureSystem = fm.galaxy.treasureMod.treasureMap.keys
           .sorted((a,b) => fm.galaxy.topo.distance(a.system, fm.player.system)
           .compareTo(fm.galaxy.topo.distance(b.system, fm.player.system))).first;

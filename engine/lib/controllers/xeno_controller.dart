@@ -100,7 +100,7 @@ class XenoController {
   double effectProb(XenomancySpell spell, {int? bonus}) {
     final intelligence = ship.pilot.attributes[AttribType.int] ?? .5;
     final level = spell.level / 9;
-    final skill = ship.pilot.skills[SkillType.xeno]!;
+    final skill = ship.pilot.skills[SkillType.xeno]!; //TODO: pilot.xenoSkills
 
     final intFactor = 0.5 + 0.5 * intelligence;
     final levFactor = 0.33 + 0.67 * (1 - level);
