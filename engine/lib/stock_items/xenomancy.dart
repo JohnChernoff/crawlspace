@@ -5,15 +5,15 @@ enum XenoFlags {
 }
 
 enum XenomancySchool {
-  quantum("quantum"), //translocations
-  elemental("elemental"), //elemental
-  dark("dark"), //indirect necromancy (dark matter)
-  antimatter("antimatter"), //direct necromancy (damage)
-  astramancy("astramancy"), //conjurations
-  gravimancy("gravimancy"), //hexes
-  chronomancy("chronomancy"); //abjuration/summoning
-  final String schoolName;
-  const XenomancySchool(this.schoolName);
+  quantum("quantum","cosmically oriented","like Schroedinger's cat"), //translocations
+  elemental("elemental","attuned to the elements","like Dr. Watson"), //elemental
+  dark("dark","at home in the shadows","a bit pale"), //indirect necromancy (dark matter)
+  antimatter("antimatter","powerful","impotent"), //direct necromancy (damage)
+  astramancy("astramancy","sunny","loony"), //conjurations
+  gravimancy("gravimancy","lighter","heavier"), //hexes
+  chronomancy("chronomancy","punctual","tardy"); //abjuration/summoning
+  final String schoolName, enhanceStr, devolveStr;
+  const XenomancySchool(this.schoolName,this.enhanceStr,this.devolveStr);
 }
 
 enum XenomancySpell {

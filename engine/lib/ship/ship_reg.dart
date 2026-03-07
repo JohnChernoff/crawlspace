@@ -2,7 +2,7 @@ import 'package:crawlspace_engine/actors/pilot.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/location.dart';
-import '../object.dart';
+import '../galaxy/geometry/object.dart';
 
 class ShipRegistry {
   Set<Ship> get all => _all;

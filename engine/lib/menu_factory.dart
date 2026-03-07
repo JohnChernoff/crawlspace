@@ -12,7 +12,7 @@ import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 import 'foosham/foosham_session.dart';
 import 'galaxy/system.dart';
 import 'menu.dart';
-import 'object.dart';
+import 'galaxy/geometry/object.dart';
 
 typedef Menu = List<MenuEntry>;
 

@@ -1,5 +1,5 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 
 import 'grid.dart';

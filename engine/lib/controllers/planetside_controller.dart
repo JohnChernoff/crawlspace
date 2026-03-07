@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/rng/drinks_gen.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
-import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/stock_items/ship_systems/stock_pile.dart';
 import '../actors/agent.dart';
@@ -202,10 +202,10 @@ class PlanetsideController extends FugueController {
         _ => "Glurg..."
       });
     }
-    if (fm.aiRng.nextDouble() < (env.rapport * .1)) {
-      final nearestTreasureSystem = fm.galaxy.treasureMap.keys
+    if (fm.aiRng.nextDouble() < .25) { //(env.rapport * .1)) {
+      final nearestTreasureSystem = fm.galaxy.treasureMod.treasureMap.keys
           .sorted((a,b) => fm.galaxy.topo.distance(a.system, fm.player.system)
-          .compareTo(fm.galaxy.topo.distance(a.system, fm.player.system))).first;
+          .compareTo(fm.galaxy.topo.distance(b.system, fm.player.system))).first;
       fm.msg("Psst - there's treasure at ${nearestTreasureSystem.loc}");
     }
     final security = env is Planet ? (env.population + env.fedLvl) / 2.0 : 0.5;

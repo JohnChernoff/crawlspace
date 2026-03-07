@@ -6,7 +6,7 @@ import '../galaxy/geometry/grid.dart';
 import '../galaxy/hazards.dart';
 import '../galaxy/geometry/impulse.dart';
 import '../galaxy/geometry/location.dart';
-import '../path_gen.dart';
+import '../galaxy/geometry/path_gen.dart';
 import '../actors/pilot.dart';
 import '../galaxy/geometry/sector.dart';
 import '../ship/ship.dart';
@@ -116,8 +116,8 @@ class LayerTransitController extends FugueController {
         if (sysLoc.cell.hasHaz(Hazard.roid)) PathGenerator.generate(impMap,4,0,fm.rnd, haz: Hazard.roid);
         impLevel = ImpulseLevel(impMap,sysLoc.cell);
         sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel);
-        if (fm.galaxy.treasureMap.containsKey(sysLoc)) {
-          for (final i in fm.galaxy.treasureMap[sysLoc]!) {
+        if (fm.galaxy.treasureMod.treasureMap.containsKey(sysLoc)) {
+          for (final i in fm.galaxy.treasureMod.treasureMap[sysLoc]!) {
             impMap.rndCell(fm.itemRng).items.add(i);
           }
         }

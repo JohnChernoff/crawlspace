@@ -1,8 +1,13 @@
+import 'dart:math';
+
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/stock_items/activators.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
+import 'actors/pilot.dart';
 import 'galaxy/galaxy.dart';
 import 'galaxy/system.dart';
-import 'object.dart';
+import 'galaxy/geometry/object.dart';
 
 abstract interface class Nameable {
   String get selectionName;
@@ -30,8 +35,8 @@ class Item extends SpaceObject with Itemizable {
   final double volume; //cubic meters
   final sellable;
 
-  Item(super.name, {super.desc, int baseCost = 0, this.rarity = 0, this.mass = .01, this.volume = .01, this.sellable = true, super.objColor})
-      : id = _idCounter++, _baseCost = baseCost;
+  Item(super.name, {super.desc, int baseCost = 0, this.rarity = 0, this.mass = .01, this.volume = .01,
+    this.sellable = true, super.objColor}) : id = _idCounter++, _baseCost = baseCost;
 
 
   @override
@@ -42,6 +47,51 @@ class Relic extends Item {
   Species species;
   Relic(super.name, this.species, {super.sellable = false}) {
     objColor = species.graphCol;
+  }
+}
+
+typedef ActivatorAction = bool Function(FugueEngine fm, Pilot pilot);
+
+class Activator extends Item {
+  final ActivatorData data;
+  int charges;
+  double power;
+  bool get isRod => data.type == ActivatorType.rod;
+  bool get ready => isRod ? recharged : charges > 0;
+  bool get useless => !isRod && !ready;
+  bool get recharged => rechargeMeter >= rechargeRequirement;
+  int rechargeMeter = 0, rechargeRequirement;
+  ActivatorAction onActivate;
+  Activator(super.name, this.onActivate, {required this.data, super.desc, this.power = .5, this.charges = 1, this.rechargeRequirement = 0}) :
+        super(rarity: data.rarity);
+  factory Activator.fromStock(StockActivator stock, ActivatorAction action, {
+    double quality = .5, String? name, String? desc}) => switch(stock.data.type) {
+    ActivatorType.scroll => Activator(name ?? stock.name, action,data: stock.data, power: quality,
+        desc: desc ?? stock.desc),
+    ActivatorType.wand => Activator(name ?? stock.name, action,data: stock.data, power: .5,
+        charges: (16 * quality).ceil(), desc: desc ?? stock.desc),
+    ActivatorType.rod => Activator(name ?? stock.name, action,data: stock.data, power: .5,
+        rechargeRequirement: (250 * quality).ceil(), desc: desc ?? stock.desc),
+  };
+
+  void consumeCharge() {
+    if (isRod) rechargeMeter = 0;
+    else charges = max(charges - 1, 0);
+  }
+
+  bool activate(FugueEngine fm, Pilot pilot) {
+    if (ready) {
+      consumeCharge();
+      return onActivate(fm,pilot);
+    } return false;
+
+  }
+
+  bool recharge(int amount) {
+    if (!ready) {
+      rechargeMeter = min(rechargeMeter + amount,rechargeRequirement);
+      return ready;
+    } return false;
   }
 }
 

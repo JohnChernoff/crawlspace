@@ -1,8 +1,8 @@
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
-import 'color.dart';
-import 'item.dart';
+import '../../color.dart';
+import '../../item.dart';
 
 abstract interface class Locatable {
   SpaceLocation get loc;

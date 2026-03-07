@@ -3,7 +3,7 @@ import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import '../galaxy/galaxy.dart';
-import '../object.dart';
+import '../galaxy/geometry/object.dart';
 import 'pilot.dart';
 import '../ship/ship.dart';
 

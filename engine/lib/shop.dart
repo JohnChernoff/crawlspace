@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
-import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/stock_items/trade/commodities.dart';
 import 'item.dart';
 import 'actors/pilot.dart';

@@ -8,11 +8,11 @@ import '../../stock_items/species.dart';
 import '../../ship/systems/ship_system.dart';
 import '../kernels/corp_kern.dart';
 
-class CorpMod extends GalaxySubMod {
+class CorpModel extends GalaxySubMod {
   final Map<Corporation, CorpKernelField> kernels = {};
   final Map<Species,Map<Corporation,System>> headquarters = {};
 
-  CorpMod(super.galaxy) {
+  CorpModel(super.galaxy) {
     for (final species in galaxy.allSpecies) {
       final speciesCorps = Corporation.values
           .where((c) => c.stockSpecies.species == species)

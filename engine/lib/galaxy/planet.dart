@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
-import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/stock_items/trade/commodities.dart';

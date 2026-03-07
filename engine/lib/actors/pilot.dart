@@ -15,11 +15,19 @@ import '../galaxy/galaxy.dart';
 import '../galaxy/hazards.dart';
 import '../galaxy/geometry/location.dart';
 import '../menu.dart';
-import '../object.dart';
+import '../galaxy/geometry/object.dart';
 import '../galaxy/system.dart';
 
 enum AttribType {
-  int,wis,str,dex,cha,con
+  int("clever","stupid"),
+  wis("wiser","ignorant"),
+  str("stronger","weaker"),
+  dex("nibler","clumsier"),
+  con("hardier","frail"),
+  cha("more persuasive","less persuasive"),
+  ;
+  final String enhanceStr, devolveStr;
+  const AttribType(this.enhanceStr,this.devolveStr);
 }
 
 enum SkillType {

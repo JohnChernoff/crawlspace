@@ -3,7 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/effects.dart';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
-import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/rng/sys_gen.dart';
 import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:crawlspace_engine/ship/ship_sys.dart';

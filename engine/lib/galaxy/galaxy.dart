@@ -6,9 +6,9 @@ import 'package:crawlspace_engine/galaxy/models/flow_model.dart';
 import 'package:crawlspace_engine/galaxy/models/topology.dart';
 import 'package:crawlspace_engine/galaxy/models/trade_model.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/models/treasure.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../item.dart';
-import '../rng/rng.dart';
 import 'flow_field.dart';
 import '../fugue_engine.dart';
 import 'kernels/auth_kern.dart';
@@ -71,16 +71,13 @@ class Galaxy {
   late CivModel civMod;
   late HeatModel heatMod;
   late FederationModel fedMod;
+  late TreasureModel treasureMod;
+  late TradeModel tradeMod;
+  late CorpModel corpMod;
   late CivKernelField civKernel;
   late TechKernelField techKernel;
   late CommerceKernelField commerceKernel;
   late AuthorityKernelField fedKernel;
-  Map<SystemLocation,Set<Item>> treasureMap = {};
-  Item ancientFedArt1 = Item("Primitive Humanoid Communications Device",desc: "Something called an 'IPhone 27'",sellable: false);
-  Item ancientFedArt2 = Item("A glowing datastack",desc: "A datastack entitled 'Ancient Earth History (500 BC - 2500 AD)'",sellable: false);
-  Item ancientFedArt3 = Item("Ivory chess piece", desc: "A chess knight, floating in space. Odd.",sellable: false);
-  late TradeModel tradeMod;
-  late CorpMod corpMod;
 
   // Static (computed at gen, recomputed on tickCentury)
   //late TradeKernelField supplyField;    // per-commodity supply gradient
@@ -106,7 +103,7 @@ class Galaxy {
     civMod.debugPrintPoliticalMap();
     computeKernels();
     initFlowFields();
-    corpMod = CorpMod(this);
+    corpMod = CorpModel(this);
     fedMod = FederationModel(this);
     heatMod = HeatModel(this);
     getRandomLinkableSystem(fedHomeSystem)?.starOne = true;
@@ -125,29 +122,15 @@ class Galaxy {
     }
 
     tradeMod = TradeModel(this);
+    treasureMod = TreasureModel(this);
 
-    Set<Item> items = {ancientFedArt1,ancientFedArt2,ancientFedArt3};
-    for (int i=0; i<1000; i++) items.add(Rng.randomArtifact(rnd, 100000));
-    for (Item i in items) {
-      final loc = rndLoc(rnd);
-      treasureMap.putIfAbsent(loc, () => {}).add(i); //print("Adding to ${loc}: ${i.name}, ${i.baseCost}");
-    }
-    for (final s in StockSpecies.values) {
-      final t = territory(s.species);
-      if (t.isNotEmpty) {
-        final sys = t.elementAt(rnd.nextInt(t.length));
-        final r = Relic("${s.species.name} relic", s.species);
-        treasureMap.putIfAbsent(SystemLocation(sys,sys.map.rndCell(rnd)), () => {}).add(r);
-      }
-    }
+
     print(relicMap); print(relics);
     maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
   }
 
-  Iterable<Relic> get relics => relicMap
-      .expand((entry) => entry.value)
-      .whereType<Relic>();
-  Iterable<MapEntry<SystemLocation, Set<Item>>> get relicMap => treasureMap.entries.where((t) => t.value.any((i) => i is Relic));
+  Iterable<Relic> get relics => relicMap.expand((entry) => entry.value).whereType<Relic>();
+  Iterable<MapEntry<SystemLocation, Set<Item>>> get relicMap => treasureMod.treasureMap.entries.where((t) => t.value.any((i) => i is Relic));
   Iterable<System> territory(Species species) => systems.where((s) => civMod.dominantSpecies(s) == species);
 
   SystemLocation rndLoc(Random rnd) {
@@ -379,57 +362,4 @@ class Galaxy {
       ..take(10)
           .forEach((s)=> print("${s.name}: ${commerceKernel.val(s).toStringAsFixed(2)}"));
   }
-
 }
-
-/*
-  Map<Species,double> populationMix(System s) {
-    final raw = <Species,double>{};
-    for (final sp in allSpecies) {
-      raw[sp] = exp(-topo.distance(findHomeworld(sp), s) / sp.range) * sp.propagation;
-    }
-    return normalize(raw);
-  }
-
-  List<double> speciesOneHot(Species sp) {
-    final v = List<double>.filled(allSpecies.length, 0.0);
-    v[allSpecies.indexOf(sp)] = 1.0;
-    return v;
-  }
- */
-
-//crimeEvent(system) { authorityShockSources[system] += 10.0; }
-
-//final SpeciesRegistry speciesRegistry = SpeciesRegistry(StockSpecies.values.map((s) => s.species).toList());
-//late FlowField<List<double>> civField;
-
-//PiracyKernelField
-//piracy = commerceLevel * (1 - fedLevel)
-
-//double fedStdKernel(int d) => exp(-d / 6.0);      // soft control gradient
-//double harshFed(int d) => 1 / (1 + d * d);     // sharp jurisdiction zones
-//double imperial(int d) => exp(-d / 12.0);      // huge empires
-
-/*
-  TrafficGenHint getRndTrafficLvl() {
-    return switch(rnd.nextInt(100)) {
-      > 95 => TrafficGenHint.culDeSac,
-      < 10 => TrafficGenHint.hub,
-      int() => TrafficGenHint.normal,
-    };
-  }
-
-      final fedPreset = FlowPreset<double>(
-      edgeWeight: (a,b) => 1.0,
-      decay: (s,v) => v * 0.999,
-      source: (s) => fedMod.fedPressure[s]! * 0.01,
-    );
-
-        //registerFlowField("fedSurveillance", FlowField(this,DoubleOps(),fedPreset));
-    //registerFlowField("trade", FlowField(this,DoubleOps(),null));
-    //registerFlowField("civFlow", CivFlowField(this, speciesiRegistry));
-
-        //flowScheduler.register("fedSurveillance", 10, rnd); // slower
-    //flowScheduler.register("trade", 100, rnd);   // very slow
-    //flowScheduler.register("civFlow", 50, rnd); // VERY slow
- */
