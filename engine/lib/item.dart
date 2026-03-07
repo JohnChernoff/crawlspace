@@ -1,6 +1,16 @@
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
+import 'galaxy/galaxy.dart';
+import 'galaxy/system.dart';
 import 'object.dart';
+
+abstract interface class Nameable {
+  String get selectionName;
+}
+
+abstract interface class Normalizable extends Nameable {
+  Map<System,double> normalize(Galaxy g, {log = true});
+}
 
 mixin Itemizable {
   String get name;

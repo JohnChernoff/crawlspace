@@ -1,7 +1,7 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
-import 'package:crawlspace_engine/grid.dart';
-import 'package:crawlspace_engine/systems/ship_system.dart';
+import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
+import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 
 void main() {
   debugLevel = DebugLevel.Lowest;

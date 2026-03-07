@@ -1,11 +1,8 @@
-import 'package:crawlspace_engine/location.dart';
-import 'package:crawlspace_engine/ship.dart';
+import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'color.dart';
-
-abstract interface class Nameable {
-  String get selectionName;
-}
+import 'item.dart';
 
 abstract interface class Locatable {
   SpaceLocation get loc;

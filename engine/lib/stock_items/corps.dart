@@ -1,7 +1,9 @@
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
+import 'package:crawlspace_engine/galaxy/system.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../color.dart';
-import '../object.dart';
-import '../systems/ship_system.dart';
+import '../item.dart';
+import '../ship/systems/ship_system.dart';
 
 enum BrandSupport { native, trustedPartner, compatible, thirdParty, needsAdapter } //null: needsAdapter
 enum CorpTier {
@@ -13,7 +15,7 @@ enum CorpTier {
   const CorpTier(this.costMultiplier);
 }
 
-enum Corporation implements Nameable {
+enum Corporation implements Normalizable  {
   genCorp(
       color: GameColors.green,
       stockSpecies: StockSpecies.humanoid,
@@ -202,5 +204,10 @@ enum Corporation implements Nameable {
 
   CorpTier? tierFor(ShipSystemType category) => products[category];
   bool makes(ShipSystemType category) => products.containsKey(category);
+
+  @override
+  Map<System, double> normalize(Galaxy g, {log = true}) {
+    return g.corpMod.normalizedInfluence(this); //print(influence);
+  }
 
 }

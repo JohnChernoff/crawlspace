@@ -1,8 +1,8 @@
 import 'dart:math';
 
-import 'package:crawlspace_engine/hazards.dart';
+import 'package:crawlspace_engine/galaxy/hazards.dart';
 
-import 'grid.dart';
+import 'galaxy/geometry/grid.dart';
 
 abstract class PathGenerator<T extends GridCell> {
   static void generate<T extends GridCell>(

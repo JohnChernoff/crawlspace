@@ -1,8 +1,8 @@
 import 'dart:math';
 
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/ship.dart';
-import 'package:crawlspace_engine/systems/weapons.dart';
+import 'package:crawlspace_engine/ship/ship.dart';
+import 'package:crawlspace_engine/ship/systems/weapons.dart';
 
 import 'color.dart';
 

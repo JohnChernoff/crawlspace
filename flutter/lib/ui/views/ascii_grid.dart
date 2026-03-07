@@ -1,8 +1,8 @@
-import 'package:crawlspace_engine/coord_3d.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/grid.dart';
-import 'package:crawlspace_engine/impulse.dart';
-import 'package:crawlspace_engine/ship.dart';
+import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
+import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
+import 'package:crawlspace_engine/galaxy/geometry/impulse.dart';
+import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:flutter/material.dart';
 import 'ascii_gridcell_widget.dart';
 

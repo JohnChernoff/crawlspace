@@ -1,4 +1,4 @@
-import 'package:crawlspace_engine/grid.dart';
+import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 
 enum XenoFlags {
   trans, damage, summoning, directional, targeted, aoe, escape

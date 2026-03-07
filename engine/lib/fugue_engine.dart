@@ -1,14 +1,14 @@
 import 'dart:math';
-import 'package:crawlspace_engine/hazards.dart';
+import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
-import 'package:crawlspace_engine/pilot_reg.dart';
-import 'package:crawlspace_engine/ship_reg.dart';
+import 'package:crawlspace_engine/actors/pilot_reg.dart';
+import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
-import 'package:crawlspace_engine/systems/engines.dart';
-import 'package:crawlspace_engine/systems/power.dart';
-import 'package:crawlspace_engine/systems/shields.dart';
-import 'agent.dart';
+import 'package:crawlspace_engine/ship/systems/engines.dart';
+import 'package:crawlspace_engine/ship/systems/power.dart';
+import 'package:crawlspace_engine/ship/systems/shields.dart';
+import 'actors/agent.dart';
 import 'audio_service.dart';
 import 'color.dart';
 import 'controllers/audio_controller.dart';
@@ -21,17 +21,17 @@ import 'controllers/pilot_controller.dart';
 import 'controllers/planetside_controller.dart';
 import 'controllers/scanner_controller.dart';
 import 'galaxy/galaxy.dart';
-import 'impulse.dart';
-import 'location.dart';
-import 'pilot.dart';
-import 'player.dart';
+import 'galaxy/geometry/impulse.dart';
+import 'galaxy/geometry/location.dart';
+import 'actors/pilot.dart';
+import 'actors/player.dart';
 import 'rng/rng.dart';
-import 'ship.dart';
+import 'ship/ship.dart';
 import 'shop.dart';
-import 'stock_items/stock_pile.dart';
+import 'stock_items/ship_systems/stock_pile.dart';
 import 'stock_items/stock_ships.dart';
 import 'galaxy/system.dart';
-import 'systems/weapons.dart';
+import 'ship/systems/weapons.dart';
 
 const blownUp = -1;
 
@@ -73,7 +73,7 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1q3";
+  final String version = "0.1r";
   final Galaxy galaxy;
   late Player player;
   int numAgents = 3;

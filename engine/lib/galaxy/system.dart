@@ -1,16 +1,16 @@
 import 'dart:collection';
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/location.dart';
-import 'package:crawlspace_engine/object.dart';
-import 'package:crawlspace_engine/sector.dart';
+import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import '../color.dart';
-import '../coord_3d.dart';
+import '../item.dart';
+import 'geometry/coord_3d.dart';
 import 'galaxy.dart';
-import '../grid.dart';
-import '../hazards.dart';
-import '../impulse.dart';
-import '../planet.dart';
+import 'geometry/grid.dart';
+import 'hazards.dart';
+import 'geometry/impulse.dart';
+import 'planet.dart';
 import '../rng/rng.dart';
 
 enum TrafficGenHint { normal, culDeSac, hub }

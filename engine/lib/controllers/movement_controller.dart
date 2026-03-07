@@ -1,8 +1,8 @@
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
-import '../coord_3d.dart';
-import '../grid.dart';
-import '../ship.dart';
-import '../systems/engines.dart';
+import '../galaxy/geometry/coord_3d.dart';
+import '../galaxy/geometry/grid.dart';
+import '../ship/ship.dart';
+import '../ship/systems/engines.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 

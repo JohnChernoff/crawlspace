@@ -1,12 +1,12 @@
 import 'dart:math';
-import 'package:crawlspace_engine/agent.dart';
+import 'package:crawlspace_engine/actors/agent.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
-import 'package:crawlspace_engine/object.dart';
+import 'package:crawlspace_engine/item.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
-import 'package:crawlspace_engine/stock_items/goods.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
+import 'package:crawlspace_flutter/ui/views/painters.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -118,8 +118,7 @@ class GalaxyMapState extends State<GalaxyMap> {
     );
   }
 
-  final Map<GalaxyMapLegend, Map<System, double>> _legendCache = {};
-  GalaxyMapLegend? _cachedLegend;
+  final Map<GalaxyMapLegend, Map<System, double>> _legendCache = {}; //GalaxyMapLegend? _cachedLegend;
   Nameable? _cachedType;
   final Map<System, double> _cachedItemVals = {};
 
@@ -153,46 +152,9 @@ class GalaxyMapState extends State<GalaxyMap> {
     _cachedType = nameable;
     _cachedItemVals.clear();
     final g = widget.fugueModel.galaxy;
-    if (nameable is UniversalCommodity) cacheUniversalCommodity(g, nameable);
-    if (nameable is Corporation) cacheCorpInfluence(g, nameable);
-
-  }
-
-  void cacheCorpInfluence(Galaxy g, Corporation c) {
-    final influence = g.corpMod.normalizedInfluence(c); //print(influence);
-    _cachedItemVals.clear();
-    _cachedItemVals.addAll(influence);
-  }
-
-  void cacheUniversalCommodity(Galaxy g, UniversalCommodity commodity, {log = true}) {
-    // compute all system prices
-    final allPrices = <System, double>{};
-    for (final system in g.systems) {
-      final sysPrices = system.planets.map((p) {
-        final hasSupply = g.tradeMod.planetSupply[p]
-            ?.contains(commodity) ?? false;
-        final dist = g.tradeMod.nearestSourceDist(commodity, p);
-        return commodity.priceAt(
-            hasLocalSupply: hasSupply,
-            distFromSource: dist).toDouble();
-      }).toList();
-      if (sysPrices.isNotEmpty) {
-        allPrices[system] = sysPrices.reduce((a, b) => a + b) / sysPrices.length;
-      }
-    }
-
-    // normalize
-    if (allPrices.isEmpty) return;
-    final minPrice = allPrices.values.reduce(min);
-    final maxPrice = allPrices.values.reduce(max);
-    for (final entry in allPrices.entries) {
-      if (log) {
-        _cachedItemVals[entry.key] = maxPrice > minPrice
-            ? log(entry.value - minPrice + 1) / log(maxPrice - minPrice + 1)
-            : 0.5;
-      } else {
-        _cachedItemVals[entry.key] = maxPrice > minPrice ? (entry.value - minPrice) / (maxPrice - minPrice) : 0.5;
-      }
+    if (nameable is Normalizable) {
+      _cachedItemVals.clear();
+      _cachedItemVals.addAll(nameable.normalize(g));
     }
   }
 
@@ -373,138 +335,6 @@ class GalaxyMapState extends State<GalaxyMap> {
   }
 }
 
-class PentagramPainter extends CustomPainter {
-  final Color color;
-  final Color? borderCol;
-  PentagramPainter(this.color,{this.borderCol});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final double radius = min(size.width, size.height) / 2;
-    final double centerX = size.width / 2;
-    final double centerY = size.height / 2;
-
-    final Path path = Path();
-
-    for (int i = 0; i < 5; i++) {
-      final double angle = (pi / 2) + (2 * pi * i * 2 / 5);
-      final double x = centerX + radius * cos(angle);
-      final double y = centerY - radius * sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
-    }
-
-    path.close();
-    canvas.drawPath(path, paint);
-
-    if (borderCol != null) {
-      paint = Paint()
-        ..strokeWidth = 2
-        ..color = borderCol!
-        ..style = PaintingStyle.stroke;
-      path.close();
-      canvas.drawPath(path, paint);
-    }
-  }
-
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
-
-class HexagramPainter extends CustomPainter {
-  final Color color;
-  final Color? borderCol;
-  HexagramPainter(this.color,{this.borderCol});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final double radius = min(size.width, size.height) / 2;
-    final Offset center = Offset(size.width / 2, size.height / 2);
-
-    Path triangle(double rotation) {
-      final Path path = Path();
-      for (int i = 0; i < 3; i++) {
-        final angle = (2 * pi * i / 3) + rotation;
-        final x = center.dx + radius * cos(angle);
-        final y = center.dy + radius * sin(angle);
-        if (i == 0) {
-          path.moveTo(x, y);
-        } else {
-          path.lineTo(x, y);
-        }
-      }
-      path.close();
-      return path;
-    }
-
-    canvas.drawPath(triangle(0), paint);
-    canvas.drawPath(triangle(pi), paint); // flipped triangle
-
-    if (borderCol != null) {
-      paint = Paint()
-        ..strokeWidth = 2
-        ..color = borderCol!
-        ..style = PaintingStyle.stroke;
-      canvas.drawPath(triangle(0), paint);
-      canvas.drawPath(triangle(pi), paint); // flipped triangle
-    }
-
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
-
-class DiamondPainter extends CustomPainter {
-  final Color color;
-  final Color? borderCol;
-  DiamondPainter(this.color,{this.borderCol});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    Paint paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-
-    final cx = size.width / 2;
-    final cy = size.height / 2;
-    final rx = size.width * 0.4;
-    final ry = size.height * 0.45;
-
-    final path = Path()
-      ..moveTo(cx, cy - ry)   // top
-      ..lineTo(cx + rx, cy)   // right
-      ..lineTo(cx, cy + ry)   // bottom
-      ..lineTo(cx - rx, cy)   // left
-      ..close();
-
-    canvas.drawPath(path, paint);
-
-    if (borderCol != null) {
-      paint = Paint()
-        ..strokeWidth = 2
-        ..color = borderCol!
-        ..style = PaintingStyle.stroke;
-      canvas.drawPath(path, paint);
-    }
-
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
-}
 
 /*
   Color planColor(Galaxy g, System system) {

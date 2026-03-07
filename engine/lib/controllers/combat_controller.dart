@@ -1,8 +1,8 @@
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/systems/weapons.dart';
-import '../coord_3d.dart';
-import '../impulse.dart';
-import '../ship.dart';
+import 'package:crawlspace_engine/ship/systems/weapons.dart';
+import '../galaxy/geometry/coord_3d.dart';
+import '../galaxy/geometry/impulse.dart';
+import '../ship/ship.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 

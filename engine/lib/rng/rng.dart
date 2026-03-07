@@ -1,15 +1,15 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/pilot.dart';
-import 'package:crawlspace_engine/ship.dart';
+import 'package:crawlspace_engine/actors/pilot.dart';
+import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'package:crawlspace_engine/stock_items/stock_ships.dart';
-import '../coord_3d.dart';
+import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/galaxy.dart';
 import '../galaxy/system.dart';
-import '../grid.dart';
+import '../galaxy/geometry/grid.dart';
 import '../item.dart';
-import '../location.dart';
+import '../galaxy/geometry/location.dart';
 
 enum ColorName {
   white,black,blue,red,green,orange,yellow,lavender,peach,vanilla,cream,

@@ -1,8 +1,8 @@
 import 'package:crawlspace_engine/item.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
-import '../ship.dart';
-import '../systems/ship_system.dart';
-import '../systems/weapons.dart';
+import '../ship/ship.dart';
+import '../ship/systems/ship_system.dart';
+import '../ship/systems/weapons.dart';
 
 enum HullType {
   basic([],1),

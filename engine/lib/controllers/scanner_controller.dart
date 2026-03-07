@@ -1,8 +1,8 @@
 import 'package:collection/collection.dart';
 import '../fugue_engine.dart';
 import '../color.dart';
-import '../grid.dart';
-import '../ship.dart';
+import '../galaxy/geometry/grid.dart';
+import '../ship/ship.dart';
 import 'fugue_controller.dart';
 
 enum ScannerMode {

@@ -1,18 +1,18 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
-import 'package:crawlspace_engine/coord_3d.dart';
-import 'package:crawlspace_engine/ship_sys.dart';
+import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
+import 'package:crawlspace_engine/ship/ship_sys.dart';
 import '../galaxy/system.dart';
-import '../grid.dart';
-import '../impulse.dart';
-import '../location.dart';
+import '../galaxy/geometry/grid.dart';
+import '../galaxy/geometry/impulse.dart';
+import '../galaxy/geometry/location.dart';
 import '../menu.dart';
-import '../pilot.dart';
+import '../actors/pilot.dart';
 import '../rng/rng.dart';
-import '../ship.dart';
-import '../systems/ship_system.dart';
-import '../systems/weapons.dart';
+import '../ship/ship.dart';
+import '../ship/systems/ship_system.dart';
+import '../ship/systems/weapons.dart';
 import 'fugue_controller.dart';
 import 'movement_controller.dart';
 

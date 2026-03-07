@@ -13,7 +13,8 @@
 import 'dart:math';
 import 'package:crawlspace_engine/stock_items/species.dart';
 
-import '../stock_items/goods.dart';
+import '../stock_items/trade/goods.dart';
+import '../stock_items/trade/trade_enums.dart';
 
 class GoodsGen {
 

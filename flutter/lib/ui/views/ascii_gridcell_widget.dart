@@ -1,10 +1,10 @@
 import 'dart:math';
-import 'package:crawlspace_engine/grid.dart';
-import 'package:crawlspace_engine/hazards.dart';
-import 'package:crawlspace_engine/impulse.dart';
-import 'package:crawlspace_engine/sector.dart';
-import 'package:crawlspace_engine/ship.dart';
-import 'package:crawlspace_engine/ship_reg.dart';
+import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
+import 'package:crawlspace_engine/galaxy/geometry/impulse.dart';
+import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
+import 'package:crawlspace_engine/galaxy/hazards.dart';
+import 'package:crawlspace_engine/ship/ship.dart';
+import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:flutter/material.dart';
 import '../../options.dart';
 

@@ -2,8 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:collection/collection.dart';
 import '../fugue_engine.dart';
+import '../item.dart';
 import '../menu.dart';
-import '../object.dart';
 import 'fugue_controller.dart';
 
 class AlphaCompleter<T extends Nameable> {

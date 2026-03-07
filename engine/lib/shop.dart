@@ -1,14 +1,14 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/object.dart';
-import 'stock_items/goods.dart';
+import 'package:crawlspace_engine/stock_items/trade/commodities.dart';
 import 'item.dart';
-import 'pilot.dart';
-import 'planet.dart';
+import 'actors/pilot.dart';
+import 'galaxy/planet.dart';
 import 'rng/rng.dart';
-import 'ship.dart';
-import 'stock_items/stock_pile.dart';
-import 'systems/ship_system.dart';
+import 'ship/ship.dart';
+import 'stock_items/ship_systems/stock_pile.dart';
+import 'ship/systems/ship_system.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared types
@@ -141,7 +141,7 @@ class SystemShop extends Shop {
     };
 
     final itemSelection = generateSystemInventory(quantity, sysTypes, techLvl, rnd,
-        availableCorps: g.corpMod.activeCorporations(location.loc.system),
+        corpWeights: g.corpMod.corpWeights(location.loc.system),
         militaryAvailable: g.corpMod.militaryAvailable(location.loc.system));
     if (itemSelection.isEmpty) return;
 

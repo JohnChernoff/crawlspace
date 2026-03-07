@@ -1,6 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/foosham/throws.dart';
-import 'package:crawlspace_engine/galaxy/civ_model.dart';
+import 'package:crawlspace_engine/galaxy/models/civ_model.dart';
 import '../stock_items/species.dart';
 
 class CrowdReaction {

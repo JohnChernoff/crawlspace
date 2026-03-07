@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:math';
-import 'package:crawlspace_engine/location.dart';
-import 'package:crawlspace_engine/pilot.dart';
-import 'package:crawlspace_engine/ship.dart';
+import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/actors/pilot.dart';
+import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import '../color.dart';
 import '../effects.dart';

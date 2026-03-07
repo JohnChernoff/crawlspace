@@ -1,6 +1,6 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
 
-import '../pilot.dart';
+import '../actors/pilot.dart';
 import 'foosham.dart';
 
 class FooshamSession {

@@ -9,7 +9,7 @@
 
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
-import 'package:crawlspace_engine/planet.dart';
+import 'package:crawlspace_engine/galaxy/planet.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 
 import '../color.dart';
