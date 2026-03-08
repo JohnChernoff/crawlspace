@@ -178,7 +178,58 @@ enum Corporation implements Normalizable  {
       products: {
         ShipSystemType.shield: CorpTier.premium,
       },
-      brandRelations: {});
+      brandRelations: {}),
+
+  montak(
+      color: GameColors.red,
+      stockSpecies: StockSpecies.moveliean,
+      spread: 9.0,
+      corpName: "Montak Industries",
+      lore: "Movelian Pride",
+      products: {
+        ShipSystemType.engine: CorpTier.premium,
+      },
+      brandRelations: {}),
+
+  narblorp(
+      color: GameColors.darkGreen,
+      stockSpecies: StockSpecies.moveliean,
+      spread: 3.0,
+      corpName: "Narblorp Corp.",
+      lore: "Rock Bottom Prices, Rock Solid Stability",
+      products: {
+        ShipSystemType.engine: CorpTier.budget,
+        ShipSystemType.shield: CorpTier.budget,
+        ShipSystemType.power: CorpTier.standard,
+      },
+      brandRelations: {}),
+
+  umbrix(
+      color: GameColors.purple,
+      stockSpecies: StockSpecies.vorlon,
+      spread: 5.0,
+      corpName: "Umbrix Utilities",
+      lore: "Harness the Cosmos",
+      products: {
+        ShipSystemType.engine: CorpTier.standard,
+        ShipSystemType.power: CorpTier.standard,
+        ShipSystemType.shield: CorpTier.premium,
+      },
+      brandRelations: {}),
+
+    laventar(
+        color: GameColors.neonGreen,
+        stockSpecies: StockSpecies.lael,
+        spread: 8.0,
+        corpName: "Laventar Services",
+        lore: "Discover Everything",
+        products: {
+          ShipSystemType.sensor: CorpTier.premium,
+          ShipSystemType.quarters: CorpTier.premium,
+          ShipSystemType.adapter: CorpTier.standard,
+        },
+        brandRelations: {}),
+    ;
 
   String get selectionName => corpName;
   final StockSpecies stockSpecies;

@@ -18,7 +18,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepFedLaser2: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Fed Laser Mk 2",
+    systemData: ShipSystemData.fromStock(StockSystem.wepFedLaser2,"Fed Laser Mk 2",
         mass: 10, baseCost: 250, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 4,
     dmgDiceSides: 20,
@@ -32,7 +32,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepFedLaser3: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Fed Laser Mk 3",
+    systemData: ShipSystemData.fromStock(StockSystem.wepFedLaser3,"Fed Laser Mk 3",
         mass: 10, baseCost: 500, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 5,
     dmgDiceSides: 25,
@@ -46,7 +46,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepPlasmaRay: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Plasma Ray",
+    systemData: ShipSystemData.fromStock(StockSystem.wepPlasmaRay,"Plasma Ray",
         mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .5),
     dmgDice: 4,
     dmgDiceSides: 60,
@@ -60,7 +60,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepGravRifle: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Gravimetric Pulse Rifle",
+    systemData: ShipSystemData.fromStock(StockSystem.wepGravRifle,"Gravimetric Pulse Rifle",
         mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6),
     dmgDice: 4,
     dmgDiceSides: 24,
@@ -74,7 +74,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepVibraSlap: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Cosmosonic Emitter",
+    systemData: ShipSystemData.fromStock(StockSystem.wepVibraSlap,"Cosmosonic Emitter",
         mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6),
     dmgDice: 8,
     dmgDiceSides: 24,
@@ -88,7 +88,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepNeuRad: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Neutronic Radiator",
+    systemData: ShipSystemData.fromStock(StockSystem.wepNeuRad,"Neutronic Radiator",
         mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6),
     dmgDice: 8,
     dmgDiceSides: 32,
@@ -102,7 +102,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepThermalLance: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Thermal Lance",
+    systemData: ShipSystemData.fromStock(StockSystem.wepThermalLance,"Thermal Lance",
         mass: 10, baseCost: 2000, baseRepairCost: 1.5, powerDraw: .9),
     dmgDice: 4,
     dmgDiceSides: 160,
@@ -116,7 +116,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepQuarkSplitter: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Quark Splitter",
+    systemData: ShipSystemData.fromStock(StockSystem.wepQuarkSplitter,"Quark Splitter",
         mass: 10, baseCost: 80000, baseRepairCost: 5, powerDraw: 1.2),
     dmgDice: 3,
     dmgDiceSides: 512,
@@ -130,7 +130,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepGammapult: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Gammapult",
+    systemData: ShipSystemData.fromStock(StockSystem.wepGammapult,"Gammapult",
         mass: 10, baseCost: 2000, baseRepairCost: 5, powerDraw: 1.7),
     dmgDice: 4,
     dmgDiceSides: 255,
@@ -144,7 +144,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
   ),
 
   StockSystem.wepCosmogripher: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Cosmogripher",
+    systemData: ShipSystemData.fromStock(StockSystem.wepCosmogripher,"Cosmogripher",
         mass: 10, baseCost: 2000, baseRepairCost: 5, powerDraw: 2.25),
     dmgDice: 5,
     dmgDiceSides: 255,
@@ -157,9 +157,8 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .5),
   ),
 
-
   StockSystem.webSingularitron: WeaponData(
-    systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Singularitron",
+    systemData: ShipSystemData.fromStock(StockSystem.webSingularitron,"Singularitron",
         mass: 10, baseCost: 200000, baseRepairCost: 5, powerDraw: 5),
     dmgDice: 8,
     dmgDiceSides: 1280,

@@ -5,6 +5,7 @@ import '../../item.dart';
 import '../../rng/rng.dart';
 import '../../ship/systems/engines.dart';
 import '../../ship/systems/power.dart';
+import '../../ship/systems/sensors.dart';
 import '../../ship/systems/shields.dart';
 import '../../ship/systems/ship_system.dart';
 import '../../ship/systems/weapons.dart';
@@ -48,6 +49,9 @@ enum StockSystem {
 
   ammoFedTorp(ShipSystemType.ammo,1,.9),
   ammoPlasmaBall(ShipSystemType.ammo,2,.9),
+
+  senFed1(ShipSystemType.sensor,1,.9),
+  senLael1(ShipSystemType.sensor,5,.5, manufacturer: Corporation.laventar),
   ;
 
   final ShipSystemType type;
@@ -63,18 +67,17 @@ enum StockSystem {
       ShipSystemType.weapon => Weapon.fromStock(this),
       ShipSystemType.launcher => Weapon.fromStock(this),
       ShipSystemType.ammo => Ammo.fromStock(this),
+      ShipSystemType.sensor => Sensor.fromStock(this),
+  // TODO: Handle this case.
+    ShipSystemType.scrapper => throw UnimplementedError(),
   // TODO: Handle this case.
     ShipSystemType.quarters => throw UnimplementedError(),
   // TODO: Handle this case.
     ShipSystemType.converter => throw UnimplementedError(),
   // TODO: Handle this case.
-    ShipSystemType.sensor => throw UnimplementedError(),
-  // TODO: Handle this case.
     ShipSystemType.unknown => throw UnimplementedError(),
   // TODO: Handle this case.
     ShipSystemType.emitter => throw UnimplementedError(),
-  // TODO: Handle this case.
-    ShipSystemType.scrapper => throw UnimplementedError(),
   // TODO: Handle this case.
     ShipSystemType.adapter => throw UnimplementedError(),
   };

@@ -69,8 +69,7 @@ class TradeModel extends GalaxySubMod {
     _assignSourcePlanets(tradeRng);
     _seedHouseSpecials(tradeRng);
     _buildSupplyMap();
-
-    _debugDump();
+    //_debugDump();
   }
 
   // ── Step 1: generate species goods pool ───────────────────────────────────
@@ -106,7 +105,7 @@ class TradeModel extends GalaxySubMod {
       speciesGoods[stockSpecies] = goods;
 
       glog("TradeModel: ${stockSpecies.species.name} goods: "
-          "${goods.map((g) => g.name).join(', ')}");
+          "${goods.map((g) => g.name).join(', ')}", level: DebugLevel.Fine);
     }
   }
 
