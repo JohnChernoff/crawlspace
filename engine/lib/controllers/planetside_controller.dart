@@ -100,7 +100,7 @@ class PlanetsideController extends FugueController {
       List<System> path = [];
       int steps = 3;
       int r = 100; //(player.techLevel() / 10).ceil() * playerShip!.cargo.value;
-      int reward = (r/2).floor() + fm.rnd.nextInt(r);
+      int reward = (r/2).floor() + fm.itemRnd.nextInt(r);
       Planet? planet; int tries = 0;
       while (planet == null && tries++ < 100) {
         path = [fm.player.system];
@@ -161,7 +161,7 @@ class PlanetsideController extends FugueController {
   void market() {
     final location = fm.player.locale; if (location is AtEnvironment) {
       final env = location.env;
-      env.market ??= Market(env as Planet, fm.galaxy, fm.itemRng);
+      env.market ??= Market(env as Planet, fm.galaxy, fm.itemRnd);
       fm.menuController.showMenu(() => fm.menuFactory.buildShopBuyMenu(env.market!, ship: fm.playerShip),
           headerTxt: "${env.market?.name}");
     }
@@ -172,11 +172,11 @@ class PlanetsideController extends FugueController {
       final env = location.env;
       final techLvl = (env is Planet && env.homeworld)
           ? (maxTechLvl * env.techLvl).round()
-          : (fm.itemRng.nextDouble() * (maxTechLvl * env.techLvl)).round();
+          : (fm.itemRnd.nextDouble() * (maxTechLvl * env.techLvl)).round();
       if (type != null) {
-        env.sysShop ??= SystemShop(env,type,techLvl,fm.rnd, galaxy: fm.galaxy);
+        env.sysShop ??= SystemShop(env,type,techLvl,fm.itemRnd, galaxy: fm.galaxy);
       } else {
-        env.sysShop ??= SystemShop.random(env,techLvl,fm.rnd, galaxy: fm.galaxy);
+        env.sysShop ??= SystemShop.random(env,techLvl,fm.itemRnd, galaxy: fm.galaxy);
       }
       fm.menuController.showMenu(() => fm.menuFactory.buildShopBuyMenu(env.sysShop!, ship: fm.playerShip),
           headerTxt: "${env.sysShop?.name}");
@@ -193,7 +193,7 @@ class PlanetsideController extends FugueController {
     fm.player.drink(strength);
     double charChk = fm.player.attributes[AttribType.cha]! / 3;
     //print("Drink Strength: $strength"); print("Char Check: $charChk");
-    if (fm.aiRng.nextDouble() < charChk) {
+    if (fm.aiRnd.nextDouble() < charChk) {
       env.rapport += .1 * strength;
       fm.msg(switch(env.rapport) {
         > .8 => "The locals love you!",
@@ -202,7 +202,7 @@ class PlanetsideController extends FugueController {
         _ => "Glurg..."
       });
     }
-    if (fm.aiRng.nextDouble() < .25) { //(env.rapport * .1)) { //TODO: debug settings
+    if (fm.aiRnd.nextDouble() < .25) { //(env.rapport * .1)) { //TODO: debug settings
       final nearestTreasureSystem = fm.galaxy.treasureMod.treasureMap.keys
           .sorted((a,b) => fm.galaxy.topo.distance(a.system, fm.player.system)
           .compareTo(fm.galaxy.topo.distance(b.system, fm.player.system))).first;
@@ -211,15 +211,15 @@ class PlanetsideController extends FugueController {
     final security = env is Planet ? (env.population + env.fedLvl) / 2.0 : 0.5;
     final conResistance = fm.player.attributes[AttribType.con]! * 0.5;
     final blackoutChance = (fm.player.inebriation - conResistance).clamp(0.0, 1.0);
-    if (fm.aiRng.nextDouble() < blackoutChance) {
+    if (fm.aiRnd.nextDouble() < blackoutChance) {
       fm.player.inebriation = 0;
       final robChance  = 1.0 - security;
       final fedChance  = security;
       final totalChance = robChance + fedChance;
-      final roll = fm.aiRng.nextDouble() * totalChance;
+      final roll = fm.aiRnd.nextDouble() * totalChance;
       if (roll < robChance) {
         // Robbed — lawless outcome
-        final stolen = (fm.player.credits * (0.1 + fm.aiRng.nextDouble() * 0.3)).round();
+        final stolen = (fm.player.credits * (0.1 + fm.aiRnd.nextDouble() * 0.3)).round();
         fm.player.transaction(TransactionType.robbed, -stolen);
         fm.msg("You wake up in an alley. Your pockets are lighter by $stolen credits.");
       } else {
@@ -227,7 +227,7 @@ class PlanetsideController extends FugueController {
         fm.player.transaction(TransactionType.jail, -1000);
         fm.msg("You pass out and are taken to the local jail to sleep it off. Processing fee: 1000 credits.");
         //heat calc
-        if (fm.aiRng.nextDouble() < env.fedLvl) {
+        if (fm.aiRnd.nextDouble() < env.fedLvl) {
           fm.galaxy.playerCrime(fm.player.system, env.fedLvl * 5);
           fm.msg(switch(env.fedLvl) {
             > .75 => "The authorities file a full report. The Feds will know you were here.",
@@ -242,7 +242,7 @@ class PlanetsideController extends FugueController {
 
   Planet? createTradePlanet(List<System> path,int steps) {
     if (steps < 1 && path.last.planets.isNotEmpty) {
-      return path.last.planets.elementAt(fm.mapRng.nextInt(path.last.planets.length));
+      return path.last.planets.elementAt(fm.mapRnd.nextInt(path.last.planets.length));
     } else {
       Set<System> links = path.last.links;
       List<System> unvisitedLinks = links.where((link) => !path.contains(link)).toList();
@@ -258,9 +258,9 @@ class PlanetsideController extends FugueController {
 
   void enterShipyard() {
     final loc = fm.player.locale; if (loc is AtEnvironment) {
-      loc.env.yard ??= ShipYard(loc.env, 1, fm.rnd,
-          shiplist: List.generate(fm.itemRng.nextInt(5) + 1, (i) =>
-              Rng.generateShip(fm.player.system, fm.galaxy, fm.itemRng)));
+      loc.env.yard ??= ShipYard(loc.env, 1, fm.itemRnd,
+          shiplist: List.generate(fm.itemRnd.nextInt(5) + 1, (i) =>
+              Rng.generateShip(fm.player.system, fm.galaxy, fm.itemRnd)));
       fm.menuController.showMenu(() =>
           fm.menuFactory.buildShopBuyMenu(loc.env.yard!, ship: fm.playerShip), headerTxt: "${loc.env.yard!.name}");
     }

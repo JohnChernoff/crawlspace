@@ -103,8 +103,8 @@ class LayerTransitController extends FugueController {
             for (int z=0;z<size;z++) {
               final c = Coord3D(x, y, z);
               final cell = ImpulseCell(c,{
-                Hazard.nebula : fm.mapRng.nextDouble() < sectorNeb ? sectorNeb : 0,
-                Hazard.ion : fm.mapRng.nextDouble() < sectorIon ? sectorIon : 0,
+                Hazard.nebula : fm.mapRnd.nextDouble() < sectorNeb ? sectorNeb : 0,
+                Hazard.ion : fm.mapRnd.nextDouble() < sectorIon ? sectorIon : 0,
                 Hazard.roid : sysLoc.cell.hazMap[Hazard.roid] ?? 0,
                 Hazard.wake: c.isEdge(size) ? 1 : 0
               });
@@ -113,12 +113,12 @@ class LayerTransitController extends FugueController {
           }
         }
         final impMap = ImpulseMap(size,cells);
-        if (sysLoc.cell.hasHaz(Hazard.roid)) PathGenerator.generate(impMap,4,0,fm.rnd, haz: Hazard.roid);
+        if (sysLoc.cell.hasHaz(Hazard.roid)) PathGenerator.generate(impMap,4,0,fm.mapRnd, haz: Hazard.roid);
         impLevel = ImpulseLevel(impMap,sysLoc.cell);
         sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel);
         if (fm.galaxy.treasureMod.treasureMap.containsKey(sysLoc)) {
           for (final i in fm.galaxy.treasureMod.treasureMap[sysLoc]!) {
-            impMap.rndCell(fm.itemRng).items.add(i);
+            impMap.rndCell(fm.itemRnd).items.add(i);
           }
         }
       }
@@ -144,7 +144,7 @@ class LayerTransitController extends FugueController {
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: false, silent: true);
     final sysLoc = ship.loc;
     if (sysLoc is SystemLocation) {
-      GridCell targetCell = cell ?? impLvl.map.rndCell(fm.rnd);
+      GridCell targetCell = cell ?? impLvl.map.rndCell(fm.mapRnd);
       final pic = playerImpulseLoc;
       if (pic != null) {
         bool okCell(GridCell cell) => targetCell.coord.distance(pic.cell.coord) >= safeDist && cell.hazLevel == 0;
@@ -155,7 +155,7 @@ class LayerTransitController extends FugueController {
             safeDist--;
           };
           if (safeDistCells.isNotEmpty) {
-            safeDistCells.shuffle(fm.rnd);
+            safeDistCells.shuffle(fm.mapRnd);
             targetCell = safeDistCells.first;
           }
         }

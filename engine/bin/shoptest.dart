@@ -21,7 +21,7 @@ void main() {
     }
 
     SystemShop shop = SystemShop(galaxy: engine.galaxy,
-        planets.elementAt(Random().nextInt(planets.length)),SystemShopType.misc,Random().nextInt(maxTechLvl-1)+1,engine.rnd);
+        planets.elementAt(Random().nextInt(planets.length)),SystemShopType.misc,Random().nextInt(maxTechLvl-1)+1,engine.itemRnd);
     print(shop.name); print(shop.techLvl); print(shop.location.loc.system);
     for (final slot in shop.inventory.slots) {
       print("${slot.items.first}: ${slot.items.length}");

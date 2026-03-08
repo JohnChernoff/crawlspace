@@ -113,9 +113,9 @@ class MenuFactory {
 
   Menu buildCatinaMenu(SpaceEnvironment env) {
     AlienDrink drink;
-    double drinkStrength = fm.aiRng.nextDouble();
+    double drinkStrength = fm.aiRnd.nextDouble();
     if (env is Planet) {
-      drink = env.drink = env.drink ?? DrinkGen.generate(fm.galaxy, env, fm.itemRng, strength: drinkStrength);
+      drink = env.drink = env.drink ?? DrinkGen.generate(fm.galaxy, env, fm.itemRnd, strength: drinkStrength);
       drinkStrength = ((1-fm.galaxy.civKernel.val(fm.player.system)) + ((1-env.techLvl + env.industry)/2))/2;
     } else {
       drink = AlienDrink("Space Grog", shortDesc: "Generic Space Station Grog", baseCost: 5, strength: drinkStrength, potency: "unknown");

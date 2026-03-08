@@ -78,7 +78,7 @@ class FugueEngine {
   late Player player;
   int numAgents = 3;
   Iterable<Agent> get agents => _pilotRegistry.npcs.whereType<Agent>();
-  late Random rnd,combatRng,mapRng,speciesRng,aiRng,effectRnd,itemRng, audioRnd; //TODO: remove rnd
+  late Random combatRnd,mapRnd,speciesRnd,aiRnd,effectRnd,itemRnd,audioRnd,eventRnd;
   int auTick = 0;
   String get result => blownUp ? "blown up" : isVictorious ? "victorious" : "vanquished";
   bool get blownUp => (getShip(player)?.hullRemaining ?? 1) <= 0;
@@ -125,18 +125,18 @@ class FugueEngine {
   }
 
   FugueEngine(this.galaxy,String playerName,{seed = 0}) {
-    rnd = Random(seed);
+    //rnd = Random(seed);
     audioRnd = Random(seed ^0xAAAAAA);
-    mapRng = Random(seed ^0xBBBBBBB);
-    speciesRng = Random(seed ^ 0xC0FFEE);
-    aiRng = Random(seed ^ 0xBADC0DE);
-    itemRng = Random(seed ^ 0xFEED);
+    mapRnd = Random(seed ^0xBBBBBBB);
+    speciesRnd = Random(seed ^ 0xC0FFEE);
+    aiRnd = Random(seed ^ 0xBADC0DE);
+    itemRnd = Random(seed ^ 0xFEED);
     effectRnd = Random(seed ^ 0xBEAD);
-    combatRng = Random(seed ^ 0xABCDEF);
+    combatRnd = Random(seed ^ 0xABCDEF);
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
     Ship playShip = Ship("HMS Sebastian",
         shipClass: ShipClass.fromEnum(ShipClassType.hermes),
-        location: SystemLocation(farSys, farSys.map.rndCell(rnd)),
+        location: SystemLocation(farSys, farSys.map.rndCell(mapRnd)),
         generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
         impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
         subEngine: Engine.fromStock(StockSystem.engBasicFedSub),
@@ -150,7 +150,7 @@ class FugueEngine {
     for (final persona in AgentPersonality.values) {
         Ship agentShip = Ship("Agent ${persona.name}",
             shipClass: ShipClass.fromEnum(ShipClassType.galaxy),
-            location: SystemLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCell(rnd)),
+            location: SystemLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCell(mapRnd)),
             generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
             impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
             subEngine: Engine.fromStock(StockSystem.engBasicFedSub),
@@ -175,15 +175,15 @@ class FugueEngine {
   }
 
   void populateSystem(System system, {int? numShips, int maxShips = 8}) {
-    numShips ??= (itemRng.nextDouble() * (galaxy.civKernel.val(system) * maxShips)).floor();
+    numShips ??= (itemRnd.nextDouble() * (galaxy.civKernel.val(system) * maxShips)).floor();
     //print("Populating System: ${system.name}, ships: $numShips");
     for (int i = 0; i < numShips; i++) {
-      addShip(Rng.generateShip(system, galaxy, itemRng));
+      addShip(Rng.generateShip(system, galaxy, itemRnd));
     }
-    final numPirates = (itemRng.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
+    final numPirates = (itemRnd.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
     //print("Adding pirates: $numPirates");
     for (int i = 0; i < numPirates; i++) {
-      addShip(Rng.generateShip(system, galaxy, itemRng, isPirate: true));
+      addShip(Rng.generateShip(system, galaxy, itemRnd, isPirate: true));
     }
   }
 
@@ -209,7 +209,7 @@ class FugueEngine {
             "Perhaps you should have broadcasted your information to the galaxy first.");
         victory = false;
       }
-      else if (Rng.biasedRndInt(rnd,mean: 1, min: 0, max: 5) <= player.broadcasts) {
+      else if (Rng.biasedRndInt(eventRnd,mean: 1, min: 0, max: 5) <= player.broadcasts) {
         msgController.addMsg("You arrive on ${hw.name} admist a media firestorm and are taken into custody, but before your case can be "
             "heard the Federation Government collapses and you are reappointed and promoted to the rank of Intergalactic Commodore ${player.name}. "
             "Congratulations!");
@@ -236,14 +236,14 @@ class FugueEngine {
   //normal: true if repeatedly below level, inverted: true if repeatedly above level (less likely)
   bool techCheck(int passes, {bool invert = false}) {
     for (int i=0;i<passes;i++) {
-      if (rnd.nextInt(100) > (invert ? 100 - player.techLevel(galaxy) : player.techLevel(galaxy))) return false;
+      if (eventRnd.nextInt(100) > (invert ? 100 - player.techLevel(galaxy) : player.techLevel(galaxy))) return false;
     }
     return true;
   }
 
   bool fedCheck(int passes, {bool invert = false}) {
     for (int i=0;i<passes;i++) {
-      if (rnd.nextInt(100) > (invert ? 100 - player.fedLevel(galaxy) : player.fedLevel(galaxy))) return false;
+      if (eventRnd.nextInt(100) > (invert ? 100 - player.fedLevel(galaxy) : player.fedLevel(galaxy))) return false;
     }
     return true;
   }
@@ -317,7 +317,7 @@ class FugueEngine {
     if (playShip != null) {
       final playMap = playShip.loc.level.map; if (playMap is ImpulseMap) {
         final playLevel = playShip.loc.level as ImpulseLevel;
-        if (playLevel.sector.hasHaz(Hazard.ion)) playMap.hodgeTick(Hazard.ion, rnd);
+        if (playLevel.sector.hasHaz(Hazard.ion)) playMap.hodgeTick(Hazard.ion, mapRnd);
       }
       for (final s in _shipRegistry.inLevel(playShip.loc.level).where((s) => s.npc)) playShip.detect(s);
     }

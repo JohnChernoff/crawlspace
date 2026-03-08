@@ -283,7 +283,7 @@ class Ship extends Item implements Locatable {
         double recharge = rss.currentMaxEnergy * rss.rechargeRate * (1-rss.damage);
         if (!dryRun) {
           if (fm != null && rss.currentEnergy < 1) {
-            recharge = (fm.aiRng.nextInt(rss.avgRecoveryTime) == 0) ? recharge : 0;
+            recharge = (fm.aiRnd.nextInt(rss.avgRecoveryTime) == 0) ? recharge : 0;
           }
           if (recharge > 0) rss.recharge(recharge);
         }

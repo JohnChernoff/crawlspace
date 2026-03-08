@@ -11,7 +11,7 @@ class FooshamSession {
   bool gameOver = false;
 
   FooshamSession(this.pilot,this.stakes,this.fm) {
-    game = FooShamGame(pilot.system,fm.aiRng, difficulty: FooShamDifficulty.medium, civMod: fm.galaxy.civMod);
+    game = FooShamGame(pilot.system,fm.aiRnd, difficulty: FooShamDifficulty.medium, civMod: fm.galaxy.civMod);
   }
 
   void gameThrow(String t) {

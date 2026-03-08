@@ -11,11 +11,7 @@ sealed class SpaceLocation implements Locatable {
   SpaceLocation get loc => this;
   final Level _level;
   final GridCell _cell;
-  Domain get domain { //TODO: remove type check
-    if (this is SystemLocation) return Domain.system;
-    if (this is ImpulseLocation) return Domain.impulse;
-    return Domain.hyperspace;
-  }
+  Domain get domain;
   Level get level => _level;
   GridCell get cell => _cell;
 
@@ -55,13 +51,17 @@ sealed class SpaceLocation implements Locatable {
 }
 
 class SystemLocation extends SpaceLocation {
-
+  @override
+  Domain get domain => Domain.system;
   @override
   System get level => _level as System;
   @override
   SectorCell get cell => _cell as SectorCell;
 
-  const SystemLocation(super.level, super.cell);
+  SystemLocation(super.level, super.cell)
+      : assert(level is System, "SystemLocation requires a System, got ${level.runtimeType}"),
+        assert(cell is SectorCell, "SystemLocation requires a SectorCell, got ${cell.runtimeType}");
+
   @override
   SystemLocation withCell(GridCell newCell) => SystemLocation(level, newCell as SectorCell);
 
@@ -72,14 +72,18 @@ class SystemLocation extends SpaceLocation {
 }
 
 class ImpulseLocation extends SpaceLocation {
-
+  @override
+  Domain get domain => Domain.impulse;
   final SystemLocation systemLoc;
   @override
   ImpulseLevel get level => _level as ImpulseLevel;
   @override
   ImpulseCell get cell => _cell as ImpulseCell;
 
-  const ImpulseLocation(this.systemLoc, super.level, super.cell);
+  ImpulseLocation(this.systemLoc, super.level, super.cell)
+      : assert(level is ImpulseLocation, "ImpulseLocation requires a System, got ${level.runtimeType}"),
+        assert(cell is ImpulseCell, "ImpulseLocation requires a SectorCell, got ${cell.runtimeType}");
+
   @override
   ImpulseLocation withCell(GridCell newCell) => ImpulseLocation(systemLoc, level, newCell as ImpulseCell);
 

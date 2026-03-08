@@ -115,7 +115,7 @@ class Pilot implements Locatable {
           final h = hostilityToward(fm.player.faction.species, fm.galaxy.civMod);
           if (h < .75) _hostile = false;
           else {
-            _hostile = (fm.aiRng.nextDouble() < (h * .75)); //TODO: tie into game difficulty?
+            _hostile = (fm.aiRnd.nextDouble() < (h * .75)); //TODO: tie into game difficulty?
           }
         }
         print("Setting hostility: ${faction.name} -> player = ${_hostile}, pirate: ${faction.isPirate}");

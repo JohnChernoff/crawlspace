@@ -102,9 +102,9 @@ class PilotController extends FugueController {
   //returns false if location domain changes
   bool action(Pilot pilot, ActionType actionType, { mod = 1.0, int? actionAuts }) {
     if (pilot == nobody) return true;
-    if (pilot == fm.player && actionType.risk > 0 && fm.rnd.nextInt(255) < fm.player.fedLevel(fm.galaxy)) {
+    if (pilot == fm.player && actionType.risk > 0 && fm.aiRnd.nextInt(255) < fm.player.fedLevel(fm.galaxy)) {
       //msgController.addMsg("You have a bad feeling about this...");
-      if (fm.rnd.nextInt(128) < (max(actionType.risk - (actionType.dna ? fm.player.dnaScram : 0),1))) {
+      if (fm.aiRnd.nextInt(128) < (max(actionType.risk - (actionType.dna ? fm.player.dnaScram : 0),1))) {
         //fm.heat(actionType.heat);
       }
     }
@@ -140,7 +140,7 @@ class PilotController extends FugueController {
                 final idealCells = ship.loc.level.map.cells.values
                     .where((c) => (playLoc.dist(c: c) - r).abs() < 1.5) //TODO: tweak acceptable range
                     .sorted((c1,c2) => ship.distance(c: c1.coord).compareTo(ship.distance(c: c2.coord)));
-                ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.rnd); //print(ship.currentPath);
+                ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd); //print(ship.currentPath);
               } else {
                 if (playLoc != fm.playerShip!.loc) {
                   //print("${ship.name} cannot find ${fm.playerShip!.name}"); //TODO: fallback strategy
@@ -157,10 +157,10 @@ class PilotController extends FugueController {
               fm.msgController.addMsg("${ship.name} flees!");
               final idealCells = ship.loc.level.map.cells.values
                   .sorted((c1,c2) => playLoc.dist(c: c2).compareTo(playLoc.dist(c: c1)));
-              ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.rnd);
+              ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd);
             }
         } else if (loc is SystemLocation) {
-          ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell,ship.targetShip!.loc.cell,3,fm.rnd, forceHaz: true); //print(ship.currentPath);
+          ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell,ship.targetShip!.loc.cell,3,fm.aiRnd, forceHaz: true); //print(ship.currentPath);
         }
       }
       if (ship.currentPath.isNotEmpty) {
@@ -169,7 +169,7 @@ class PilotController extends FugueController {
           action(pilot, ActionType.movement, actionAuts: 10);
         }
       } else { //TODO: avoid hazards (if possible)
-        fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.rnd));
+        fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.aiRnd));
       }
     }
   }

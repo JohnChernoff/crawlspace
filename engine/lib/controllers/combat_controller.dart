@@ -16,7 +16,7 @@ class CombatController extends FugueController {
   void pursue(Ship? ship) {
     if (ship != null) {
       Ship? target = ship.targetShip; if (target != null) {
-        final path = ship.loc.level.map.greedyPath(ship.loc.cell, target.loc.cell, 1, fm.rnd);
+        final path = ship.loc.level.map.greedyPath(ship.loc.cell, target.loc.cell, 1, fm.combatRnd);
         final dest = path.firstOrNull?.coord;
         if (dest != null) fm.movementController.moveShip(ship, path.first.coord);
       }
@@ -31,7 +31,7 @@ class CombatController extends FugueController {
       }
       final cell = ship.loc.level.map.cells[target];
       if (cell is ImpulseCell) { //TODO: sector-ranged weapons?
-        final results = ship.fireWeapons(cell, fm.rnd, ship: ship.targetShip);
+        final results = ship.fireWeapons(cell, fm.combatRnd, ship: ship.targetShip);
         if (results.isEmpty && ship == fm.playerShip) {
           fm.msgController.addMsg("No weapons ready");
         } else {
@@ -45,7 +45,7 @@ class CombatController extends FugueController {
                   rangedMishap = true;
                 } else {
                   final path = ship.loc.level.map.greedyPath(ship.loc.cell,
-                      ship.targetShip!.loc.cell, ship.loc.level.map.size, fm.rnd, jitter: 0, ignoreHaz: true);
+                      ship.targetShip!.loc.cell, ship.loc.level.map.size, fm.combatRnd, jitter: 0, ignoreHaz: true);
                   final obstacle = path.firstWhereOrNull((c) => c.hazLevel > 0);
                   if (obstacle != null) {
                     fm.msgController.addMsg("${result.weapon.ammo!.name} hits ${obstacle.hazMap.entries.firstWhere((o) => o.value > 0).key.name}!");
@@ -78,9 +78,9 @@ class CombatController extends FugueController {
   void explode(Ship ship) {
     fm.msgController.addMsg("${ship.name} explodes!");
     for (final system in ship.systemControl.getInstalledSystems()) {
-      if (fm.rnd.nextBool()) {
+      if (fm.combatRnd.nextBool()) {
         final cell = ship.loc.cell; if (cell is ImpulseCell) {
-          system.damage = 50.0 + fm.rnd.nextInt(50);
+          system.damage = 50.0 + fm.combatRnd.nextInt(50);
           cell.items.add(system);
         }
       }

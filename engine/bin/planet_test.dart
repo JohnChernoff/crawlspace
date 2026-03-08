@@ -7,7 +7,7 @@ void main() {
   final engine = FugueEngine(Galaxy("Testlandia"), "Zug", seed: 0); // Random().nextInt(999));
   for (int i=0; i<n; i++) {
     print("***");
-    final rndSys = engine.galaxy.systems.elementAt(engine.rnd.nextInt(engine.galaxy.systems.length));
+    final rndSys = engine.galaxy.systems.elementAt(engine.mapRnd.nextInt(engine.galaxy.systems.length));
     print("Fed HW distance: ${engine.galaxy.topo.distance(rndSys, engine.galaxy.fedHomeSystem)}");
     print("Fed Influence: ${engine.galaxy.fedKernel.val(rndSys)}");
     print("Comm Influence: ${engine.galaxy.commerceKernel.val(rndSys)}");

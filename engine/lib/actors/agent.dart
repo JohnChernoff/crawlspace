@@ -26,7 +26,7 @@ class Agent extends Pilot {
   // Called each turn by the engine
   void tick(FugueEngine fm) {
     super.tick(fm);  //final moves = movesPerTurn(fm.galaxy).round(); //TODO use this somehow
-    if (fm.aiRng.nextDouble() < .1) _move(fm);
+    if (fm.aiRnd.nextDouble() < .1) _move(fm);
   }
 
   void _move(FugueEngine fm) {
@@ -52,8 +52,8 @@ class Agent extends Pilot {
   System _bloodhoundPick(FugueEngine fm) {
     final heatMap = fm.galaxy.heatMod.playerHeatMap;
     // 25% random noise so it doesn't get perfectly stuck in local maxima
-    if (fm.rnd.nextDouble() < 0.25) {
-      return system.links.elementAt(fm.rnd.nextInt(system.links.length));
+    if (fm.aiRnd.nextDouble() < 0.25) {
+      return system.links.elementAt(fm.aiRnd.nextInt(system.links.length));
     }
     return system.links.reduce((a, b) =>
     (heatMap[a] ?? 0) > (heatMap[b] ?? 0) ? a : b);
