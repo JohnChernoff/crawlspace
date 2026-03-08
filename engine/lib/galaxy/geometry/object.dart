@@ -28,7 +28,7 @@ class SpaceEnvironment<T extends SpaceLocation> extends SpaceObject implements L
       {super.shortDesc, required T this.locale});
 }
 
-class SpaceObject implements Nameable, Descriable {
+class SpaceObject implements Nameable, Describable {
   final String name;
   String get selectionName => name;
   String get description => shortDesc ?? name;

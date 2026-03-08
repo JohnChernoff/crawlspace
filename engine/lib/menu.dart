@@ -97,12 +97,11 @@ class ActionEntry extends MenuEntry {
 }
 
 class ValueEntry<T> extends MenuEntry {
-  final bool describe;
   final T value;
   final void Function(T) onSelect;
 
   const ValueEntry(this.value, this.onSelect,
-      {super.letter, super.label, super.txtBlocks, super.exitBefore, super.exitAfter, super.disabledReason, this.describe = false});
+      {super.letter, super.label, super.txtBlocks, super.exitBefore, super.exitAfter, super.disabledReason});
 
   factory ValueEntry.stub(T val, {String? lab, List<TextBlock>? blocks }) => ValueEntry(val, (m) => {}, label: lab, txtBlocks: blocks ?? []);
 
@@ -115,24 +114,17 @@ class ValueEntry<T> extends MenuEntry {
     txtBlocks: txtBlocks ?? this.txtBlocks,
     exitBefore: exitBefore ?? this.exitBefore,
     exitAfter: exitAfter ?? this.exitAfter,
-    describe: describe ?? this.describe,
     disabledReason: disabledReason ?? _disabledReason
   );
 
   @override
   void activate(MenuController mc) {
-    final v = value;
-    if (describe && v is Descriable) {
-      mc.showMenu(() => [TextEntry(label: v.description)],headerTxt: v.selectionName);
-    }
-    else {
-      if (enabled) {
-        if (exitBefore) mc.exitMenu();
-        onSelect(value);
-        if (!exitBefore) {
-          if (exitAfter) mc.exitMenu();
-          else mc.rebuild();
-        }
+    if (enabled) {
+      if (exitBefore) mc.exitMenu();
+      onSelect(value);
+      if (!exitBefore) {
+        if (exitAfter) mc.exitMenu();
+        else mc.rebuild();
       }
     }
   }

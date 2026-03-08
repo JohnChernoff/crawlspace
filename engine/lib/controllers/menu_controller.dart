@@ -155,8 +155,11 @@ class MenuController extends FugueController {
       final entries = ctx.builder();
       showMenu(() => List.generate(entries.length,(i) {
         MenuEntry entry = entries.elementAt(i);
-        if (entry is ValueEntry && entry.value is Descriable) {
-          return entry.copyWith(letter: letter(i), describe: true);
+        if (entry is ValueEntry) {
+          final v = entry.value; if (v is Describable) {
+            return entry.copyWith(letter: letter(i), onSelect: (_) => showMenu( // value already captured as `v` above
+                    () => [TextEntry(label: v.description)],headerTxt: v.selectionName));
+          }
         }
         return entry;
       }),headerTxt: "Describe");

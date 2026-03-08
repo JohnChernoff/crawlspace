@@ -13,7 +13,7 @@ abstract interface class Nameable {
   String get selectionName;
 }
 
-abstract interface class Descriable extends Nameable {
+abstract interface class Describable extends Nameable {
   String? get flavor;
   String get description;
 }
