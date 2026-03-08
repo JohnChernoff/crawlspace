@@ -414,7 +414,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
               if (intent.type == InventoryType.display) {
                 if (fm.playerShip != null) {
                   fm.menuController.showMenu(() => fm.menuFactory
-                      .buildInventoryMenu(fm.playerShip!.inventory, shop: false),headerTxt: "Inventory");
+                      .buildInventoryMenu(fm.playerShip!.inventory, shop: false),headerTxt: "Inventory", describable: true);
                 }
               } else if (intent.type == InventoryType.use) {
                 fm.menuController.showMenu(() => fm.menuFactory.buildInventoryUseMenu(fm.player));

@@ -66,7 +66,7 @@ class MenuWidgetState extends State<MenuWidget> {
                 itemCount: list.length,
                 itemBuilder: (context, i) {
                   final isEnabled = list[i].enabled;
-                  final disabledString =  isEnabled ? '' : "(${list[i].disabledReason()})";
+                  final disabledString =  isEnabled ? '' : "(${(list[i].disabledReason ?? '')})";
                   final letter = list[i].letter;
                   final label = list[i].label ?? "";
                   final txtBlocks = list[i].txtBlocks;

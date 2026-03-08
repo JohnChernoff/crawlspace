@@ -25,14 +25,16 @@ class SpaceEnvironment<T extends SpaceLocation> extends SpaceObject implements L
   double rapport = 0; // -1–1
 
   SpaceEnvironment(super.name, this.fedLvl, this.techLvl,
-      {super.desc, required T this.locale});
+      {super.shortDesc, required T this.locale});
 }
 
-class SpaceObject implements Nameable {
+class SpaceObject implements Nameable, Descriable {
   final String name;
   String get selectionName => name;
-  String?   desc;
+  String get description => shortDesc ?? name;
+  String? get flavor => null;
+  String?   shortDesc;
   bool      known    = false;
   GameColor objColor;
-  SpaceObject(this.name, {this.desc, this.objColor = GameColors.white});
+  SpaceObject(this.name, {this.shortDesc, this.objColor = GameColors.white});
 }

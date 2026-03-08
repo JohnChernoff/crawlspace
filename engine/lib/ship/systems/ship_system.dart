@@ -40,6 +40,7 @@ class SystemSlot with Itemizable {
 
 abstract class ShipSystem extends Item {
   String get name => "${super.name} (${manufacturer.corpName})";
+  String? get flavor => about;
   ShipSystemType get type;
   String get shopDesc => this.toString();
   final Corporation manufacturer;
@@ -53,6 +54,19 @@ abstract class ShipSystem extends Item {
   final double repairDifficulty;
   final int techLvl;
   bool active = true;
+  String about;
+
+  @override
+  String get description {
+    StringBuffer sb = StringBuffer();
+    sb.writeln("Tech Level: $techLvl");
+    sb.writeln("Stability: $stability");
+    sb.writeln("Repair Cost (per 1% of damage): $baseRepairCost");
+    sb.writeln("Power Draw (per aut): $powerDraw");
+    sb.writeln("Mass: $mass");
+    if (enhancement > 0) sb.writeln("Enhancement: $enhancement");
+    return sb.toString();
+  }
 
   ShipSystem(super.name,{  //required this.type,
     required super.baseCost,
@@ -62,9 +76,10 @@ abstract class ShipSystem extends Item {
     this.damage = 0,
     this.enhancement = 0,
     this.maxEnhancement = 9,
-    this.repairDifficulty = .5,
+    this.repairDifficulty = .5, //determines which shops can repair this item (currently unused)
     this.stability = .8,
     this.manufacturer = Corporation.genCorp,
+    required this.about,
     required super.mass,
     super.volume = 1,
     required this.powerDraw,
@@ -96,6 +111,7 @@ abstract class ShipSystem extends Item {
 
 class ShipSystemData {
   final String name;
+  final String about;
   final Corporation manufacturer;
   final double mass; //kilos
   final int techLvl;
@@ -117,7 +133,9 @@ class ShipSystemData {
     this.repairDifficulty = .5,
     this.enhancement = 0,
     this.maxEnhancement = 9,
+    String? about,
   }) : techLvl = stock.techLvl,
         rarity = stock.rarity,
-        manufacturer = stock.manufacturer;
+        manufacturer = stock.manufacturer,
+        about = about ?? "A standard-issue ${name}";
 }

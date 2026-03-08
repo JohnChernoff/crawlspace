@@ -43,6 +43,7 @@ class Shield extends RechargableShipSystem {
     required super.baseRepairCost,
     required super.powerDraw,
     required super.mass,
+    required super.about,
     super.manufacturer,
     super.rarity,
     super.stability,
@@ -61,6 +62,7 @@ class Shield extends RechargableShipSystem {
       baseRepairCost: data.systemData.baseRepairCost,
       repairDifficulty: data.systemData.repairDifficulty,
       rarity: data.systemData.rarity,
+      about: data.systemData.about,
       //
       shieldType: data.shieldType,
       maxEnergy: data.maxEnergy,

@@ -359,7 +359,7 @@ class SpecialGood extends Item {
 
   SpecialGood(
       super.name, {
-        required super.desc,
+        required super.shortDesc,
         required int baseCost,
         required this.archetype,
         this.isHandcrafted = true,

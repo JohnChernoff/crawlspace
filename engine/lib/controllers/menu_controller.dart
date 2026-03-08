@@ -87,8 +87,16 @@ class MenuController extends FugueController {
 
   //return false if empty
   bool showMenu(MenuBuilder builder, {
-    InputMode? mode, String? headerTxt, String? nothingTxt, int? maxEntries, bool? noExit, int? firstEntry, MenuLevel? level}) {
-    menuStack.add(MenuContext.fromBuilder(builder, m: mode, ht: headerTxt, nt: nothingTxt, me: maxEntries, ne: noExit, fe: firstEntry, lvl: level));
+    InputMode? mode, String? headerTxt, String? nothingTxt, int? maxEntries, bool? noExit, int? firstEntry, MenuLevel? level, bool? describable}) {
+    menuStack.add(MenuContext.fromBuilder(builder,
+        m: mode,
+        ht: headerTxt,
+        nt: nothingTxt,
+        me: maxEntries,
+        ne: noExit,
+        fe: firstEntry,
+        desc: describable,
+        lvl: level));
     return _rebuildMenu();
   }
 
@@ -141,6 +149,25 @@ class MenuController extends FugueController {
       page.add(ActionEntry(letter: ">", label: "Next", (_) =>
           replaceTopMenu(firstEntry: start + ctx.maxEntries)
       ));
+    }
+
+    void createDescriptors() {
+      final entries = ctx.builder();
+      showMenu(() => List.generate(entries.length,(i) {
+        MenuEntry entry = entries.elementAt(i);
+        if (entry is ValueEntry && entry.value is Descriable) {
+          return entry.copyWith(letter: letter(i), describe: true);
+        }
+        return entry;
+      }),headerTxt: "Describe");
+    }
+
+    if (ctx.describable) {
+      if (full.any((m) => m.letter == "z")) {
+        page.add(ActionEntry(letter: "Z", label: "Describe entries", (_) => createDescriptors()));
+      } else {
+        page.add(ActionEntry(letter: "z", label: "Describe entries", (_) => createDescriptors()));
+      }
     }
 
     if (!ctx.noExit) {

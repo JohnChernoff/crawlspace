@@ -18,12 +18,14 @@ class MenuContext {
   final String nothingTxt;
   final int maxEntries;
   final bool noExit;
+  final bool describable;
   int firstEntry;
   static const defMode = InputMode.menu;
   static const defHeadTxt = "Select: ";
   static const defNothingTxt = "Nothing found";
   static const defMaxEntries = 12;
   static const defNoExit = false;
+  static const defDescribable = false;
   static const defFirstEntry = 0;
   static const defLevel = MenuLevel.misc;
 
@@ -33,16 +35,19 @@ class MenuContext {
     this.nothingTxt = defNothingTxt,
     this.maxEntries = defMaxEntries,
     this.noExit = defNoExit,
+    this.describable = defDescribable,
     this.firstEntry = defFirstEntry,
     this.level = defLevel
   });
 
-  factory MenuContext.fromBuilder(MenuBuilder b, {InputMode? m, String? ht, String? nt, int? me, bool? ne, int? fe, MenuLevel? lvl}) =>
+  factory MenuContext.fromBuilder(MenuBuilder b,
+      {InputMode? m, String? ht, String? nt, int? me, bool? ne, bool? desc, int? fe, MenuLevel? lvl}) =>
       MenuContext(builder: b,
           headerTxt: ht ?? defHeadTxt,
           nothingTxt: nt ?? defNothingTxt,
           maxEntries: me ?? defMaxEntries,
           noExit: ne ?? defNoExit,
+          describable: desc ?? defDescribable,
           firstEntry: fe ?? defFirstEntry,
           level: lvl ?? defLevel
       );
@@ -53,16 +58,16 @@ abstract class MenuEntry {
   final String? label;
   final List<TextBlock> txtBlocks;
   final bool exitBefore,exitAfter;
-  final String? Function() disabledReason;
-  bool get enabled => disabledReason() == null;
-
-  MenuEntry({this.letter,
+  final String? Function()? _disabledReason;
+  String? get disabledReason => (_disabledReason ??  (() => null))();
+  bool get enabled => disabledReason == null;
+  const MenuEntry({this.letter,
         this.label,
         this.txtBlocks = const [],
         this.exitBefore = false,
         this.exitAfter = false,
-        StringFn? disabledReason,
-      }) : disabledReason = disabledReason ?? (() => null);
+        String? Function()? disabledReason,
+      }) : _disabledReason = disabledReason;
 
   void activate(MenuController mc);
 }
@@ -70,13 +75,13 @@ abstract class MenuEntry {
 class TextEntry extends MenuEntry {
   TextEntry({super.label,super.txtBlocks});
   @override
-  void activate(MenuController mc) {}
+  void activate(MenuController mc) => {};
 }
 
 class ActionEntry extends MenuEntry {
   final void Function(MenuController) action;
 
-  ActionEntry(this.action,{super.letter, super.label, super.txtBlocks, super.exitBefore, super.exitAfter, super.disabledReason});
+  const ActionEntry(this.action,{super.letter, super.label, super.txtBlocks, super.exitBefore, super.exitAfter, super.disabledReason});
 
   @override
   void activate(MenuController mc) {
@@ -92,19 +97,42 @@ class ActionEntry extends MenuEntry {
 }
 
 class ValueEntry<T> extends MenuEntry {
+  final bool describe;
   final T value;
   final void Function(T) onSelect;
 
-  ValueEntry(this.value, this.onSelect, {super.letter, super.label, super.txtBlocks, super.exitBefore, super.exitAfter, super.disabledReason});
+  const ValueEntry(this.value, this.onSelect,
+      {super.letter, super.label, super.txtBlocks, super.exitBefore, super.exitAfter, super.disabledReason, this.describe = false});
+
+  factory ValueEntry.stub(T val, {String? lab, List<TextBlock>? blocks }) => ValueEntry(val, (m) => {}, label: lab, txtBlocks: blocks ?? []);
+
+  ValueEntry<T> copyWith({T? value,  void Function(T)? onSelect,
+    String? letter, String? label, List<TextBlock>? txtBlocks,
+    bool? exitBefore, bool? exitAfter, bool? describe, String? Function()? disabledReason})
+  => ValueEntry<T>(value ?? this.value, onSelect ?? this.onSelect,
+    letter: letter ?? this.letter,
+    label: label ?? this.label,
+    txtBlocks: txtBlocks ?? this.txtBlocks,
+    exitBefore: exitBefore ?? this.exitBefore,
+    exitAfter: exitAfter ?? this.exitAfter,
+    describe: describe ?? this.describe,
+    disabledReason: disabledReason ?? _disabledReason
+  );
 
   @override
   void activate(MenuController mc) {
-    if (enabled) {
-      if (exitBefore) mc.exitMenu();
-      onSelect(value);
-      if (!exitBefore) {
-        if (exitAfter) mc.exitMenu();
-        else mc.rebuild();
+    final v = value;
+    if (describe && v is Descriable) {
+      mc.showMenu(() => [TextEntry(label: v.description)],headerTxt: v.selectionName);
+    }
+    else {
+      if (enabled) {
+        if (exitBefore) mc.exitMenu();
+        onSelect(value);
+        if (!exitBefore) {
+          if (exitAfter) mc.exitMenu();
+          else mc.rebuild();
+        }
       }
     }
   }
@@ -114,7 +142,7 @@ class ShopItemEntry<T> extends ValueEntry<T> {
   Pilot shopper;
 
   @override
-  String? Function() get disabledReason => () => !canAfford ? "Can't afford" : null;
+  String? get disabledReason => !canAfford ? "Can't afford" : null;
 
   bool get canAfford {   // TODO: use shop to determine actual cost
     final v = value; if (v is ItemSlot) {

@@ -20,7 +20,7 @@ class AlienDrink extends Item {
   final String potency;  // for display/tooltip
 
   AlienDrink(super.name, {
-    required super.desc,
+    required super.shortDesc,
     required super.baseCost,
     required this.strength,
     required this.potency,
@@ -222,7 +222,7 @@ class DrinkGen {
 
     return AlienDrink(
       drinkName,
-      desc: description,
+      shortDesc: description,
       baseCost: baseCost,
       strength: strength,
       potency: potencyLabel,

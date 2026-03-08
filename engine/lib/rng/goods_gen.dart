@@ -574,7 +574,7 @@ class GoodsGen {
 
     return SpecialGood(
       name,
-      desc: desc,
+      shortDesc: desc,
       baseCost: baseCost,
       archetype: archetype,
       isHandcrafted: isHandcrafted,

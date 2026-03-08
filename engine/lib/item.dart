@@ -13,6 +13,11 @@ abstract interface class Nameable {
   String get selectionName;
 }
 
+abstract interface class Descriable extends Nameable {
+  String? get flavor;
+  String get description;
+}
+
 abstract interface class Normalizable extends Nameable {
   Map<System,double> normalize(Galaxy g, {log = true});
 }
@@ -35,7 +40,7 @@ class Item extends SpaceObject with Itemizable {
   final double volume; //cubic meters
   final sellable;
 
-  Item(super.name, {super.desc, int baseCost = 0, this.rarity = 0, this.mass = .01, this.volume = .01,
+  Item(super.name, {super.shortDesc, int baseCost = 0, this.rarity = 0, this.mass = .01, this.volume = .01,
     this.sellable = true, super.objColor}) : id = _idCounter++, _baseCost = baseCost;
 
 
@@ -62,16 +67,16 @@ class Activator extends Item {
   bool get recharged => rechargeMeter >= rechargeRequirement;
   int rechargeMeter = 0, rechargeRequirement;
   ActivatorAction onActivate;
-  Activator(super.name, this.onActivate, {required this.data, super.desc, this.power = .5, this.charges = 1, this.rechargeRequirement = 0}) :
+  Activator(super.name, this.onActivate, {required this.data, super.shortDesc, this.power = .5, this.charges = 1, this.rechargeRequirement = 0}) :
         super(rarity: data.rarity);
   factory Activator.fromStock(StockActivator stock, ActivatorAction action, {
     double quality = .5, String? name, String? desc}) => switch(stock.data.type) {
     ActivatorType.scroll => Activator(name ?? stock.name, action,data: stock.data, power: quality,
-        desc: desc ?? stock.desc),
+        shortDesc: desc ?? stock.desc),
     ActivatorType.wand => Activator(name ?? stock.name, action,data: stock.data, power: .5,
-        charges: (16 * quality).ceil(), desc: desc ?? stock.desc),
+        charges: (16 * quality).ceil(), shortDesc: desc ?? stock.desc),
     ActivatorType.rod => Activator(name ?? stock.name, action,data: stock.data, power: .5,
-        rechargeRequirement: (250 * quality).ceil(), desc: desc ?? stock.desc),
+        rechargeRequirement: (250 * quality).ceil(), shortDesc: desc ?? stock.desc),
   };
 
   void consumeCharge() {

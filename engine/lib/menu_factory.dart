@@ -71,7 +71,7 @@ class MenuFactory {
     return List.generate(items.slots.length,(i) {
       final slot = items.slots.elementAt(i); //print ("Inventory slot: ${slot.slotName}");
       if (action != null) return ValueEntry(letter: mc.letter(i), label: slot.label(shop: shop), slot.item, (m) => action(m));
-      else return TextEntry(label: slot.label(shop: shop));
+      else return ValueEntry.stub(slot.item, lab: slot.label(shop: shop));
     });
   }
 
@@ -118,7 +118,7 @@ class MenuFactory {
       drink = env.drink = env.drink ?? DrinkGen.generate(fm.galaxy, env, fm.itemRng, strength: drinkStrength);
       drinkStrength = ((1-fm.galaxy.civKernel.val(fm.player.system)) + ((1-env.techLvl + env.industry)/2))/2;
     } else {
-      drink = AlienDrink("Space Grog", desc: "Generic Space Station Grog", baseCost: 5, strength: drinkStrength, potency: "unknown");
+      drink = AlienDrink("Space Grog", shortDesc: "Generic Space Station Grog", baseCost: 5, strength: drinkStrength, potency: "unknown");
     }
     return <MenuEntry> [
       fm.player.creditLine,

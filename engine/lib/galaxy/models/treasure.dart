@@ -12,9 +12,9 @@ class TreasureModel extends GalaxySubMod {
   int numScrolls = 1000;
 
   Map<SystemLocation,Set<Item>> treasureMap = {};
-  Item ancientFedArt1 = Item("Primitive Humanoid Communications Device",desc: "Something called an 'IPhone 27'",sellable: false);
-  Item ancientFedArt2 = Item("A glowing datastack",desc: "A datastack entitled 'Ancient Earth History (500 BC - 2500 AD)'",sellable: false);
-  Item ancientFedArt3 = Item("Ivory chess piece", desc: "A chess knight, floating in space. Odd.",sellable: false);
+  Item ancientFedArt1 = Item("Primitive Humanoid Communications Device",shortDesc: "Something called an 'IPhone 27'",sellable: false);
+  Item ancientFedArt2 = Item("A glowing datastack",shortDesc: "A datastack entitled 'Ancient Earth History (500 BC - 2500 AD)'",sellable: false);
+  Item ancientFedArt3 = Item("Ivory chess piece", shortDesc: "A chess knight, floating in space. Odd.",sellable: false);
 
   TreasureModel(super.galaxy) {
     Set<Item> items = {ancientFedArt1,ancientFedArt2,ancientFedArt3};

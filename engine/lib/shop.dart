@@ -29,7 +29,7 @@ class CommodityItem extends Item {
   final UniversalCommodity commodity;
   CommodityItem(this.commodity, {required int marketPrice})
       : super(commodity.toString(),
-      desc: commodity.desc,
+      shortDesc: commodity.desc,
       baseCost: marketPrice,
       rarity: 0.8);
 }

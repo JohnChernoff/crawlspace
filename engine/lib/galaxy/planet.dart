@@ -94,7 +94,7 @@ class Planet extends SpaceEnvironment<SystemLocation> {
     // in practice given the broad coverage of Goods constraints).
     export = _pickExport(rnd);
 
-    desc = "$name is ${article(age.toString())} "
+    shortDesc = "$name is ${article(age.toString())} "
         "${getDescriptor(WordType.adj)} ${getDescriptor(WordType.noun)} "
         "with ${article(environment.toString())} climate. "
         "Its chief exports include $export.";

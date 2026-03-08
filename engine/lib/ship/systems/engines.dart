@@ -34,6 +34,22 @@ class Engine extends ShipSystem {
   Map<XenomancySchool,int> xenoPowerBonus;
 
   @override
+  String get description {
+    StringBuffer sb = StringBuffer();
+    sb.writeln(flavor);
+    sb.writeln();
+    if (domain == Domain.hyperspace) {
+      sb.writeln("Base aut per hyperspace jump: $baseAutPerUnitTraversal");
+    } else {
+      sb.writeln("Base aut per unit traversal (BAPUT): $baseAutPerUnitTraversal");
+    }
+    sb.writeln("Efficiency: $efficiency");
+    sb.writeln("Xeno production (per aut): $xenoGen");
+    sb.writeln(super.description);
+    return sb.toString();
+  }
+
+  @override
   ShipSystemType get type => ShipSystemType.engine;
 
   Engine(super.name, {
@@ -52,7 +68,9 @@ class Engine extends ShipSystem {
     required super.baseCost,
     required super.baseRepairCost,
     required super.powerDraw,
-    required super.mass});
+    required super.mass,
+    required super.about
+  });
 
   factory Engine.fromStock(StockSystem stock) {
     EngineData data = stockEngines[stock]!;
@@ -66,6 +84,7 @@ class Engine extends ShipSystem {
       baseRepairCost: data.systemData.baseRepairCost,
       repairDifficulty: data.systemData.repairDifficulty,
       rarity: data.systemData.rarity,
+      about: data.systemData.about,
       //
       xenoGen: data.xenoGen,
       xenoCastBonus: data.xenoCastBonus,

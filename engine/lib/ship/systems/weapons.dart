@@ -107,6 +107,7 @@ class Weapon extends ShipSystem {
     required super.baseRepairCost,
     required super.powerDraw,
     required super.mass,
+    required super.about,
     super.manufacturer,
     super.rarity,
     super.stability,
@@ -125,6 +126,7 @@ class Weapon extends ShipSystem {
       baseRepairCost: data.systemData.baseRepairCost,
       repairDifficulty: data.systemData.repairDifficulty,
       rarity: data.systemData.rarity,
+      about: data.systemData.about,
       //
       dmgDice: data.dmgDice,
       dmgDiceSides: data.dmgDiceSides,

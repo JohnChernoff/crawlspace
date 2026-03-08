@@ -25,6 +25,7 @@ abstract class RechargableShipSystem extends ShipSystem {
     required super.baseRepairCost,
     required super.mass,
     required super.powerDraw,
+    required super.about,
     super.manufacturer,
     super.rarity,
     super.stability,
@@ -73,6 +74,7 @@ class PowerGenerator extends RechargableShipSystem {
     required super.baseRepairCost,
     required super.mass,
     required super.powerDraw,
+    required super.about,
     super.manufacturer,
     super.rarity,
     super.stability,
@@ -91,6 +93,7 @@ class PowerGenerator extends RechargableShipSystem {
       baseRepairCost: data.systemData.baseRepairCost,
       repairDifficulty: data.systemData.repairDifficulty,
       rarity: data.systemData.rarity,
+      about: data.systemData.about,
       //
       powerType: data.powerType,
       maxEnergy: data.maxEnergy,
