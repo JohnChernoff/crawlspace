@@ -150,6 +150,11 @@ class ItemSlot<T extends Itemizable> {
     }
     return sb.toString();
   }
+
+  @override
+  String toString() {
+    return "$slotName: ${items.length}";
+  }
 }
 
 typedef InventoryView<T extends Itemizable> = Inventory<T>;
@@ -207,5 +212,12 @@ class Inventory<T extends Itemizable> {
       result.add(item, data: slot?.data.copyWith());
     }
     return result;
+  }
+
+  @override
+  String toString() {
+    StringBuffer sb = StringBuffer();
+    for (final slot in slots) sb.writeln(slot);
+    return sb.toString();
   }
 }

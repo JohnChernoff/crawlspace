@@ -161,9 +161,7 @@ class FugueEngine {
         Agent(persona.name,persona,loc: AboardShip(agentShip),galaxy: galaxy);
         addShip(agentShip);
     }
-    print(_shipRegistry.all);
-    print(_pilotRegistry.all);
-    print (activePilots);
+    //print(_shipRegistry.all); //print(_pilotRegistry.all); //print (activePilots);
     msg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
     msg("You are ${galaxy.maxJumps} jumps away from Mentos.");
     update();

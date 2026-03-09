@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
+import 'package:crawlspace_engine/stock_items/corps.dart';
 import 'package:crawlspace_engine/stock_items/trade/commodities.dart';
 import 'item.dart';
 import 'actors/pilot.dart';
@@ -104,6 +105,14 @@ abstract class Shop {
       TransactionResult.wtf               => "Wtf!",
     };
   }
+
+  @override
+  String toString() {
+    StringBuffer sb = StringBuffer();
+    sb.writeln("$name, tech level: ${location.techLvl.toStringAsFixed(2)}, system: ${location.locale.system.name}");
+    sb.writeln(inventory);
+    return sb.toString();
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -137,19 +146,32 @@ class SystemShop extends Shop {
       SystemShopType.shield   => [ShipSystemType.shield],
       SystemShopType.weapon   => [ShipSystemType.weapon],
       SystemShopType.launcher => [ShipSystemType.launcher],
-      SystemShopType.misc     => [ShipSystemType.power, ShipSystemType.engine],
+      SystemShopType.misc     => [
+        ShipSystemType.power,
+        ShipSystemType.engine,
+        ShipSystemType.shield,
+        ShipSystemType.sensor,
+      ],
     };
 
-    final itemSelection = generateSystemInventory(quantity, sysTypes, techLvl, rnd,
-        corpWeights: g.corpMod.corpWeights(location.loc.system),
-        militaryAvailable: g.corpMod.militaryAvailable(location.loc.system));
+    final domCorp = g.corpMod.dominantCorp(location.loc.system);
+    final itemSelection = generateSystemInventory(quantity, sysTypes, techLvl, rnd, domCorp: domCorp);
     if (itemSelection.isEmpty) return;
 
+    final corpWeights =  g.corpMod.corpWeights(location.loc.system);
+    final weights = {
+      for (final s in itemSelection) s: corpWeights[s.manufacturer] ?? 0 // + (s.manufacturer == domCorp ?  .5 : 0)).clamp(0,1).toDouble()
+    }; //print(weights);
+
+    //final militaryAvailable = g.corpMod.militaryAvailable(location.loc.system);
+
     while (inventory.count < quantity) {
-      final i = itemSelection.elementAt(rnd.nextInt(itemSelection.length));
-      if (rnd.nextDouble() < i.rarity) inventory.add(i.createSystem());
+      inventory.add(Rng.weightedRandom(weights, rnd).createSystem());
     }
   }
+
+  @override
+  String toString() => super.toString();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

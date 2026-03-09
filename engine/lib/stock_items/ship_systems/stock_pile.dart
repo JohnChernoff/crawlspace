@@ -1,6 +1,8 @@
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 
+import '../../fugue_engine.dart';
 import '../../item.dart';
 import '../../rng/rng.dart';
 import '../../ship/systems/engines.dart';
@@ -83,38 +85,32 @@ enum StockSystem {
   };
 }
 
-List<StockSystem> generateSystemInventory(
-    int n, List<ShipSystemType> types, int techLvl, Random rnd,
-    {Map<Corporation, double>? corpWeights, bool militaryAvailable = false}) {
+List<StockSystem> generateSystemInventory(int n, List<ShipSystemType> types, int techLvl, Random rnd, {Corporation? domCorp}) {
 
-  final candidates = getSystemsByTech(types, techLvl,
-      availableCorps: corpWeights?.keys.toList(),
-      militaryAvailable: militaryAvailable).toList();
+  final candidates = filterSystems(types, techLvl).toList();
 
-  if (candidates.isEmpty) return techLvl > 0
-      ? generateSystemInventory(n, types, techLvl - 1, rnd,
-      corpWeights: corpWeights, militaryAvailable: militaryAvailable)
-      : [];
+  if (candidates.isEmpty) {
+    glog("Could not generate inventory, raising tech level: $techLvl");
+    return techLvl < maxTechLvl
+        ? generateSystemInventory(n, types, techLvl + 1, rnd)
+        : [];
+  }
 
   final weights = {
-    for (final s in candidates)
-      s: (corpWeights?[s.manufacturer] ?? 1.0) * s.rarity
-  };
+    for (final s in candidates) s: s.rarity + (s.manufacturer == domCorp ?  .25 : 0).clamp(0,1).toDouble()
+  }; //print(weights);
+
+  final domItems = filterSystems(types,9).where((c) => c.manufacturer == domCorp).toList();
 
   final maxItems = min(n, candidates.length);
   final Set<StockSystem> chosen = {};
   while (chosen.length < maxItems) {
-    chosen.add(Rng.weightedRandom(weights, rnd));
+    chosen.add(rnd.nextInt(n) == 0 && domItems.isNotEmpty //this works well for 6-12 items
+        ? domItems.elementAt(rnd.nextInt(domItems.length))
+        : Rng.weightedRandom(weights, rnd));
   }
   return chosen.toList();
 }
 
-Iterable<StockSystem> getSystemsByTech(
-    List<ShipSystemType> types, int techLvl,
-    {List<Corporation>? availableCorps, bool militaryAvailable = false}) =>
-    StockSystem.values.where((s) =>
-    types.contains(s.type) &&
-        s.techLvl <= techLvl &&
-        (availableCorps == null || availableCorps.contains(s.manufacturer)) &&
-        (militaryAvailable || s.manufacturer.tierFor(s.type) != CorpTier.military)
-    );
+Iterable<StockSystem> filterSystems(List<ShipSystemType> types, int techLvl) =>
+    StockSystem.values.where((s) => types.contains(s.type) && s.techLvl <= techLvl);

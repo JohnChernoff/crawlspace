@@ -17,9 +17,7 @@ class ShipSystemControl {
   List<SlotAssignment> systemMap = [];
   Map<Ammo,int> ammoMap = {};
 
-  ShipSystemControl(this.ship) {
-    print(ship.name);
-    print(ship.shipClass.name);
+  ShipSystemControl(this.ship) { //print(ship.name); print(ship.shipClass.name);
     for (final classSlot in ship.shipClass.slots.all) { //print("Adding slot: ${classSlot.name}");
       systemMap.add(SlotAssignment(classSlot,null));
     }
