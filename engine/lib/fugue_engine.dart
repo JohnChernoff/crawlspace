@@ -137,7 +137,7 @@ class FugueEngine {
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
     Ship playShip = Ship("HMS Sebastian",
         shipClass: ShipClass.fromEnum(ShipClassType.hermes),
-        location: SystemLocation(farSys, farSys.map.rndCell(mapRnd)),
+        location: SystemLocation(farSys, farSys.map.rndCoord(mapRnd)),
         generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
         sensor: Sensor.fromStock(StockSystem.senFed1),
         impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
@@ -152,7 +152,7 @@ class FugueEngine {
     for (final persona in AgentPersonality.values) {
         Ship agentShip = Ship("Agent ${persona.name}",
             shipClass: ShipClass.fromEnum(ShipClassType.galaxy),
-            location: SystemLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCell(mapRnd)),
+            location: SystemLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCoord(mapRnd)),
             generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
             impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
             subEngine: Engine.fromStock(StockSystem.engBasicFedSub),

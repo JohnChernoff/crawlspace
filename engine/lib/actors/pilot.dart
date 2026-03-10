@@ -4,7 +4,6 @@ import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/actors/player.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
-import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import 'agent.dart';
@@ -42,7 +41,7 @@ class TransactionRecord {
   const TransactionRecord(this.type,this.credits);
 }
 
-final nowhere = AtEnvironment.fromSystem(SystemLocation(System("nowhere",StellarClass.A,Random()),SectorCell(Coord3D(0,0,0),{},0)));
+final nowhere = AtEnvironment.fromSystem(SystemLocation(System("nowhere",StellarClass.A,Random()),Coord3D(0,0,0)));
 final Pilot nobody = Pilot("nobody",loc:nowhere);
 
 class Pilot implements Locatable {

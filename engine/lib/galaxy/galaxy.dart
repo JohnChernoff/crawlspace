@@ -6,9 +6,8 @@ import 'package:crawlspace_engine/galaxy/models/flow_model.dart';
 import 'package:crawlspace_engine/galaxy/models/topology.dart';
 import 'package:crawlspace_engine/galaxy/models/trade_model.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
-import 'package:crawlspace_engine/galaxy/models/treasure.dart';
+import 'package:crawlspace_engine/galaxy/models/item_reg.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
-import '../item.dart';
 import 'flow_field.dart';
 import '../fugue_engine.dart';
 import 'kernels/auth_kern.dart';
@@ -48,6 +47,8 @@ import 'system.dart';
 enum LawLevel { core, regulated, frontier, lawless }
 
 class Galaxy {
+  final systemMapSize = 8;
+  final impulseMapSize = 8; //minimums?
   static const int density = 25;
   static const int maxSystems = 360;
   static const int avgPlanets = 3, maxPlanets = 6;
@@ -71,13 +72,14 @@ class Galaxy {
   late CivModel civMod;
   late HeatModel heatMod;
   late FederationModel fedMod;
-  late TreasureModel treasureMod;
+  late ItemRegistry itemRepository;
   late TradeModel tradeMod;
   late CorpModel corpMod;
   late CivKernelField civKernel;
   late TechKernelField techKernel;
   late CommerceKernelField commerceKernel;
   late AuthorityKernelField fedKernel;
+  bool formed = false;
 
   // Static (computed at gen, recomputed on tickCentury)
   //late TradeKernelField supplyField;    // per-commodity supply gradient
@@ -110,11 +112,11 @@ class Galaxy {
     getRandomLinkableSystem(fedHomeSystem)?.blackHole = true;
 
     for (final s in systems) {
-      s.map = s.createSystemMap(8,.02,.01,.001,rnd);
+      s.map = s.createSystemMap(systemMapSize,.02,.01,.001,this);
       final species = getHomeworldSpecies(s);
       if (species != null) {
         final homeWorld = Planet(species.homeWorld, 1, 1, rnd, homeworld: true, species: species,
-            locale: SystemLocation(s, s.map.rndCell(rnd)), population: 1, industry: 1, commerce: 1);
+            locale: SystemLocation(s, s.map.rndCoord(rnd)), population: 1, industry: 1, commerce: 1);
         s.addPlanets(this, rnd, pList: [homeWorld]);
       } else {
         s.addPlanets(this, rnd);
@@ -122,21 +124,17 @@ class Galaxy {
     }
 
     tradeMod = TradeModel(this);
-    treasureMod = TreasureModel(this);
-
-
-    print(relicMap); print(relics);
+    itemRepository = ItemRegistry(this);
     maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
+    formed = true;
   }
 
-  Iterable<Relic> get relics => relicMap.expand((entry) => entry.value).whereType<Relic>();
-  Iterable<MapEntry<SystemLocation, Set<Item>>> get relicMap => treasureMod.treasureMap.entries.where((t) => t.value.any((i) => i is Relic));
   Iterable<System> territory(Species species) => systems.where((s) => civMod.dominantSpecies(s) == species);
 
   SystemLocation rndLoc(Random rnd) {
     final system = getRandomSystem();
-    final sysCell = system.map.rndCell(rnd);
-    return SystemLocation(system,sysCell);
+    final rndCoord = system.map.rndCoord(rnd);
+    return SystemLocation(system,rndCoord);
   }
 
   void _createMap() {
@@ -258,7 +256,7 @@ class Galaxy {
       }
       map[t] = best!.$1;
     }
-    print("Spread Map: $map");
+    glog("Spread Map: $map",level: DebugLevel.Fine);
   }
 
   int minDist(Iterable<System> systems, System system) => systems

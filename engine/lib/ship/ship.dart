@@ -10,7 +10,6 @@ import 'package:crawlspace_engine/ship/ship_sys.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import '../fugue_engine.dart';
 import '../color.dart';
-import '../galaxy/galaxy.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/system.dart';
 import '../galaxy/geometry/grid.dart';
@@ -311,17 +310,23 @@ class Ship extends Item implements Locatable {
     return totalRecharge - totalBurn;
   }
 
-  List<MapEntry<SystemLocation, Set<Item>>>? scanSystem(Galaxy g, System system, Random rnd) {
+  void scanSystem(System system, FugueEngine fm) {
     final sensor = systemControl.getSensor();
-    if (sensor == null || sensor.scannedSystems.contains(system)) return null;
+    if (sensor == null || sensor.scannedSystems.contains(system)) return;
     else {
       sensor.scannedSystems.add(system);
-      return g.treasureMod.inSystem(system);
-      if (rnd.nextDouble() < ((sensor.accuracy[Domain.system] ?? 0) * .25)) {
-        return g.treasureMod.inSystem(system);
+      final itemList = fm.galaxy.itemRepository.inSystem(system);
+      for (final i in itemList) {
+        i.value.forEach((item) => item.scanned = ScanReport(sector: true));
+      }
+      final scanRoll = ((sensor.accuracy[Domain.system] ?? 0) * .25);
+      if (fm.mapRnd.nextDouble() < 1) { //scanRoll) {
+        for (final i in fm.galaxy.itemRepository.inSystem(system).expand((e) => e.value)) {
+          i.scanned = ScanReport(sector: true);
+          fm.scannerController.refreshSensors(system);
+        }
       }
     }
-    return null;
   }
 
   bool activeEffect(ShipEffect effect) => effectMap.isActive(effect);

@@ -40,7 +40,7 @@ class Agent extends Pilot {
   }
 
   void _travelTo(System dest, FugueEngine fm) {
-    final newLoc = SystemLocation(dest, dest.map.rndCell(fm.galaxy.rnd));
+    final newLoc = SystemLocation(dest, dest.map.rndCoord(fm.mapRnd));
     fm.shipRegistry.byPilot(this)!.move(newLoc, fm.shipRegistry); //print("Agent $name -> ${system}");
     if (fm.player.system == system) {
       lastKnownPlayerLocation = system;

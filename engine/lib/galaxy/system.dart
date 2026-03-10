@@ -87,18 +87,18 @@ class System extends Level implements Nameable {
     }
   }
 
-  SystemMap createSystemMap(int size, double nebulaFactor, double ionFactor, double blackFactor, Random rnd) {
+  SystemMap createSystemMap(int size, double nebulaFactor, double ionFactor, double blackFactor, Galaxy g) {
     Map<Coord3D,SectorCell> cells = {};
     for (int x=0;x<size;x++) {
       for (int y=0;y<size;y++) {
         for (int z=0;z<size;z++) {
           Map<Hazard, double> hazMap = {
-            Hazard.nebula : (nebulaFactor > rnd.nextDouble() ? 1 : 0),
-            Hazard.ion : (ionFactor > rnd.nextDouble() ? 1 : 0),
-            Hazard.roid : (ionFactor > rnd.nextDouble() ? 1 : 0)
+            Hazard.nebula : (nebulaFactor > g.rnd.nextDouble() ? 1 : 0),
+            Hazard.ion : (ionFactor > g.rnd.nextDouble() ? 1 : 0),
+            Hazard.roid : (ionFactor > g.rnd.nextDouble() ? 1 : 0)
           };
           final c = Coord3D(x, y, z); //if (neb == 1) print("System: $name, neb: $neb -> $c");
-          final sectorCell = SectorCell(c,hazMap, rnd.nextInt(999999));
+          final sectorCell = SectorCell(c,hazMap,g,g.rnd.nextInt(999999));
           cells.putIfAbsent(c, () => sectorCell);
         }
       }
@@ -112,7 +112,7 @@ class System extends Level implements Nameable {
           if (c != null) {
             for (final h in c.hazMap.entries) {
               if (h.value == 1) { //print("System: $name, Adding hazard -> ${c.coord}");
-                map.growHazard(c,h.key,rnd.nextDouble(),rnd);
+                map.growHazard(c,h.key,g.rnd.nextDouble(),g.rnd);
               }
             }
           }
@@ -120,9 +120,9 @@ class System extends Level implements Nameable {
       }
     }
 
-    if (blackFactor > rnd.nextDouble()) map.rndCell(rnd).blackHole = true;
+    if (blackFactor > g.rnd.nextDouble()) map.rndCell(g.rnd).blackHole = true;
     final List<SectorCell> starCells = map.cells.values.where((c) => c.planet == null && c.blackHole == false).toList();
-    final starCell = map.rndCell(rnd, cellList:  starCells);
+    final starCell = map.rndCell(g.rnd, cellList:  starCells);
     starCell.clearHazards();
     starCell.starClass = starClass;
 
@@ -142,7 +142,7 @@ class System extends Level implements Nameable {
       //print("res: $res, comm: $comm, dust: $dust");
       final cellList = map.cells.values.map((c) => c as SectorCell).where((
           sc) => sc.planet == null && !sc.blackHole).toList();
-      final loc = SystemLocation(this, map.rndCell(rnd, cellList: cellList));
+      final loc = SystemLocation.fromCell(this, map.rndCell(rnd, cellList: cellList));
       final planet = Planet(
         g.nameGenerator.generatePlanetName(),
         Rng.betaRnd(rnd, fed, 15),
@@ -171,6 +171,11 @@ class System extends Level implements Nameable {
       if (!link.scouted) explore(depth-1,sys: system);
     }
   }
+
+  ImpulseLocation rndImpLoc(Galaxy g) => ImpulseLocation(
+      SystemLocation(this,map.rndCoord(g.rnd)),
+      this,
+      Coord3D.random(g.impulseMapSize,g.rnd));
 
   String shortString(Galaxy g, {bool showVisit = false}) {
     return "$name ("

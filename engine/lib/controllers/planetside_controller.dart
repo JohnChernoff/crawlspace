@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/rng/drinks_gen.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
@@ -203,10 +202,8 @@ class PlanetsideController extends FugueController {
       });
     }
     if (fm.aiRnd.nextDouble() < .25) { //(env.rapport * .1)) { //TODO: debug settings
-      final nearestTreasureSystem = fm.galaxy.treasureMod.treasureMap.keys
-          .sorted((a,b) => fm.galaxy.topo.distance(a.system, fm.player.system)
-          .compareTo(fm.galaxy.topo.distance(b.system, fm.player.system))).first;
-      fm.msg("Psst - there's treasure at ${nearestTreasureSystem.loc}");
+      final nearestItem = fm.galaxy.itemRepository.nearestItem(fm.player.system);
+      fm.msg("Psst - there's treasure at ${nearestItem.key}");
     }
     final security = env is Planet ? (env.population + env.fedLvl) / 2.0 : 0.5;
     final conResistance = fm.player.attributes[AttribType.con]! * 0.5;

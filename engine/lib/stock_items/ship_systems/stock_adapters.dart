@@ -1,8 +1,5 @@
-import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:crawlspace_engine/ship/systems/adapter.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
-
-import '../../ship/systems/sensors.dart';
 import '../../ship/systems/ship_system.dart';
 import 'stock_pile.dart';
 

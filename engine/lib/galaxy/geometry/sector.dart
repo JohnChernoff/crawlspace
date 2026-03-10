@@ -13,7 +13,7 @@ class SectorCell extends GridCell {
   //double nebula,ionStorm,asteroids;
   int impulseSeed;
 
-  SectorCell(super.coord, super.hazMap, this.impulseSeed, {
+  SectorCell(super.coord, super.hazMap, super.g, this.impulseSeed, {
     this.planet,this.starClass, this.starOne = false, this.blackHole = false,
   });
 

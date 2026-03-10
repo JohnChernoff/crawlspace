@@ -120,7 +120,7 @@ class GridCellWidgetState extends State<GridCellWidget> {
       if (cell.starClass != null) stack.add(Text("✦", style: style));
       if (cell.blackHole) stack.add(Text("-", style: style));
     } else if (cell is ImpulseCell) {
-      if (cell.items.isNotEmpty) stack.add(Text("\$", style: style));
+      if (cell.itemz.isNotEmpty) stack.add(Text("\$", style: style));
     }
 
     //if (widget.ships.isNotEmpty) print(widget.ships);

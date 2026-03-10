@@ -1,7 +1,12 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
+import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/models/item_reg.dart';
 import 'package:crawlspace_engine/ship/ship_reg.dart';
+import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import '../../controllers/scanner_controller.dart';
+import '../../item.dart';
 import 'coord_3d.dart';
 import '../../effects.dart';
 import '../hazards.dart';
@@ -17,15 +22,26 @@ abstract class Level {
 }
 
 abstract class GridCell {
+  Set<Item> _itemCache = {};
+  IList<Item> get itemz => _itemCache.toIList();
   final Coord3D coord;
   final Map<Hazard,double> hazMap;
   final EffectMap<CellEffect> effects = EffectMap();
 
-  GridCell(this.coord,this.hazMap);
+  GridCell(this.coord,this.hazMap,Galaxy g) {
+    if (g.formed) scanItems(g.itemRepository);
+  }
 
   bool isEmpty(ShipRegistry reg, {countPlayer = true});
   void clearHazard(Hazard haz) => hazMap.remove(haz);
   void clearHazards() => hazMap.clear();
+  void scanItems(ItemRegistry itemReg) => _itemCache = itemReg.atCell(this);
+  void addItem(Item i, SpaceLocation loc, ItemRegistry reg) {
+    reg.addItem(i,loc); scanItems(reg);
+  }
+  void removeItem(Item i,ItemRegistry reg) {
+    reg.removeItem(i); scanItems(reg);
+  }
 
   String toScannerString(ShipRegistry reg) {
     StringBuffer sb = StringBuffer(toString());
@@ -57,6 +73,8 @@ class Grid<T extends GridCell> { //Map<GridCell,Set<Ship>> shipMap = {};
     final list = cellList ?? _cellList;
     return list[rnd.nextInt(list.length)];
   }
+
+  Coord3D rndCoord(Random rnd) => Coord3D.random(size, rnd);
 
   void growHazard(T cell, Hazard hazard, double strength, Random rnd, {spreadFactor = .25}) {
     cell.hazMap[hazard] = strength;
@@ -135,7 +153,5 @@ class Grid<T extends GridCell> { //Map<GridCell,Set<Ship>> shipMap = {};
 
     return path;
   }
-
-
 
 }

@@ -4,6 +4,14 @@ import 'package:crawlspace_engine/shop.dart';
 import '../../color.dart';
 import '../../item.dart';
 
+class ScanReport {
+  bool get unknownLocation => !(system || sector);
+  final bool system;
+  final bool sector;
+  const ScanReport({bool system = false, this.sector = false})
+      : this.system = system || sector;
+}
+
 abstract interface class Locatable {
   SpaceLocation get loc;
 }
@@ -33,8 +41,10 @@ class SpaceObject implements Nameable, Describable {
   String get selectionName => name;
   String get description => shortDesc ?? name;
   String? get flavor => null;
-  String?   shortDesc;
-  bool      known    = false;
+  String? shortDesc;
+  bool known = false;
+  ScanReport? scanned;
+
   GameColor objColor;
   SpaceObject(this.name, {this.shortDesc, this.objColor = GameColors.white});
 }

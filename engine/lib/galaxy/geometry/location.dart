@@ -1,4 +1,5 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 
@@ -10,10 +11,10 @@ import '../system.dart';
 sealed class SpaceLocation implements Locatable {
   SpaceLocation get loc => this;
   final Level _level;
-  final GridCell _cell;
+  final Coord3D _coord;
   Domain get domain;
   Level get level => _level;
-  GridCell get cell => _cell;
+  GridCell get cell => level.map.cells[_coord]!; //TODO: error log
 
   @override
   bool operator ==(Object other) {
@@ -25,6 +26,7 @@ sealed class SpaceLocation implements Locatable {
   SpaceLocation withCell(GridCell newCell);
 
   System get system {
+
     final loc = this; return switch(loc) {
       SystemLocation() => loc.level,
       ImpulseLocation() => loc.systemLoc.level,
@@ -47,7 +49,8 @@ sealed class SpaceLocation implements Locatable {
     }
   }
 
-  const SpaceLocation(this._level,this._cell);
+  const SpaceLocation(this._level,this._coord);
+
 }
 
 class SystemLocation extends SpaceLocation {
@@ -56,14 +59,14 @@ class SystemLocation extends SpaceLocation {
   @override
   System get level => _level as System;
   @override
-  SectorCell get cell => _cell as SectorCell;
+  SectorCell get cell => super.cell as SectorCell;
 
-  SystemLocation(super.level, super.cell)
-      : assert(level is System, "SystemLocation requires a System, got ${level.runtimeType}"),
-        assert(cell is SectorCell, "SystemLocation requires a SectorCell, got ${cell.runtimeType}");
+  SystemLocation(super._level, super._coord)
+      : assert(_level is System, "SystemLocation requires a System, got ${_level.runtimeType}");
+  factory SystemLocation.fromCell(Level lev, GridCell cell) => SystemLocation(lev,cell.coord);
 
   @override
-  SystemLocation withCell(GridCell newCell) => SystemLocation(level, newCell as SectorCell);
+  SystemLocation withCell(GridCell newCell) => SystemLocation(level, newCell.coord);
 
   @override
   String toString() {
@@ -78,14 +81,14 @@ class ImpulseLocation extends SpaceLocation {
   @override
   ImpulseLevel get level => _level as ImpulseLevel;
   @override
-  ImpulseCell get cell => _cell as ImpulseCell;
+  ImpulseCell get cell => super.cell as ImpulseCell;
 
-  ImpulseLocation(this.systemLoc, super.level, super.cell)
-      : assert(level is ImpulseLevel, "ImpulseLocation requires a ImpulseLevel, got ${level.runtimeType}"),
-        assert(cell is ImpulseCell, "ImpulseLocation requires a ImpulseCell, got ${cell.runtimeType}");
+  ImpulseLocation(this.systemLoc, super._level, super._coord)
+      : assert(_level is ImpulseLevel, "ImpulseLocation requires a ImpulseLevel, got ${_level.runtimeType}");
+  factory ImpulseLocation.fromCell(SystemLocation sysLoc, Level lev, GridCell cell) => ImpulseLocation(sysLoc,lev,cell.coord);
 
   @override
-  ImpulseLocation withCell(GridCell newCell) => ImpulseLocation(systemLoc, level, newCell as ImpulseCell);
+  ImpulseLocation withCell(GridCell newCell) => ImpulseLocation(systemLoc, level, newCell.coord);
 
   @override
   String toString() {

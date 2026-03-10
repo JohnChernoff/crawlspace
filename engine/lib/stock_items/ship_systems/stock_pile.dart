@@ -1,7 +1,5 @@
 import 'dart:math';
-import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
-
 import '../../fugue_engine.dart';
 import '../../item.dart';
 import '../../rng/rng.dart';

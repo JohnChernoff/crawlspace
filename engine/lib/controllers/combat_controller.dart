@@ -81,7 +81,7 @@ class CombatController extends FugueController {
       if (fm.combatRnd.nextBool()) {
         final cell = ship.loc.cell; if (cell is ImpulseCell) {
           system.damage = 50.0 + fm.combatRnd.nextInt(50);
-          cell.items.add(system);
+          ship.loc.cell.addItem(system, ship.loc, fm.galaxy.itemRepository);
         }
       }
     }

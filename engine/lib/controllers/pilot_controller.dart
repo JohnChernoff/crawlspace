@@ -198,19 +198,19 @@ class PilotController extends FugueController {
     int m = 0;
     Ship? ship = fm.playerShip; if (ship != null) {
       final cell = ship.loc.cell; if (cell is ImpulseCell) {
-        for (final i in List.of(cell.items)) {
+        for (final i in List.of(cell.itemz)) {
           if (i is ShipSystem) {
             if (ship.addScrap(i)) {
               m++;
               fm.msgController.addMsg("Scrapping: ${i.name}");
-              cell.items.remove(i);
+              cell.removeItem(i,fm.galaxy.itemRepository);
             }
             else {
               fm.msgController.addMsg("Couldn't scrap: ${i.name}");
             }
           } else {
             m++;
-            cell.items.remove(i);
+            cell.removeItem(i,fm.galaxy.itemRepository);
             ship.inventory.add(i);
             fm.msgController.addMsg("Added: ${i.name}");
           }

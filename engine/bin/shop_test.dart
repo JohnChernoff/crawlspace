@@ -1,8 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
-import 'package:crawlspace_engine/galaxy/planet.dart';
-import 'package:crawlspace_engine/galaxy/system.dart';
 import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
