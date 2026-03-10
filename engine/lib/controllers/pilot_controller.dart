@@ -88,11 +88,11 @@ class PilotController extends FugueController {
         fm.menuController.showMenu(() => fm.menuFactory.buildInstallSlotMenu(ship,system),headerTxt: "Select Slot:");
         return const ResultMessage("Select a slot", true);
       } else { //print("hmm");
-        final result = ship.systemControl.installSystem(system, slot: slot);
-        if (result == InstallResult.success) {
+        final report = ship.systemControl.installSystem(system, slot: slot);
+        if (report.result == InstallResult.success) {
           return ResultMessage("Installed at slot: ${slot.name}",true);
         } else {
-          return ResultMessage("${result.name} slot: ${slot.name}",false);
+          return ResultMessage("${report.result.name} slot: ${slot.name}",false);
         }
       }
     }

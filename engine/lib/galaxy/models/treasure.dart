@@ -5,6 +5,7 @@ import '../../rng/rng.dart';
 import '../../stock_items/activators.dart';
 import '../../stock_items/species.dart';
 import '../geometry/location.dart';
+import '../system.dart';
 
 class TreasureModel extends GalaxySubMod {
 
@@ -54,5 +55,7 @@ class TreasureModel extends GalaxySubMod {
     treasureMap.putIfAbsent(loc, () => {}).add(ActivatorFactory.generate(StockActivator.xenoEnhanceScroll, .5, galaxy.rnd,
         species: StockSpecies.vorlon.species));
   }
+
+  List<MapEntry<SystemLocation, Set<Item>>> inSystem(System sys) => treasureMap.entries.where((m) => m.key.level == sys).toList();
 
 }

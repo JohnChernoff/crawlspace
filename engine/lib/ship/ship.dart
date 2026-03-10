@@ -7,8 +7,10 @@ import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/rng/sys_gen.dart';
 import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:crawlspace_engine/ship/ship_sys.dart';
+import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import '../fugue_engine.dart';
 import '../color.dart';
+import '../galaxy/galaxy.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/system.dart';
 import '../galaxy/geometry/grid.dart';
@@ -104,8 +106,9 @@ class Ship extends Item implements Locatable {
     Engine? impEngine,
     Engine? subEngine,
     Engine? hyperEngine,
+    Sensor? sensor,
     this.hullType = HullType.basic
-    }) : _loc = location, _pilot = pilot {
+  }) : _loc = location, _pilot = pilot {
 
     _pilot?.locale = AboardShip(this);
     systemControl = ShipSystemControl(this);
@@ -121,14 +124,15 @@ class Ship extends Item implements Locatable {
     for (final a in (ammo ?? {}).entries) {
       systemControl.addAmmo(a.key, a.value, setWeapon: true);
     }
+    install(sensor);
   }
 
   void install(ShipSystem? system, {bool active = true}) {
     if (system != null) {
       addToInventory(system);
-      final result = systemControl.installSystem(system);
-      if (result == InstallResult.success) systemControl.toggleSystem(system, on: active);
-      else print("Error installing ${system.name}: $result");
+      final report = systemControl.installSystem(system);
+      if (report.result == InstallResult.success) systemControl.toggleSystem(system, on: active);
+      else print("Error installing ${system.name}: ${report.result.name}");
     }
   }
 
@@ -305,6 +309,19 @@ class Ship extends Item implements Locatable {
       }
     }
     return totalRecharge - totalBurn;
+  }
+
+  List<MapEntry<SystemLocation, Set<Item>>>? scanSystem(Galaxy g, System system, Random rnd) {
+    final sensor = systemControl.getSensor();
+    if (sensor == null || sensor.scannedSystems.contains(system)) return null;
+    else {
+      sensor.scannedSystems.add(system);
+      return g.treasureMod.inSystem(system);
+      if (rnd.nextDouble() < ((sensor.accuracy[Domain.system] ?? 0) * .25)) {
+        return g.treasureMod.inSystem(system);
+      }
+    }
+    return null;
   }
 
   bool activeEffect(ShipEffect effect) => effectMap.isActive(effect);

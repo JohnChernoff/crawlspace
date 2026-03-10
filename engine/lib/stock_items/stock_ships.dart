@@ -56,6 +56,7 @@ enum ShipType {
     ShipClassSlot(ShipSystemType.power, 1),
     ShipClassSlot(ShipSystemType.shield, 1),
     ShipClassSlot(ShipSystemType.weapon, 1),
+    ShipClassSlot(ShipSystemType.sensor, 1),
   ]),
   cruiser(.5, .6, [
     ShipClassSlot(ShipSystemType.engine, 3),

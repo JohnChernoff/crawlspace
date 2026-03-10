@@ -70,6 +70,8 @@ class LayerTransitController extends FugueController {
               fm.msgController.addMsg("New System: ${system.name}");
               fm.scannerController.reset();
             }
+            final scan = ship.scanSystem(fm.galaxy, system, fm.effectRnd);
+            if (scan != null) fm.msg("Scan: $scan");
             return true;
           }
         }

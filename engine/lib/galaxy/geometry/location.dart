@@ -81,8 +81,8 @@ class ImpulseLocation extends SpaceLocation {
   ImpulseCell get cell => _cell as ImpulseCell;
 
   ImpulseLocation(this.systemLoc, super.level, super.cell)
-      : assert(level is ImpulseLocation, "ImpulseLocation requires a System, got ${level.runtimeType}"),
-        assert(cell is ImpulseCell, "ImpulseLocation requires a SectorCell, got ${cell.runtimeType}");
+      : assert(level is ImpulseLevel, "ImpulseLocation requires a ImpulseLevel, got ${level.runtimeType}"),
+        assert(cell is ImpulseCell, "ImpulseLocation requires a ImpulseCell, got ${cell.runtimeType}");
 
   @override
   ImpulseLocation withCell(GridCell newCell) => ImpulseLocation(systemLoc, level, newCell as ImpulseCell);

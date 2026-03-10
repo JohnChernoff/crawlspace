@@ -54,6 +54,8 @@ enum StockSystem {
 
   senFed1(ShipSystemType.sensor,1,.9),
   senLael1(ShipSystemType.sensor,5,.5, manufacturer: Corporation.laventar),
+
+  adaGenMult(ShipSystemType.adapter,3,.8, manufacturer: Corporation.genCorp),
   ;
 
   final ShipSystemType type;

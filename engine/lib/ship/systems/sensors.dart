@@ -1,4 +1,5 @@
 import '../../galaxy/geometry/grid.dart';
+import '../../galaxy/system.dart';
 import '../../stock_items/ship_systems/stock_pile.dart';
 import '../../stock_items/ship_systems/stock_sensors.dart';
 import 'ship_system.dart';
@@ -17,10 +18,11 @@ enum SensorType {
 }
 
 class Sensor extends ShipSystem {
-  Map<Domain,int> scope;
-  Map<Domain,double> accuracy;
-  SensorType sensorType;
-  SensorEgo ego;
+  final Map<Domain,int> scope;
+  final Map<Domain,double> accuracy;
+  final SensorType sensorType;
+  final SensorEgo ego;
+  Set<System> scannedSystems = {};
 
   @override
   String get description {

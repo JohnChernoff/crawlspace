@@ -47,6 +47,7 @@ abstract class ShipSystem extends Item {
   final double baseRepairCost; //credits per 1% repair
   String get dmgTxt => "${(damage * 100).round()}";
   double damage; //% damaged
+  double adapterPenalty = 0;
   int enhancement;
   final int maxEnhancement;
   final double powerDraw; //per 1 aut of use

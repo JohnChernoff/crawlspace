@@ -191,11 +191,11 @@ class MenuFactory {
   }
 
   Menu buildInstallSlotMenu(Ship ship, ShipSystem system) {
-    final slots = ship.systemControl.availableSlotsbySystem(system).map((s) => s.slot).toList();
+    final results = ship.systemControl.availableSlotsbySystem(system).toList();
     return <MenuEntry> [
-      for (int i = 0; i < slots.length; i++)
-        ValueEntry(letter: letter(i), label: "${slots[i].labelFor(system)}", slots[i],
-                (slot) => fm.msgController.addResultMsg(fm.pilotController.installSystem(ship, system, slot: slot)), exitAfter: true)
+      for (int i = 0; i < results.length; i++)
+        ValueEntry(letter: letter(i), label: "${results[i].assignment!.slot.labelFor(system)}", results[i].assignment!.slot,
+                (s) => fm.msgController.addResultMsg(fm.pilotController.installSystem(ship, system, slot: s)), exitAfter: true)
     ];
   }
 

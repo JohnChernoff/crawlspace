@@ -1,16 +1,24 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
+import 'package:crawlspace_engine/ship/systems/adapter.dart';
+import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/ship/systems/power.dart';
 import 'package:crawlspace_engine/ship/systems/shields.dart';
 import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
-import '../fugue_engine.dart';
 import '../galaxy/geometry/grid.dart';
 
-enum InstallResult {success,unsupported,duplicate}
+enum InstallResult {success,unsupported,duplicate,adaptable}
+
+class InstallReport {
+  bool get installable => assignment != null;
+  final InstallResult result;
+  final SlotAssignment? assignment;
+  const InstallReport(this.result,this.assignment);
+}
 
 class ShipSystemControl {
   Ship ship;
@@ -38,27 +46,28 @@ class ShipSystemControl {
   Iterable<Shield> getShields({activeOnly = true}) => getInstalledSystems().whereType<Shield>().where((s) => (!activeOnly || s.active));
 
   PowerGenerator? getPower({activeOnly = true}) => getPowers(activeOnly: activeOnly).firstOrNull;
-  Iterable<PowerGenerator> getPowers({activeOnly = true}) => getInstalledSystems().whereType<PowerGenerator>().where((s) => (!activeOnly || s.active));
+  Iterable<PowerGenerator> getPowers({activeOnly = true}) => getInstalledSystems().whereType<PowerGenerator>()
+      .where((s) => (!activeOnly || s.active));
+
+  List<Adapter> get adapters => getInstalledSystems().whereType<Adapter>().toList();
+
+  Sensor? getSensor({activeOnly = true}) => getSensors(activeOnly: activeOnly).firstOrNull;
+  Iterable<Sensor> getSensors({activeOnly = true}) => getInstalledSystems().whereType<Sensor>()
+      .where((s) => (!activeOnly || s.active));
 
   Weapon? get primaryWeapon => availableWeapons.sorted((w1,w2) => w1.baseCost - w2.baseCost).firstOrNull;
   Iterable<Weapon> getWeapons({activeOnly = true}) => getInstalledSystems().whereType<Weapon>().where((s) => (!activeOnly || s.active));
 
   Iterable<RechargableShipSystem> get rechargables => getInstalledSystems().whereType<RechargableShipSystem>().where((s) => s.active);
   Iterable<ShipSystem> get activeSystems => getInstalledSystems().where((s) => s.active);
-  bool duplicateInstallation(ShipSystem s) => !ship.multiSystems.contains(s.type) && getInstalledSystems().any((sys) => sys.type == s.type);
+  bool duplicateInstallation(ShipSystem s) => isInstalled(s) ||
+      (!ship.multiSystems.contains(s.type) && getInstalledSystems().any((sys) => sys.type == s.type));
   bool isInstalled(ShipSystem s) => getInstalledSystems().contains(s);
   Iterable<SlotAssignment> exactSlots(SystemSlot s) => vacantSlots.where((as) => as.slot == s).toList();
   Iterable<SlotAssignment> availableSlots(ShipSystemType type,Corporation corp) => vacantSlots.where((i) => i.slot.supports(type,corp));
-  Iterable<SlotAssignment> availableSlotsbySystem(ShipSystem s) => vacantSlots.where((vs) => canInstall(s,vs) == InstallResult.success);
-  InstallResult canInstall(ShipSystem s, SlotAssignment assignment) {
-    if (duplicateInstallation(s)) return InstallResult.duplicate;
-    glog("Checking if ${s.name},${s.type},${s.manufacturer} can be installed at: "
-        "${assignment.system},${assignment.slot.systemType},${assignment.slot.manufacturer}",level: DebugLevel.Finer);
-    if (assignment.slot.supports(s.type,s.manufacturer)) {
-      return InstallResult.success;
-    }
-    return InstallResult.unsupported;
-  }
+  Iterable<InstallReport> availableSlotsbySystem(ShipSystem s) => vacantSlots
+      .map((vs) => installSystem(s,slot: vs.slot, dryRun: true)).where((r) => r.installable);
+
   double get currentShieldStrength => ship.multiSystems.contains(ShipSystemType.shield)
       ? getShields().where((s) => s.currentEnergy > 0).firstOrNull?.currentEnergy ?? 0
       : getShield()?.currentEnergy ?? 0;
@@ -100,30 +109,59 @@ class ShipSystemControl {
     systemMap.firstWhereOrNull((s) => s.system == sys)?.system = null;
   }
 
-  InstallResult installSystem(ShipSystem system, {SystemSlot? slot}) {
-    if (duplicateInstallation(system)) return InstallResult.duplicate;
+  InstallReport installSystem(ShipSystem system, {SystemSlot? slot, dryRun = false}) {
+    if (duplicateInstallation(system)) return InstallReport(InstallResult.duplicate,null);
     if (slot == null) {
-      final slots = availableSlotsbySystem(system).toList();
+      final slots = vacantSlots.where((s) => s.slot.supports(system.type, system.manufacturer)).toList();
       if (slots.isNotEmpty) {
-        slots.first.system = system;
-        return InstallResult.success;
+        if (!dryRun) slots.first.system = system;
+        return InstallReport(InstallResult.success,slots.first);
       }
     } else {
       final slots = exactSlots(slot).toList();
       if (slots.isNotEmpty && slots.first.slot.supports(system.type,system.manufacturer)) {
-        slots.first.system = system;
-        return InstallResult.success;
+        if (!dryRun) slots.first.system = system;
+        return InstallReport(InstallResult.success,slots.first);
       }
     }
-    return InstallResult.unsupported;
+
+    if (system is! Adapter && adapters.isNotEmpty) {
+      for (final vs in vacantSlots) {
+        if (vs.slot.systemType == system.type) {
+          for (final adapter in adapters) {
+            if (adapter.adapting == null && adapter.supportList.containsValue(system.manufacturer)) {
+              if (!dryRun) {
+                vs.system = adapter.adapting = system;
+                system.adapterPenalty = 1 - adapter.supportList[system.manufacturer]!;
+              }
+              return InstallReport(InstallResult.adaptable,vs);
+            }
+          }
+        }
+      }
+    }
+    return InstallReport(InstallResult.unsupported,null);
   }
 
   bool uninstallSystem(ShipSystem system) {
     final s = systemMap.firstWhereOrNull((s) => s.system == system);
     if (s != null) {
-      s.system = null; return true;
+      s.system = null;
+      if (system is Adapter && system.adapting != null) {
+        return uninstallSystem(system.adapting!);
+      } else {
+        system.adapterPenalty = 0;
+        final adapter = getAdapter(system); if (adapter != null) {
+          adapter.adapting = null;
+          uninstallSystem(adapter);
+        }
+      }
+      return true;
     } return false;
   }
+
+  Adapter? getAdapter(ShipSystem system) => getInstalledSystems(types: [ShipSystemType.adapter])
+      .whereType<Adapter>().where((a) => a.adapting == system).firstOrNull;
 
   bool addAmmo(Ammo ammo, int n, {setWeapon = false}) {
     if (!ship.okMass(ammo.mass * n)) return false;

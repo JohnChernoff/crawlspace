@@ -4,6 +4,7 @@ import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
 import 'package:crawlspace_engine/actors/pilot_reg.dart';
 import 'package:crawlspace_engine/ship/ship_reg.dart';
+import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/ship/systems/power.dart';
@@ -138,6 +139,7 @@ class FugueEngine {
         shipClass: ShipClass.fromEnum(ShipClassType.hermes),
         location: SystemLocation(farSys, farSys.map.rndCell(mapRnd)),
         generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
+        sensor: Sensor.fromStock(StockSystem.senFed1),
         impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
         subEngine: Engine.fromStock(StockSystem.engBasicFedSub),
         hyperEngine: Engine.fromStock(StockSystem.engBasicFedHyper),
