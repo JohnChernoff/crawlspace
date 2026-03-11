@@ -117,7 +117,7 @@ class Pilot implements Locatable {
             _hostile = (fm.aiRnd.nextDouble() < (h * .75)); //TODO: tie into game difficulty?
           }
         }
-        print("Setting hostility: ${faction.name} -> player = ${_hostile}, pirate: ${faction.isPirate}");
+        glog("Setting hostility: ${faction.name} -> player = ${_hostile}, pirate: ${faction.isPirate}",level: DebugLevel.Fine);
       }
     }
     return _hostile!;
