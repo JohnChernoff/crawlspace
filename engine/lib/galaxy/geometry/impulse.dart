@@ -8,7 +8,7 @@ import 'grid.dart';
 import '../hazards.dart';
 import '../../item.dart';
 
-typedef ImpulseMap = Grid<ImpulseCell>;
+typedef ImpulseMap = MappedGrid<ImpulseCell>;
 
 class ImpulseCell extends GridCell {
 
@@ -19,18 +19,18 @@ class ImpulseCell extends GridCell {
 
   void hodgeTick(Hazard haz, Random rnd, {jitter = .1}) {
     final Map<Coord3D,double> tmpCells = {};
-    for (final entry in map.cells.entries) {
-      int count = map.getAdjacentCells(entry.value).where((n) => n.hasHaz(haz)).length; //print("${entry.key}: $count");
-      if (entry.value.hasHaz(haz)) {
-        if (count > 3 && count < 6) tmpCells[entry.key] = entry.value.hazMap[haz]!;
-        else tmpCells[entry.key] = 0;
+    for (final entry in map.values) {
+      int count = map.getAdjacentCells(entry).where((n) => n.hasHaz(haz)).length; //print("${entry.key}: $count");
+      if (entry.hasHaz(haz)) {
+        if (count > 3 && count < 6) tmpCells[entry.coord] = entry.hazMap[haz]!;
+        else tmpCells[entry.coord] = 0;
       } else {
-        if (count == 5 || (count == 0 && rnd.nextDouble() < jitter)) tmpCells[entry.key] = rnd.nextDouble();
-        else tmpCells[entry.key] = 0;
+        if (count == 5 || (count == 0 && rnd.nextDouble() < jitter)) tmpCells[entry.coord] = rnd.nextDouble();
+        else tmpCells[entry.coord] = 0;
       }
     }
-    for (final entry in map.cells.entries) {
-      entry.value.hazMap[haz] = tmpCells[entry.key] ?? 0;
+    for (final entry in map.values) {
+      entry.hazMap[haz] = tmpCells[entry.coord] ?? 0;
     }
   }
 

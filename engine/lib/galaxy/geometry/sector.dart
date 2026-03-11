@@ -7,19 +7,33 @@ import 'grid.dart';
 import '../hazards.dart';
 import 'impulse.dart';
 
-typedef SectorMap = Grid<ImpulseCell>;
+typedef SectorMap = MappedGrid<ImpulseCell>;
 
 class SectorCell extends GridCell {
-
-  System system;
+  final System system;
   Planet? planet;
   StellarClass? starClass;
-  bool starOne,blackHole;
+  bool starOne, blackHole;
   int impulseSeed;
 
-  SectorCell(this.system, this.impulseSeed, { super.g, super.coord, super.hazMap,
-    this.planet,this.starClass, this.starOne = false, this.blackHole = false, required super.map,
-  });
+  SectorCell(
+      this.system,
+      this.impulseSeed, {
+        super.g,
+        super.coord,
+        super.hazMap,
+        this.planet,
+        this.starClass,
+        this.starOne = false,
+        this.blackHole = false,
+        required DenseCellMap<ImpulseCell> map,
+      }) : super(map: map);
+
+  DenseCellMap<ImpulseCell> get impulseMap => map as DenseCellMap<ImpulseCell>;
+
+  void updateMap(DenseCellMap<ImpulseCell> newMap) {
+    map = newMap;
+  }
 
   @override
   bool isEmpty(ShipRegistry reg, {countPlayer = true}) { //print("Chceking enpty");

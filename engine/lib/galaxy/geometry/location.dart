@@ -13,7 +13,7 @@ sealed class SpaceLocation implements Locatable {
   Domain get domain;
   System system;
   GridCell get cell; //TODO: error log
-  Grid get map;
+  MappedGrid get map;
 
   @override
   bool operator ==(Object other) {
@@ -55,7 +55,7 @@ class SectorLocation extends SpaceLocation {
   Coord3D sectorCoord;
 
   @override
-  SectorCell get cell => system.map.cells[sectorCoord] as SectorCell;
+  SectorCell get cell => system.map[sectorCoord] as SectorCell;
 
   @override
   SystemMap get map => system.map as SystemMap;
@@ -67,7 +67,7 @@ class SectorLocation extends SpaceLocation {
 
   @override
   String toString() {
-    return "System: ${system.name}\nSector: ${cell.coord}";
+    return "System: ${system.name}\nSector: $sectorCoord";
   }
 
   @override
@@ -89,11 +89,9 @@ class ImpulseLocation extends SpaceLocation {
   @override
   SectorMap get map => sectorCell.map as SectorMap;
 
-  SectorCell get sectorCell => system.map.cells[sectorCoord] as SectorCell;
+  SectorCell get sectorCell => system.map[sectorCoord] as SectorCell;
 
-  ImpulseCell get cell => sectorCell.map.cells[impulseCoord] as ImpulseCell;
-
-  //sectorCell.map.cells.putIfAbsent(impulseCoord,() => ImpulseCell(coord: impulseCoord)) as ImpulseCell;
+  ImpulseCell get cell => sectorCell.impulseMap.at(impulseCoord);
 
   ImpulseLocation(super.system, this.sectorCoord, this.impulseCoord);
 
@@ -102,7 +100,7 @@ class ImpulseLocation extends SpaceLocation {
 
   @override
   String toString() {
-    return "System: ${super.toString()}\nImpulse: ${cell.coord}";
+    return "Sector: $sectorCoord\nImpulse: $impulseCoord";
   }
 
   @override

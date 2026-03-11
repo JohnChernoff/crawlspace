@@ -55,7 +55,7 @@ class LayerTransitController extends FugueController {
         if (sysLoc.cell.starClass != null) { //sysLoc.level.removeShip(ship);
           if (action) fm.pilotController.action(pilot,ActionType.sector);
           if (ship.loc.domain == Domain.system) { //didn't get pulled into impulse
-            final stars = system.map.cells.values.where((c) => c is SectorCell && c.starClass != null);
+            final stars = system.map.values.where((c) => c is SectorCell && c.starClass != null);
             ship.move(SectorLocation(system,stars.first.coord),fm.shipRegistry);
             system.visit(fm);
             if (ship.itinerary != null) {
@@ -112,14 +112,14 @@ class LayerTransitController extends FugueController {
         }
         impMap = SectorMap(size,cells);
         if (sysLoc.cell.hasHaz(Hazard.roid)) PathGenerator.generate(impMap,4,0,fm.mapRnd, haz: Hazard.roid);
-        sysLoc.cell.map = impMap;
+        sysLoc.cell.updateMap(impMap);
         //sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel); //TODO: limit cache size
         //final items = fm.galaxy.treasureMod.treasureMap[sysLoc]?.toList();
       } else if (sysLoc.cell.map is SectorMap) {
         impMap = sysLoc.cell.map as SectorMap?;
       }
       if (impMap == null) return;
-      _enterImpulse(impMap,playShip,cell: impMap.cells.entries.firstWhere((c) => c.value.hazLevel == 0).value);
+      _enterImpulse(impMap,playShip,cell: impMap.values.firstWhere((c) => c.hazLevel == 0));
       fm.update();
       final ships = List.of(fm.shipRegistry.atCell(sysLoc.cell)); //avoids ConcurrentModificationError (hopefully)
       try {
@@ -148,7 +148,7 @@ class LayerTransitController extends FugueController {
         if (ship.npc && pic.sectorCoord == sysLoc.cell.coord && !okCell(targetCell)) {
           List<GridCell> safeDistCells = [];
           while (safeDistCells.isEmpty && safeDist > 0) {
-            safeDistCells = sectorMap.cells.values.where((c) => okCell(c)).toList();
+            safeDistCells = sectorMap.values.where((c) => okCell(c)).toList();
             safeDist--;
           };
           if (safeDistCells.isNotEmpty) {

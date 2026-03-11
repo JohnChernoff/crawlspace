@@ -95,7 +95,7 @@ class ScannerController extends FugueController {
     } else if (ship.inNebula) {
       return [TextBlock("In Nebula", GameColors.red, true)];
     } else {
-      final cells = ship.loc.map.cells.values
+      final cells = ship.loc.map.values
           .where((c) => c.scannable(mode ?? scannerMode,fm.shipRegistry))
           .sorted((c1,c2) => c1.dist(ship.loc).compareTo(c2.dist(ship.loc)))
           .sorted((a,b) => fm.shipRegistry.atCell(b).length.compareTo(fm.shipRegistry.atCell(a).length));

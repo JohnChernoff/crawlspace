@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/models/corp_model.dart';
 import 'package:crawlspace_engine/galaxy/models/fed_model.dart';
 import 'package:crawlspace_engine/galaxy/models/flow_model.dart';

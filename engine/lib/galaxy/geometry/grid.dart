@@ -21,14 +21,14 @@ abstract class GridCell implements Locatable {
   final Coord3D coord;
   final Map<Hazard,double> hazMap;
   final EffectMap<CellEffect> effects = EffectMap();
-  Grid map;
+  CellMap map;
 
   GridCell({Galaxy? g, this.coord = noCoord,this.hazMap = const {},required this.map}) {
     if (g != null) scanItems(g.itemRepository);
   }
 
   double distCell(GridCell cell) => loc.dist(cell.loc);
-  double dist(SpaceLocation loc) => loc.dist(loc);
+  double dist(SpaceLocation loc) => this.loc.dist(loc);
 
   bool isEmpty(ShipRegistry reg, {countPlayer = true});
   void clearHazard(Hazard haz) => hazMap.remove(haz);
@@ -59,18 +59,56 @@ abstract class GridCell implements Locatable {
   String toString() => "";
 }
 
-
-
-class Grid<T extends GridCell> { //Map<GridCell,Set<Ship>> shipMap = {};
+class MappedGrid<T extends GridCell> extends DenseCellMap<T> {
+  @override
   final int size;
-  final Map<Coord3D, T> cells;
-  late final List<T> _cellList;
 
-  Grid(this.size, this.cells) : _cellList = cells.values.toList();
-  factory Grid.empty() => Grid(0,const {});
+  final Map<Coord3D, T> _cells;
+
+  MappedGrid(this.size, Map<Coord3D, T> cells) : _cells = cells;
+
+  @override
+  T? operator [](Coord3D coord) => _cells[coord];
+
+  @override
+  void operator []=(Coord3D coord, T value) {
+    _cells[coord] = value;
+  }
+
+  @override
+  T? atXYZ(int x, int y, int z) => _cells[Coord3D(x, y, z)];
+
+  @override
+  T at(Coord3D coord) {
+    final cell = _cells[coord];
+    if (cell == null) throw StateError('No cell at $coord');
+    return cell;
+  }
+
+  @override
+  Iterable<T> get values => _cells.values;
+
+}
+
+abstract class CellMap<T extends GridCell> {
+  int get size;
+
+  T? operator [](Coord3D coord);
+  void operator []=(Coord3D coord, T value);
+  Iterable<T> get values;
+
+  T? atXYZ(int x, int y, int z);
+
+  bool containsCoord(Coord3D c) =>
+      c.x >= 0 && c.y >= 0 && c.z >= 0 &&
+          c.x < size && c.y < size && c.z < size;
+
+  bool containsXYZ(int x, int y, int z) =>
+      x >= 0 && y >= 0 && z >= 0 &&
+          x < size && y < size && z < size;
 
   T rndCell(Random rnd, {List<T>? cellList}) {
-    final list = cellList ?? _cellList;
+    final list = cellList ?? values.toList();
     return list[rnd.nextInt(list.length)];
   }
 
@@ -87,39 +125,51 @@ class Grid<T extends GridCell> { //Map<GridCell,Set<Ship>> shipMap = {};
     }
   }
 
-  List<T> getAdjacentCells(T cell, {int distance = 1}) {
-    final List<T> list = [];
-    for (int x = max(cell.coord.x - distance, 0); x <= min(cell.coord.x + distance, size - 1); x++) {
-      for (int y = max(cell.coord.y - distance, 0); y <= min(cell.coord.y + distance, size - 1); y++) {
-        for (int z = max(cell.coord.z - distance, 0); z <= min(cell.coord.z + distance, size - 1); z++) {
-          final c = Coord3D(x, y, z);
-          final neighbor = cells[c];
-          if (neighbor != null && c != cell.coord) {
-            list.add(neighbor);
+  Iterable<T> adjacentCells(T cell, {int distance = 1}) sync* {
+    final cx = cell.coord.x;
+    final cy = cell.coord.y;
+    final cz = cell.coord.z;
+
+    final minX = max(cx - distance, 0);
+    final maxX = min(cx + distance, size - 1);
+    final minY = max(cy - distance, 0);
+    final maxY = min(cy + distance, size - 1);
+    final minZ = max(cz - distance, 0);
+    final maxZ = min(cz + distance, size - 1);
+
+    for (int x = minX; x <= maxX; x++) {
+      for (int y = minY; y <= maxY; y++) {
+        for (int z = minZ; z <= maxZ; z++) {
+          if (x == cx && y == cy && z == cz) continue;
+
+          final neighbor = atXYZ(x, y, z);
+          if (neighbor != null) {
+            yield neighbor;
           }
         }
       }
     }
-
-    return list;
   }
+
+  List<T> getAdjacentCells(T cell, {int distance = 1}) =>
+      adjacentCells(cell, distance: distance).toList();
 
   List<T> getOppositeEdgeCells(T cell) {
     final edge = size-1;
     if (cell.coord.x == 0) {
-      return cells.values.where((c) => c.coord.x == edge).toList();
+      return values.where((c) => c.coord.x == edge).toList();
     } else if (cell.coord.x == edge) {
-      return cells.values.where((c) => c.coord.x == 0).toList();
+      return values.where((c) => c.coord.x == 0).toList();
     }
     if (cell.coord.y == 0) {
-      return cells.values.where((c) => c.coord.y == edge).toList();
+      return values.where((c) => c.coord.y == edge).toList();
     } else if (cell.coord.y == edge) {
-      return cells.values.where((c) => c.coord.y == 0).toList();
+      return values.where((c) => c.coord.y == 0).toList();
     }
     if (cell.coord.z == 0) {
-      return cells.values.where((c) => c.coord.z == edge).toList();
+      return values.where((c) => c.coord.z == edge).toList();
     } else if (cell.coord.z == edge) {
-      return cells.values.where((c) => c.coord.z == 0).toList();
+      return values.where((c) => c.coord.z == 0).toList();
     }
     return [];
   }
@@ -154,3 +204,22 @@ class Grid<T extends GridCell> { //Map<GridCell,Set<Ship>> shipMap = {};
     return path;
   }
 }
+
+abstract class DenseCellMap<T extends GridCell> extends CellMap<T> {
+  T at(Coord3D coord);
+}
+
+abstract class LazyCellMap<T extends GridCell> extends CellMap<T> {
+  T getOrCreate(Coord3D coord);
+}
+
+
+/*
+@override
+ImpulseCell? atXYZ(int x, int y, int z) {
+  if (x < 0 || y < 0 || z < 0 || x >= size || y >= size || z >= size) {
+    return null;
+  }
+  return _cells[x + y * size + z * size * size];
+}
+ */

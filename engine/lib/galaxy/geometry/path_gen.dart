@@ -6,7 +6,7 @@ import 'grid.dart';
 
 abstract class PathGenerator<T extends GridCell> {
   static void generate<T extends GridCell>(
-      Grid<T> grid,
+      MappedGrid<T> grid,
       int numPaths,
       int numRooms,
       Random rnd, {
@@ -22,9 +22,9 @@ abstract class PathGenerator<T extends GridCell> {
     }
   }
 
-  static int _forgePath<T extends GridCell>(Grid<T> grid,Random rnd, {width = 0, Hazard? haz}) {
-    final edgeCells = grid.cells.entries.where((e) => e.value.coord.isEdge(grid.size));
-    T start = edgeCells.elementAt(rnd.nextInt(edgeCells.length)).value;
+  static int _forgePath<T extends GridCell>(MappedGrid<T> grid,Random rnd, {width = 0, Hazard? haz}) {
+    final edgeCells = grid.values.where((e) => e.coord.isEdge(grid.size));
+    T start = edgeCells.elementAt(rnd.nextInt(edgeCells.length));
     final endCells =  grid.getOppositeEdgeCells(start);
     T end = endCells.elementAt(rnd.nextInt(endCells.length));
     clearHazards(start,haz);

@@ -22,7 +22,6 @@ import 'controllers/pilot_controller.dart';
 import 'controllers/planetside_controller.dart';
 import 'controllers/scanner_controller.dart';
 import 'galaxy/galaxy.dart';
-import 'galaxy/geometry/impulse.dart';
 import 'galaxy/geometry/location.dart';
 import 'actors/pilot.dart';
 import 'actors/player.dart';
@@ -176,7 +175,10 @@ class FugueEngine {
     numShips ??= (itemRnd.nextDouble() * (galaxy.civKernel.val(system) * maxShips)).floor();
     //print("Populating System: ${system.name}, ships: $numShips");
     for (int i = 0; i < numShips; i++) {
-      addShip(Rng.generateShip(system, galaxy, itemRnd));
+      print("System: ${system.name}...");
+      final ship = Rng.generateShip(system, galaxy, itemRnd);
+      sanityCheck(ship);
+      addShip(ship);
     }
     final numPirates = (itemRnd.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
     //print("Adding pirates: $numPirates");
@@ -295,9 +297,9 @@ class FugueEngine {
           Ship? ship = shipRegistry.byPilot(p);
           if (ship != null) {
             final loc = ship.loc;
-            if (loc.domain == playerShip?.loc.domain && player.locale is AboardShip) {
+            if (loc.system == playerShip?.loc.system && player.locale is AboardShip) {
               pilotController.npcShipAct(ship);
-            } else if (loc is ImpulseLocation) {
+            } else if (loc is ImpulseLocation) { //escape impulse
               ship.move(loc, shipRegistry);
             }
           }
@@ -308,7 +310,7 @@ class FugueEngine {
       auTick++;
       player.tick(this);
       playShip?.tick(fm: this);
-      for (final cell in player.loc.map.cells.values) {
+      for (final cell in player.loc.map.values) {
         cell.effects.tickAll();
       }
     } while (!player.ready);
@@ -324,6 +326,19 @@ class FugueEngine {
     glog("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}",
         level: DebugLevel.Fine);
     return playerShip?.loc.domain == domain;
+  }
+
+  void sanityCheck(Ship? ship) {
+    if (ship != null) {
+      final cell = ship.loc.cell;
+      print("ship.loc: ${ship.loc}");
+      print("cell.loc: ${cell.loc}");
+      print("equal: ${ship.loc == cell.loc}");
+      print("atLocation(ship.loc): ${shipRegistry.atLocation(ship.loc)}");
+      print("atCell(cell): ${shipRegistry.atCell(cell)}");
+    } else {
+      print("No ship");
+    }
   }
 
   void msg(String msg) => msgController.addMsg(msg);

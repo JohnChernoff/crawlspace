@@ -1,6 +1,5 @@
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
-import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:crawlspace_engine/galaxy/models/sub_model.dart';
 import '../../item.dart';
 import '../../rng/rng.dart';

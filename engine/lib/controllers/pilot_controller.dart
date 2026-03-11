@@ -137,7 +137,7 @@ class PilotController extends FugueController {
             if (w != null && ship.currentHullPercentage > (ship.pilot.faction.courage * 100)) {
               final r = w.accuracyRangeConfig.idealRange, d = ship.distance(l: playLoc); //print("${ship.name} combat...$r, $d");
               if ((r -d).abs() > 1) { //print("${ship.name} maneuvering...");
-                final idealCells = ship.loc.map.cells.values
+                final idealCells = ship.loc.map.values
                     .where((c) => (playLoc.distCell(c) - r).abs() < 1.5) //TODO: tweak acceptable range
                     .sorted((c1,c2) => ship.distance(c: c1.coord).compareTo(ship.distance(c: c2.coord)));
                 ship.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd); //print(ship.currentPath);
@@ -155,7 +155,7 @@ class PilotController extends FugueController {
               }
             } else {
               fm.msgController.addMsg("${ship.name} flees!");
-              final idealCells = ship.loc.map.cells.values
+              final idealCells = ship.loc.map.values
                   .sorted((c1,c2) => playLoc.distCell(c2).compareTo(playLoc.distCell(c1)));
               ship.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd);
             }

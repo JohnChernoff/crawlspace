@@ -81,16 +81,16 @@ class _AsciiGridState extends State<AsciiGrid> {
     return widget.fugueModel.shipRegistry.atCell(cell);
   }
 
-  List<GridCellWidget> createStack(int x, int y, double size, Grid<GridCell> map, Ship playship, GridCell? scannedCell,
+  List<GridCellWidget> createStack(int x, int y, double size, MappedGrid<GridCell> map, Ship playship, GridCell? scannedCell,
       {showAllCellsOnZPlane = true}) {
 
-    GridCell closestCell = map.cells[Coord3D(x, y, 0)]!;
+    GridCell closestCell = map.at(Coord3D(x, y, 0));
     final shipCoord = playship.loc.cell.coord;
     final cellWidgets = <GridCellWidget>[];
-    final invert = map is SectorMap && map.cells.entries.any((e) => e.value.hazLevel > 0);
+    final invert = map is SectorMap && map.values.any((e) => e.hazLevel > 0);
     final targetPath = widget.fugueModel.scannerController.targetPath;
     for (int z = 0; z < map.size; z++) {
-      final cell = map.cells[Coord3D(x,y,z)]!;
+      final cell = map.at(Coord3D(x,y,z));
       final uiTarget = widget.fugueModel.inputMode == InputMode.target && widget.fugueModel.player.targetLoc?.cell == cell;
       //final scanned = scannedCell?.coord == cell.coord && playship.canScan(cell);
       final scanned = scannedCell != null

@@ -6,7 +6,6 @@ import 'package:crawlspace_engine/actors/player.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
-import '../galaxy/geometry/sector.dart';
 import 'agent.dart';
 import '../color.dart';
 import '../controllers/pilot_controller.dart';

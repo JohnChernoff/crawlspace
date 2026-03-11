@@ -14,9 +14,9 @@ class MovementController extends FugueController {
   void vectorTarget(Coord3D v) {
     final loc = fm.player.targetLoc;
     if (loc == null) return;
-    final destCell = loc.cell.coord.add(v);
-    if (loc.map.cells.containsKey(destCell)) {
-      fm.player.targetLoc = loc.withCell(loc.map.cells[destCell]!);
+    final c = loc.cell.coord.add(v);
+    if (loc.map.containsCoord(c)) {
+      fm.player.targetLoc = loc.withCell(loc.map.at(c));
       fm.update();
     }
   }
@@ -26,10 +26,8 @@ class MovementController extends FugueController {
   }
 
   MoveResult moveShip(Ship ship, Coord3D c, {double baseEnergy = 20}) {
-    GridCell? destination = ship.loc.map.cells[c];
-    if (destination == null) {
-      return MoveResult.badDestination;
-    }
+    GridCell? destination = ship.loc.map[c];
+    if (destination == null) return MoveResult.badDestination;
     if (ship.loc.domain == Domain.impulse) {
       if (fm.shipRegistry.atCell(destination).isNotEmpty) {
         return MoveResult.impCollision;
@@ -61,6 +59,7 @@ class MovementController extends FugueController {
     }
 
     fm.pilotController.action(ship.pilot, ActionType.movement,actionAuts: auts);
+    assert(ship.loc == ship.loc.cell.loc);
     return MoveResult.moved;
   }
 

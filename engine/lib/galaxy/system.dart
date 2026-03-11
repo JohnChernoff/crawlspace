@@ -30,7 +30,7 @@ enum StellarClass {
   const StellarClass(this.color,this.power,this.prob);
 }
 
-typedef SystemMap = Grid<SectorCell>;
+typedef SystemMap = MappedGrid<SectorCell>;
 
 class System extends GridCell implements Nameable {
   String name;
@@ -105,12 +105,10 @@ class System extends GridCell implements Nameable {
     for (int x=0;x<size;x++) {
       for (int y=0;y<size;y++) {
         for (int z=0;z<size;z++) {
-          final c = map.cells[Coord3D(x, y, z)]; //use copy
-          if (c != null) {
-            for (final h in c.hazMap.entries) {
-              if (h.value == 1) { //print("System: $name, Adding hazard -> ${c.coord}");
-                map.growHazard(c,h.key,g.rnd.nextDouble(),g.rnd);
-              }
+          final c = map.at(Coord3D(x, y, z)); //use copy
+          for (final h in c.hazMap.entries) {
+            if (h.value == 1) { //print("System: $name, Adding hazard -> ${c.coord}");
+              map.growHazard(c,h.key,g.rnd.nextDouble(),g.rnd);
             }
           }
         }
@@ -118,7 +116,7 @@ class System extends GridCell implements Nameable {
     }
 
     if (blackFactor > g.rnd.nextDouble()) map.rndCell(g.rnd).blackHole = true;
-    final List<SectorCell> starCells = map.cells.values.where((c) => c.planet == null && c.blackHole == false).toList();
+    final List<SectorCell> starCells = map.values.where((c) => c.planet == null && c.blackHole == false).toList();
     final starCell = map.rndCell(g.rnd, cellList:  starCells);
     starCell.clearHazards();
     starCell.starClass = starClass;
@@ -137,7 +135,7 @@ class System extends GridCell implements Nameable {
       final res = g.civKernel.val(this);
       final dust = min(1.0, comm * 0.7 + tech * 0.3);
       //print("res: $res, comm: $comm, dust: $dust");
-      final cellList = map.cells.values.map((c) => c as SectorCell).where((
+      final cellList = map.values.map((c) => c as SectorCell).where((
           sc) => sc.planet == null && !sc.blackHole).toList();
       final loc = SectorLocation(this,map.rndCell(rnd, cellList: cellList).coord);
       final planet = Planet(

@@ -29,7 +29,7 @@ class CombatController extends FugueController {
       if (target == null) {
         fm.msgController.addMsg("Error: no target"); return;
       }
-      final cell = ship.loc.map.cells[target];
+      final cell = ship.loc.map.at(target);
       if (cell is ImpulseCell) { //TODO: sector-ranged weapons?
         final results = ship.fireWeapons(cell, fm.combatRnd, ship: ship.targetShip);
         if (results.isEmpty && ship == fm.playerShip) {
