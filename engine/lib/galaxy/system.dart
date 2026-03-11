@@ -10,6 +10,8 @@ import '../item.dart';
 import 'geometry/coord_3d.dart';
 import 'galaxy.dart';
 import 'geometry/grid.dart';
+import 'geometry/impulse.dart';
+import 'geometry/path_gen.dart';
 import 'hazards.dart';
 import 'planet.dart';
 import '../rng/rng.dart';
@@ -33,6 +35,8 @@ enum StellarClass {
 typedef SystemMap = MappedGrid<SectorCell>;
 
 class System extends GridCell implements Nameable {
+  final systemMapSize = 8;
+  final impulseMapSize = 8; //minimums?
   String name;
   String get selectionName => name;
   Set<System> links = HashSet();
@@ -44,10 +48,11 @@ class System extends GridCell implements Nameable {
   bool connected;
   StellarClass starClass;
   double anomaly;
-  //Map<SectorCell,SectorMap> impMapCache = {};
+  SystemMap map;
+  final Map<Coord3D, SectorMap> impulseCache = {};
 
   System(this.name,this.starClass,Random rnd,
-      {super.coord, super.hazMap, required super.map,this.blackHole = false,this.starOne = false,
+      {super.coord, super.hazMap, required this.map,this.blackHole = false,this.starOne = false,
         this.trafficGenHint = TrafficGenHint.normal, this.connected = false})
       : anomaly = 0.7 + rnd.nextDouble() * 0.6;
 
@@ -84,7 +89,8 @@ class System extends GridCell implements Nameable {
     }
   }
 
-  SystemMap createSystemMap(int size, double nebulaFactor, double ionFactor, double blackFactor, Galaxy g) {
+  SystemMap createSystemMap(double nebulaFactor, double ionFactor, double blackFactor, Galaxy g) {
+    int size = systemMapSize;
     Map<Coord3D,SectorCell> cells = {};
     for (int x=0;x<size;x++) {
       for (int y=0;y<size;y++) {
@@ -95,7 +101,7 @@ class System extends GridCell implements Nameable {
             Hazard.roid : (ionFactor > g.rnd.nextDouble() ? 1 : 0)
           };
           final c = Coord3D(x, y, z); //if (neb == 1) print("System: $name, neb: $neb -> $c");
-          final sectorCell = SectorCell(this,g.rnd.nextInt(999999),map: EmptyImpulse(),coord: c,hazMap: hazMap);
+          final sectorCell = SectorCell(this,g.rnd.nextInt(999999),coord: c,hazMap: hazMap);
           cells.putIfAbsent(c, () => sectorCell);
         }
       }
@@ -135,8 +141,7 @@ class System extends GridCell implements Nameable {
       final res = g.civKernel.val(this);
       final dust = min(1.0, comm * 0.7 + tech * 0.3);
       //print("res: $res, comm: $comm, dust: $dust");
-      final cellList = map.values.map((c) => c as SectorCell).where((
-          sc) => sc.planet == null && !sc.blackHole).toList();
+      final cellList = map.values.where((sc) => sc.planet == null && !sc.blackHole).toList();
       final loc = SectorLocation(this,map.rndCell(rnd, cellList: cellList).coord);
       final planet = Planet(
         g.nameGenerator.generatePlanetName(),
@@ -169,8 +174,8 @@ class System extends GridCell implements Nameable {
 
   ImpulseLocation rndImpLoc(Galaxy g) => ImpulseLocation(
       this,
-      Coord3D.random(g.systemMapSize,g.rnd),
-      Coord3D.random(g.impulseMapSize,g.rnd));
+      Coord3D.random(systemMapSize,g.rnd),
+      Coord3D.random(impulseMapSize,g.rnd));
 
   String shortString(Galaxy g, {bool showVisit = false}) {
     return "$name ("
@@ -205,6 +210,36 @@ class System extends GridCell implements Nameable {
 
   @override
   SpaceLocation get loc => throw UnimplementedError();
+
+  SectorMap generateImpulseMap(SectorCell sector, int size, Random rnd) {
+    final sectorIon = sector.hazMap[Hazard.ion] ?? 0;
+    final sectorNeb = sector.hazMap[Hazard.nebula] ?? 0;
+
+    final cells = <Coord3D, ImpulseCell>{};
+
+    for (int x = 0; x < size; x++) {
+      for (int y = 0; y < size; y++) {
+        for (int z = 0; z < size; z++) {
+          final c = Coord3D(x, y, z);
+          cells[c] = ImpulseCell(
+            sector,
+            coord: c,
+            hazMap: {
+              Hazard.nebula: rnd.nextDouble() < sectorNeb ? sectorNeb : 0,
+              Hazard.ion: rnd.nextDouble() < sectorIon ? sectorIon : 0,
+              Hazard.roid: sector.hazMap[Hazard.roid] ?? 0,
+              Hazard.wake: c.isEdge(size) ? 1 : 0,
+            },
+          );
+        }
+      }
+    }
+    final impMap = SectorMap(size, cells);
+    if (sector.hasHaz(Hazard.roid)) {
+      PathGenerator.generate(impMap, 4, 0, rnd, haz: Hazard.roid);
+    }
+    return impMap;
+  }
 }
 
 class EmptySector extends SystemMap {

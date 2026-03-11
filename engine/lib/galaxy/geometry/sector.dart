@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/planet.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
@@ -15,6 +17,10 @@ class SectorCell extends GridCell {
   StellarClass? starClass;
   bool starOne, blackHole;
   int impulseSeed;
+  @override
+  SectorMap get map => system.impulseCache.putIfAbsent(coord,
+        () => system.generateImpulseMap(this, system.impulseMapSize, Random(impulseSeed)),
+  );
 
   SectorCell(
       this.system,
@@ -26,14 +32,7 @@ class SectorCell extends GridCell {
         this.starClass,
         this.starOne = false,
         this.blackHole = false,
-        required DenseCellMap<ImpulseCell> map,
-      }) : super(map: map);
-
-  DenseCellMap<ImpulseCell> get impulseMap => map as DenseCellMap<ImpulseCell>;
-
-  void updateMap(DenseCellMap<ImpulseCell> newMap) {
-    map = newMap;
-  }
+      });
 
   @override
   bool isEmpty(ShipRegistry reg, {countPlayer = true}) { //print("Chceking enpty");
@@ -69,7 +68,7 @@ class SectorCell extends GridCell {
   }
 
   @override
-  SpaceLocation get loc => SectorLocation(system, coord);
+  SectorLocation get loc => SectorLocation(system, coord);
 }
 
 class EmptyImpulse extends SectorMap {

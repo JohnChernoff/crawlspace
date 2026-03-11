@@ -47,8 +47,6 @@ import 'system.dart';
 enum LawLevel { core, regulated, frontier, lawless }
 
 class Galaxy {
-  final systemMapSize = 8;
-  final impulseMapSize = 8; //minimums?
   static const int density = 25;
   static const int maxSystems = 360;
   static const int avgPlanets = 3, maxPlanets = 6;
@@ -112,7 +110,7 @@ class Galaxy {
     getRandomLinkableSystem(fedHomeSystem)?.blackHole = true;
 
     for (final s in systems) {
-      s.map = s.createSystemMap(systemMapSize,.02,.01,.001,this);
+      s.map = s.createSystemMap(.02,.01,.001,this);
       final species = getHomeworldSpecies(s);
       if (species != null) {
         final homeWorld = Planet(species.homeWorld, 1, 1, rnd, homeworld: true, species: species,

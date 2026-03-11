@@ -21,9 +21,9 @@ abstract class GridCell implements Locatable {
   final Coord3D coord;
   final Map<Hazard,double> hazMap;
   final EffectMap<CellEffect> effects = EffectMap();
-  CellMap map;
+  CellMap get map;
 
-  GridCell({Galaxy? g, this.coord = noCoord,this.hazMap = const {},required this.map}) {
+  GridCell({Galaxy? g, this.coord = noCoord,this.hazMap = const {}}) {
     if (g != null) scanItems(g.itemRepository);
   }
 

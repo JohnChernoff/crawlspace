@@ -13,7 +13,7 @@ sealed class SpaceLocation implements Locatable {
   Domain get domain;
   System system;
   GridCell get cell; //TODO: error log
-  MappedGrid get map;
+  CellMap get map;
 
   @override
   bool operator ==(Object other) {
@@ -58,7 +58,7 @@ class SectorLocation extends SpaceLocation {
   SectorCell get cell => system.map[sectorCoord] as SectorCell;
 
   @override
-  SystemMap get map => system.map as SystemMap;
+  SystemMap get map => system.map;
 
   SectorLocation(super.system, this.sectorCoord);
 
@@ -87,11 +87,11 @@ class ImpulseLocation extends SpaceLocation {
   SectorLocation get sector => SectorLocation(system, sectorCoord);
 
   @override
-  SectorMap get map => sectorCell.map as SectorMap;
+  SectorMap get map => sectorCell.map;
 
   SectorCell get sectorCell => system.map[sectorCoord] as SectorCell;
 
-  ImpulseCell get cell => sectorCell.impulseMap.at(impulseCoord);
+  ImpulseCell get cell => sectorCell.map.at(impulseCoord);
 
   ImpulseLocation(super.system, this.sectorCoord, this.impulseCoord);
 

@@ -12,10 +12,15 @@ typedef ImpulseMap = MappedGrid<ImpulseCell>;
 
 class ImpulseCell extends GridCell {
 
+  ImpulseMap map;
   SectorCell sector;
 
-  ImpulseCell(this.sector,{super.g, super.coord, super.hazMap})
-      : super(map: EmptySubImpulse());
+  ImpulseCell(
+      this.sector, {
+        ImpulseMap? map,
+        super.coord,
+        super.hazMap,
+      }) : map = map ?? EmptySubImpulse.instance;
 
   void hodgeTick(Hazard haz, Random rnd, {jitter = .1}) {
     final Map<Coord3D,double> tmpCells = {};
@@ -64,9 +69,10 @@ class ImpulseCell extends GridCell {
   }
 
   @override
-  SpaceLocation get loc => ImpulseLocation(sector.system, sector.coord, coord);
+  ImpulseLocation get loc => ImpulseLocation(sector.system, sector.coord, coord);
 }
 
 class EmptySubImpulse extends ImpulseMap {
-  EmptySubImpulse() : super(0, const {});
+  static final instance = EmptySubImpulse._();
+  EmptySubImpulse._() : super(0, const {});
 }

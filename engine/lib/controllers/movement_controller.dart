@@ -16,7 +16,7 @@ class MovementController extends FugueController {
     if (loc == null) return;
     final c = loc.cell.coord.add(v);
     if (loc.map.containsCoord(c)) {
-      fm.player.targetLoc = loc.withCell(loc.map.at(c));
+      fm.player.targetLoc = loc.withCell(loc.map[c]!);
       fm.update();
     }
   }

@@ -1,12 +1,9 @@
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import '../audio_service.dart';
-import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
-import '../galaxy/hazards.dart';
 import '../galaxy/geometry/impulse.dart';
 import '../galaxy/geometry/location.dart';
-import '../galaxy/geometry/path_gen.dart';
 import '../actors/pilot.dart';
 import '../galaxy/geometry/sector.dart';
 import '../ship/ship.dart';
@@ -55,7 +52,7 @@ class LayerTransitController extends FugueController {
         if (sysLoc.cell.starClass != null) { //sysLoc.level.removeShip(ship);
           if (action) fm.pilotController.action(pilot,ActionType.sector);
           if (ship.loc.domain == Domain.system) { //didn't get pulled into impulse
-            final stars = system.map.values.where((c) => c is SectorCell && c.starClass != null);
+            final stars = system.map.values.where((c) => c.starClass != null);
             ship.move(SectorLocation(system,stars.first.coord),fm.shipRegistry);
             system.visit(fm);
             if (ship.itinerary != null) {
@@ -88,37 +85,9 @@ class LayerTransitController extends FugueController {
       fm.msgController.addMsg("Error: ship not at system level"); return;
     }
     glog("Creating impulse map...",level: DebugLevel.Fine); //Entering")
-    int size = fm.galaxy.impulseMapSize;
     SpaceLocation sysLoc = playShip.loc;
     if (sysLoc is SectorLocation) { //final rnd = Random(l.cell.impulseSeed);
-      SectorMap? impMap;
-      if (sysLoc.cell.map is EmptyImpulse) {
-        final sectorIon = sysLoc.cell.hazMap[Hazard.ion] ?? 0;
-        final sectorNeb = sysLoc.cell.hazMap[Hazard.nebula] ?? 0;
-        Map<Coord3D,ImpulseCell> cells = {};
-        for (int x=0;x<size;x++) {
-          for (int y=0;y<size;y++) {
-            for (int z=0;z<size;z++) {
-              final c = Coord3D(x, y, z);
-              final cell = ImpulseCell(sysLoc.cell,coord: c, hazMap: {
-                Hazard.nebula : fm.mapRnd.nextDouble() < sectorNeb ? sectorNeb : 0,
-                Hazard.ion : fm.mapRnd.nextDouble() < sectorIon ? sectorIon : 0,
-                Hazard.roid : sysLoc.cell.hazMap[Hazard.roid] ?? 0,
-                Hazard.wake: c.isEdge(size) ? 1 : 0,
-              }, g: fm.galaxy);
-              cells.putIfAbsent(c, () => cell);
-            }
-          }
-        }
-        impMap = SectorMap(size,cells);
-        if (sysLoc.cell.hasHaz(Hazard.roid)) PathGenerator.generate(impMap,4,0,fm.mapRnd, haz: Hazard.roid);
-        sysLoc.cell.updateMap(impMap);
-        //sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel); //TODO: limit cache size
-        //final items = fm.galaxy.treasureMod.treasureMap[sysLoc]?.toList();
-      } else if (sysLoc.cell.map is SectorMap) {
-        impMap = sysLoc.cell.map as SectorMap?;
-      }
-      if (impMap == null) return;
+      final impMap = sysLoc.cell.map;
       _enterImpulse(impMap,playShip,cell: impMap.values.firstWhere((c) => c.hazLevel == 0));
       fm.update();
       final ships = List.of(fm.shipRegistry.atCell(sysLoc.cell)); //avoids ConcurrentModificationError (hopefully)
