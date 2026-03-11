@@ -16,7 +16,7 @@ class CombatController extends FugueController {
   void pursue(Ship? ship) {
     if (ship != null) {
       Ship? target = ship.targetShip; if (target != null) {
-        final path = ship.loc.level.map.greedyPath(ship.loc.cell, target.loc.cell, 1, fm.combatRnd);
+        final path = ship.loc.map.greedyPath(ship.loc.cell, target.loc.cell, 1, fm.combatRnd);
         final dest = path.firstOrNull?.coord;
         if (dest != null) fm.movementController.moveShip(ship, path.first.coord);
       }
@@ -29,7 +29,7 @@ class CombatController extends FugueController {
       if (target == null) {
         fm.msgController.addMsg("Error: no target"); return;
       }
-      final cell = ship.loc.level.map.cells[target];
+      final cell = ship.loc.map.cells[target];
       if (cell is ImpulseCell) { //TODO: sector-ranged weapons?
         final results = ship.fireWeapons(cell, fm.combatRnd, ship: ship.targetShip);
         if (results.isEmpty && ship == fm.playerShip) {
@@ -44,8 +44,8 @@ class CombatController extends FugueController {
                   fm.msgController.addMsg("No ammo for ${result.weapon.name}");
                   rangedMishap = true;
                 } else {
-                  final path = ship.loc.level.map.greedyPath(ship.loc.cell,
-                      ship.targetShip!.loc.cell, ship.loc.level.map.size, fm.combatRnd, jitter: 0, ignoreHaz: true);
+                  final path = ship.loc.map.greedyPath(ship.loc.cell,
+                      ship.targetShip!.loc.cell, ship.loc.map.size, fm.combatRnd, jitter: 0, ignoreHaz: true);
                   final obstacle = path.firstWhereOrNull((c) => c.hazLevel > 0);
                   if (obstacle != null) {
                     fm.msgController.addMsg("${result.weapon.ammo!.name} hits ${obstacle.hazMap.entries.firstWhere((o) => o.value > 0).key.name}!");

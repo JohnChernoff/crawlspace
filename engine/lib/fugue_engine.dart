@@ -34,8 +34,6 @@ import 'stock_items/stock_ships.dart';
 import 'galaxy/system.dart';
 import 'ship/systems/weapons.dart';
 
-const blownUp = -1;
-
 class TextBlock {
   final String txt;
   final bool newline;
@@ -137,7 +135,7 @@ class FugueEngine {
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
     Ship playShip = Ship("HMS Sebastian",
         shipClass: ShipClass.fromEnum(ShipClassType.hermes),
-        location: SystemLocation(farSys, farSys.map.rndCoord(mapRnd)),
+        location: SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),
         generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
         sensor: Sensor.fromStock(StockSystem.senFed1),
         impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
@@ -152,7 +150,7 @@ class FugueEngine {
     for (final persona in AgentPersonality.values) {
         Ship agentShip = Ship("Agent ${persona.name}",
             shipClass: ShipClass.fromEnum(ShipClassType.galaxy),
-            location: SystemLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCoord(mapRnd)),
+            location: SectorLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCoord(mapRnd)),
             generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
             impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
             subEngine: Engine.fromStock(StockSystem.engBasicFedSub),
@@ -297,10 +295,10 @@ class FugueEngine {
           Ship? ship = shipRegistry.byPilot(p);
           if (ship != null) {
             final loc = ship.loc;
-            if (loc.level == playerShip?.loc.level && player.locale is AboardShip) {
+            if (loc.domain == playerShip?.loc.domain && player.locale is AboardShip) {
               pilotController.npcShipAct(ship);
             } else if (loc is ImpulseLocation) {
-              ship.move(loc.systemLoc, shipRegistry);
+              ship.move(loc, shipRegistry);
             }
           }
         } on ConcurrentModificationError {
@@ -310,16 +308,17 @@ class FugueEngine {
       auTick++;
       player.tick(this);
       playShip?.tick(fm: this);
-      for (final cell in player.loc.level.map.cells.values) {
+      for (final cell in player.loc.map.cells.values) {
         cell.effects.tickAll();
       }
     } while (!player.ready);
     if (playShip != null) {
-      final playMap = playShip.loc.level.map; if (playMap is ImpulseMap) {
-        final playLevel = playShip.loc.level as ImpulseLevel;
-        if (playLevel.sector.hasHaz(Hazard.ion)) playMap.hodgeTick(Hazard.ion, mapRnd);
+      final loc = playShip.loc; if (loc is ImpulseLocation) {
+        if (loc.sectorCell.hasHaz(Hazard.ion)) {
+          loc.cell.hodgeTick(Hazard.ion, mapRnd);
+        }
       }
-      for (final s in _shipRegistry.inLevel(playShip.loc.level).where((s) => s.npc)) playShip.detect(s);
+      for (final s in _shipRegistry.atDomain(playShip.loc).where((s) => s.npc)) playShip.detect(s);
     }
     update();
     glog("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}",

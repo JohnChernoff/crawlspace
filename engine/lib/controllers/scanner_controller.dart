@@ -55,9 +55,9 @@ class ScannerController extends FugueController {
       final tLoc = playShip.targetShip?.loc;
       if (tLoc != null && tLoc.domain == playShip.loc.domain) {
         return switch(targetPathMode) {
-          TargetPathMode.safe => tLoc.level.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.level.map.size, fm.mapRnd, jitter: 0, minHaz: 0),
-          TargetPathMode.safest => tLoc.level.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.level.map.size, fm.mapRnd, jitter: 0, forceHaz: true),
-          TargetPathMode.direct => tLoc.level.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.level.map.size, fm.mapRnd, jitter: 0,  ignoreHaz: true),
+          TargetPathMode.safe => tLoc.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.map.size, fm.mapRnd, jitter: 0, minHaz: 0),
+          TargetPathMode.safest => tLoc.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.map.size, fm.mapRnd, jitter: 0, forceHaz: true),
+          TargetPathMode.direct => tLoc.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.map.size, fm.mapRnd, jitter: 0,  ignoreHaz: true),
         };
       }
     }
@@ -95,9 +95,9 @@ class ScannerController extends FugueController {
     } else if (ship.inNebula) {
       return [TextBlock("In Nebula", GameColors.red, true)];
     } else {
-      final cells = ship.loc.level.map.cells.values
+      final cells = ship.loc.map.cells.values
           .where((c) => c.scannable(mode ?? scannerMode,fm.shipRegistry))
-          .sorted((c1,c2) => c1.coord.distance(ship.loc.cell.coord).compareTo(c2.coord.distance(ship.loc.cell.coord)))
+          .sorted((c1,c2) => c1.dist(ship.loc).compareTo(c2.dist(ship.loc)))
           .sorted((a,b) => fm.shipRegistry.atCell(b).length.compareTo(fm.shipRegistry.atCell(a).length));
       for (final cell in cells) {
         if (!cell.isEmpty(fm.shipRegistry)) {

@@ -130,17 +130,17 @@ class PilotController extends FugueController {
     if (pilot.ready) { //print("${ship.name}'s turn...");
       final hostile = pilot.setHostilityToPlayer(fm); //TODO: unset/refresh this somewhere?
       final playLoc = fm.playerShip != null ? ship.detect(fm.playerShip!) : null;
-      if (playLoc != null && hostile && fm.shipRegistry.inLevel(ship.loc.level).contains(fm.playerShip)) {
+      if (playLoc != null && hostile && fm.shipRegistry.atDomain(ship.loc).contains(fm.playerShip)) {
         ship.targetShip = fm.playerShip;
         final loc = ship.loc; if (loc is ImpulseLocation) {
             Weapon? w = ship.systemControl.primaryWeapon;
             if (w != null && ship.currentHullPercentage > (ship.pilot.faction.courage * 100)) {
               final r = w.accuracyRangeConfig.idealRange, d = ship.distance(l: playLoc); //print("${ship.name} combat...$r, $d");
               if ((r -d).abs() > 1) { //print("${ship.name} maneuvering...");
-                final idealCells = ship.loc.level.map.cells.values
-                    .where((c) => (playLoc.dist(c: c) - r).abs() < 1.5) //TODO: tweak acceptable range
+                final idealCells = ship.loc.map.cells.values
+                    .where((c) => (playLoc.distCell(c) - r).abs() < 1.5) //TODO: tweak acceptable range
                     .sorted((c1,c2) => ship.distance(c: c1.coord).compareTo(ship.distance(c: c2.coord)));
-                ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd); //print(ship.currentPath);
+                ship.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd); //print(ship.currentPath);
               } else {
                 if (playLoc != fm.playerShip!.loc) {
                   //print("${ship.name} cannot find ${fm.playerShip!.name}"); //TODO: fallback strategy
@@ -155,12 +155,12 @@ class PilotController extends FugueController {
               }
             } else {
               fm.msgController.addMsg("${ship.name} flees!");
-              final idealCells = ship.loc.level.map.cells.values
-                  .sorted((c1,c2) => playLoc.dist(c: c2).compareTo(playLoc.dist(c: c1)));
-              ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd);
+              final idealCells = ship.loc.map.cells.values
+                  .sorted((c1,c2) => playLoc.distCell(c2).compareTo(playLoc.distCell(c1)));
+              ship.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd);
             }
-        } else if (loc is SystemLocation) {
-          ship.currentPath = ship.loc.level.map.greedyPath(ship.loc.cell,ship.targetShip!.loc.cell,3,fm.aiRnd, forceHaz: true); //print(ship.currentPath);
+        } else if (loc is SectorLocation) {
+          ship.currentPath = ship.loc.map.greedyPath(ship.loc.cell,ship.targetShip!.loc.cell,3,fm.aiRnd, forceHaz: true); //print(ship.currentPath);
         }
       }
       if (ship.currentPath.isNotEmpty) {

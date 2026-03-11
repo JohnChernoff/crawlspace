@@ -10,90 +10,107 @@ import '../system.dart';
 
 sealed class SpaceLocation implements Locatable {
   SpaceLocation get loc => this;
-  final Level _level;
-  final Coord3D _coord;
   Domain get domain;
-  Level get level => _level;
-  GridCell get cell => level.map.cells[_coord]!; //TODO: error log
+  System system;
+  GridCell get cell; //TODO: error log
+  Grid get map;
 
   @override
   bool operator ==(Object other) {
-    return other is SpaceLocation && other.domain == domain && other.cell.coord == cell.coord;
+    return other is SpaceLocation
+        && other.domain == domain
+        && other.system == system;
   }
+
   @override
-  int get hashCode => level.hashCode * cell.hashCode;
+  int get hashCode;
 
   SpaceLocation withCell(GridCell newCell);
 
-  System get system {
+  SpaceLocation(this.system);
 
-    final loc = this; return switch(loc) {
-      SystemLocation() => loc.level,
-      ImpulseLocation() => loc.systemLoc.level,
-    };
-  }
-
-  double dist({SpaceLocation? l, GridCell? c}) {
-    if (l != null) {
-      if (l.domain == domain) {
-        return cell.coord.distance(l.cell.coord);
-      } else {
-        glog("Error: invalid ship location comparison", error: true);
-        return double.infinity;
+  double distCell(GridCell cell) => dist(cell.loc);
+  double dist(SpaceLocation l) {
+    if (l.domain == domain) {
+      if (this is SectorLocation && l is SectorLocation) {
+        return (this as SectorLocation)
+            .sectorCoord
+            .distance(l.sectorCoord);
       }
-    } else if (c != null) {
-      return cell.coord.distance(c.coord);
-    } else {
-      glog("Error: missing distance argument", error: true);
-      return double.infinity;
+      if (this is ImpulseLocation && l is ImpulseLocation) {
+        return (this as ImpulseLocation)
+            .impulseCoord
+            .distance(l.impulseCoord);
+      }
     }
+    glog("Error: invalid ship location comparison", error: true);
+    return double.infinity;
   }
-
-  const SpaceLocation(this._level,this._coord);
-
 }
 
-class SystemLocation extends SpaceLocation {
+class SectorLocation extends SpaceLocation {
   @override
   Domain get domain => Domain.system;
-  @override
-  System get level => _level as System;
-  @override
-  SectorCell get cell => super.cell as SectorCell;
 
-  SystemLocation(super._level, super._coord)
-      : assert(_level is System, "SystemLocation requires a System, got ${_level.runtimeType}");
-  factory SystemLocation.fromCell(Level lev, GridCell cell) => SystemLocation(lev,cell.coord);
+  Coord3D sectorCoord;
 
   @override
-  SystemLocation withCell(GridCell newCell) => SystemLocation(level, newCell.coord);
+  SectorCell get cell => system.map.cells[sectorCoord] as SectorCell;
+
+  @override
+  SystemMap get map => system.map as SystemMap;
+
+  SectorLocation(super.system, this.sectorCoord);
+
+  @override
+  SectorLocation withCell(GridCell newCell) => SectorLocation(system, newCell.coord);
 
   @override
   String toString() {
-    return "System: ${level.name}\nSector: ${cell.coord}";
+    return "System: ${system.name}\nSector: ${cell.coord}";
   }
+
+  @override
+  bool operator ==(Object other) => (super == other)
+      && other is SectorLocation && other.sectorCoord == sectorCoord;
+
+  @override
+  int get hashCode =>  Object.hash(system, domain, sectorCoord);
+
 }
 
 class ImpulseLocation extends SpaceLocation {
   @override
   Domain get domain => Domain.impulse;
-  final SystemLocation systemLoc;
-  @override
-  ImpulseLevel get level => _level as ImpulseLevel;
-  @override
-  ImpulseCell get cell => super.cell as ImpulseCell;
+  Coord3D sectorCoord,impulseCoord;
 
-  ImpulseLocation(this.systemLoc, super._level, super._coord)
-      : assert(_level is ImpulseLevel, "ImpulseLocation requires a ImpulseLevel, got ${_level.runtimeType}");
-  factory ImpulseLocation.fromCell(SystemLocation sysLoc, Level lev, GridCell cell) => ImpulseLocation(sysLoc,lev,cell.coord);
+  SectorLocation get sector => SectorLocation(system, sectorCoord);
 
   @override
-  ImpulseLocation withCell(GridCell newCell) => ImpulseLocation(systemLoc, level, newCell.coord);
+  SectorMap get map => sectorCell.map as SectorMap;
+
+  SectorCell get sectorCell => system.map.cells[sectorCoord] as SectorCell;
+
+  ImpulseCell get cell => sectorCell.map.cells[impulseCoord] as ImpulseCell;
+
+  //sectorCell.map.cells.putIfAbsent(impulseCoord,() => ImpulseCell(coord: impulseCoord)) as ImpulseCell;
+
+  ImpulseLocation(super.system, this.sectorCoord, this.impulseCoord);
+
+  @override
+  ImpulseLocation withCell(GridCell newCell) => ImpulseLocation(system, sectorCoord, newCell.coord);
 
   @override
   String toString() {
-    return "System: ${systemLoc.toString()}\nImpulse: ${cell.coord}";
+    return "System: ${super.toString()}\nImpulse: ${cell.coord}";
   }
+
+  @override
+  int get hashCode => Object.hash(system, domain, sectorCoord, impulseCoord);
+
+  @override
+  bool operator ==(Object other) => (super == other)
+      && other is ImpulseLocation && other.sectorCoord == sectorCoord && other.impulseCoord == impulseCoord;
 }
 
 sealed class PilotLocale implements Locatable {
@@ -110,7 +127,7 @@ class AboardShip extends PilotLocale {
 class AtEnvironment extends PilotLocale {
   final SpaceEnvironment env;
   AtEnvironment(this.env);
-  factory AtEnvironment.fromSystem(SystemLocation s) => AtEnvironment(SpaceEnvironment("",0,0,locale: s)); //TODO: copy galactic kernels
+  factory AtEnvironment.fromSystem(SectorLocation s) => AtEnvironment(SpaceEnvironment("",0,0,locale: s)); //TODO: copy galactic kernels
   @override
   SpaceLocation get loc => env.loc; // stable — fixed point
 }

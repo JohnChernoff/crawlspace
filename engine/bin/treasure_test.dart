@@ -7,7 +7,7 @@ void main() {
     print("***");
     //final humanSpace = fm.galaxy.territory(StockSpecies.humanoid.species);
     //final rndSys = humanSpace.elementAt(fm.itemRnd.nextInt(humanSpace.length));
-    final rndSys = fm.galaxy.rndLoc(fm.itemRnd).level;
+    final rndSys = fm.galaxy.rndLoc(fm.itemRnd).system;
     print("System: ${rndSys.name}");
     print(fm.galaxy.itemRepository.inSystem(rndSys));
   }

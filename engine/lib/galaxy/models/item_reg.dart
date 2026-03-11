@@ -57,7 +57,7 @@ class ItemRegistry extends GalaxySubMod {
     }
 
     final startingSystem = galaxy.farthestSystem(galaxy.fedHomeSystem);
-    final loc = SystemLocation(startingSystem, Coord3D(5,5,5));
+    final loc = SectorLocation(startingSystem, Coord3D(5,5,5));
     addItem(ActivatorFactory.generate(StockActivator.xenoEnhanceScroll, .5, galaxy.rnd, species: StockSpecies.vorlon.species),loc);
   }
 
@@ -82,7 +82,7 @@ class ItemRegistry extends GalaxySubMod {
 
   ItemSet inSystem(System sys) => _repository.entries.where((m) => m.key.system == sys).toSet();
   Set<Item>? atLocation(SpaceLocation loc) => _repository[loc];
-  Set<Item> atCell(GridCell cell) => _repository.entries.where((m) => m.key.cell == cell).expand((e) => e.value).toSet();
+  //Set<Item> atCell(GridCell cell) => _repository.entries.where((m) => m.key.cell == cell).expand((e) => e.value).toSet();
 
 
 }

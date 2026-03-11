@@ -15,8 +15,8 @@ class MovementController extends FugueController {
     final loc = fm.player.targetLoc;
     if (loc == null) return;
     final destCell = loc.cell.coord.add(v);
-    if (loc.level.map.cells.containsKey(destCell)) {
-      fm.player.targetLoc = loc.withCell(loc.level.map.cells[destCell]!);
+    if (loc.map.cells.containsKey(destCell)) {
+      fm.player.targetLoc = loc.withCell(loc.map.cells[destCell]!);
       fm.update();
     }
   }
@@ -26,7 +26,7 @@ class MovementController extends FugueController {
   }
 
   MoveResult moveShip(Ship ship, Coord3D c, {double baseEnergy = 20}) {
-    GridCell? destination = ship.loc.level.map.cells[c];
+    GridCell? destination = ship.loc.map.cells[c];
     if (destination == null) {
       return MoveResult.badDestination;
     }
@@ -39,7 +39,7 @@ class MovementController extends FugueController {
         return MoveResult.unsafeDestination;
       }
     }
-    final dist = ship.loc.cell.coord.distance(destination.coord);
+    final dist = ship.loc.distCell(destination);
     Engine? engine = ship.systemControl.engine;
     if (engine == null) return MoveResult.noEngine;
     if (!engine.active) return MoveResult.inactiveEngine; //engine.active = true; //auto activate

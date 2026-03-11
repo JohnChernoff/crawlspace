@@ -131,7 +131,7 @@ class XenoController {
 
   void fireCloud(double power, SpaceLocation location) {
     //double cells = 8 * power;
-    for (final cell in location.level.map.getAdjacentCells(location.cell)) {
+    for (final cell in location.cell.map.getAdjacentCells(location.cell)) {
       cell.effects.addEffect(CellEffect.fire, XenomancySpell.firecloud.timeout);
     }
   }

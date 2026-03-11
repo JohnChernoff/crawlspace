@@ -51,12 +51,12 @@ class LayerTransitController extends FugueController {
   bool newSystem(Pilot pilot, System system, {action = true}) {
     Ship? ship = fm.getShip(pilot); if (ship != null) {
       final sysLoc = ship.loc;
-      if (sysLoc is SystemLocation) {
+      if (sysLoc is SectorLocation) {
         if (sysLoc.cell.starClass != null) { //sysLoc.level.removeShip(ship);
           if (action) fm.pilotController.action(pilot,ActionType.sector);
           if (ship.loc.domain == Domain.system) { //didn't get pulled into impulse
             final stars = system.map.cells.values.where((c) => c is SectorCell && c.starClass != null);
-            ship.move(SystemLocation(system,stars.first.coord),fm.shipRegistry);
+            ship.move(SectorLocation(system,stars.first.coord),fm.shipRegistry);
             system.visit(fm);
             if (ship.itinerary != null) {
               if (ship.itinerary!.last == system) {
@@ -84,18 +84,15 @@ class LayerTransitController extends FugueController {
     if (playShip == null) {
       fm.msgController.addMsg("You're not in a ship."); return;
     }
-    if (playShip.loc is! SystemLocation) {
+    if (playShip.loc is! SectorLocation) {
       fm.msgController.addMsg("Error: ship not at system level"); return;
     }
     glog("Creating impulse map...",level: DebugLevel.Fine); //Entering")
     int size = fm.galaxy.impulseMapSize;
-    ImpulseLevel impLevel;
     SpaceLocation sysLoc = playShip.loc;
-    if (sysLoc is SystemLocation) { //final rnd = Random(l.cell.impulseSeed);
-      if (sysLoc.level.impMapCache.containsKey(sysLoc.cell)) {
-        impLevel = sysLoc.level.impMapCache[sysLoc.cell]!;
-      }
-      else {
+    if (sysLoc is SectorLocation) { //final rnd = Random(l.cell.impulseSeed);
+      SectorMap? impMap;
+      if (sysLoc.cell.map is EmptyImpulse) {
         final sectorIon = sysLoc.cell.hazMap[Hazard.ion] ?? 0;
         final sectorNeb = sysLoc.cell.hazMap[Hazard.nebula] ?? 0;
         Map<Coord3D,ImpulseCell> cells = {};
@@ -103,23 +100,26 @@ class LayerTransitController extends FugueController {
           for (int y=0;y<size;y++) {
             for (int z=0;z<size;z++) {
               final c = Coord3D(x, y, z);
-              final cell = ImpulseCell(c,{
+              final cell = ImpulseCell(sysLoc.cell,coord: c, hazMap: {
                 Hazard.nebula : fm.mapRnd.nextDouble() < sectorNeb ? sectorNeb : 0,
                 Hazard.ion : fm.mapRnd.nextDouble() < sectorIon ? sectorIon : 0,
                 Hazard.roid : sysLoc.cell.hazMap[Hazard.roid] ?? 0,
-                Hazard.wake: c.isEdge(size) ? 1 : 0
-              },fm.galaxy);
+                Hazard.wake: c.isEdge(size) ? 1 : 0,
+              }, g: fm.galaxy);
               cells.putIfAbsent(c, () => cell);
             }
           }
         }
-        final impMap = ImpulseMap(size,cells);
+        impMap = SectorMap(size,cells);
         if (sysLoc.cell.hasHaz(Hazard.roid)) PathGenerator.generate(impMap,4,0,fm.mapRnd, haz: Hazard.roid);
-        impLevel = ImpulseLevel(impMap,sysLoc.cell);
-        sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel); //TODO: limit cache size
+        sysLoc.cell.map = impMap;
+        //sysLoc.level.impMapCache.putIfAbsent(sysLoc.cell, () => impLevel); //TODO: limit cache size
         //final items = fm.galaxy.treasureMod.treasureMap[sysLoc]?.toList();
+      } else if (sysLoc.cell.map is SectorMap) {
+        impMap = sysLoc.cell.map as SectorMap?;
       }
-      _enterImpulse(impLevel,playShip,cell: impLevel.map.cells.entries.firstWhere((c) => c.value.hazLevel == 0).value as ImpulseCell);
+      if (impMap == null) return;
+      _enterImpulse(impMap,playShip,cell: impMap.cells.entries.firstWhere((c) => c.value.hazLevel == 0).value);
       fm.update();
       final ships = List.of(fm.shipRegistry.atCell(sysLoc.cell)); //avoids ConcurrentModificationError (hopefully)
       try {
@@ -127,7 +127,7 @@ class LayerTransitController extends FugueController {
         for (final ship in ships) {
           final h = ship.pilot.hostilityToward(fm.player.faction.species, fm.galaxy.civMod);
           fm.msgController.addMsg("${ship.name}${ship.pilot.hostile ? "(hostile)" : "(friendly)"} (${h.toStringAsFixed(2)}) is here");
-          if (ship != playShip) _enterImpulse(impLevel,ship);
+          if (ship != playShip) _enterImpulse(impMap,ship);
         }
       } on ConcurrentModificationError {
         glog("fark",error: true);
@@ -135,20 +135,20 @@ class LayerTransitController extends FugueController {
     }
   }
 
-  void _enterImpulse(ImpulseLevel impLvl, Ship? ship, {ImpulseCell? cell, safeDist = 4}) {
+  void _enterImpulse(SectorMap sectorMap, Ship? ship, {ImpulseCell? cell, safeDist = 4}) {
     if (ship == null) return;
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.impulse, activeOnly: false), ship, on: true, silent: true);
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: false, silent: true);
     final sysLoc = ship.loc;
-    if (sysLoc is SystemLocation) {
-      GridCell targetCell = cell ?? impLvl.map.rndCell(fm.mapRnd);
+    if (sysLoc is SectorLocation) {
+      GridCell targetCell = cell ?? sectorMap.rndCell(fm.mapRnd);
       final pic = playerImpulseLoc;
       if (pic != null) {
-        bool okCell(GridCell cell) => targetCell.coord.distance(pic.cell.coord) >= safeDist && cell.hazLevel == 0;
-        if (ship.npc && pic.systemLoc.cell == sysLoc.cell && !okCell(targetCell)) {
+        bool okCell(GridCell cell) => targetCell.dist(pic) >= safeDist && cell.hazLevel == 0;
+        if (ship.npc && pic.sectorCoord == sysLoc.cell.coord && !okCell(targetCell)) {
           List<GridCell> safeDistCells = [];
           while (safeDistCells.isEmpty && safeDist > 0) {
-            safeDistCells = impLvl.map.cells.values.where((c) => okCell(c)).toList();
+            safeDistCells = sectorMap.cells.values.where((c) => okCell(c)).toList();
             safeDist--;
           };
           if (safeDistCells.isNotEmpty) {
@@ -157,7 +157,7 @@ class LayerTransitController extends FugueController {
           }
         }
       }
-      ship.move(ImpulseLocation.fromCell(sysLoc, impLvl, targetCell),fm.shipRegistry);
+      ship.move(ImpulseLocation(ship.loc.system,sysLoc.cell.coord,targetCell.coord),fm.shipRegistry);
       fm.audioController.newTrack(newMood: MusicalMood.danger);
     } //fm.pilotController.action(ship.pilot, ActionType.movement);
   }
@@ -166,7 +166,7 @@ class LayerTransitController extends FugueController {
     if (ship == null) return;
     final impLoc = ship.loc;
     if (impLoc is ImpulseLocation) {
-      final ships = fm.shipRegistry.inLevel(impLoc.level);
+      final ships = fm.shipRegistry.atDomain(impLoc);
       if (ship == fm.playerShip && ships.length > 1 && ships.any((s) => s.pilot.hostile)) {
         if (ship.activeEffect(ShipEffect.folding)) {
           ships.forEach((s) => _exitImpulse(s, impLoc));
@@ -188,7 +188,7 @@ class LayerTransitController extends FugueController {
     fm.msgController.addMsg("Exiting impulse, resuming system travel");
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: true, silent: true);
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.impulse, activeOnly: false), ship, on: false, silent: true);
-    ship.move(impLoc.systemLoc, fm.shipRegistry);
+    ship.move(impLoc.sector, fm.shipRegistry);
   }
 
 }

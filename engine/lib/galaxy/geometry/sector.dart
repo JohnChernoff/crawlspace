@@ -1,20 +1,24 @@
+import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/planet.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
 import 'package:crawlspace_engine/ship/ship_reg.dart';
 import '../../controllers/scanner_controller.dart';
 import 'grid.dart';
 import '../hazards.dart';
+import 'impulse.dart';
+
+typedef SectorMap = Grid<ImpulseCell>;
 
 class SectorCell extends GridCell {
+
+  System system;
   Planet? planet;
   StellarClass? starClass;
   bool starOne,blackHole;
-
-  //double nebula,ionStorm,asteroids;
   int impulseSeed;
 
-  SectorCell(super.coord, super.hazMap, super.g, this.impulseSeed, {
-    this.planet,this.starClass, this.starOne = false, this.blackHole = false,
+  SectorCell(this.system, this.impulseSeed, { super.g, super.coord, super.hazMap,
+    this.planet,this.starClass, this.starOne = false, this.blackHole = false, required super.map,
   });
 
   @override
@@ -49,4 +53,11 @@ class SectorCell extends GridCell {
     if (mode.scaningBlackhole && blackHole) return true;
     return false;
   }
+
+  @override
+  SpaceLocation get loc => SectorLocation(system, coord);
+}
+
+class EmptyImpulse extends SectorMap {
+  EmptyImpulse() : super(0, {});
 }

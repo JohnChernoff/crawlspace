@@ -20,7 +20,8 @@ class GridCellWidget extends StatefulWidget {
   final bool invert;
   final ShipRegistry reg;
   const GridCellWidget(this.cell,this.size,this.ships,this.playShip,
-      {super.key, required this.reg, this.inTargetPath = false, this.targeted = false, this.scanned = false, this.invert = false, this.uiTarget = false});
+      {super.key, required this.reg, this.inTargetPath = false, this.targeted = false,
+        this.scanned = false, this.invert = false, this.uiTarget = false});
 
   bool get sameDepth => (cell.coord.z - playShip.loc.cell.coord.z).abs() == 0;
   bool get sameDepthAndNotEmpty => sameDepth && !cell.isEmpty(reg);
@@ -34,14 +35,14 @@ class GridCellWidget extends StatefulWidget {
 class GridCellWidgetState extends State<GridCellWidget> {
   @override
   Widget build(BuildContext context) {
-    final level = widget.playShip.loc.level;
-    final maxZ = level.map.size - 1;
+    final mapSize = widget.playShip.loc.map.size;
+    final maxZ = max(1, mapSize - 1);
     final rawT = widget.cell.coord.z / maxZ;
     final t = sqrt(rawT); // boosts near depths
     final depthFactor = 0.6 + 0.6 * t; // min 0.6, max 1.2
     final opacity = 0.55 + 0.45 * t;  //final offsetY = (1 - t) * 24; // stronger offset for ASCII
-    final distFromPlayer = widget.cell.coord.distance(widget.playShip.loc.cell.coord);
-    final maxDist = sqrt(3) * level.map.size; // diagonal of grid
+    final distFromPlayer = widget.playShip.distanceFromLocation(widget.cell.loc); //widget.cell.distance(widget.playShip.loc.cell.coord);
+    final maxDist = sqrt(3) * mapSize; // diagonal of grid
     // Normalize 0.0 → 1.0, closer = higher value
     final proximityFactor = 1.0 - (distFromPlayer / maxDist).clamp(0, 1);
     // Color intensity based on proximity

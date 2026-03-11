@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/models/corp_model.dart';
 import 'package:crawlspace_engine/galaxy/models/fed_model.dart';
 import 'package:crawlspace_engine/galaxy/models/flow_model.dart';
@@ -90,10 +91,10 @@ class Galaxy {
 // flowFields["priceSignal"] — price information diffusing through gossip
 
   Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
-    fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub);
-    fed1 = System("Movelia", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub);
-    fed2 = System("Sargon", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.normal);
-    fed3 = System("Javalix", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.culDeSac);
+    fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub, map: EmptySector());
+    fed1 = System("Movelia", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub, map: EmptySector());
+    fed2 = System("Sargon", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.normal, map: EmptySector());
+    fed3 = System("Javalix", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.culDeSac, map: EmptySector());
     systems.addAll([fedHomeSystem,fed1,fed2,fed3]);
 
     final t0 = DateTime.now(); _createMap(); final t1 = DateTime.now();
@@ -116,7 +117,7 @@ class Galaxy {
       final species = getHomeworldSpecies(s);
       if (species != null) {
         final homeWorld = Planet(species.homeWorld, 1, 1, rnd, homeworld: true, species: species,
-            locale: SystemLocation(s, s.map.rndCoord(rnd)), population: 1, industry: 1, commerce: 1);
+            locale: SectorLocation(s, s.map.rndCoord(rnd)), population: 1, industry: 1, commerce: 1);
         s.addPlanets(this, rnd, pList: [homeWorld]);
       } else {
         s.addPlanets(this, rnd);
@@ -131,10 +132,10 @@ class Galaxy {
 
   Iterable<System> territory(Species species) => systems.where((s) => civMod.dominantSpecies(s) == species);
 
-  SystemLocation rndLoc(Random rnd) {
+  SectorLocation rndLoc(Random rnd) {
     final system = getRandomSystem();
     final rndCoord = system.map.rndCoord(rnd);
-    return SystemLocation(system,rndCoord);
+    return SectorLocation(system,rndCoord);
   }
 
   void _createMap() {
@@ -142,7 +143,7 @@ class Galaxy {
       String name;
       do { name = nameGenerator.generateSystemName(); }
       while (systems.where((sys) => sys.name == name).isNotEmpty);
-      System system = System(name,getRndStellarClass(),rnd);
+      System system = System(name,getRndStellarClass(),rnd, map: EmptySector());
       systems.add(system);
     }
     for (System system in systems) {

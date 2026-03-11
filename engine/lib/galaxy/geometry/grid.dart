@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/models/item_reg.dart';
 import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
@@ -14,28 +15,25 @@ import '../../ship/ship.dart';
 
 enum Domain {hyperspace,system,impulse}
 
-abstract class Level {
-  Domain get domain;
-  GridCell? upperLevel;
-  late Grid map;
-  Level({this.upperLevel});
-}
-
-abstract class GridCell {
+abstract class GridCell implements Locatable {
   Set<Item> _itemCache = {};
   IList<Item> get itemz => _itemCache.toIList();
   final Coord3D coord;
   final Map<Hazard,double> hazMap;
   final EffectMap<CellEffect> effects = EffectMap();
+  Grid map;
 
-  GridCell(this.coord,this.hazMap,Galaxy g) {
-    if (g.formed) scanItems(g.itemRepository);
+  GridCell({Galaxy? g, this.coord = noCoord,this.hazMap = const {},required this.map}) {
+    if (g != null) scanItems(g.itemRepository);
   }
+
+  double distCell(GridCell cell) => loc.dist(cell.loc);
+  double dist(SpaceLocation loc) => loc.dist(loc);
 
   bool isEmpty(ShipRegistry reg, {countPlayer = true});
   void clearHazard(Hazard haz) => hazMap.remove(haz);
   void clearHazards() => hazMap.clear();
-  void scanItems(ItemRegistry itemReg) => _itemCache = itemReg.atCell(this);
+  void scanItems(ItemRegistry itemReg) => _itemCache = itemReg.atLocation(loc) ?? {};
   void addItem(Item i, SpaceLocation loc, ItemRegistry reg) {
     reg.addItem(i,loc); scanItems(reg);
   }
@@ -61,13 +59,15 @@ abstract class GridCell {
   String toString() => "";
 }
 
+
+
 class Grid<T extends GridCell> { //Map<GridCell,Set<Ship>> shipMap = {};
   final int size;
   final Map<Coord3D, T> cells;
   late final List<T> _cellList;
 
-  Grid(this.size, this.cells)
-      : _cellList = cells.values.toList();
+  Grid(this.size, this.cells) : _cellList = cells.values.toList();
+  factory Grid.empty() => Grid(0,const {});
 
   T rndCell(Random rnd, {List<T>? cellList}) {
     final list = cellList ?? _cellList;
@@ -134,8 +134,8 @@ class Grid<T extends GridCell> { //Map<GridCell,Set<Ship>> shipMap = {};
       final candidates = getAdjacentCells(current, distance: nDist).where((c) => !path.contains(c)).toList();
 
       candidates.sort((a, b) {
-        final da = a.coord.distance(goal.coord) + (rnd.nextDouble() * jitter);
-        final db = b.coord.distance(goal.coord) + (rnd.nextDouble() * jitter);
+        final da = a.distCell(goal) + (rnd.nextDouble() * jitter);
+        final db = b.distCell(goal) + (rnd.nextDouble() * jitter);
         return da.compareTo(db);
       });
 
@@ -153,5 +153,4 @@ class Grid<T extends GridCell> { //Map<GridCell,Set<Ship>> shipMap = {};
 
     return path;
   }
-
 }

@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
+import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/ship/ship_reg.dart';
 import '../../controllers/scanner_controller.dart';
@@ -7,9 +8,31 @@ import 'grid.dart';
 import '../hazards.dart';
 import '../../item.dart';
 
+typedef ImpulseMap = Grid<ImpulseCell>;
+
 class ImpulseCell extends GridCell {
 
-  ImpulseCell(super.coord, super.hazMap, super.g);
+  SectorCell sector;
+
+  ImpulseCell(this.sector,{super.g, super.coord, super.hazMap})
+      : super(map: EmptySubImpulse());
+
+  void hodgeTick(Hazard haz, Random rnd, {jitter = .1}) {
+    final Map<Coord3D,double> tmpCells = {};
+    for (final entry in map.cells.entries) {
+      int count = map.getAdjacentCells(entry.value).where((n) => n.hasHaz(haz)).length; //print("${entry.key}: $count");
+      if (entry.value.hasHaz(haz)) {
+        if (count > 3 && count < 6) tmpCells[entry.key] = entry.value.hazMap[haz]!;
+        else tmpCells[entry.key] = 0;
+      } else {
+        if (count == 5 || (count == 0 && rnd.nextDouble() < jitter)) tmpCells[entry.key] = rnd.nextDouble();
+        else tmpCells[entry.key] = 0;
+      }
+    }
+    for (final entry in map.cells.entries) {
+      entry.value.hazMap[haz] = tmpCells[entry.key] ?? 0;
+    }
+  }
 
   @override
   bool scannable(ScannerMode mode, ShipRegistry reg) {
@@ -39,36 +62,11 @@ class ImpulseCell extends GridCell {
     }
     return sb.toString();
   }
-}
 
-class ImpulseLevel extends Level {
   @override
-  Domain get domain => Domain.impulse;
-
-  ImpulseLevel(Grid<ImpulseCell> cells, SectorCell sector) {
-    upperLevel = sector;
-    map = cells;
-  }
-  SectorCell get sector => upperLevel as SectorCell;
+  SpaceLocation get loc => ImpulseLocation(sector.system, sector.coord, coord);
 }
 
-class ImpulseMap extends Grid<ImpulseCell> {
-  ImpulseMap(super.size, super.cells);
-
-  void hodgeTick(Hazard haz, Random rnd, {jitter = .1}) {
-    final Map<Coord3D,double> tmpCells = {};
-    for (final entry in cells.entries) {
-      int count = getAdjacentCells(entry.value).where((n) => n.hasHaz(haz)).length; //print("${entry.key}: $count");
-      if (entry.value.hasHaz(haz)) {
-        if (count > 3 && count < 6) tmpCells[entry.key] = entry.value.hazMap[haz]!;
-        else tmpCells[entry.key] = 0;
-      } else {
-        if (count == 5 || (count == 0 && rnd.nextDouble() < jitter)) tmpCells[entry.key] = rnd.nextDouble();
-        else tmpCells[entry.key] = 0;
-      }
-    }
-    for (final entry in cells.entries) {
-      entry.value.hazMap[haz] = tmpCells[entry.key] ?? 0;
-    }
-  }
+class EmptySubImpulse extends ImpulseMap {
+  EmptySubImpulse() : super(0, const {});
 }

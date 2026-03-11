@@ -1,8 +1,9 @@
 import 'dart:math';
 
+const noCoord = const Coord3D(999999, 999999, 999999);
 class Coord3D {
   final int x,y,z;
-  Coord3D(this.x,this.y,this.z);
+  const Coord3D(this.x,this.y,this.z);
 
   double distance(Coord3D? c) {
     if (c == null) return 0;

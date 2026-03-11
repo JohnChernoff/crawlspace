@@ -15,7 +15,7 @@ enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   final String shortString;
 }
 
-class Planet extends SpaceEnvironment<SystemLocation> {
+class Planet extends SpaceEnvironment<SectorLocation> {
   late PlanetAge age;
   late EnvType environment;
   late Goods export;

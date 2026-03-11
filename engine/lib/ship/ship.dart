@@ -191,14 +191,14 @@ class Ship extends Item implements Locatable {
   }
 
   double distance({Ship? ship, SpaceLocation? l, Coord3D? c}) {
-    if (ship != null) return ship.loc.cell.coord.distance(loc.cell.coord);
-    if (l != null) return l.cell.coord.distance(loc.cell.coord);
+    if (ship != null) return ship.loc.dist(loc);
+    if (l != null) return l.dist(loc);
     if (c != null) return c.distance(loc.cell.coord);
     glog("Warning: distance called with 0 arguments",error: true);
     return double.infinity;
   }
-  double distanceFrom(Ship ship) => ship.loc.cell.coord.distance(loc.cell.coord);
-  double distanceFromLocation(SpaceLocation l) => l.cell.coord.distance(loc.cell.coord);
+  double distanceFrom(Ship ship) => ship.loc.dist(loc);
+  double distanceFromLocation(SpaceLocation l) => l.dist(loc);
   double distanceFromCoord(Coord3D c) => c.distance(loc.cell.coord);
 
   double get hullRemaining  => (hullStrength-hullDamage);
@@ -247,7 +247,7 @@ class Ship extends Item implements Locatable {
           }
         }
         if (ammoOK) {
-          dmg += weapon.fire(l.cell.coord.distance(target.coord), rnd, targetShip: ship, clips: clips);
+          dmg += weapon.fire(l.distCell(target), rnd, targetShip: ship, clips: clips);
           if (minCool == null || minCool > weapon.cooldown) minCool = weapon.cooldown;
         }
         results.add(FireResult(dmg.floor(),weapon,ammoWarn));
