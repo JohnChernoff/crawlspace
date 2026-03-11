@@ -110,12 +110,13 @@ class LayerTransitController extends FugueController {
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: false, silent: true);
     final sysLoc = ship.loc;
     if (sysLoc is SectorLocation) {
-      GridCell targetCell = cell ?? sectorMap.rndCell(fm.mapRnd);
+      ImpulseCell targetCell = cell ?? sectorMap.rndCell(fm.mapRnd);
       final pic = playerImpulseLoc;
       if (pic != null) {
-        bool okCell(GridCell cell) => targetCell.dist(pic) >= safeDist && cell.hazLevel == 0;
+        //bool okCell(GridCell cell) => targetCell.dist(pic) >= safeDist && cell.hazLevel == 0;
+        bool okCell(ImpulseCell c) => c.loc.dist(pic) >= safeDist && c.hazLevel == 0;
         if (ship.npc && pic.sectorCoord == sysLoc.cell.coord && !okCell(targetCell)) {
-          List<GridCell> safeDistCells = [];
+          List<ImpulseCell> safeDistCells = [];
           while (safeDistCells.isEmpty && safeDist > 0) {
             safeDistCells = sectorMap.values.where((c) => okCell(c)).toList();
             safeDist--;

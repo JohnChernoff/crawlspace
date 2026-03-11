@@ -17,15 +17,15 @@ class ImpulseCell extends GridCell {
 
   ImpulseCell(
       this.sector, {
-        ImpulseMap? map,
         super.coord,
         super.hazMap,
-      }) : map = map ?? EmptySubImpulse.instance;
+      }) : map = EmptySubImpulse.instance;
 
   void hodgeTick(Hazard haz, Random rnd, {jitter = .1}) {
+    final parentMap = sector.map;
     final Map<Coord3D,double> tmpCells = {};
-    for (final entry in map.values) {
-      int count = map.getAdjacentCells(entry).where((n) => n.hasHaz(haz)).length; //print("${entry.key}: $count");
+    for (final entry in parentMap.values) {
+      int count = parentMap.getAdjacentCells(entry).where((n) => n.hasHaz(haz)).length;
       if (entry.hasHaz(haz)) {
         if (count > 3 && count < 6) tmpCells[entry.coord] = entry.hazMap[haz]!;
         else tmpCells[entry.coord] = 0;
@@ -34,7 +34,7 @@ class ImpulseCell extends GridCell {
         else tmpCells[entry.coord] = 0;
       }
     }
-    for (final entry in map.values) {
+    for (final entry in parentMap.values) {
       entry.hazMap[haz] = tmpCells[entry.coord] ?? 0;
     }
   }

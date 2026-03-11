@@ -306,9 +306,10 @@ class FugueEngine {
       auTick++;
       player.tick(this);
       playShip?.tick(fm: this);
+      //if (playShip != null && playShip.loc is ImpulseLocation) {
       for (final cell in player.loc.map.values) {
         cell.effects.tickAll();
-      }
+      }//}
     } while (!player.ready);
     if (playShip != null) {
       final loc = playShip.loc; if (loc is ImpulseLocation) {
