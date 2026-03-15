@@ -47,12 +47,13 @@ class MenuFactory {
   }
 
   Menu buildXenoMenu(Pilot pilot, {void Function(XenomancySpell spell)? action}) {
+    final ship = fm.shipRegistry.byPilot(pilot);
+    if (ship == null) return [];
     return List.generate(pilot.knownSpells.length,(i) {
       final spell = pilot.knownSpells.entries.elementAt(i);
-      final ship = fm.shipRegistry.byPilot(pilot);
-      final chance = ship?.xenoControl.effectProb(spell.value) ?? 0;
-      final power = ship?.xenoControl.calcPower(spell.value) ?? 0;
-      final noMatter = spell.value.matterCost > (ship?.xenoMatter ?? 0);
+      final chance = fm.xenoControl.effectProb(spell.value,ship);
+      final power = fm.xenoControl.calcPower(spell.value,ship);
+      final noMatter = spell.value.matterCost > (ship.xenoMatter);
       final blocks = [
         TextBlock(spell.value.spellName, GameColors.white, false),
         TextBlock(", ${spell.value.matterCost} xm ", GameColors.white, false),

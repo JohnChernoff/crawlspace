@@ -131,7 +131,7 @@ class Faction {
   double strength;
   double militancy;
   final Map<Species, double> fixedAttitudes;
-  final isPirate;
+  final bool isPirate, isWarmonger;
   final double courage;
   final double flexibility;
   final double xenomancy;
@@ -151,6 +151,7 @@ class Faction {
     this.color = GameColors.white,
     this.fixedAttitudes = const {},
     this.isPirate = false,
+    this.isWarmonger = false,
     double? crg,
     double? flex,
     double? xeno,
@@ -260,7 +261,7 @@ enum FactionList {
   soroj("Sorojbian","A rogue Vorlornian"),
   gersh("Greshplergian","A strange cross between an earth wooly mamooth, pig, and hippo.  Fearsome when angered."),
   hagy("Hagyorny","A more docile Gershplergian with a penchant for xenomancy"),
-  skorpl("",""),
+  edualx("",""),
   lael("",""),
   orblix("",""),
   mov("",""),
@@ -280,11 +281,12 @@ pirateFaction(Species species, {String? name,String? desc,double strength = .1})
 final List<Faction> factions = [
   Faction(StockSpecies.humanoid.species, FactionList.fed.factionName, desc: FactionList.fed.desc,
       strength: .8, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      fixedAttitudes: {StockSpecies.moveliean.species : .8},
       color: GameColors.white),
 
   Faction(StockSpecies.humanoid.species, FactionList.fedReb.factionName, desc: FactionList.fedReb.desc,
       strength: .2, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
-      fixedAttitudes: {StockSpecies.krakkar.species : .1},
+      fixedAttitudes: {},
       color: GameColors.lightBlue),
 
   pirateFaction(StockSpecies.humanoid.species),
@@ -303,6 +305,7 @@ final List<Faction> factions = [
 
   Faction(StockSpecies.gersh.species, FactionList.gersh.factionName, desc: FactionList.gersh.desc,
       strength: .9, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      fixedAttitudes: {StockSpecies.lael.species : .8},
       color: GameColors.green),
 
   Faction(StockSpecies.gersh.species,FactionList.hagy.factionName, desc: FactionList.hagy.desc,
@@ -310,11 +313,30 @@ final List<Faction> factions = [
       fixedAttitudes: {StockSpecies.vorlon.species : .8},
       color: GameColors.gold),
 
-  pirateFaction(StockSpecies.edualx.species),
-  pirateFaction(StockSpecies.lael.species),
-  pirateFaction(StockSpecies.orblix.species),
-  pirateFaction(StockSpecies.moveliean.species),
-  pirateFaction(StockSpecies.krakkar.species),
+  Faction(StockSpecies.edualx.species,FactionList.edualx.factionName, desc: FactionList.edualx.desc,
+      strength: .99, xeno: .1, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      fixedAttitudes: {StockSpecies.orblix.species : .75},
+      color: GameColors.gray),
+
+  Faction(StockSpecies.lael.species,FactionList.lael.factionName, desc: FactionList.lael.desc,
+      strength: .8, xeno: .7, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      fixedAttitudes: {StockSpecies.gersh.species : .7},
+      color: GameColors.lime),
+
+  Faction(StockSpecies.orblix.species,FactionList.orblix.factionName, desc: FactionList.orblix.desc,
+      strength: .8, xeno: .3, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      fixedAttitudes: {StockSpecies.edualx.species : .75},
+      color: GameColors.purple),
+
+  Faction(StockSpecies.moveliean.species,FactionList.mov.factionName, desc: FactionList.mov.desc,
+      strength: .8, xeno: .2, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      fixedAttitudes: {StockSpecies.humanoid.species : .75},
+      color: GameColors.brown),
+
+  Faction(StockSpecies.krakkar.species,FactionList.krakkar.factionName, desc: FactionList.krakkar.desc,
+      strength: .8, xeno: .2, shpWeights: WeightedTrait(ShipPrefs.standard.shipWeights, allValues: ShipType.values),
+      isWarmonger: true,
+      color: GameColors.red),
 ];
 
 Map<T,double> normalize<T>(Map<T,double> m) {

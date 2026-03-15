@@ -3,6 +3,7 @@ import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
 import 'package:crawlspace_engine/actors/pilot_reg.dart';
+import 'package:crawlspace_engine/rng/ship_gen.dart';
 import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
@@ -21,6 +22,7 @@ import 'controllers/movement_controller.dart';
 import 'controllers/pilot_controller.dart';
 import 'controllers/planetside_controller.dart';
 import 'controllers/scanner_controller.dart';
+import 'controllers/xeno_controller.dart';
 import 'galaxy/galaxy.dart';
 import 'galaxy/geometry/location.dart';
 import 'actors/pilot.dart';
@@ -48,16 +50,17 @@ class TextBlock {
 enum InputMode {
   main(false),
   target(false),
+  movementTarget(false),
   menu(true),
   alphaSelect(false);
   final bool showMenu;
+  bool get targeting => this == target || this == movementTarget;
   const InputMode(this.showMenu);
 }
 
 //cargo systems?  passengers, smuggling? cloaking systems?
 //hyperspace landing spot?   Graph not detecting player location?
 //TODO: add music, add launchers, one shield/generator per ship, Galaxy menu/refresh log, themed tavern games/activities
-//Show ship class somehow
 //hostility calc, pacification/bribes, swap , and . keys, more intuitive key commands, etc.
 class FugueEngine {
   final _listeners = <void Function()>[];
@@ -103,6 +106,8 @@ class FugueEngine {
   late final PlanetsideController planetsideController = PlanetsideController(this);
   late final ScannerController scannerController = ScannerController(this);
   late final AudioController audioController = AudioController(NullAudioService(),audioRnd);
+  late final XenoController xenoControl = XenoController(this);
+
   final ShopOptions shopOptions = ShopOptions();
 
   List<InputMode> _inputStack = [InputMode.main];
@@ -174,12 +179,12 @@ class FugueEngine {
   void populateSystem(System system, {int? numShips, int maxShips = 8}) {
     numShips ??= (itemRnd.nextDouble() * (galaxy.civKernel.val(system) * maxShips)).floor();
     for (int i = 0; i < numShips; i++) { //print("Populating System: ${system.name}, ships: $numShips");
-      final ship = Rng.generateShip(system, galaxy, itemRnd);
+      final ship = ShipGenerator.generateShip(system, galaxy, itemRnd);
       addShip(ship); //sanityCheck(ship);
     }
     final numPirates = (itemRnd.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
     for (int i = 0; i < numPirates; i++) {
-      addShip(Rng.generateShip(system, galaxy, itemRnd, isPirate: true));
+      addShip(ShipGenerator.generateShip(system, galaxy, itemRnd, isPirate: true));
     } //print("Adding pirates: $numPirates");
   }
 

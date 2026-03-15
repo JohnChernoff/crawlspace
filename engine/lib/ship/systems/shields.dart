@@ -4,37 +4,82 @@ import '../../stock_items/ship_systems/stock_shields.dart';
 import 'power.dart';
 import 'ship_system.dart';
 
+mixin Resisting {
+  Set<Resistance> get resists;
+
+  double getResistance(DamageType type) {
+    double r = 0;
+    for (final res in resists) {
+      if (res.type == type || res.type == DamageType.all) {
+        r += res.level;
+      }
+    }
+    return r;
+  }
+}
+
 class Resistance {
-  final level;
+  final double level;
   final DamageType type;
-  const Resistance(this.type,{this.level = 1});
+
+  const Resistance(this.type, {this.level = 1});
+
   static const none = Resistance(DamageType.none);
 }
 
-enum ShieldType {
+enum ShieldType with Resisting {
   fusion({Resistance(DamageType.kinetic)}),
   fission({Resistance(DamageType.ion)}),
   energon({Resistance(DamageType.photonic)}),
   gravimetric({Resistance(DamageType.gravitron)}),
   nullSpace({Resistance(DamageType.etherial)}),
-  darkMatter({Resistance(DamageType.neutrino),Resistance(DamageType.fire),Resistance(DamageType.plasma)});
+  darkMatter({
+    Resistance(DamageType.neutrino),
+    Resistance(DamageType.fire),
+    Resistance(DamageType.plasma),
+  });
+
+  @override
   final Set<Resistance> resists;
+
   const ShieldType(this.resists);
 }
 
-enum ShieldEgo {
-  none, endurance, recharging, spike, reflector, absorption
+enum ShieldEgo with Resisting {
+  endurance({}), recharging({}), spike({}), absorption({}), phase({}), block({}), deflector({}),
+  reflector({Resistance(DamageType.photonic)}),
+  resistance({Resistance(DamageType.photonic), Resistance(DamageType.all)}),
+  ionSink({Resistance(DamageType.ion)});
+
+  @override
+  final Set<Resistance> resists;
+
+  const ShieldEgo(this.resists);
+}
+
+class ShieldState {
+  int blockCooldown = 0;
+  int phaseCooldown = 0;
 }
 
 class Shield extends RechargableShipSystem {
   final ShieldType shieldType;
-  final ShieldEgo ego;
+  ShieldState state = ShieldState();
+  final Set<ShieldEgo> egos;
+
+  double resistance(DamageType type) {
+    double r = shieldType.getResistance(type);
+    for (final e in egos) {
+      r += e.getResistance(type);
+    }
+    return r;
+  }
 
   @override
   ShipSystemType get type => ShipSystemType.shield;
 
   Shield(super.name,{
-    this.ego = ShieldEgo.none,
+    this.egos = const {},
     required this.shieldType,
     required super.maxEnergy,
     required super.rechargeRate,
@@ -78,7 +123,7 @@ class ShieldData {
   final double rechargeRate;
   final int avgRecoveryTime;
   final ShieldType shieldType;
-  final ShieldEgo ego;
+  final Set<ShieldEgo> ego;
 
   const ShieldData({
     required this.systemData,
@@ -86,6 +131,6 @@ class ShieldData {
     required this.rechargeRate,
     required this.avgRecoveryTime,
     required this.shieldType,
-    this.ego = ShieldEgo.none,
+    this.ego = const {},
   });
 }

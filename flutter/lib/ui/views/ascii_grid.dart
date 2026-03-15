@@ -1,3 +1,4 @@
+import 'package:crawlspace_engine/controllers/movement_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
@@ -29,6 +30,18 @@ class _AsciiGridState extends State<AsciiGrid> {
 
   @override
   Widget build(BuildContext context) {
+
+    MovementPreview? preview;
+    final fm = widget.fugueModel;
+    if (fm.inputMode == InputMode.movementTarget &&
+        fm.playerShip != null &&
+        fm.player.targetLoc != null) {
+      preview = fm.playerShip!.nav.previewMove(
+          fm.player.targetLoc!.cell,
+          throttle: fm.movementController.throttle
+      );
+    }
+
     double cellScaleFactor = 1;
     return LayoutBuilder(builder: (ctx,bc) {
       final playship = widget.fugueModel.playerShip;
@@ -39,12 +52,12 @@ class _AsciiGridState extends State<AsciiGrid> {
         final cellWidth = (bc.maxWidth / mapSize) * cellScaleFactor;
         final cellHeight = (bc.maxHeight / mapSize) * cellScaleFactor;
         final scannedCell =
-            widget.fugueModel.playerShip?.targetShip?.loc.cell ??
-                widget.fugueModel.scannerController.currentScanSelection;
+            fm.playerShip?.nav.targetShip?.loc.cell ??
+                fm.scannerController.currentScanSelection;
         for (int y = 0; y < mapSize; y++) {
           for (int x = 0; x < mapSize; x++) {
-            final widgets = createStack(x,y,cellHeight/2,map,playship,scannedCell,
-                showAllCellsOnZPlane: widget.fugueModel.scannerController.showAllCellsOnZPlane);
+            final widgets = createStack(x,y,cellHeight/2,map,playship,scannedCell,preview,
+                showAllCellsOnZPlane: fm.scannerController.showAllCellsOnZPlane);
             stacks.add(ColoredBox(color: Colors.black, child: Stack(
                 alignment: Alignment.center,
                 children: List.generate(widgets.length, (depth) {
@@ -81,8 +94,8 @@ class _AsciiGridState extends State<AsciiGrid> {
     return widget.fugueModel.shipRegistry.atCell(cell);
   }
 
-  List<GridCellWidget> createStack(int x, int y, double size, CellMap<GridCell> map, Ship playship, GridCell? scannedCell,
-      {showAllCellsOnZPlane = true}) {
+  List<GridCellWidget> createStack(int x, int y, double size, CellMap<GridCell> map, Ship playship,
+      GridCell? scannedCell, MovementPreview? preview, {showAllCellsOnZPlane = true}) {
 
     GridCell closestCell = map[Coord3D(x, y, 0)]!;
     final shipCoord = playship.loc.cell.coord;
@@ -91,7 +104,7 @@ class _AsciiGridState extends State<AsciiGrid> {
     final targetPath = widget.fugueModel.scannerController.targetPath;
     for (int z = 0; z < map.size; z++) {
       final cell = map[Coord3D(x,y,z)]!;
-      final uiTarget = widget.fugueModel.inputMode == InputMode.target && widget.fugueModel.player.targetLoc?.cell == cell;
+      final uiTarget = widget.fugueModel.inputMode.targeting && widget.fugueModel.player.targetLoc?.cell == cell;
       //final scanned = scannedCell?.coord == cell.coord && playship.canScan(cell);
       final scanned = scannedCell != null
           && scannedCell.coord.x == cell.coord.x
@@ -100,12 +113,13 @@ class _AsciiGridState extends State<AsciiGrid> {
       final inTargetPath = targetPath.contains(cell);
       if (showAllCellsOnZPlane) {
         cellWidgets.add(GridCellWidget(cell,size,shipsAt(cell),playship, scanned: scanned, invert: invert, uiTarget: uiTarget,
-            reg: widget.fugueModel.shipRegistry, inTargetPath: inTargetPath));
+            reg: widget.fugueModel.shipRegistry, inTargetPath: inTargetPath,
+          movePreviewActual: preview?.actualCell == cell,));
       }
       else {
         if (scannedCell?.coord == cell.coord) { //print("Adding scanned coord: ${cell.coord}");
           cellWidgets.add(GridCellWidget(cell,size,shipsAt(scannedCell!), playship, scanned: scanned, invert: invert, uiTarget: uiTarget,
-              reg: widget.fugueModel.shipRegistry, inTargetPath: inTargetPath));
+              reg: widget.fugueModel.shipRegistry, inTargetPath: inTargetPath, movePreviewActual: preview?.actualCell == cell));
         } else {
           if (shipCoord == cell.coord) {
             closestCell = cell; break;
@@ -122,7 +136,7 @@ class _AsciiGridState extends State<AsciiGrid> {
     if (!showAllCellsOnZPlane && (cellWidgets.isEmpty || cellWidgets.first.cell.dist(playship.loc) > closestCell.dist(playship.loc))) {
       final uiTarget = widget.fugueModel.inputMode == InputMode.target && widget.fugueModel.player.targetLoc?.cell == closestCell;
       cellWidgets.add(GridCellWidget(closestCell,size,shipsAt(closestCell), playship,
-        reg: widget.fugueModel.shipRegistry, invert: invert, uiTarget: uiTarget));
+        reg: widget.fugueModel.shipRegistry, invert: invert, uiTarget: uiTarget, movePreviewActual: preview?.actualCell == closestCell));
       //if (cellWidgets.length > 1) print("adding closest coord: ${closestCell.coord}");
     } else {
       cellWidgets.sort((a, b) => a.cell.coord.z.compareTo(b.cell.coord.z)); // IMPORTANT: back → front

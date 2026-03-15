@@ -145,7 +145,7 @@ class LayerTransitController extends FugueController {
           return;
         }
       } else {
-        _exitImpulse(ship, impLoc); //TODO: return all friendly ships to system travel as well?
+        _exitImpulse(ship, impLoc);
       }
       fm.audioController.newTrack(newMood: MusicalMood.space);
       fm.pilotController.action(ship.pilot, ActionType.movement);

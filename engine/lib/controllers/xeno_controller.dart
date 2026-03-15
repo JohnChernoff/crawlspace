@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math';
+import 'package:crawlspace_engine/controllers/fugue_controller.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/actors/pilot.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
@@ -27,21 +28,19 @@ enum XenoResult {
   const XenoResult(this.msg);
 }
 
-class XenoController {
+class XenoController extends FugueController {
   static const double bonusDecay = 0.85;
-  final Ship ship;
-  Completer<SpaceLocation>? targetCompleter;
 
-  XenoController(this.ship);
+  XenoController(super.fm);
 
-  XenoResult generateEffect(XenomancySpell spell, FugueEngine fm) {
+  XenoResult generateEffect(XenomancySpell spell, Ship ship) {
     if (spell.domain != fm.player.loc.domain) return XenoResult.badLayer;
     if (ship.xenoMatter < spell.matterCost) return XenoResult.insufficientMatter;
     ship.xenoMatter -= spell.matterCost;
     final powBonus = ship.systemControl.engine?.xenoPowerBonus[spell.schools.first] ?? 0;
-    final power = calcPower(spell, bonus: powBonus);
+    final power = calcPower(spell, ship, bonus: powBonus);
     final castBonus = ship.systemControl.engine?.xenoCastBonus[spell.schools.first] ?? 0;
-    final baseChance = effectProb(spell, bonus: 0);
+    final baseChance = effectProb(spell, ship, bonus: 0);
     final finalChance = applyBonus(baseChance, castBonus);
     final illegitimacy = 1 - baseChance;
     final overreach = max(0, spell.level/9 - ship.pilot.skills[SkillType.xeno]!);
@@ -58,9 +57,9 @@ class XenoController {
     }
 
     if (spell == XenomancySpell.foldSpace) {
-      foldSpace(power);
+      foldSpace(power, ship);
     } else if (spell == XenomancySpell.firecloud) {
-      acquireTarget(fm).then((target) => fireCloud(power, target));
+      acquireTarget().then((target) => fireCloud(power, ship, target));
     } else {
       return XenoResult.unsupported;
     }
@@ -70,7 +69,7 @@ class XenoController {
   double capacityFactor(double shipXeno, { k = 25.0}) => shipXeno / (shipXeno + k);
   double energyFactor(double shipEnergy, { k = 1000.0}) => shipEnergy / (shipEnergy + k);
 
-  double calcPower(XenomancySpell spell, {int? bonus}) {
+  double calcPower(XenomancySpell spell, Ship ship, {int? bonus}) {
     final intelligence = ship.pilot.attributes[AttribType.int] ?? .5;
     final skill = ship.pilot.skills[SkillType.xeno]!;
     final scale = spell.level / 9.0;
@@ -97,7 +96,7 @@ class XenoController {
     ).clamp(0.0, 1.0);
   }
 
-  double effectProb(XenomancySpell spell, {int? bonus}) {
+  double effectProb(XenomancySpell spell, Ship ship, {int? bonus}) {
     final intelligence = ship.pilot.attributes[AttribType.int] ?? .5;
     final level = spell.level / 9;
     final skill = ship.pilot.skills[SkillType.xeno]!; //TODO: pilot.xenoSkills
@@ -116,7 +115,7 @@ class XenoController {
     return 1 - (1 - base) * pow(bonusDecay, bonus);
   }
 
-  Future<SpaceLocation> acquireTarget(FugueEngine fm) {
+  Future<SpaceLocation> acquireTarget() {
     fm.player.targetLoc = fm.player.loc;
     fm.setInputMode(InputMode.target);
     fm.msg("Pick a target (arrows to move, return to select):");
@@ -124,12 +123,12 @@ class XenoController {
     return targetCompleter!.future;
   }
 
-  void foldSpace(double power) {
+  void foldSpace(double power, Ship ship) {
     final duration = ((XenomancySpell.foldSpace.timeout * 1.5) * power) + (XenomancySpell.foldSpace.timeout * .5);
     ship.effectMap.addEffect(ShipEffect.folding, duration.round());
   }
 
-  void fireCloud(double power, SpaceLocation location) {
+  void fireCloud(double power, Ship ship, SpaceLocation location) {
     //double cells = 8 * power;
     for (final cell in location.cell.map.getAdjacentCells(location.cell)) {
       cell.effects.addEffect(CellEffect.fire, XenomancySpell.firecloud.timeout);

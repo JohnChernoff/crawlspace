@@ -51,8 +51,9 @@ class ScannerController extends FugueController {
   bool autoTarget = true;
 
   List<GridCell> get targetPath {
-    final playShip = fm.playerShip; if (playShip != null && playShip.targetShip != null && playShip.canScan(playShip.targetShip!.loc.cell)) {
-      final tLoc = playShip.targetShip?.loc;
+    final playShip = fm.playerShip;
+    if (playShip != null && playShip.nav.targetShip != null && playShip.canScan(playShip.nav.targetShip!.loc.cell)) {
+      final tLoc = playShip.nav.targetShip?.loc;
       if (tLoc != null && tLoc.domain == playShip.loc.domain) {
         return switch(targetPathMode) {
           TargetPathMode.safe => tLoc.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.map.size, fm.mapRnd, jitter: 0, minHaz: 0),
@@ -65,7 +66,7 @@ class ScannerController extends FugueController {
   }
 
   List<TextBlock> statusText() {
-    final abbrev = fm.playerShip?.targetShip != null;
+    final abbrev = fm.playerShip?.nav.targetShip != null;
     List<TextBlock> blocks = [];
     if (!abbrev) {
       blocks.add(TextBlock("Mode: ${fm.inputMode.name}",GameColors.white,true));
@@ -144,16 +145,16 @@ class ScannerController extends FugueController {
       if (ships.length > 1) {
         currentScannedShipIndex++;
         if (currentScannedShipIndex >= ships.length) currentScannedShipIndex = 0;
-        playShip.targetCoord = null;
-        playShip.targetShip = ships.elementAt(currentScannedShipIndex);
+        playShip.nav.targetCoord = null;
+        playShip.nav.targetShip = ships.elementAt(currentScannedShipIndex);
       }
       else if (ships.length == 1) {
-        playShip.targetCoord = null;
-        playShip.targetShip = ships.first;
+        playShip.nav.targetCoord = null;
+        playShip.nav.targetShip = ships.first;
       }
       else {
-        playShip.targetShip = null;
-        playShip.targetCoord = scannedCell.coord;
+        playShip.nav.targetShip = null;
+        playShip.nav.targetCoord = scannedCell.coord;
       }
     }
     fm.update();

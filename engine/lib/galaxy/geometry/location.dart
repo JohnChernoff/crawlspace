@@ -43,7 +43,7 @@ sealed class SpaceLocation implements Locatable {
             .distance(l.impulseCoord);
       }
     }
-    glog("Error: invalid ship location comparison", error: true);
+    glog("Warning: invalid ship location comparison", level: DebugLevel.Warning);
     return double.infinity;
   }
 }

@@ -1,25 +1,51 @@
 import 'package:crawlspace_engine/item.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 import '../ship/ship.dart';
+import '../ship/systems/shields.dart';
 import '../ship/systems/ship_system.dart';
 import '../ship/systems/weapons.dart';
 
-enum HullType {
-  basic([],1),
-  ablative([HullResistance(DamageType.kinetic,.5)],2),
-  refractive([HullResistance(DamageType.photonic,.33)],2.5),
-  crystalline([
-    HullResistance(DamageType.kinetic,.66),
-    HullResistance(DamageType.plasma,.25),
-  ],5),
-  hypercarbon([
-    HullResistance(DamageType.fire,.66),
-    HullResistance(DamageType.plasma,.5),
-    HullResistance(DamageType.sonic,.5),
-  ],6.6);
-  final List<HullResistance> resistances;
+enum HullMaterial with Resisting {
+  basic(1.2,1.5, {},
+      1,.1,1,1,.1),
+  ablative(1.5,1.5,{Resistance(DamageType.kinetic,level: .5)},
+      2,.2,2.5,.8,.2),
+  refractive(1.25,1.5,{Resistance(DamageType.photonic,level: .33)},
+      2.5,.3,3,.75,.15),
+  crystalline(1.75,2,{
+    Resistance(DamageType.kinetic,level: .66),
+    Resistance(DamageType.plasma,level: .25),
+  },5,.4,5,.5,.5),
+  hypercarbon(2,1,{
+    Resistance(DamageType.fire,level: .66),
+    Resistance(DamageType.plasma,level: .5),
+    Resistance(DamageType.sonic,level: .5),
+  },6.6,.5,20,.1,.25);
+
+  @override
+  final Set<Resistance> resists;
+  final double integrityMult;
+  final double massMult;
   final double baseRepairCost;
-  const HullType(this.resistances,this.baseRepairCost);
+  final double repairDifficulty;
+  final double unitCost;
+  final double rarity;
+  final double bulk;
+
+  const HullMaterial(this.integrityMult,this.massMult,this.resists,this.baseRepairCost,this.repairDifficulty,
+      this.unitCost, this.rarity, this.bulk);
+}
+
+class Hull extends Item with Resisting {
+  HullMaterial material;
+  Set<Resistance> get resists => material.resists;
+  Hull(this.material,super.name, {super.baseCost, super.rarity, super.volume});
+  factory Hull.fromMaterial(HullMaterial material, Ship ship) =>
+      Hull(material,"${material.name} hull",
+          baseCost: (material.unitCost * ship.volume).round(),
+          rarity: material.rarity,
+          volume: ship.volume * material.bulk
+      );
 }
 
 class ShipClassSlot {
@@ -32,15 +58,15 @@ class ShipClass {
   final String name;
   final ShipType type;
   final Inventory<SystemSlot> slots;
-  final double maxMass, maxXeno;
-  const ShipClass(this.name,this.type,this.slots,this.maxMass,this.maxXeno);
+  final double mass, volume, maxXeno;
+  const ShipClass(this.name,this.type,this.slots,this.mass,this.volume,this.maxXeno);
   factory ShipClass.fromEnum(ShipClassType classType) {
     Inventory<SystemSlot> slotInv = Inventory();
     final allSlots = [...classType.type.slots, ...classType.extras];
     for (final s in allSlots) {
       for (int i=0;i<s.num;i++) slotInv.add(SystemSlot(s.type, classType.corpMap[s.type] ?? Corporation.genCorp));
     }
-    return ShipClass(classType.name, classType.type, slotInv, classType.maxMass, classType.maxXeno);
+    return ShipClass(classType.name, classType.type, slotInv, classType.mass, classType.volume, classType.maxXeno);
   }
 }
 
@@ -141,7 +167,7 @@ enum ShipClassType {
   // ── Scouts ────────────────────────────────────────────────────────────────
   mentok("Mentok",
       type: ShipType.scout,
-      maxMass: 500, maxXeno: 4,
+      mass: 500, volume: 500, maxXeno: 4,
       corpMap: {
         ShipSystemType.engine: Corporation.rimbaud,
         ShipSystemType.shield: Corporation.smythe,
@@ -150,7 +176,7 @@ enum ShipClassType {
 
   ariel("Ariel",   // nimble explorer variant
       type: ShipType.scout,
-      maxMass: 450, maxXeno: 6,
+      mass: 500, volume: 450, maxXeno: 6,
       extras: [ShipClassSlot(ShipSystemType.sensor, 1)],  // extra sensor
       corpMap: {
         ShipSystemType.engine: Corporation.tanaka,   // tanaka engines = best speed
@@ -161,7 +187,7 @@ enum ShipClassType {
   // ── Skiffs ────────────────────────────────────────────────────────────────
   hermes("Hermes",
       type: ShipType.skiff,
-      maxMass: 750, maxXeno: 6,
+      mass: 500, volume: 750, maxXeno: 6,
       corpMap: {
         ShipSystemType.engine: Corporation.smythe,
         ShipSystemType.shield: Corporation.smythe,
@@ -170,13 +196,13 @@ enum ShipClassType {
 
   falcon("Falcon",   // budget skiff, GenCorp throughout
       type: ShipType.skiff,
-      maxMass: 700, maxXeno: 4,
+      mass: 500, volume: 700, maxXeno: 4,
       corpMap: {}),    // all GenCorp default
 
   // ── Cruisers ──────────────────────────────────────────────────────────────
   orion("Orion",
       type: ShipType.cruiser,
-      maxMass: 5000, maxXeno: 9,
+      mass: 1500, volume: 5000, maxXeno: 9,
       corpMap: {
         ShipSystemType.engine:  Corporation.rimbaud,
         ShipSystemType.power:   Corporation.lopez,
@@ -188,7 +214,7 @@ enum ShipClassType {
 
   perseus("Perseus",   // sinclair premium cruiser
       type: ShipType.cruiser,
-      maxMass: 5500, maxXeno: 10,
+      mass: 1500, volume: 5500, maxXeno: 10,
       extras: [ShipClassSlot(ShipSystemType.emitter, 1)],
       corpMap: {
         ShipSystemType.engine:  Corporation.sinclair,
@@ -202,7 +228,7 @@ enum ShipClassType {
   // ── Destroyers ────────────────────────────────────────────────────────────
   marduk("Marduk",
       type: ShipType.destroyer,
-      maxMass: 5000, maxXeno: 12,
+      mass: 2000, volume: 5000, maxXeno: 12,
       corpMap: {
         ShipSystemType.engine:  Corporation.rimbaud,
         ShipSystemType.power:   Corporation.salazar,
@@ -214,7 +240,7 @@ enum ShipClassType {
 
   nemesis("Nemesis",   // heavier destroyer, extra weapon
       type: ShipType.destroyer,
-      maxMass: 6000, maxXeno: 12,
+      mass: 2000, volume: 6000, maxXeno: 12,
       extras: [ShipClassSlot(ShipSystemType.weapon, 1)],
       corpMap: {
         ShipSystemType.engine:  Corporation.nimrod,
@@ -228,7 +254,7 @@ enum ShipClassType {
   // ── Interceptors ──────────────────────────────────────────────────────────
   lynx("Lynx",
       type: ShipType.interceptor,
-      maxMass: 4000, maxXeno: 16,
+      mass: 1000, volume: 4000, maxXeno: 16,
       corpMap: {
         ShipSystemType.engine:  Corporation.nimrod,
         ShipSystemType.power:   Corporation.lopez,
@@ -239,7 +265,7 @@ enum ShipClassType {
 
   raptor("Raptor",   // tanaka engine interceptor — pure speed
       type: ShipType.interceptor,
-      maxMass: 3500, maxXeno: 18,
+      mass: 1000, volume: 3500, maxXeno: 18,
       extras: [ShipClassSlot(ShipSystemType.engine, 1)],
       corpMap: {
         ShipSystemType.engine:  Corporation.tanaka,
@@ -252,7 +278,7 @@ enum ShipClassType {
   // ── Battleships ───────────────────────────────────────────────────────────
   balrog("Balrog",
       type: ShipType.battleship,
-      maxMass: 7500, maxXeno: 8,
+      mass: 5000, volume: 7500, maxXeno: 8,
       corpMap: {
         ShipSystemType.engine:  Corporation.rimbaud,
         ShipSystemType.power:   Corporation.sinclair,
@@ -264,7 +290,7 @@ enum ShipClassType {
 
   leviathan("Leviathan",   // extra shields + emitters, defensive monster
       type: ShipType.battleship,
-      maxMass: 8000, maxXeno: 8,
+      mass: 5000, volume: 8000, maxXeno: 8,
       extras: [
         ShipClassSlot(ShipSystemType.shield, 1),
         ShipClassSlot(ShipSystemType.emitter, 2),
@@ -281,7 +307,7 @@ enum ShipClassType {
   // ── Flagships ─────────────────────────────────────────────────────────────
   galaxy("Galaxy",
       type: ShipType.flagship,
-      maxMass: 10000, maxXeno: 24,
+      mass: 8000, volume: 10000, maxXeno: 24,
       corpMap: {
         ShipSystemType.engine:  Corporation.sinclair,
         ShipSystemType.power:   Corporation.sinclair,
@@ -294,7 +320,7 @@ enum ShipClassType {
 
   sovereign("Sovereign",   // pure Sinclair prestige ship
       type: ShipType.flagship,
-      maxMass: 12000, maxXeno: 30,
+      mass: 8000, volume: 12000, maxXeno: 30,
       extras: [
         ShipClassSlot(ShipSystemType.weapon, 1),
         ShipClassSlot(ShipSystemType.emitter, 1),
@@ -312,12 +338,12 @@ enum ShipClassType {
   // ── Freighters ────────────────────────────────────────────────────────────
   barge("Barge",
       type: ShipType.freighter,
-      maxMass: 20000, maxXeno: 2,
+      mass: 12000, volume: 20000, maxXeno: 2,
       corpMap: {}),   // all GenCorp — this is the bottom of the market
 
   condor("Condor",   // Lopez freighter — excellent converters
       type: ShipType.freighter,
-      maxMass: 18000, maxXeno: 4,
+      mass: 12000, volume: 18000, maxXeno: 4,
       extras: [ShipClassSlot(ShipSystemType.converter, 1)],
       corpMap: {
         ShipSystemType.engine:    Corporation.rimbaud,
@@ -329,12 +355,12 @@ enum ShipClassType {
   // ── Haulers ───────────────────────────────────────────────────────────────
   mule("Mule",
       type: ShipType.hauler,
-      maxMass: 8000, maxXeno: 3,
+      mass: 5000, volume: 8000, maxXeno: 3,
       corpMap: {}),   // GenCorp workhorse
 
   drayage("Drayage",   // armed hauler
       type: ShipType.hauler,
-      maxMass: 9000, maxXeno: 4,
+      mass: 5000, volume: 9000, maxXeno: 4,
       extras: [ShipClassSlot(ShipSystemType.weapon, 1)],
       corpMap: {
         ShipSystemType.engine:    Corporation.rimbaud,
@@ -346,7 +372,7 @@ enum ShipClassType {
   // ── Probes ────────────────────────────────────────────────────────────────
   dart("Dart",
       type: ShipType.probe,
-      maxMass: 200, maxXeno: 8,
+      mass: 50, volume: 200, maxXeno: 8,
       corpMap: {
         ShipSystemType.engine: Corporation.tanaka,
         ShipSystemType.power:  Corporation.rimbaud,
@@ -355,7 +381,7 @@ enum ShipClassType {
 
   whisper("Whisper",   // stealth probe, gregoriev emitters
       type: ShipType.probe,
-      maxMass: 180, maxXeno: 10,
+      mass: 80, volume: 180, maxXeno: 10,
       extras: [ShipClassSlot(ShipSystemType.emitter, 2)],
       corpMap: {
         ShipSystemType.engine: Corporation.tanaka,
@@ -367,7 +393,7 @@ enum ShipClassType {
   // ── Emitter Boats ─────────────────────────────────────────────────────────
   aegis("Aegis",
       type: ShipType.emitterBoat,
-      maxMass: 3000, maxXeno: 10,
+      mass: 800, volume: 3000, maxXeno: 10,
       corpMap: {
         ShipSystemType.engine:  Corporation.nimrod,
         ShipSystemType.power:   Corporation.lopez,
@@ -378,7 +404,7 @@ enum ShipClassType {
 
   nullfield("Nullfield",   // extreme emitter specialist
       type: ShipType.emitterBoat,
-      maxMass: 3500, maxXeno: 12,
+      mass: 900, volume: 3500, maxXeno: 12,
       extras: [ShipClassSlot(ShipSystemType.emitter, 2)],
       corpMap: {
         ShipSystemType.engine:  Corporation.rimbaud,
@@ -391,7 +417,7 @@ enum ShipClassType {
   // ── Gunships ──────────────────────────────────────────────────────────────
   hellfire("Hellfire",
       type: ShipType.gunship,
-      maxMass: 4000, maxXeno: 6,
+      mass: 1000, volume: 4000, maxXeno: 6,
       corpMap: {
         ShipSystemType.engine:  Corporation.nimrod,
         ShipSystemType.power:   Corporation.salazar,
@@ -402,7 +428,7 @@ enum ShipClassType {
 
   apocalypse("Apocalypse",   // extra weapons, nothing else
       type: ShipType.gunship,
-      maxMass: 5000, maxXeno: 4,
+      mass: 1000, volume: 5000, maxXeno: 4,
       extras: [
         ShipClassSlot(ShipSystemType.weapon, 2),
         ShipClassSlot(ShipSystemType.launcher, 1),
@@ -419,11 +445,12 @@ enum ShipClassType {
   final Map<ShipSystemType, Corporation> corpMap;
   final List<ShipClassSlot> extras;
   final ShipType type;
-  final double maxMass, maxXeno;
+  final double mass, volume, maxXeno;
 
   const ShipClassType(this.className, {
     required this.type,
-    required this.maxMass,
+    required this.mass,
+    required this.volume,
     required this.maxXeno,
     this.extras = const [],
     this.corpMap = const {},

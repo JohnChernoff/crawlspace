@@ -24,8 +24,8 @@ class ShipRegistry {
     if (_byLoc[ship.loc]?.isEmpty ?? false) {
       _byLoc.remove(ship.loc);
     }
-    for (final shp in _all.where((s) => s.targetShip == ship)) {
-      shp.targetShip = null;
+    for (final shp in _all.where((s) => s.nav.targetShip == ship)) {
+      shp.nav.targetShip = null;
     }
   }
 

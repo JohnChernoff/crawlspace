@@ -24,12 +24,18 @@ enum EngineType {
 }
 
 class Engine extends ShipSystem {
-  int baseAutPerUnitTraversal; //BAPUT
+  int baseAutPerUnitTraversal; // BAPUT
   double efficiency;
+
+  /// Hidden movement-model stats.
+  /// Keep defaults conservative so existing stock data still works.
+  double thrust;
+  double maxSpeed;
+
   Domain domain;
   EngineType engineType;
   EngineEgo ego;
-  double xenoGen; //per AUT
+  double xenoGen; // per AUT
   Map<XenomancySchool,int> xenoCastBonus;
   Map<XenomancySchool,int> xenoPowerBonus;
 
@@ -42,6 +48,8 @@ class Engine extends ShipSystem {
       sb.writeln("Base aut per hyperspace jump: $baseAutPerUnitTraversal");
     } else {
       sb.writeln("Base aut per unit traversal (BAPUT): $baseAutPerUnitTraversal");
+      sb.writeln("Thrust: ${thrust.toStringAsFixed(2)}");
+      sb.writeln("Max speed: ${maxSpeed.toStringAsFixed(2)}");
     }
     sb.writeln("Efficiency: $efficiency");
     sb.writeln("Xeno production (per aut): $xenoGen");
@@ -65,6 +73,8 @@ class Engine extends ShipSystem {
     this.xenoPowerBonus = const {},
     required this.baseAutPerUnitTraversal,
     required this.efficiency,
+    this.thrust = 1.0,
+    this.maxSpeed = 2.5,
     required super.baseCost,
     required super.baseRepairCost,
     required super.powerDraw,
@@ -85,7 +95,6 @@ class Engine extends ShipSystem {
       repairDifficulty: data.systemData.repairDifficulty,
       rarity: data.systemData.rarity,
       about: data.systemData.about,
-      //
       xenoGen: data.xenoGen,
       xenoCastBonus: data.xenoCastBonus,
       domain: data.domain,
@@ -93,14 +102,18 @@ class Engine extends ShipSystem {
       ego: data.ego,
       efficiency: data.efficiency,
       baseAutPerUnitTraversal: data.baseAutPerUnitTraversal,
+      thrust: data.thrust,
+      maxSpeed: data.maxSpeed,
     );
   }
 }
 
 class EngineData {
   final ShipSystemData systemData;
-  final int baseAutPerUnitTraversal; //BAPUT
+  final int baseAutPerUnitTraversal;
   final double efficiency;
+  final double thrust;
+  final double maxSpeed;
   final Domain domain;
   final EngineType engineType;
   final EngineEgo ego;
@@ -108,18 +121,17 @@ class EngineData {
   final Map<XenomancySchool,int> xenoCastBonus;
   final Map<XenomancySchool,int> xenoPowerBonus;
 
-
   const EngineData({
     required this.systemData,
     required this.baseAutPerUnitTraversal,
     required this.efficiency,
+    this.thrust = 100,
+    this.maxSpeed = 2.5,
     required this.domain,
     required this.engineType,
     this.xenoGen = .025,
     this.xenoCastBonus = const {},
     this.xenoPowerBonus = const {},
-    this.ego = EngineEgo.none
+    this.ego = EngineEgo.none,
   });
 }
-
-

@@ -8,6 +8,7 @@ import 'package:crawlspace_engine/rng/sys_gen.dart';
 import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:crawlspace_engine/ship/ship_sys.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';
+import 'package:crawlspace_engine/ship/systems/weapon_profiler.dart';
 import '../fugue_engine.dart';
 import '../color.dart';
 import '../galaxy/geometry/coord_3d.dart';
@@ -19,16 +20,31 @@ import '../galaxy/geometry/location.dart';
 import '../actors/pilot.dart';
 import '../actors/player.dart';
 import '../stock_items/stock_ships.dart';
+import 'nav.dart';
 import 'systems/engines.dart';
 import 'systems/power.dart';
 import 'systems/shields.dart';
 import 'systems/ship_system.dart';
 import 'systems/weapons.dart';
 
-class HullResistance {
-  final DamageType dmgType;
-  final double resistance;
-  const HullResistance(this.dmgType,this.resistance);
+enum ShieldHitType {
+  none,
+  absorbed,
+  overflow,
+  phaseCatch,
+  efficientBlock,
+}
+
+class ShieldHitResult {
+  final ShieldHitType type;
+  final double toHull;
+  final double toShield;
+
+  const ShieldHitResult({
+    required this.type,
+    required this.toHull,
+    required this.toShield,
+  });
 }
 
 class SlotAssignment {
@@ -55,11 +71,13 @@ class Scrap extends Item {
   double get costEffectiveness => baseCost / mass;
 }
 
+
+
 class Ship extends Item implements Locatable {
   @override
   SpaceLocation get loc => _loc;
   @override
-  int get baseCost => inventory.all.map((i) => i.baseCost).sum + shipClass.maxMass.round();
+  int get baseCost => inventory.all.map((i) => i.baseCost).sum + shipClass.volume.round();
   @override
   String get shopDesc => dump(shop: true);
   SpaceLocation _loc;
@@ -77,19 +95,19 @@ class Ship extends Item implements Locatable {
   InventoryView get cargo => inventory.filter((i) => i is! ShipSystem || !systemControl.isInstalled(i));
   bool get playship => pilot is Player;
   bool get npc => !playship;
-  Ship? targetShip;
-  Coord3D? targetCoord;
-  List<GridCell> currentPath = [];
-  Map<Ship,SpaceLocation> lastKnown = {};
-  HullType hullType;
+  bool sameLevel(Ship? ship) => ship?.loc.domain == loc.domain;
+  late Hull hull;
   bool get inNebula => loc.cell.hasHaz(Hazard.nebula);
   List<ShipSystemType> multiSystems = [ShipSystemType.engine,ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.ammo,ShipSystemType.quarters];
   late ShipSystemControl systemControl;
   late RndSystemInstaller rndSystemInstaller;
   List<System>? itinerary;
   double xenoMatter = 0;
+  bool autoShutdown = false;
   EffectMap<ShipEffect> effectMap = EffectMap();
-  late XenoController xenoControl = XenoController(this);
+  late ShipNav nav = ShipNav(this);
+
+  double get volume => shipClass.volume;
 
   Ship(super.name, {
     this.owner,
@@ -106,9 +124,8 @@ class Ship extends Item implements Locatable {
     Engine? subEngine,
     Engine? hyperEngine,
     Sensor? sensor,
-    this.hullType = HullType.basic
+    HullMaterial hullMaterial = HullMaterial.basic,
   }) : _loc = location, _pilot = pilot {
-
     _pilot?.locale = AboardShip(this);
     systemControl = ShipSystemControl(this);
     rndSystemInstaller = RndSystemInstaller(this, systemControl);
@@ -124,6 +141,7 @@ class Ship extends Item implements Locatable {
       systemControl.addAmmo(a.key, a.value, setWeapon: true);
     }
     install(sensor);
+    hull = Hull.fromMaterial(hullMaterial,this);
   }
 
   void install(ShipSystem? system, {bool active = true}) {
@@ -149,17 +167,17 @@ class Ship extends Item implements Locatable {
   }
 
   bool addToInventory(Item i) {
-    if (availableMass < i.mass) return false;
+    if (availableSpace < i.mass) return false;
     inventory.add(i);
     return true;
   }
 
   SpaceLocation? detect(Ship ship) {
     if (canScan(ship.loc.cell)) {
-      lastKnown[ship] = ship.loc;
+      nav.lastKnown[ship] = ship.loc;
       return ship.loc;
     } else {
-      return lastKnown[ship];
+      return nav.lastKnown[ship];
     }
   }
   bool canScan(GridCell cell) => !(loc.cell.hasHaz(Hazard.nebula) || cell.hasHaz(Hazard.nebula));
@@ -169,7 +187,7 @@ class Ship extends Item implements Locatable {
   //TODO: some ship system to improve this?
   bool addScrap(ShipSystem s, {double scrapFact = 20, double scrapVal = 20}) {
     double m = s.mass/scrapFact;
-      if (availableMass > m) {
+      if (availableSpace > m) {
         inventory.add(Scrap("scrapped ${s.name}", mass: m, baseCost: (s.baseCost / scrapVal).round()));
         return true;
       } return false;
@@ -215,13 +233,76 @@ class Ship extends Item implements Locatable {
     return prevDam - hullDamage;
   }
 
-  double get hullStrength => shipClass.maxMass;
+  double get hullStrength => hull.material.integrityMult * volume;
 
-  bool takeDamage(double dam, DamageType dmgType) {
-    Shield? shield = systemControl.getCurrentShield; if (shield != null) {
-      dam -= shield.burn(dam,partial: true);
+  double shieldResistance(DamageType type) { //TODO: add emitters
+    return systemControl.getShields().map((s) => s.resistance(type)).sum;
+  }
+
+  double hullResistance(DamageType type) => hull.getResistance(type);
+
+  ShieldHitResult takeShieldDamage(double dmg) {
+    final shield = systemControl.getCurrentShield;
+    if (shield == null || shield.currentEnergy.floor() <= 0) {
+      return ShieldHitResult(
+        type: ShieldHitType.none,
+        toHull: dmg,
+        toShield: 0,
+      );
     }
-    hullDamage += dam;
+
+    final canDeflect =
+        shield.egos.contains(ShieldEgo.deflector) &&
+            shield.state.blockCooldown <= 0 &&
+            shield.currentEnergy >= shield.rawMaxEnergy - 0.001;
+
+    final canBlock =
+        shield.egos.contains(ShieldEgo.block) &&
+        shield.state.blockCooldown <= 0 &&
+        shield.currentEnergy >= dmg;
+
+    if (canBlock || canDeflect) {
+      if (canBlock) shield.state.blockCooldown = shield.avgRecoveryTime;
+      else shield.state.blockCooldown = shield.avgRecoveryTime * 25;
+
+      return ShieldHitResult(
+        type: ShieldHitType.efficientBlock,
+        toHull: 0,
+        toShield: 0,
+      );
+    }
+
+    final burned = shield.burn(dmg, partial: true);
+    final overflow = dmg - burned;
+
+    final canPhase =
+        overflow > 0 &&
+            shield.egos.contains(ShieldEgo.phase) &&
+            shield.state.phaseCooldown <= 0;
+
+    if (canPhase) {
+      final phaseFactor = 1.0;
+      shield.state.phaseCooldown = shield.avgRecoveryTime * 10;
+      final ratio = burned / dmg;
+      final negated = (overflow * ratio) * phaseFactor;
+      final toHull = overflow - negated;
+
+      return ShieldHitResult(
+        type: ShieldHitType.phaseCatch,
+        toHull: toHull,
+        toShield: burned,
+      );
+    }
+
+    return ShieldHitResult(
+      type: overflow > 0 ? ShieldHitType.overflow : ShieldHitType.absorbed,
+      toHull: overflow,
+      toShield: burned,
+    );
+  }
+
+  bool takeHullDamage(double dmg) {
+    hullDamage += dmg;
     return hullDamage >= hullStrength;
   }
 
@@ -272,20 +353,28 @@ class Ship extends Item implements Locatable {
     for (final a in systemControl.ammo) {
       m += a.count * a.ammo.mass;
     }
-    return inventory.all.fold<double>(0.0, (sum, s) => sum + s.mass) + m;
+    return inventory.all.fold<double>(0.0, (sum, s) => sum + s.mass) + m + shipClass.mass;
   }
 
-  double get availableMass => shipClass.maxMass - currentMass;
-  bool okMass(double m) => availableMass > m;
+  double get currentVolume {
+    double m = 0;
+    for (final a in systemControl.ammo) {
+      m += a.count * a.ammo.volume;
+    }
+    return inventory.all.fold<double>(0.0, (sum, s) => sum + s.volume) + m;
+  }
 
-  //TODO: handle power outages?
-  double tick({FugueEngine? fm, dryRun = false}) { //print("Tick... $dryRun");
+  double get availableSpace => shipClass.volume - currentVolume;
+  bool okVolume(double m) => availableSpace > m;
+
+  double tick({FugueEngine? fm}) {
+    final dryRun = fm == null; //print("Tick... $dryRun");
     double totalRecharge = 0, totalBurn = 0;
     for (final rss in systemControl.rechargables) {
       if (rss.currentEnergy < rss.currentMaxEnergy) { //print(rss.name); print(rss.rechargeRate);
         double recharge = rss.currentMaxEnergy * rss.rechargeRate * (1-rss.damage);
         if (!dryRun) {
-          if (fm != null && rss.currentEnergy < 1) {
+          if (rss.currentEnergy < 1) {
             recharge = (fm.aiRnd.nextInt(rss.avgRecoveryTime) == 0) ? recharge : 0;
           }
           if (recharge > 0) rss.recharge(recharge);
@@ -293,12 +382,20 @@ class Ship extends Item implements Locatable {
         totalRecharge += recharge;
       }
     }
-    for (final system in systemControl.activeSystems) {
+    //if (dryRun) print("Total recharge: ${totalRecharge}");
+    for (final system in systemControl.activeSystems) { //TODO: handle npc power outages
       double e = system.powerDraw; //print("Burning: $e");
-      if (!dryRun) systemControl.burnEnergy(e);
+      if (!dryRun) {
+        final burnout = !systemControl.burnEnergy(e);
+        if (burnout && system is! RechargableShipSystem && autoShutdown) {
+          system.active = false;
+          fm.msg("Out of power, shutting down ${system.type.name}");
+        }
+      }
       totalBurn += e;
     } //print("$name: Net energy per tick: ${recharge - totalBurn}");
-    if (!dryRun && fm != null) {
+    //if (dryRun) print("Total burn: ${totalBurn}");
+    if (!dryRun) {
       for (final w in systemControl.getWeapons()) if (w.cooldown > 0) w.cooldown--;
       xenoMatter = min(shipClass.maxXeno,
           xenoMatter + (systemControl.engine?.xenoGen ?? 0.0));
@@ -332,7 +429,7 @@ class Ship extends Item implements Locatable {
   bool activeEffect(ShipEffect effect) => effectMap.isActive(effect);
 
   List<TextBlock> status({bool tactical = false, bool showScannedShip = true, nebula = false}) {
-    final abbrev = !tactical && targetShip != null;
+    final abbrev = !tactical && nav.targetShip != null;
     final hostile = pilot.hostile;
     if (nebula || (tactical && loc.cell.hasHaz(Hazard.nebula))) return [TextBlock("In Nebula", GameColors.red, true)];
     List<TextBlock> blocks = [];
@@ -344,14 +441,17 @@ class Ship extends Item implements Locatable {
     if (pilot.faction.isPirate) blocks.add(TextBlock("*** Pirate ***",GameColors.red,true)); else {
       if (tactical) blocks.add(TextBlock("${(hostile ? 'hostile' : 'peaceful')} ",GameColors.gray,true));
     }
+
     blocks.add(TextBlock("Hull: ${hullRemaining.toStringAsFixed(2)} ",GameColors.green,false));
+    //blocks.add(TextBlock("Volume: ${volume} ",GameColors.green,false));
+
     blocks.add(TextBlock("%: ${currentHullPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
     blocks.add(TextBlock("Shields: ${systemControl.currentShieldStrength.toStringAsFixed(2)}, ",GameColors.green,false));
     blocks.add(TextBlock("%: ${systemControl.currentShieldPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
     if (!tactical) {
       blocks.add(TextBlock("Energy: ${systemControl.getCurrentEnergy().toStringAsFixed(2)}, ",GameColors.green,false));
       blocks.add(TextBlock("%: ${systemControl.currentEnergyPercentage.round().toStringAsFixed(2)}",GameColors.lightBlue,true));
-      blocks.add(TextBlock("Energy Rate: ${tick(dryRun: true).round().toStringAsFixed(2)}",GameColors.green,true));
+      blocks.add(TextBlock("Energy Rate: ${tick().toStringAsFixed(2)}",GameColors.green,true));
     }
     blocks.add(TextBlock("Xeno Matter: ${xenoMatter.toStringAsFixed(2)}",GameColors.orange,true));
     for (final s in systemControl.getInstalledSystems()) {
@@ -364,15 +464,27 @@ class Ship extends Item implements Locatable {
         blocks.add(TextBlock("${s.ammo!.name}: ${systemControl.ammoFor(s.ammo!)}",GameColors.coral,true));
       }
     }
+    if (!tactical && nav.targetShip != null) {
+      final sustained = sustainedRangeProfile(maxRange: impulseMapSize * 2);
+      blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
+      final dist = distanceFrom(nav.targetShip!).round();
+      final volley = volleyRangeProfile(maxRange: impulseMapSize * 2);
+      final fit = (volley.efficiencyAt(dist) * 100).round();
+      blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
+    }
     if (!tactical && !abbrev) {
-      blocks.add(TextBlock("Remaining capacity: ${availableMass.toStringAsFixed(2)}", GameColors.gray, true));
+      blocks.add(TextBlock("Heading: ${nav.heading?.loc.cell.coord}", GameColors.gray, true));
+      blocks.add(TextBlock("Velocity: ${nav.velocityString()}", GameColors.gray, true));
+      blocks.add(TextBlock("Speed: ${nav.speed.toStringAsFixed(2)}", GameColors.gray, true));
+      blocks.add(TextBlock("Total mass: ${currentMass.toStringAsFixed(2)}", GameColors.gray, true));
+      blocks.add(TextBlock("Remaining capacity: ${availableSpace.toStringAsFixed(2)}", GameColors.gray, true));
       blocks.add(TextBlock("Total scrap value: ${scrapVal.toStringAsFixed(2)}", GameColors.gray, true));
     }
     blocks.add(const TextBlock("",GameColors.black,true));
-    if (targetCoord != null) blocks.add(TextBlock("Scanning Coord: $targetCoord", GameColors.orange, true));
-    if (showScannedShip && !tactical && (targetShip != null && targetShip!.npc)) {
+    if (nav.targetCoord != null) blocks.add(TextBlock("Scanning Coord: $nav.targetCoord", GameColors.orange, true));
+    if (showScannedShip && !tactical && (nav.targetShip != null && nav.targetShip!.npc)) {
       blocks.add(const TextBlock("Scanning Ship: ", GameColors.orange, true));
-      blocks.addAll(targetShip!.status(tactical: true));
+      blocks.addAll(nav.targetShip!.status(tactical: true));
     }
     return blocks;
   }

@@ -211,7 +211,7 @@ class GalaxyMapState extends State<GalaxyMap> {
             _cycleLegend(false);
             return KeyEventResult.handled;
           } else if (ev.logicalKey == LogicalKeyboardKey.space) {
-            widget.fugueModel.movementController.loiter();
+            widget.fugueModel.movementController.loiter(widget.fugueModel.playerShip);
             setState(() {});
           }
           return KeyEventResult.ignored;

@@ -1,3 +1,4 @@
+import 'package:crawlspace_engine/controllers/movement_controller.dart';
 import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
@@ -22,8 +23,14 @@ enum InventoryType {
 }
 
 enum DepthViewOption {showAll,showClosest,toggle}
+
 class XenoIntent extends Intent {
   const XenoIntent();
+}
+
+class ThrottleIntent extends Intent {
+  final ThrottleMode mode;
+  const ThrottleIntent(this.mode);
 }
 
 class SystemSelectIntent extends Intent {
@@ -104,8 +111,8 @@ class ScrapIntent extends Intent {
   const ScrapIntent(this.collect);
 }
 
-class LoiterIntent extends Intent {
-    const LoiterIntent();
+class CruiseIntent extends Intent {
+    const CruiseIntent();
 }
 
 class DepthViewIntent extends Intent {
@@ -184,13 +191,22 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         const DirectionIntent(0, 0, 1),
 
         LogicalKeySet(LogicalKeyboardKey.clear):
-        const LoiterIntent(),
+        const CruiseIntent(),
 
         LogicalKeySet(LogicalKeyboardKey.period):
         const ImpulseIntent(true),
 
         LogicalKeySet(LogicalKeyboardKey.comma):
         const ImpulseIntent(false),
+
+        LogicalKeySet(LogicalKeyboardKey.digit1):
+        const ThrottleIntent(ThrottleMode.stop),
+
+        LogicalKeySet(LogicalKeyboardKey.digit2):
+        const ThrottleIntent(ThrottleMode.half),
+
+        LogicalKeySet(LogicalKeyboardKey.digit3):
+        const ThrottleIntent(ThrottleMode.full),
 
         LogicalKeySet(LogicalKeyboardKey.keyL):
         const OpenPlanetMenuIntent(),
@@ -265,12 +281,14 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ...generalActions,
         DirectionIntent: CallbackAction<DirectionIntent>(
           onInvoke: (intent) { //print("Moving ship");
-            if (fm.playerShip != null) {
-              if (fm.inputMode == InputMode.main) {
-                fm.pilotController.move(fm.playerShip!, Coord3D(intent.dx, intent.dy, intent.dz), vector: true);
-              } else if (fm.inputMode == InputMode.target) {
-                fm.movementController.vectorTarget(Coord3D(intent.dx, intent.dy, intent.dz));
-              }
+            if (fm.playerShip == null) return null;
+            if (fm.inputMode == InputMode.main) {
+              fm.movementController.acquireTarget(Coord3D(intent.dx, intent.dy, intent.dz)).then((v) {
+                if (v != null) fm.movementController.moveShip(fm.playerShip!, v.cell.loc);
+              });
+            }
+            else if (fm.inputMode == InputMode.target || fm.inputMode == InputMode.movementTarget) {
+              fm.movementController.vectorTarget(Coord3D(intent.dx, intent.dy, intent.dz));
             }
             return null;
           },
@@ -295,12 +313,19 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
             return null;
           }
         ),
-        LoiterIntent: CallbackAction<LoiterIntent>(
+        CruiseIntent: CallbackAction<CruiseIntent>(
             onInvoke: (_) {
-              fm.movementController.loiter();
+              fm.movementController.cruise(fm.playerShip);
               return null;
             }
         ),
+        ThrottleIntent: CallbackAction<ThrottleIntent>(
+            onInvoke: (intent) {
+              fm.movementController.throttle = intent.mode;
+              return null;
+            }
+        ),
+
         ImpulseIntent: CallbackAction<ImpulseIntent>(
             onInvoke: (intent) {
               if (intent.enter) {
@@ -336,7 +361,16 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
                 fm.combatController.awaitNextWeapon(fm.playerShip);
               } else if (fm.inputMode == InputMode.target) {
                 fm.exitInputMode();
-                fm.playerShip?.xenoControl.targetCompleter?.complete(fm.player.targetLoc);
+                fm.xenoControl.confirmTarget();
+              } else if (fm.inputMode == InputMode.movementTarget && fm.playerShip != null) {
+                final loc = fm.player.targetLoc;
+                if (loc != null) {
+                  fm.movementController.moveShip(
+                      fm.playerShip!,
+                      loc.cell.loc
+                  );
+                }
+                fm.exitInputMode();
               }
               return null;
             }

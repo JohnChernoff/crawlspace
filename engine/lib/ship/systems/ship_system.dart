@@ -82,7 +82,7 @@ abstract class ShipSystem extends Item {
     this.manufacturer = Corporation.genCorp,
     required this.about,
     required super.mass,
-    super.volume = 1,
+    super.volume = 25,
     required this.powerDraw,
   });
 

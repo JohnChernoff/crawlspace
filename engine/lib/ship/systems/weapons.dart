@@ -176,7 +176,7 @@ class Weapon extends ShipSystem {
   double _calcDamage(double dist, math.Random rnd) {
     double dmg = ammo == null
       ? dmgBase + Rng.rollDice(dmgDice, dmgDiceSides, rnd) * dmgMult
-      : (dmgBase + (rnd.nextDouble() * ammo!.avgDamage)) * dmgMult;
+      : (dmgBase + (rnd.nextDouble() * ammo!.maxDamage)) * dmgMult;
     //print("Gross damage: $dmg");
     //TODO: egos, etc.
     final netDamage = dmg * dmgRangeConfig.rangeMultiplier(dist); //print("Net damage: $netDamage");
@@ -238,18 +238,19 @@ enum AmmoEgo {
 class Ammo extends Item {
   final AmmoType ammoType;
   final AmmoDamageType damageType;
-  final double avgDamage;
+  final double maxDamage;
   final double volitity;
   final AmmoEgo ego;
   final int splashRad;
   final double splashFalloff;
   final int enchantment;
   final int maxEnchantment;
+  double get expectedDamage => maxDamage * 0.5;
 
   Ammo(super.name, {
     required this.ammoType,
     required this.damageType,
-    required this.avgDamage,
+    required this.maxDamage,
     required super.baseCost,
     this.splashRad = 0,
     this.splashFalloff = .5,
@@ -266,7 +267,7 @@ class Ammo extends Item {
     return Ammo(ammo.name,
         ammoType: ammo.ammoType,
         damageType: ammo.damageType,
-        avgDamage: ammo.avgDamage,
+        maxDamage: ammo.maxDamage,
         volitity: ammo.volitity,
         ego: ammo.ego,
         mass: ammo.mass,

@@ -26,7 +26,7 @@ class AsciiViewState extends State<AsciiView> {
     return currentView == ViewType.galaxy
         ? GalaxyMap(widget.fugueModel)
         : buildInputLayer(child: switch(widget.fugueModel.inputMode) {
-          InputMode.main || InputMode.target =>  asciiView(),
+          InputMode.main || InputMode.target || InputMode.movementTarget =>  asciiView(),
           InputMode.menu => menuView(),
           InputMode.alphaSelect => AlphaSelect(widget.fugueModel),
         }, fugueModel: widget.fugueModel);
@@ -66,8 +66,8 @@ class AsciiViewState extends State<AsciiView> {
           ),
           if (currentView == ViewType.normal) Expanded(child: TextBlockWidget(widget.fugueModel.scannerController.scannerText())),
           if (currentView == ViewType.normal) Expanded(child: TextBlockWidget(widget.fugueModel.scannerController.statusText())),
-          if (currentView == ViewType.normal && twoShipScan && widget.fugueModel.playerShip?.targetShip != null) Expanded(
-              child: TextBlockWidget(widget.fugueModel.playerShip!.targetShip!.status(tactical: true,
+          if (currentView == ViewType.normal && twoShipScan && widget.fugueModel.playerShip?.nav.targetShip != null) Expanded(
+              child: TextBlockWidget(widget.fugueModel.playerShip!.nav.targetShip!.status(tactical: true,
                   nebula: widget.fugueModel.playerShip!.inNebula)))
         ])),
         if (currentView == ViewType.normal) Expanded(child: Row(children: [
@@ -111,7 +111,7 @@ class TextBlockWidget extends StatelessWidget {
 
 Widget buildInputLayer({required Widget child, required FugueEngine fugueModel}) =>
   switch (fugueModel.inputMode) {
-     InputMode.main || InputMode.target => ShipInput(child,fugueModel),
+     InputMode.main || InputMode.target || InputMode.movementTarget => ShipInput(child,fugueModel),
      InputMode.menu => MenuInput(child,fugueModel),
      InputMode.alphaSelect => SystemInput(child, fugueModel, raw: true)
 };

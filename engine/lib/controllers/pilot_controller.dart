@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
-import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
+import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/ship/ship_sys.dart';
 import '../galaxy/system.dart';
 import '../galaxy/geometry/grid.dart';
@@ -36,26 +36,12 @@ enum ActionType {
 class PilotController extends FugueController {
   PilotController(super.fm);
 
-  void move(Ship ship, Coord3D c, { required bool vector }) {
-    final goto = vector ? ship.loc.cell.coord.add(c) : c;
-    final result = fm.movementController.moveShip(ship, goto);
-    if (ship.playship) {
-      if (result == MoveResult.unsafeDestination) {
-        fm.msgController.addMsg("Can't move to $goto (unsafe)");
-      } else if (result == MoveResult.outOfEnergy) {
-        fm.msgController.addMsg("Out of energy");
-      } else if (result == MoveResult.noEngine) {
-        fm.msgController.addMsg("Error: no engine");
-      }
-    }
-  }
-
   void castEffect(Pilot pilot) {
     final ship = fm.shipRegistry.byPilot(pilot);
     if (ship != null) {
       fm.menuController.showMenu(
           () => fm.menuFactory.buildXenoMenu(pilot, action: (s) {
-            final result = ship.xenoControl.generateEffect(s,fm);
+            final result = fm.xenoControl.generateEffect(s,ship);
             if (result != XenoResult.success) fm.msg(result.msg);
           }),
           headerTxt: "Effects: "
@@ -69,8 +55,11 @@ class PilotController extends FugueController {
 
   void toggleSystem(ShipSystem? system, Ship ship, {bool? on, silent = false}) {
     if (system != null) {
-      ship.systemControl.toggleSystem(system, on: on);
-      if (!silent) fm.msgController.addMsg("${system.type.name}: ${system.active ? 'on' : 'off'}");
+      if (ship.systemControl.toggleSystem(system, on: on)) {
+        if (!silent) fm.msgController.addMsg("${system.type.name}: ${system.active ? 'on' : 'off'}");
+      } else {
+        fm.msg("Cannot activate system (insufficient energy)");
+      }
     }
   }
 
@@ -131,8 +120,11 @@ class PilotController extends FugueController {
       final hostile = pilot.setHostilityToPlayer(fm); //TODO: unset/refresh this somewhere?
       final playLoc = fm.playerShip != null ? ship.detect(fm.playerShip!) : null;
       if (playLoc != null && hostile && fm.shipRegistry.atDomain(ship.loc).contains(fm.playerShip)) {
-        ship.targetShip = fm.playerShip;
-        final loc = ship.loc; if (loc is ImpulseLocation) {
+        final loc = ship.loc;
+        final target = ship.nav.targetShip = fm.playerShip;
+        if (target == null) {
+          glog("Null NPC target",level: DebugLevel.Warning);
+        } else if (loc is ImpulseLocation) {
             Weapon? w = ship.systemControl.primaryWeapon;
             if (w != null && ship.currentHullPercentage > (ship.pilot.faction.courage * 100)) {
               final r = w.accuracyRangeConfig.idealRange, d = ship.distance(l: playLoc); //print("${ship.name} combat...$r, $d");
@@ -140,10 +132,10 @@ class PilotController extends FugueController {
                 final idealCells = ship.loc.map.values
                     .where((c) => (playLoc.distCell(c) - r).abs() < 1.5) //TODO: tweak acceptable range
                     .sorted((c1,c2) => ship.distance(c: c1.coord).compareTo(ship.distance(c: c2.coord)));
-                ship.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd); //print(ship.currentPath);
+                ship.nav.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd); //print(ship.currentPath);
               } else {
-                if (playLoc != fm.playerShip!.loc) {
-                  //print("${ship.name} cannot find ${fm.playerShip!.name}"); //TODO: fallback strategy
+                if (playLoc != target.loc) {
+                  //print("${ship.name} cannot find ${fm.target?.name}"); //TODO: fallback strategy
                 }
                 else if (w.cooldown == 0) {  //print("${ship.name} firing...");
                   fm.combatController.fire(ship);
@@ -157,15 +149,15 @@ class PilotController extends FugueController {
               fm.msgController.addMsg("${ship.name} flees!");
               final idealCells = ship.loc.map.values
                   .sorted((c1,c2) => playLoc.distCell(c2).compareTo(playLoc.distCell(c1)));
-              ship.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd);
+              ship.nav.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd);
             }
         } else if (loc is SectorLocation) {
-          ship.currentPath = ship.loc.map.greedyPath(ship.loc.cell,ship.targetShip!.loc.cell,3,fm.aiRnd, forceHaz: true); //print(ship.currentPath);
+          ship.nav.currentPath = ship.loc.map.greedyPath(ship.loc.cell,target.loc.cell,3,fm.aiRnd, forceHaz: true); //print(ship.currentPath);
         }
       }
-      if (ship.currentPath.isNotEmpty) {
-        final result = fm.movementController.moveShip(ship, ship.currentPath.removeAt(0).coord); //print(result);
-        if (result == MoveResult.impCollision) { //fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.rnd));
+      if (ship.nav.currentPath.isNotEmpty) {
+        final result = fm.movementController.moveShip(ship, ship.nav.currentPath.removeAt(0).loc); //print(result);
+        if (result == MoveResultType.impCollision) { //fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.rnd));
           action(pilot, ActionType.movement, actionAuts: 10);
         }
       } else { //TODO: avoid hazards (if possible)

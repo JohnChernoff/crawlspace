@@ -43,7 +43,7 @@ abstract class RechargableShipSystem extends ShipSystem {
     if (!partial) {
       if (currentEnergy >= e) {
         _currentEnergy -= e; return e;
-      } return e;
+      } return 0;
     } else {
       double partialBurn = min(_currentEnergy,e);
       _currentEnergy -= partialBurn;

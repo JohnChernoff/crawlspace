@@ -72,7 +72,9 @@ class ShipSystemControl {
       ? getShields().where((s) => s.currentEnergy > 0).firstOrNull?.currentEnergy ?? 0
       : getShield()?.currentEnergy ?? 0;
 
-  bool ammoOK(Weapon weapon) => ammoMap.containsKey(weapon.ammo) && ammoMap[weapon.ammo]! > 0;
+  bool ammoOK(Weapon weapon) =>
+      ammoMap.containsKey(weapon.ammo) &&
+          ammoMap[weapon.ammo]! >= weapon.clipRate;
 
   int fireAmmoRound(Weapon weapon) {
     final prevAmmo = ammoMap[weapon.ammo]!;
@@ -81,21 +83,25 @@ class ShipSystemControl {
     return prevAmmo - newAmmo;
   }
 
-  void toggleSystem(ShipSystem? s, {bool? on}) {
+  bool toggleSystem(ShipSystem? s, {bool? on}) {
     if (s != null) {
       if (on == null) s.active = !s.active; else s.active = on;
+      if (s.active && getCurrentEnergy() <= 0) {
+        s.active = false; return false;
+      }
     }
+    return true;
   }
 
   bool burnEnergy(double e) {
     if (ship.multiSystems.contains(ShipSystemType.power)) {
       for (final gen in getPowers()) {
-        if (gen.burn(e,partial: false) > 0) { //print("Burning: $e");
+        if (gen.burn(e,partial: false) >= 0) { //print("Burning: $e");
           return true;
         }
       }
     } else {
-      return ((getPower()?.burn(e,partial: false) ?? 0) > 0);
+      return ((getPower()?.burn(e,partial: false) ?? 0) >= 0);
     }
     return false;
   }
@@ -164,7 +170,7 @@ class ShipSystemControl {
       .whereType<Adapter>().where((a) => a.adapting == system).firstOrNull;
 
   bool addAmmo(Ammo ammo, int n, {setWeapon = false}) {
-    if (!ship.okMass(ammo.mass * n)) return false;
+    if (!ship.okVolume(ammo.mass * n)) return false;
     ammoMap[ammo] = ammoMap.containsKey(ammo) ? ammoMap[ammo]! + n : n; //print("Setting weapon...");
     if (setWeapon) {
       final weapons = getInstalledSystems(types: [ShipSystemType.launcher]);

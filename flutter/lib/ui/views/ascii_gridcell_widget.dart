@@ -19,9 +19,11 @@ class GridCellWidget extends StatefulWidget {
   final GridCell cell;
   final bool invert;
   final ShipRegistry reg;
+  final bool movePreviewActual;
+
   const GridCellWidget(this.cell,this.size,this.ships,this.playShip,
       {super.key, required this.reg, this.inTargetPath = false, this.targeted = false,
-        this.scanned = false, this.invert = false, this.uiTarget = false});
+        this.scanned = false, this.invert = false, this.uiTarget = false, this.movePreviewActual = true});
 
   bool get sameDepth => (cell.coord.z - playShip.loc.cell.coord.z).abs() == 0;
   bool get sameDepthAndNotEmpty => sameDepth && !cell.isEmpty(reg);
@@ -122,6 +124,10 @@ class GridCellWidgetState extends State<GridCellWidget> {
       if (cell.blackHole) stack.add(Text("-", style: style));
     } else if (cell is ImpulseCell) {
       if (cell.itemz.isNotEmpty) stack.add(Text("\$", style: style));
+    }
+
+    if (widget.movePreviewActual) {
+      stack.add(Text("+", style: style));
     }
 
     //if (widget.ships.isNotEmpty) print(widget.ships);

@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/rng/drinks_gen.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
+import 'package:crawlspace_engine/rng/ship_gen.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/stock_items/ship_systems/stock_pile.dart';
 import '../actors/agent.dart';
@@ -11,7 +12,6 @@ import '../menu.dart';
 import '../actors/pilot.dart';
 import '../galaxy/planet.dart';
 import '../actors/player.dart';
-import '../rng/rng.dart';
 import '../galaxy/geometry/sector.dart';
 import '../ship/ship.dart';
 import '../shop.dart';
@@ -257,7 +257,7 @@ class PlanetsideController extends FugueController {
     final loc = fm.player.locale; if (loc is AtEnvironment) {
       loc.env.yard ??= ShipYard(loc.env, 1, fm.itemRnd,
           shiplist: List.generate(fm.itemRnd.nextInt(5) + 1, (i) =>
-              Rng.generateShip(fm.player.system, fm.galaxy, fm.itemRnd)));
+              ShipGenerator.generateShip(fm.player.system, fm.galaxy, fm.itemRnd)));
       fm.menuController.showMenu(() =>
           fm.menuFactory.buildShopBuyMenu(loc.env.yard!, ship: fm.playerShip), headerTxt: "${loc.env.yard!.name}");
     }
@@ -278,7 +278,7 @@ class PlanetsideController extends FugueController {
 
   int tryHullRepair(Ship ship, double percent, {double discount = 1, dryRun = false}) {
     int repairing = (ship.hullDamage * percent).round();
-    int cost = (repairing * ship.hullType.baseRepairCost * discount).round(); //TODO: add hull mods
+    int cost = (repairing * ship.hull.material.baseRepairCost * discount).round(); //TODO: add hull mods
     if (!dryRun) {
       if (fm.player.transaction(TransactionType.repair, -cost)) {
         ship.hullDamage -= repairing;

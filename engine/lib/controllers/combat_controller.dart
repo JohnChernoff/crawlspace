@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
 import '../galaxy/geometry/coord_3d.dart';
@@ -15,28 +17,28 @@ class CombatController extends FugueController {
 
   void pursue(Ship? ship) {
     if (ship != null) {
-      Ship? target = ship.targetShip; if (target != null) {
+      Ship? target = ship.nav.targetShip; if (target != null) {
         final path = ship.loc.map.greedyPath(ship.loc.cell, target.loc.cell, 1, fm.combatRnd);
         final dest = path.firstOrNull?.coord;
-        if (dest != null) fm.movementController.moveShip(ship, path.first.coord);
+        if (dest != null) fm.movementController.moveShip(ship, path.first.loc);
       }
     }
   }
 
   void fire(Ship? ship) { //FugueEngine.glog("${ship?.name} fires...");
     if (ship != null) {
-      Coord3D? target = ship.targetShip?.loc.cell.coord ?? ship.targetCoord;
+      Coord3D? target = ship.nav.targetShip?.loc.cell.coord ?? ship.nav.targetCoord;
       if (target == null) {
         fm.msgController.addMsg("Error: no target"); return;
       }
       final cell = ship.loc.map[target];
       if (cell is ImpulseCell) { //TODO: sector-ranged weapons?
-        final results = ship.fireWeapons(cell, fm.combatRnd, ship: ship.targetShip);
+        final results = ship.fireWeapons(cell, fm.combatRnd, ship: ship.nav.targetShip);
         if (results.isEmpty && ship == fm.playerShip) {
           fm.msgController.addMsg("No weapons ready");
         } else {
           for (final result in results) {
-            if (ship.targetShip != null) {
+            if (ship.nav.targetShip != null) {
               fm.msgController.addMsg("${ship.name} fires weapon: ${result.weapon.name}");
               bool rangedMishap = false;
               if (result.weapon.usesAmmo) {
@@ -45,7 +47,7 @@ class CombatController extends FugueController {
                   rangedMishap = true;
                 } else {
                   final path = ship.loc.map.greedyPath(ship.loc.cell,
-                      ship.targetShip!.loc.cell, ship.loc.map.size, fm.combatRnd, jitter: 0, ignoreHaz: true);
+                      ship.nav.targetShip!.loc.cell, ship.loc.map.size, fm.combatRnd, jitter: 0, ignoreHaz: true);
                   final obstacle = path.firstWhereOrNull((c) => c.hazLevel > 0);
                   if (obstacle != null) {
                     fm.msgController.addMsg("${result.weapon.ammo!.name} hits ${obstacle.hazMap.entries.firstWhere((o) => o.value > 0).key.name}!");
@@ -57,7 +59,7 @@ class CombatController extends FugueController {
                 if (result.dmg <= 0) {
                   fm.msgController.addMsg("${ship.name} misses!");
                 } else {
-                  damage(ship.targetShip!,result.dmg,result.weapon.dmgType);
+                  damage(ship.nav.targetShip!,result.dmg,result.weapon.dmgType);
                 }
               }
               fm.pilotController.action(ship.pilot, ActionType.combat, actionAuts: 1); //or result.minCool?
@@ -70,9 +72,36 @@ class CombatController extends FugueController {
     }
   }
 
+  double resistanceReduction(double r) {
+    const k = 0.4;
+    return 1 - exp(-k * r);
+  }
+
   void damage(Ship ship, int dmg, DamageType dmgType, {String? details}) {
-    fm.msgController.addMsg("${ship.name} takes ${dmg} damage ${details != null ? details : ''}");
-    if (ship.takeDamage(dmg.roundToDouble(),dmgType)) explode(ship);
+    final suffix = details == null ? "" : " $details";
+    final shieldResistance = ship.shieldResistance(dmgType);
+    final shieldReduction = resistanceReduction(shieldResistance);
+    final netDamage = dmg * (1 - shieldReduction);
+    final ShieldHitResult result = ship.takeShieldDamage(netDamage);
+    if (result.type == ShieldHitType.absorbed) {
+      fm.msgController.addMsg("${ship.name} absorbs ${result.toShield.round()} damage$suffix");
+    } else if (result.type == ShieldHitType.efficientBlock) {
+      fm.msgController.addMsg("${ship.name} blocks ${netDamage.round()} damage$suffix");
+    } else {
+      if (result.type == ShieldHitType.phaseCatch) {
+        final phased = netDamage - result.toShield - result.toHull;
+        fm.msgController.addMsg("${ship.name} phases $phased, absorbs ${result.toShield.round()} damage$suffix");
+      } else if (result.toShield > 0) {
+        fm.msgController.addMsg("${ship.name} absorbs ${result.toShield.round()} damage$suffix");
+      }
+      if (result.toHull > 0) {
+        final hullResistance = ship.hullResistance(dmgType);
+        final hullReduction = resistanceReduction(hullResistance);
+        final hullDmg = result.toHull * (1 - hullReduction);
+        fm.msgController.addMsg("${ship.name} takes ${hullDmg.round()} hull damage$suffix");
+        if (ship.takeHullDamage(hullDmg)) explode(ship);
+      }
+    }
   }
 
   void explode(Ship ship) {
