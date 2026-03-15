@@ -282,14 +282,8 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         DirectionIntent: CallbackAction<DirectionIntent>(
           onInvoke: (intent) { //print("Moving ship");
             if (fm.playerShip == null) return null;
-            if (fm.inputMode == InputMode.main) {
-              fm.movementController.acquireTarget(Coord3D(intent.dx, intent.dy, intent.dz)).then((v) {
-                if (v != null) fm.movementController.moveShip(fm.playerShip!, v.cell.loc);
-              });
-            }
-            else if (fm.inputMode == InputMode.target || fm.inputMode == InputMode.movementTarget) {
-              fm.movementController.vectorTarget(Coord3D(intent.dx, intent.dy, intent.dz));
-            }
+            fm.movementController.handleMove(
+                fm.playerShip!,Coord3D(intent.dx, intent.dy, intent.dz));
             return null;
           },
         ),

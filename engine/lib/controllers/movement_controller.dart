@@ -34,7 +34,7 @@ enum ThrottleMode {
   full(1.0),
   half(0.5),
   stop(0.0),
-  noEngine(0.0);
+  drift(0.0);
   final double speedFactor;
   const ThrottleMode(this.speedFactor);
 }
@@ -48,6 +48,7 @@ class MovementPreview {
   final double newVelY;
   final double newVelZ;
   final double emergencyDecel;
+  final bool engineFail;
 
   const MovementPreview({
     required this.desiredCell,
@@ -57,7 +58,8 @@ class MovementPreview {
     this.newVelX = 0,
     this.newVelY = 0,
     this.newVelZ = 0,
-    this.emergencyDecel = 0
+    this.emergencyDecel = 0,
+    this.engineFail = false
   });
 }
 
@@ -95,21 +97,39 @@ class MovementController extends FugueController {
     }
   }
 
-  MoveResult? vectorShip(Ship ship, Coord3D v) {
+  void handleMove(Ship ship, Coord3D vec) {
+    if (fm.inputMode == InputMode.main) {
+      if (ship.loc.domain == Domain.impulse) {
+        fm.movementController.acquireTarget(vec).then((loc) {
+          if (loc != null) fm.movementController.moveShip(ship, loc);
+        });
+      } else {
+        fm.movementController.vectorShip(ship,vec);
+      }
+    }
+    else if (fm.inputMode.targeting) {
+      fm.movementController.vectorTarget(vec);
+    }
+  }
+
+  MoveResult? vectorShip(Ship ship, Coord3D v) { //TODO: normalize v?
     final loc = ship.loc.map[ship.loc.cell.coord.add(v)]?.loc;
-    if (loc != null) return _moveShip(ship, loc);
-    return null;
+    return (loc != null) ? moveShip(ship, loc) : null;
   }
 
   MoveResult moveShip(Ship ship,
       SpaceLocation desiredLocation, {
         double baseEnergy = 20,
         ThrottleMode? throttleOverride,
-        bool report = true,
       }) {
 
-    final result =_moveShip(ship, desiredLocation, throttleOverride: throttleOverride);
-    if (report) fm.msg(result.resultType.name);
+    bool newtonian = ship.loc.domain == Domain.impulse;
+    final result = reportMove(ship, desiredLocation, throttleOverride: throttleOverride, newtonian: newtonian);
+    //fm.msg(result.resultType.name);
+
+    if (result.preview?.engineFail ?? false) {
+      fm.msg("Warning: engine failure");
+    }
 
     if (result.resultType == MoveResultType.rejected) {
       fm.msg("${ship.name} is rejected from your folded space!");
@@ -128,43 +148,53 @@ class MovementController extends FugueController {
       }
     }
 
-    fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: result.preview?.auts ?? 0);
+    fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: result.preview?.auts ?? 1);
     assert(ship.loc == ship.loc.cell.loc);
     fm.update();
     return result;
   }
 
-  MoveResult _moveShip(
+  MoveResult reportMove(
       Ship ship,
       SpaceLocation? desiredLocation, {
-        double baseEnergy = 20,
+        bool newtonian = true,
         ThrottleMode? throttleOverride,
       }) {
 
-    final ThrottleMode actualThrottle;
     if (desiredLocation == null) return MoveResult(null, MoveResultType.badDestination);
-    final engine = ship.systemControl.engine;
-    if (engine == null || (!engine.active)) {
-      actualThrottle = ThrottleMode.noEngine;
-    }
-    else {
-      actualThrottle = throttleOverride ?? throttle;
-    }
+
+    final ThrottleMode actualThrottle = throttleOverride ?? throttle;
 
     var preview = ship.nav.previewMove(
       desiredLocation.cell,
-      baseEnergy: baseEnergy,
       throttle: actualThrottle,
+      newtonian: newtonian
     );
 
+    //TODO: burn each aut?
+    print("Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}");
     if (!ship.systemControl.burnEnergy(preview.energyRequired)) { //print("Couldn't burn: ${preview.energyRequired}");
       if (!ship.npc || !npcFreeMovement) {
-        preview = ship.nav.previewMove(
-            desiredLocation.cell, baseEnergy: baseEnergy, throttle: ThrottleMode.noEngine);
+        if (newtonian) {
+          preview = ship.nav.previewMove(
+              desiredLocation.cell,
+              throttle: actualThrottle,
+              newtonian: newtonian,
+              drift: true);
+        }
+        else {
+          fm.msg("Insufficient energy");
+          preview = MovementPreview(
+              desiredCell: desiredLocation.cell,
+              actualCell: ship.loc.cell,
+              energyRequired: 0,
+              auts: 1
+          );
+        }
       }
     }
-
-    ship.nav.heading = desiredLocation;
+    print("AUTs: ${preview.auts}");
+    ship.nav.heading = desiredLocation; //print("Setting velocity");
     ship.nav.setVelocity(preview.newVelX, preview.newVelY, preview.newVelZ);
 
     final newCell = preview.actualCell;
@@ -196,8 +226,10 @@ class MovementController extends FugueController {
   }
 
   void cruise(Ship? ship) {
-    if (ship != null && ship.nav.heading != null) moveShip(ship, ship.nav.heading!.cell.loc);
-    else loiter(ship);
+    if (ship != null) {
+      if (ship.nav.activeHeading) moveShip(ship,ship.nav.heading!.cell.loc);
+      else loiter(ship);
+    }
   }
 
   void loiter(Ship? ship, {int auts = 10}) { //TODO: what happens if ship is moving?

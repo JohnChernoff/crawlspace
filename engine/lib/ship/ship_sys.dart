@@ -101,7 +101,7 @@ class ShipSystemControl {
         }
       }
     } else {
-      return ((getPower()?.burn(e,partial: false) ?? 0) >= 0);
+      return ((getPower()?.burn(e,partial: false) ?? 0) > 0);
     }
     return false;
   }
