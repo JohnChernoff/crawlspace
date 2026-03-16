@@ -19,7 +19,18 @@ class ShipNav {
   Coord3D? targetCoord;
   List<GridCell> currentPath = [];
   Map<Ship, SpaceLocation> lastKnown = {};
-  SpaceLocation? heading;
+  SpaceLocation? _heading;
+  SpaceLocation? get heading => _heading;
+  set heading(SpaceLocation? h) {
+    if (h != _heading) {
+      isBraking = false; // reset braking state when heading changes
+    }
+    _heading = h;
+  }
+
+  /// Sticky braking flag for throttle.stop — once set, the ship keeps
+  /// braking until stopped, preventing oscillation between brake/accelerate.
+  bool isBraking = false;
   /// True whenever the ship has a destination it hasn't reached yet.
   /// Does NOT gate on speed — a stopped ship in stop-mode still has a
   /// heading it needs to accelerate toward on the next cruise tick.
@@ -51,10 +62,9 @@ class ShipNav {
     ThrottleMode throttle = ThrottleMode.full,
     bool drift = false,
     bool newtonian = true,
+    double thrustFraction = 1.0,
+    double? energyOverride,
   }) {
-    final baseUnitEnergy =
-        baseEnergy ?? (ship.loc.domain == Domain.system ? 20 : 25);
-
     if (desiredCell == null) return const MovementPreview(desiredCell: null);
     final desiredCoord = desiredCell.coord;
 
@@ -64,17 +74,32 @@ class ShipNav {
     final noEngine = engine == null;
     final bool engineFail = noEngine && throttle != ThrottleMode.drift;
 
+    // Energy cost helper — called once auts are known.
+    // Cost = auts * rechargePerAut * drainFactor / efficiency
+    // drainFactor 1.5 means movement costs 150% of what you'd regenerate
+    // in the same time, so sustained travel is a real but not crippling drain.
+    // The baseEnergy override bypasses this for non-Newtonian callers that
+    // already have their own cost model.
+    double energyForAuts(int auts, double efficiency) {
+      if (noEngine) return 0;
+      if (energyOverride != null) return energyOverride;
+      if (baseEnergy != null) return baseEnergy * (1 / efficiency);
+      final double rechargePerAut =
+          ship.systemControl.getCurrentMaxEnergy() *
+              (ship.systemControl.getPower()?.rechargeRate ?? 0);
+      return 20; //auts * rechargePerAut * (1.5 / efficiency);
+    }
+
     // ── Non-Newtonian (hyperspace / system-map) path ──────────────────────
     if (!newtonian) {
       if (engine != null) {
-        final double travelEnergy =
-            (1 / engine.efficiency) * baseUnitEnergy * 0.5;
         final double distance = ship.loc.distCell(desiredCell);
+        final int travelAuts = (engine.baseAutPerUnitTraversal * distance).round();
         return MovementPreview(
           desiredCell: desiredCell,
           actualCell: desiredCell,
-          auts: (engine.baseAutPerUnitTraversal * distance).round(),
-          energyRequired: travelEnergy * distance,
+          auts: travelAuts,
+          energyRequired: energyForAuts(travelAuts, engine.efficiency),
         );
       } else {
         return MovementPreview(
@@ -97,7 +122,7 @@ class ShipNav {
     final dirZ = mag == 0 ? 0.0 : dz / mag;
 
     final double thrust = engine?.thrust ?? 0;
-    final double accel = thrust / max(ship.currentMass, 0.001);
+    final double accel = (thrust / max(ship.currentMass, 0.001)) * thrustFraction.clamp(0.0, 1.0);
     final double maxSpeed = engine?.maxSpeed ?? 0;
     final int baseAUT = engine?.baseAutPerUnitTraversal ?? 10;
     final double efficiency = engine?.efficiency ?? 0.1;
@@ -117,22 +142,42 @@ class ShipNav {
     double nextVelZ = vz;
 
     if (throttle == ThrottleMode.stop) {
+      // If already on the destination cell, just zero velocity and return.
+      if (mag == 0) {
+        isBraking = false;
+        return MovementPreview(
+          desiredCell: desiredCell,
+          actualCell: ship.loc.cell,
+          auts: 1,
+          energyRequired: 0,
+          newVelX: 0,
+          newVelY: 0,
+          newVelZ: 0,
+        );
+      }
       // ── Two-phase burn: accelerate until braking distance, then brake ─────
       //
-      // We decompose velocity into forward (toward target) and lateral
-      // components.  Lateral velocity is cancelled by up to accel/tick so
-      // the ship tracks straight to the target rather than drifting off-course
-      // or into the map edge.  Stopping distance is computed from the forward
-      // component only; the brakingCap guarantees the engine can always stop
-      // in time given remaining distance.
+      // For the per-tick physics we work in terms of the immediate next step
+      // direction (sign of delta to destination) rather than the full
+      // destination vector.  This keeps velocity aligned with actual movement
+      // and prevents the ship building up speed in a direction it then has to
+      // fight.  mag (full remaining distance) is still used for the braking
+      // phase decision so the two-phase profile works over the whole journey.
 
-      // Decompose current velocity into forward and lateral components.
-      final double forwardComponent = mag > 0
-          ? (vx * dirX + vy * dirY + vz * dirZ)
-          : 0.0;
-      final double latVelX = vx - forwardComponent * dirX;
-      final double latVelY = vy - forwardComponent * dirY;
-      final double latVelZ = vz - forwardComponent * dirZ;
+      // Immediate step direction — one cell toward destination.
+      final double stepDX = dx.sign.toDouble();
+      final double stepDY = dy.sign.toDouble();
+      final double stepDZ = dz.sign.toDouble();
+      final double stepMagImm = sqrt(stepDX*stepDX + stepDY*stepDY + stepDZ*stepDZ);
+      final double immDirX = stepMagImm > 0 ? stepDX / stepMagImm : dirX;
+      final double immDirY = stepMagImm > 0 ? stepDY / stepMagImm : dirY;
+      final double immDirZ = stepMagImm > 0 ? stepDZ / stepMagImm : dirZ;
+
+      // Decompose current velocity into forward (toward immediate step) and lateral.
+      final double forwardComponent = vx * immDirX + vy * immDirY + vz * immDirZ;
+      final double latVelX = vx - forwardComponent * immDirX;
+      final double latVelY = vy - forwardComponent * immDirY;
+      final double latVelZ = vz - forwardComponent * immDirZ;
       final double latSpeed =
       sqrt(latVelX * latVelX + latVelY * latVelY + latVelZ * latVelZ);
 
@@ -143,42 +188,53 @@ class ShipNav {
       if (latSpeed > 0) {
         final double cancelLat = min(accel, latSpeed);
         final double latScale = (latSpeed - cancelLat) / latSpeed;
-        cvx = forwardComponent * dirX + latVelX * latScale;
-        cvy = forwardComponent * dirY + latVelY * latScale;
-        cvz = forwardComponent * dirZ + latVelZ * latScale;
+        cvx = forwardComponent * immDirX + latVelX * latScale;
+        cvy = forwardComponent * immDirY + latVelY * latScale;
+        cvz = forwardComponent * immDirZ + latVelZ * latScale;
       }
 
-      // Stopping distance based on forward speed only.
+      // Once the ship commits to braking it must not re-accelerate while
+      // still carrying speed — doing so causes oscillation. isBraking is
+      // sticky once set. Exception: if the ship has come to a full stop
+      // (forwardSpeed == 0) and the remaining distance allows a safe single
+      // acceleration step, allow it — otherwise the ship gets stuck short
+      // of the destination.
       final double forwardSpeed = max(0.0, forwardComponent);
-      final double stoppingDist =
-      accel > 0 ? (forwardSpeed * forwardSpeed) / (2 * accel) : double.infinity;
-      final bool braking = mag <= stoppingDist;
+      final double speedIfAccel = min(forwardSpeed + accel, accel > 0 ? sqrt(2 * accel * mag) : maxSpeed);
+      final double stopDistIfAccel = accel > 0 ? (speedIfAccel * speedIfAccel) / (2 * accel) : double.infinity;
+      if (stopDistIfAccel >= mag) isBraking = true;
+      // If stopped and one safe step remains, allow a fresh acceleration.
+      if (forwardSpeed == 0 && stopDistIfAccel < mag) isBraking = false;
+      final bool braking = isBraking;
+
+      print("STOP mag:${mag.toStringAsFixed(2)} fwd:${forwardSpeed.toStringAsFixed(3)} accel:${accel.toStringAsFixed(3)} stopDistIfAccel:${stopDistIfAccel.toStringAsFixed(2)} braking:$braking brakingCap:${(accel>0?sqrt(2*accel*mag):0).toStringAsFixed(3)}");
 
       if (braking) {
-        // Retrograde burn — reduce forward speed by accel, keep lateral
-        // cancellation already applied. Ship coasts on vx/vy/vz this tick.
+        // Retrograde burn — reduce forward speed by accel.
         if (forwardSpeed > accel) {
           final double newForward = forwardSpeed - accel;
-          nextVelX = newForward * dirX + (cvx - forwardSpeed * dirX);
-          nextVelY = newForward * dirY + (cvy - forwardSpeed * dirY);
-          nextVelZ = newForward * dirZ + (cvz - forwardSpeed * dirZ);
+          nextVelX = newForward * immDirX + (cvx - forwardSpeed * immDirX);
+          nextVelY = newForward * immDirY + (cvy - forwardSpeed * immDirY);
+          nextVelZ = newForward * immDirZ + (cvz - forwardSpeed * immDirZ);
         } else {
           nextVelX = 0;
           nextVelY = 0;
           nextVelZ = 0;
+          // Do NOT clear isBraking here — a stopped ship mid-journey must
+          // stay in braking mode, not immediately re-accelerate.
+          // isBraking is cleared only when heading changes or ship arrives.
         }
         // vx/vy/vz unchanged — momentum carries ship forward this tick.
       } else {
-        // Acceleration phase — thrust toward target on lateral-corrected base.
-        double ax = cvx + dirX * accel;
-        double ay = cvy + dirY * accel;
-        double az = cvz + dirZ * accel;
+        // Acceleration phase — thrust in immediate step direction.
+        double ax = cvx + immDirX * accel;
+        double ay = cvy + immDirY * accel;
+        double az = cvz + immDirZ * accel;
         ax *= stabilization;
         ay *= stabilization;
         az *= stabilization;
 
-        // Cap speed to what the engine can actually stop from at this distance.
-        // v_max = sqrt(2 * accel * mag) — solving stopping distance for v.
+        // Cap speed to what the engine can stop from over remaining distance.
         final double brakingCap =
         accel > 0 ? sqrt(2 * accel * mag) : maxSpeed;
         final double effectiveCap = min(maxSpeed, brakingCap);
@@ -192,7 +248,6 @@ class ShipNav {
         nextVelX = ax;
         nextVelY = ay;
         nextVelZ = az;
-        // Update vx/vy/vz so the step this tick reflects thrust + correction.
         vx = ax;
         vy = ay;
         vz = az;
@@ -239,13 +294,12 @@ class ShipNav {
 
     // ── Same-cell result (speed too low to cross a cell boundary) ─────────
     if (finalStep.x == 0 && finalStep.y == 0 && finalStep.z == 0) {
+      final int sameAuts = max(1, (baseAUT * 0.25).round());
       return MovementPreview(
         desiredCell: desiredCell,
         actualCell: ship.loc.cell,
-        auts: max(1, (baseAUT * 0.25).round()),
-        energyRequired: noEngine
-            ? 0
-            : baseUnitEnergy * (1 / efficiency) * 0.5,
+        auts: sameAuts,
+        energyRequired: energyForAuts(sameAuts, efficiency),
         newVelX: nextVelX,
         newVelY: nextVelY,
         newVelZ: nextVelZ,
@@ -263,12 +317,9 @@ class ShipNav {
         desiredCell: desiredCell,
         actualCell: ship.loc.cell,
         auts: 1,
-        energyRequired: noEngine
-            ? 0
-            : baseUnitEnergy * (1 / efficiency) * 0.25,
+        energyRequired: energyForAuts(1, efficiency),
         emergencyDecel: attemptedSpeed,
         engineFail: engineFail,
-        // Caller should zero the ship's velocity on this result.
         newVelX: 0,
         newVelY: 0,
         newVelZ: 0,
@@ -296,17 +347,11 @@ class ShipNav {
     final double dist = ship.loc.distCell(actualCell);
     final int auts = max(1, (baseAUT * dist / forwardSpeed).round());
 
-    // Bug fix #5: energy cost is based on distance + efficiency only.
-    // Removed the (1 + accel * 0.25) term that punished light/fast ships.
-    final double energyRequired = noEngine
-        ? 0
-        : baseUnitEnergy * (1 / efficiency) * dist;
-
     return MovementPreview(
       desiredCell: desiredCell,
       actualCell: actualCell,
       auts: auts,
-      energyRequired: energyRequired,
+      energyRequired: energyForAuts(auts, efficiency),
       newVelX: nextVelX,
       newVelY: nextVelY,
       newVelZ: nextVelZ,

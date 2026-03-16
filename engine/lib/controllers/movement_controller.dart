@@ -165,51 +165,67 @@ class MovementController extends FugueController {
 
     final ThrottleMode actualThrottle = throttleOverride ?? throttle;
 
+    // For NPCs with free movement, or non-Newtonian moves, use full preview
+    // first and handle energy separately below.
     var preview = ship.nav.previewMove(
         desiredLocation.cell,
         throttle: actualThrottle,
         newtonian: newtonian
     );
 
-    //TODO: burn each aut?
     print("Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}");
-    if (!ship.systemControl.burnEnergy(preview.energyRequired)) { //print("Couldn't burn: ${preview.energyRequired}");
-      if (!ship.npc || !npcFreeMovement) {
-        if (newtonian) {
-          preview = ship.nav.previewMove(
-              desiredLocation.cell,
-              throttle: actualThrottle,
-              newtonian: newtonian,
-              drift: true);
+
+    if (newtonian && (!ship.npc || !npcFreeMovement)) {
+      final double available = ship.systemControl.getCurrentEnergy();
+      if (available <= 0) {
+        // Completely out of energy — coast as pure drift, engine flagged as failed.
+        // In stop mode this means the ship can no longer brake; it will overshoot.
+        preview = ship.nav.previewMove(
+            desiredLocation.cell,
+            throttle: actualThrottle,
+            newtonian: newtonian,
+            drift: true);
+        if (actualThrottle == ThrottleMode.stop) {
+          fm.msg("Warning: out of energy, cannot complete braking burn!");
         }
-        else {
-          fm.msg("Insufficient energy");
-          preview = MovementPreview(
-              desiredCell: desiredLocation.cell,
-              actualCell: ship.loc.cell,
-              energyRequired: 0,
-              auts: 1
-          );
-        }
+      } else if (available < preview.energyRequired && preview.energyRequired > 0) {
+        // Partial energy — scale thrust proportionally, cost is exactly what's available.
+        final double thrustFraction = available / preview.energyRequired;
+        preview = ship.nav.previewMove(
+            desiredLocation.cell,
+            throttle: actualThrottle,
+            newtonian: newtonian,
+            thrustFraction: thrustFraction,
+            energyOverride: available);
+        ship.systemControl.burnEnergy(available);
+      } else {
+        ship.systemControl.burnEnergy(preview.energyRequired);
       }
+    } else if (!ship.npc || !npcFreeMovement) {
+      // Non-Newtonian: binary — either afford it or stay put.
+      if (!ship.systemControl.burnEnergy(preview.energyRequired)) {
+        fm.msg("Insufficient energy");
+        preview = MovementPreview(
+            desiredCell: desiredLocation.cell,
+            actualCell: ship.loc.cell,
+            energyRequired: 0,
+            auts: 1
+        );
+      }
+    } else {
+      // NPC free movement — burn what we can, don't penalise.
+      ship.systemControl.burnEnergy(preview.energyRequired);
     }
     print("AUTs: ${preview.auts}");
     ship.nav.heading = desiredLocation;
+    ship.nav.setVelocity(preview.newVelX, preview.newVelY, preview.newVelZ);
 
-    // For ThrottleMode.stop only: if the ship lands on its destination cell
-    // and the engine didn't fail (meaning the braking burn executed as
-    // planned), zero velocity and clear the heading.  Other throttle modes
-    // intentionally arrive with speed, and a failed engine means the ship
-    // couldn't decelerate as planned so we leave velocity intact.
+    // Clear heading and zero velocity on arrival for stop mode (engine must
+    // not have failed, otherwise the ship couldn't execute its braking burn).
     final bool arrived = preview.actualCell == desiredLocation.cell;
-    final bool cleanStop = arrived &&
-        actualThrottle == ThrottleMode.stop &&
-        !(preview.engineFail);
-    if (cleanStop) {
-      ship.nav.heading = null;
+    if (arrived && actualThrottle == ThrottleMode.stop && !preview.engineFail) {
+      ship.nav.heading = null; // also clears isBraking via the heading setter
       ship.nav.setVelocity(0, 0, 0);
-    } else {
-      ship.nav.setVelocity(preview.newVelX, preview.newVelY, preview.newVelZ);
     }
 
     final newCell = preview.actualCell;
@@ -242,19 +258,19 @@ class MovementController extends FugueController {
 
   void cruise(Ship? ship) {
     if (ship == null) return;
-    if (ship.nav.activeHeading) {
-      // Still travelling — move toward destination.
-      moveShip(ship, ship.nav.heading!.cell.loc);
-    } else if (ship.nav.speed > 0.05) {
-      // At destination (or no heading) but still moving — burn it off.
-      // Pass current cell as destination so previewMove sees mag==0 and
-      // the stop-mode logic zeroes out velocity over successive ticks.
-      moveShip(ship, ship.loc, throttleOverride: ThrottleMode.stop);
-    } else {
-      // Truly stopped — zero out any floating point residue and loiter.
-      ship.nav.setVelocity(0, 0, 0);
+    final heading = ship.nav.heading;
+    // Already at destination or no heading set.
+    if (heading == null || ship.loc.cell == heading.cell) {
+      ship.nav.heading = null;
+      ship.nav.isBraking = false;
+      if (ship.nav.speed > 0.05) {
+        // Residual velocity — kill it in place.
+        ship.nav.setVelocity(0, 0, 0);
+      }
       loiter(ship);
+      return;
     }
+    moveShip(ship, heading.cell.loc);
   }
 
   void loiter(Ship? ship, {int auts = 10}) { //TODO: what happens if ship is moving?
