@@ -147,7 +147,7 @@ class MovementController extends FugueController {
         }
       }
     }
-
+    print("Action AUTs: ${result.preview?.auts}");
     fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: result.preview?.auts ?? 1);
     assert(ship.loc == ship.loc.cell.loc);
     fm.update();
@@ -166,9 +166,9 @@ class MovementController extends FugueController {
     final ThrottleMode actualThrottle = throttleOverride ?? throttle;
 
     var preview = ship.nav.previewMove(
-      desiredLocation.cell,
-      throttle: actualThrottle,
-      newtonian: newtonian
+        desiredLocation.cell,
+        throttle: actualThrottle,
+        newtonian: newtonian
     );
 
     //TODO: burn each aut?
@@ -194,8 +194,23 @@ class MovementController extends FugueController {
       }
     }
     print("AUTs: ${preview.auts}");
-    ship.nav.heading = desiredLocation; //print("Setting velocity");
-    ship.nav.setVelocity(preview.newVelX, preview.newVelY, preview.newVelZ);
+    ship.nav.heading = desiredLocation;
+
+    // For ThrottleMode.stop only: if the ship lands on its destination cell
+    // and the engine didn't fail (meaning the braking burn executed as
+    // planned), zero velocity and clear the heading.  Other throttle modes
+    // intentionally arrive with speed, and a failed engine means the ship
+    // couldn't decelerate as planned so we leave velocity intact.
+    final bool arrived = preview.actualCell == desiredLocation.cell;
+    final bool cleanStop = arrived &&
+        actualThrottle == ThrottleMode.stop &&
+        !(preview.engineFail);
+    if (cleanStop) {
+      ship.nav.heading = null;
+      ship.nav.setVelocity(0, 0, 0);
+    } else {
+      ship.nav.setVelocity(preview.newVelX, preview.newVelY, preview.newVelZ);
+    }
 
     final newCell = preview.actualCell;
     if (newCell == null) return MoveResult(preview,MoveResultType.error);
@@ -226,9 +241,19 @@ class MovementController extends FugueController {
   }
 
   void cruise(Ship? ship) {
-    if (ship != null) {
-      if (ship.nav.activeHeading) moveShip(ship,ship.nav.heading!.cell.loc);
-      else loiter(ship);
+    if (ship == null) return;
+    if (ship.nav.activeHeading) {
+      // Still travelling — move toward destination.
+      moveShip(ship, ship.nav.heading!.cell.loc);
+    } else if (ship.nav.speed > 0.05) {
+      // At destination (or no heading) but still moving — burn it off.
+      // Pass current cell as destination so previewMove sees mag==0 and
+      // the stop-mode logic zeroes out velocity over successive ticks.
+      moveShip(ship, ship.loc, throttleOverride: ThrottleMode.stop);
+    } else {
+      // Truly stopped — zero out any floating point residue and loiter.
+      ship.nav.setVelocity(0, 0, 0);
+      loiter(ship);
     }
   }
 
