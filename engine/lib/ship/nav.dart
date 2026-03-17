@@ -17,7 +17,7 @@ class NavState {
     required this.isBraking,
   });
 
-  factory NavState.fromShip(Ship ship) => NavState(pos: ship.nav.pos, vel: ship.nav.vel, isBraking: ship.nav.isBraking);
+  factory NavState.fromShip(Ship ship) => NavState(pos: ship.nav.pos, vel: ship.nav._vel, isBraking: ship.nav.isBraking);
 
   NavState copyWith({
     Position? pos,
@@ -72,8 +72,8 @@ class Position {
 
 class ShipNav {
   Ship ship;
-  Vec3 vel = Vec3(0, 0, 0);
-  bool get moving => vel.mag > 0;
+  Vec3 _vel = Vec3(0, 0, 0);
+  bool get moving => _vel.mag > 0;
 
   Ship? _targetShip;
   Ship? get targetShip => ship.sameLevel(_targetShip) ? _targetShip : null;
@@ -84,7 +84,7 @@ class ShipNav {
   List<GridCell> currentPath = [];
   Map<Ship, SpaceLocation> lastKnown = {};
   late MovePreviewer movePreviewer = MovePreviewer(ship);
-  late Position pos = Position.fromCoord(ship.loc.cell.coord);
+  Position pos;
   SpaceLocation? _heading;
   SpaceLocation? get heading => _heading;
   set heading(SpaceLocation? h) {
@@ -130,19 +130,30 @@ class ShipNav {
   /// Drifting ships (no engine) retain full momentum — they obey Newton.
   double stabilization = 0.98;
 
-  double get speed => sqrt((vel.x * vel.x) + (vel.y * vel.y) + (vel.z * vel.z));
+  double get speed => sqrt((_vel.x * _vel.x) + (_vel.y * _vel.y) + (_vel.z * _vel.z));
 
   void setVelocity(double x, double y, double z) {
-    vel = Vec3(x, y, z);
+    _vel = Vec3(x, y, z);
   }
 
   void dampVelocity(double factor) {
-    vel = vel * factor;
+    _vel = _vel * factor;
+  }
+
+  /// Clears all motion state on arrival or forced stop.
+  /// Always go through this rather than setting heading/isBraking/vel directly,
+  /// so isBraking is never left stale after a stop-mode arrival.
+  void resetMotionState() {
+    heading = null;      // also clears isBraking via the heading setter
+    isBraking = false;
+    setVelocity(0, 0, 0);
+    pos = Position.fromCoord(ship.loc.cell.coord); // re-sync pos to current cell
   }
 
   Vec3 vecFromCoord(Coord3D c) => Vec3(c.x.toDouble(), c.y.toDouble(), c.z.toDouble());
 
-  ShipNav(this.ship);
+  ShipNav(this.ship) : pos = Position.fromCoord(ship.loc.cell.coord);
+
 
   GuidanceResult computeGuidanceVelocity({
     required Position pos,
@@ -192,10 +203,15 @@ class ShipNav {
     // Braking-limited safe closing speed.
     final stopSpeed = sqrt(max(0.0, 2.0 * max(rAccel, 0.001) * d));
 
-    // Use desired arrival speed if you want nonzero terminal speed later.
-    final desiredClosing = min(interceptVelocity.mag, stopSpeed);
-    //final desiredClosing = min(maxSpeed, max(desiredArrivalSpeed, min(interceptVelocity.mag, maxSpeed))); //for full
-    final clampedClosing = min(desiredClosing, maxSpeed);
+    // For stop mode (desiredArrivalSpeed == 0) clamp to stopSpeed so we never
+    // approach faster than we can brake.  For full/half throttle
+    // (desiredArrivalSpeed > 0) we want to close at up to maxSpeed — the
+    // stopSpeed guard is intentionally dropped so the ship actually accelerates
+    // toward the target instead of pre-braking from the first tick.
+    final double desiredClosing = desiredArrivalSpeed > 0
+        ? min(interceptVelocity.mag, maxSpeed)
+        : min(interceptVelocity.mag, stopSpeed);
+    final clampedClosing = max(desiredArrivalSpeed, min(desiredClosing, maxSpeed));
 
     // Desired velocity points toward the target,
     // but we bias away from lateral drift.
@@ -291,9 +307,9 @@ class ShipNav {
 
 
   String velocityString({int digits = 4}) =>
-      '[${vel.x.toStringAsFixed(digits)}, '
-          '${vel.y.toStringAsFixed(digits)}, '
-          '${vel.z.toStringAsFixed(digits)}]';
+      '[${_vel.x.toStringAsFixed(digits)}, '
+          '${_vel.y.toStringAsFixed(digits)}, '
+          '${_vel.z.toStringAsFixed(digits)}]';
 }
 
 
@@ -312,5 +328,3 @@ class GuidanceResult {
     required this.horizon,
   });
 }
-
-

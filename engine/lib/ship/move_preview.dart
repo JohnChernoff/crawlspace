@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import '../controllers/movement_controller.dart';
@@ -130,17 +131,19 @@ class MovePreviewer {
       // Use whichever budget feels best.
       // For now, use forward accel as the main steering budget.
       final next = nav.steerVelocityTowardDirectional(
-        current: current,
-        desired: guidance.desiredVelocity,
-        forwardDir: targetDir,
-        fAccel: fAccel,
-        lAccel: lAccel,
-        rAccel: rAccel,
-        stabilization: nav.stabilization,
-        maxSpeed: maxSpeed,
-        lockX: lockX,
-        lockY: lockY,
-        lockZ: lockZ
+          current: current,
+          desired: guidance.desiredVelocity,
+          forwardDir: targetDir,
+          fAccel: fAccel,
+          lAccel: lAccel,
+          rAccel: rAccel,
+          // Don't pre-damp in stop mode — let the braking burn do all the work.
+          // Using nav.stabilization here wastes thrust budget and can cause overshoot.
+          stabilization: 1.0,
+          maxSpeed: maxSpeed,
+          lockX: lockX,
+          lockY: lockY,
+          lockZ: lockZ
       );
 
       nextVelX = next.x;
@@ -172,23 +175,35 @@ class MovePreviewer {
         rAccel: rAccel,
         maxSpeed: maxSpeed,
         desiredArrivalSpeed: maxSpeed, // full wants speed, not stop
+        // Low lateral correction in full throttle — ships should arc toward
+        // targets, not cancel all side-slip the way stop mode does.
+        lateralWeight: 0.2,
       );
 
       final current = Vec3(vx, vy, vz);
-      final targetDir = Vec3(dirX, dirY, dirZ); //or possibly ship facing
+      final targetDir = Vec3(dirX, dirY, dirZ);
+
+      // Blend the target direction with the ship's current velocity direction.
+      // This anchors the forward/lateral budget to where the ship is actually
+      // going, not just where it wants to be — prevents oscillation when the
+      // ship is nearly on-axis to the target.
+      final velMag = current.mag;
+      final blendedForward = velMag > 0.01
+          ? (targetDir + current.normalized() * 0.4).normalized()
+          : targetDir;
 
       final next = nav.steerVelocityTowardDirectional(
-        current: current,
-        desired: guidance.desiredVelocity,
-        forwardDir: targetDir,
-        fAccel: fAccel,
-        lAccel: lAccel,
-        rAccel: rAccel,
-        stabilization: nav.stabilization,
-        maxSpeed: maxSpeed * throttle.speedFactor,
-        lockX: false,
-        lockY: false,
-        lockZ: false
+          current: current,
+          desired: guidance.desiredVelocity,
+          forwardDir: blendedForward,
+          fAccel: fAccel,
+          lAccel: lAccel,
+          rAccel: rAccel,
+          stabilization: nav.stabilization,
+          maxSpeed: maxSpeed * throttle.speedFactor,
+          lockX: false,
+          lockY: false,
+          lockZ: false
       );
 
       vx = next.x;
@@ -222,14 +237,21 @@ class MovePreviewer {
 
     if (actualCell == null) {
       final attemptedSpeed = sqrt((vx * vx) + (vy * vy) + (vz * vz));
+      final bounceCell = ctx.map.values.isEmpty ? ctx.currentCell
+          : ctx.map.values
+          .where((c) => c.coord.isEdge(ctx.map.size))
+          .fold<GridCell>(ctx.map.values.first, (best, c) =>
+      oldPos.coord.distance(c.coord) < oldPos.coord.distance(best.coord) ? c : best);
+      print("CTX: ${ctx.map.runtimeType}");
+      print("Bounce Cell: ${bounceCell.coord}");
       return MovementPreview(
         desiredCell: desiredCell,
-        actualCell: ctx.currentCell,
+        actualCell: bounceCell,
         auts: 1,
         energyRequired: energy,
         emergencyDecel: attemptedSpeed,
         engineFail: engineFail,
-        newState: state,
+        newState: state.copyWith(pos: Position.fromCoord(bounceCell.coord)),
       );
     }
 
@@ -373,4 +395,3 @@ class MovePreviewer {
     );
   }
 }
-

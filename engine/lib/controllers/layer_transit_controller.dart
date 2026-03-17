@@ -128,6 +128,7 @@ class LayerTransitController extends FugueController {
         }
       }
       ship.move(ImpulseLocation(ship.loc.system,sysLoc.cell.coord,targetCell.coord),fm.shipRegistry);
+      ship.nav.resetMotionState();
       fm.audioController.newTrack(newMood: MusicalMood.danger);
     } //fm.pilotController.action(ship.pilot, ActionType.movement);
   }
@@ -159,6 +160,7 @@ class LayerTransitController extends FugueController {
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: true, silent: true);
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.impulse, activeOnly: false), ship, on: false, silent: true);
     ship.move(impLoc.sector, fm.shipRegistry);
+    ship.nav.resetMotionState();
   }
 
 }

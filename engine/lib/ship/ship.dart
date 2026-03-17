@@ -411,7 +411,7 @@ class Ship extends Item implements Locatable {
       }
     }
     final newCell;
-    if (!dryRun && nav.moving) {
+    if (!dryRun && (nav.moving || nav.activeHeading)) {
       final prevLoc = loc.cell.coord;
       fm.movementController.moveShip(this, nav.heading ?? loc);
        newCell = (loc.cell.coord != prevLoc);

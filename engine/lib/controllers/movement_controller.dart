@@ -97,17 +97,19 @@ class MovementController extends FugueController {
   void handleMove(Ship ship, Coord3D vec) {
     if (fm.inputMode == InputMode.main) {
       if (ship.loc.domain == Domain.impulse) {
-        fm.movementController.acquireTarget(vec).then((loc) { //print("Target acquired");
+        fm.movementController.acquireTarget(vec).then((loc) {
           if (loc != null) {
             ship.nav.heading = loc;
-            moveShip(ship,loc);
+            // Don't call moveShip directly — set the heading and hand off to
+            // the turn engine.  tick() will call cruise()/moveShip when it runs.
+            fm.pilotController.action(ship.pilot, ActionType.movement);
           }
         });
       } else {
         fm.movementController.vectorShip(ship,vec);
       }
     }
-    else if (fm.inputMode.targeting) { //print("Vectoring....");
+    else if (fm.inputMode.targeting) {
       fm.movementController.vectorTarget(vec);
     }
   }
@@ -121,7 +123,7 @@ class MovementController extends FugueController {
       SpaceLocation desiredLocation, {
         double baseEnergy = 20,
         ThrottleMode? throttleOverride,
-      }) {
+      }) { //print(StackTrace.current);
 
     bool newtonian = ship.loc.domain == Domain.impulse;
     final result = reportMove(ship, desiredLocation, throttleOverride: throttleOverride, newtonian: newtonian);
@@ -136,7 +138,11 @@ class MovementController extends FugueController {
     } else if ((result.preview?.emergencyDecel ?? 0) > 0) {
       String barrier = ship.loc.domain == Domain.system ? "The Oort Cloud" : "Impulse Wake Turbulence";
       fm.msg("${ship.name} crashes into $barrier, emergency deacceration: ${result.preview?.emergencyDecel}");
-      ship.nav.setVelocity(0, 0, 0);
+      final bounceCell = result.preview?.actualCell;
+      if (bounceCell != null && bounceCell != ship.loc.cell) {
+        ship.move(ship.loc.withCell(bounceCell), fm.shipRegistry);
+      }
+      ship.nav.resetMotionState();
     } else {
       final nextCell = result.preview?.actualCell;
       if (nextCell != null) {
@@ -176,7 +182,14 @@ class MovementController extends FugueController {
     );
 
     print("Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}");
-    bool ignoreEngineFail = true;
+    // IMPORTANT: energy is burned here in reportMove, and moveUntilNextCell
+    // already accumulates energyRequired across sub-steps for display.
+    // The two MUST NOT both call burnEnergy — reportMove is the single point
+    // of truth for actually spending energy.  If you ever disable ignoreEngineFail,
+    // verify the partial-energy re-preview path doesn't burn twice (the
+    // previewFixedStep call below is read-only; only the explicit burnEnergy
+    // calls below this comment actually spend energy).
+    bool ignoreEngineFail = true; // TODO: set false once double-burn is fully audited
     if (newtonian && (!ship.npc || !npcFreeMovement)) {
       final double available = ship.systemControl.getCurrentEnergy();
       if (available <= 0 && !ignoreEngineFail) {
@@ -235,8 +248,7 @@ class MovementController extends FugueController {
     final bool arrived = preview.actualCell == desiredLocation.cell;
     if (arrived && actualThrottle == ThrottleMode.stop && !preview.engineFail) {
       print("Clearing heading");
-      ship.nav.heading = null; // also clears isBraking via the heading setter
-      ship.nav.setVelocity(0, 0, 0);
+      ship.nav.resetMotionState();
     }
 
     final newCell = preview.actualCell;
@@ -272,9 +284,7 @@ class MovementController extends FugueController {
 
     if (ship.nav.heading == null || ship.loc.cell == ship.nav.heading?.cell) {
       print("arrived");
-      ship.nav.heading = null;
-      ship.nav.isBraking = false;
-      ship.nav.setVelocity(0, 0, 0); // for stop/cruise arrival
+      ship.nav.resetMotionState();
       loiter(ship);
       return;
     }
