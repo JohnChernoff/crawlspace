@@ -3,6 +3,7 @@ import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
+import 'package:crawlspace_engine/ship/nav.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:flutter/material.dart';
 import 'ascii_gridcell_widget.dart';
@@ -33,11 +34,14 @@ class _AsciiGridState extends State<AsciiGrid> {
 
     MovementPreview? preview;
     final fm = widget.fugueModel;
+    final ship = fm.playerShip;
     if (fm.inputMode == InputMode.movementTarget &&
-        fm.playerShip != null &&
+        ship != null &&
         fm.player.targetLoc != null) {
-      preview = fm.playerShip!.nav.movePreviewer.previewMove(
-          fm.player.targetLoc!.cell,
+      preview = ship.nav.movePreviewer.previewFixedStep(
+          state: NavState.fromShip(ship),
+          ctx: MoveContext.fromShip(ship),
+          desiredCell: fm.player.targetLoc!.cell,
           throttle: fm.movementController.throttle
       );
     }

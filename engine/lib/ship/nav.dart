@@ -1,31 +1,76 @@
 import 'dart:math';
-import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/ship/move_preview.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
+import 'package:crawlspace_engine/ship/systems/engines.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/location.dart';
 
-class Waypoint {
-  final Coord3D coord;
-  final double maxVelocity;
-  const Waypoint(this.coord,this.maxVelocity);
-}
-//List<Waypoint> wayPoints = [];
+class NavState {
+  final Position pos;
+  final Vec3 vel;
+  final bool isBraking;
 
-class _ArrivalNode {
-  final Coord3D coord;
-  final double allowedSpeed;
-  const _ArrivalNode(this.coord, this.allowedSpeed);
+  const NavState({
+    required this.pos,
+    required this.vel,
+    required this.isBraking,
+  });
+
+  factory NavState.fromShip(Ship ship) => NavState(pos: ship.nav.pos, vel: ship.nav.vel, isBraking: ship.nav.isBraking);
+
+  NavState copyWith({
+    Position? pos,
+    Vec3? vel,
+    bool? isBraking,
+  }) {
+    return NavState(
+      pos: pos ?? this.pos,
+      vel: vel ?? this.vel,
+      isBraking: isBraking ?? this.isBraking,
+    );
+  }
 }
 
-typedef BrakeField = Map<Coord3D, double>;
+class MoveContext {
+  final Ship ship;
+  final Engine? engine;
+  final GridCell currentCell;
+  final CellMap map;
+
+  const MoveContext({
+    required this.ship,
+    required this.engine,
+    required this.currentCell,
+    required this.map,
+  });
+
+  factory MoveContext.fromShip(Ship ship) => MoveContext(
+      ship: ship,
+      engine: ship.systemControl.engine,
+      currentCell: ship.loc.cell,
+      map: ship.loc.map);
+}
+
+class Position {
+  final double x;
+  final double y;
+  final double z;
+  const Position(this.x,this.y,this.z);
+  factory Position.fromCoord(Coord3D c) =>
+      Position(c.x.toDouble(), c.y.toDouble(), c.z.toDouble());
+
+  //TODO: add operators?
+  Coord3D get coord => Coord3D(
+      (x + .5).floor(),
+      (y + .5).floor(),
+      (z + .5).floor());
+}
 
 class ShipNav {
   Ship ship;
-  double velX = 0;
-  double velY = 0;
-  double velZ = 0;
+  Vec3 vel = Vec3(0, 0, 0);
+
   Ship? _targetShip;
   Ship? get targetShip => ship.sameLevel(_targetShip) ? _targetShip : null;
   void set targetShip(Ship? ship) {
@@ -34,16 +79,13 @@ class ShipNav {
   Coord3D? targetCoord;
   List<GridCell> currentPath = [];
   Map<Ship, SpaceLocation> lastKnown = {};
-  late MovePreviewer movePreviewer = MovePreviewer(this.ship);
+  late MovePreviewer movePreviewer = MovePreviewer(ship);
+  late Position pos = Position.fromCoord(ship.loc.cell.coord);
   SpaceLocation? _heading;
   SpaceLocation? get heading => _heading;
   set heading(SpaceLocation? h) {
     if (h != _heading) {
       isBraking = false;
-      _cachedBrakeField = null;
-      _cachedBrakeFieldDest = null;
-      _cachedBrakeFieldBrakeAccel = null;
-      _cachedBrakeFieldMaxSpeed = null;
     }
     _heading = h;
   }
@@ -70,109 +112,6 @@ class ShipNav {
           ship.shipClass.engineArch.reverseFactor *
           ship.shipClass.handling;
 
-  BrakeField? _cachedBrakeField;
-  Coord3D? _cachedBrakeFieldDest;
-  double? _cachedBrakeFieldBrakeAccel;
-  double? _cachedBrakeFieldMaxSpeed;
-
-  BrakeField getBrakeField({
-    required GridCell destination,
-    required double brakeAccel,
-    required double maxSpeed,
-    double goalSpeed = 0,
-  }) {
-    final dest = destination.coord;
-    final sameDest = _cachedBrakeFieldDest == dest;
-    final sameBrake = _cachedBrakeFieldBrakeAccel != null &&
-        (_cachedBrakeFieldBrakeAccel! - brakeAccel).abs() < 1e-9;
-    final sameMax = _cachedBrakeFieldMaxSpeed != null &&
-        (_cachedBrakeFieldMaxSpeed! - maxSpeed).abs() < 1e-9;
-
-    if (_cachedBrakeField != null && sameDest && sameBrake && sameMax) {
-      return _cachedBrakeField!;
-    }
-
-    final field = buildArrivalSpeedField(
-      destination: destination,
-      goalSpeed: goalSpeed,
-      brakeAccel: brakeAccel,
-      maxSpeed: maxSpeed,
-    );
-
-    _cachedBrakeField = field;
-    _cachedBrakeFieldDest = dest;
-    _cachedBrakeFieldBrakeAccel = brakeAccel;
-    _cachedBrakeFieldMaxSpeed = maxSpeed;
-    return field;
-  }
-
-  /*
-  final field = buildArrivalSpeedField(
-    destination: targetCell,
-    goalSpeed: 0,
-    brakeAccel: reverseAccel(engine.thrust),
-    maxSpeed: engine.maxSpeed,
-  );*/
-
-  double? allowedArrivalSpeed(BrakeField field, Coord3D coord) {
-    return field[coord];
-  }
-
-  BrakeField buildArrivalSpeedField({
-    required GridCell destination,
-    required double goalSpeed,
-    required double brakeAccel,
-    required double maxSpeed,
-  }) {
-    final field = <Coord3D, double>{};
-
-    final queue = PriorityQueue<_ArrivalNode>(
-          (a, b) => b.allowedSpeed.compareTo(a.allowedSpeed),
-    );
-
-    field[destination.coord] = goalSpeed.clamp(0.0, maxSpeed);
-    queue.add(_ArrivalNode(destination.coord, field[destination.coord]!));
-
-    while (queue.isNotEmpty) {
-      final node = queue.removeFirst();
-      final current = node.coord;
-
-      // Skip stale queue entries.
-      final currentAllowed = field[current];
-      if (currentAllowed == null || node.allowedSpeed < currentAllowed) continue;
-
-      for (int dx = -1; dx <= 1; dx++) {
-        for (int dy = -1; dy <= 1; dy++) {
-          for (int dz = -1; dz <= 1; dz++) {
-            if (dx == 0 && dy == 0 && dz == 0) continue;
-
-            final prev = current.add(Coord3D(dx, dy, dz));
-            final prevCell = destination.map[prev];
-            if (prevCell == null) continue;
-
-            // Optional: skip blocked cells here if needed.
-            // if (prevCell.blocked) continue;
-
-            final stepDist = sqrt((dx * dx) + (dy * dy) + (dz * dz));
-
-            final prevAllowed = min(
-              sqrt((currentAllowed * currentAllowed) + (2 * brakeAccel * stepDist)),
-              maxSpeed,
-            );
-
-            final old = field[prev];
-            if (old == null || prevAllowed > old) {
-              field[prev] = prevAllowed;
-              queue.add(_ArrivalNode(prev, prevAllowed));
-            }
-          }
-        }
-      }
-    }
-
-    return field;
-  }
-
   /// Sticky braking flag for throttle.stop — once set, the ship keeps
   /// braking until stopped, preventing oscillation between brake/accelerate.
   bool isBraking = false;
@@ -186,24 +125,23 @@ class ShipNav {
   /// Drifting ships (no engine) retain full momentum — they obey Newton.
   double stabilization = 0.98;
 
-  double get speed => sqrt((velX * velX) + (velY * velY) + (velZ * velZ));
+  double get speed => sqrt((vel.x * vel.x) + (vel.y * vel.y) + (vel.z * vel.z));
 
   void setVelocity(double x, double y, double z) {
-    velX = x;
-    velY = y;
-    velZ = z;
+    vel = Vec3(x, y, z);
   }
 
   void dampVelocity(double factor) {
-    velX *= factor;
-    velY *= factor;
-    velZ *= factor;
+    vel = vel * factor;
   }
+
+  Vec3 vecFromCoord(Coord3D c) => Vec3(c.x.toDouble(), c.y.toDouble(), c.z.toDouble());
 
   ShipNav(this.ship);
 
-
   GuidanceResult computeGuidanceVelocity({
+    required Position pos,
+    required Vec3 vel,
     required GridCell targetCell,
     required double fAccel,
     required double lAccel,
@@ -214,21 +152,11 @@ class ShipNav {
     double minHorizon = 1.5, //1-2
     double maxHorizon = 6.0, //4-8
   }) {
-    final pos = Vec3(
-      ship.loc.cell.coord.x.toDouble(),
-      ship.loc.cell.coord.y.toDouble(),
-      ship.loc.cell.coord.z.toDouble(),
-    );
+    final pv = Vec3(pos.x, pos.y, pos.z);
+    final tv = Position.fromCoord(targetCell.coord);
+    final target = Vec3(tv.x,tv.y,tv.z);
 
-    final target = Vec3(
-      targetCell.coord.x.toDouble(),
-      targetCell.coord.y.toDouble(),
-      targetCell.coord.z.toDouble(),
-    );
-
-    final vel = Vec3(velX, velY, velZ);
-
-    final r = target - pos;
+    final r = target - pv;
     final d = r.mag;
 
     if (d <= 1e-9) {
@@ -344,9 +272,9 @@ class ShipNav {
 
 
   String velocityString({int digits = 4}) =>
-      '[${velX.toStringAsFixed(digits)}, '
-          '${velY.toStringAsFixed(digits)}, '
-          '${velZ.toStringAsFixed(digits)}]';
+      '[${vel.x.toStringAsFixed(digits)}, '
+          '${vel.y.toStringAsFixed(digits)}, '
+          '${vel.z.toStringAsFixed(digits)}]';
 }
 
 

@@ -4,6 +4,7 @@ import '../fugue_engine.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/location.dart';
+import '../ship/nav.dart';
 import '../ship/ship.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
@@ -44,22 +45,18 @@ class MovementPreview {
   final GridCell? actualCell;
   final int auts;
   final double energyRequired;
-  final double newVelX;
-  final double newVelY;
-  final double newVelZ;
-  final double emergencyDecel;
   final bool engineFail;
+  final double? emergencyDecel;
+  final NavState newState;
 
   const MovementPreview({
-    required this.desiredCell,
+    this.desiredCell,
     this.actualCell,
-    this.auts = 0,
+    this.auts = 1,
     this.energyRequired = 0,
-    this.newVelX = 0,
-    this.newVelY = 0,
-    this.newVelZ = 0,
-    this.emergencyDecel = 0,
-    this.engineFail = false
+    this.engineFail = false,
+    this.emergencyDecel,
+    required this.newState,
   });
 }
 
@@ -167,8 +164,10 @@ class MovementController extends FugueController {
 
     // For NPCs with free movement, or non-Newtonian moves, use full preview
     // first and handle energy separately below.
-    var preview = ship.nav.movePreviewer.previewMove(
-        desiredLocation.cell,
+    var preview = ship.nav.movePreviewer.previewFixedStep(
+        state: NavState.fromShip(ship),
+        ctx: MoveContext.fromShip(ship),
+        desiredCell: desiredLocation.cell,
         throttle: actualThrottle,
         newtonian: newtonian
     );
@@ -180,8 +179,10 @@ class MovementController extends FugueController {
       if (available <= 0 && !ignoreEngineFail) {
         // Completely out of energy — coast as pure drift, engine flagged as failed.
         // In stop mode this means the ship can no longer brake; it will overshoot.
-        preview = ship.nav.movePreviewer.previewMove(
-            desiredLocation.cell,
+        preview = ship.nav.movePreviewer.previewFixedStep(
+            state: NavState.fromShip(ship),
+            ctx: MoveContext.fromShip(ship),
+            desiredCell: desiredLocation.cell,
             throttle: actualThrottle,
             newtonian: newtonian,
             drift: true);
@@ -191,8 +192,10 @@ class MovementController extends FugueController {
       } else if (available < preview.energyRequired && preview.energyRequired > 0 && !ignoreEngineFail) {
         // Partial energy — scale thrust proportionally, cost is exactly what's available.
         final double thrustFraction = available / preview.energyRequired;
-        preview = ship.nav.movePreviewer.previewMove(
-            desiredLocation.cell,
+        preview = ship.nav.movePreviewer.previewFixedStep(
+            state: NavState.fromShip(ship),
+            ctx: MoveContext.fromShip(ship),
+            desiredCell: desiredLocation.cell,
             throttle: actualThrottle,
             newtonian: newtonian,
             thrustFraction: thrustFraction,
@@ -209,6 +212,7 @@ class MovementController extends FugueController {
             desiredCell: desiredLocation.cell,
             actualCell: ship.loc.cell,
             energyRequired: 0,
+            newState: NavState.fromShip(ship),
             auts: 1
         );
       }
@@ -218,7 +222,11 @@ class MovementController extends FugueController {
     }
     print("AUTs: ${preview.auts}");
     ship.nav.heading = desiredLocation;
-    ship.nav.setVelocity(preview.newVelX, preview.newVelY, preview.newVelZ);
+    ship.nav.setVelocity(
+        preview.newState.vel.x,
+        preview.newState.vel.y,
+        preview.newState.vel.z);
+    ship.nav.pos = preview.newState.pos;
 
     // Clear heading and zero velocity on arrival for stop mode (engine must
     // not have failed, otherwise the ship couldn't execute its braking burn).
