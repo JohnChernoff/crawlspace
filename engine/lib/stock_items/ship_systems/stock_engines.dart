@@ -46,6 +46,7 @@ final Map<StockSystem, EngineData> stockEngines = {
     baseAutPerUnitTraversal: 10,
     thrust: 1000,   // accel ≈ 1000/900 ≈ 1.11 → stop from 2.6 in ~3 cells
     maxSpeed: 2.6,
+    arch: EngineArch.center
   ),
 
   StockSystem.engBasicFedSub: EngineData(
@@ -64,6 +65,7 @@ final Map<StockSystem, EngineData> stockEngines = {
     baseAutPerUnitTraversal: 10,
     thrust: 500,    // sublight: lower accel is fine, map is much larger
     maxSpeed: 2.2,
+    arch: EngineArch.center
   ),
 
   StockSystem.engBasicFedHyper: EngineData(
@@ -82,6 +84,7 @@ final Map<StockSystem, EngineData> stockEngines = {
     baseAutPerUnitTraversal: 10,
     thrust: 0,      // unused for non-Newtonian hyperspace
     maxSpeed: 0,    // unused for non-Newtonian hyperspace
+    arch: EngineArch.center
   ),
 
   StockSystem.engMovSub1: EngineData(
@@ -100,6 +103,7 @@ final Map<StockSystem, EngineData> stockEngines = {
     baseAutPerUnitTraversal: 7,
     thrust: 750,    // better than Fed sub, still sublight so accel is relaxed
     maxSpeed: 3.0,
+    arch: EngineArch.center
   ),
 
   StockSystem.engVorImp1: EngineData(
@@ -120,5 +124,26 @@ final Map<StockSystem, EngineData> stockEngines = {
     maxSpeed: 3.4,
     xenoGen: .25,
     xenoCastBonus: {XenomancySchool.dark: 2},
+    arch: EngineArch.center
+  ),
+
+  StockSystem.enOrbBlock: EngineData(
+      systemData: ShipSystemData.fromStock(
+        StockSystem.enOrbBlock,
+        "Orblix Gravitronic Blockade Runner",
+        about: "Goes real fast in a straight line.",
+        mass: 280,
+        baseCost: 100000,
+        baseRepairCost: 8,
+        powerDraw: 24,
+      ),
+      domain: Domain.impulse,
+      engineType: EngineType.antimatter,
+      efficiency: .9,
+      baseAutPerUnitTraversal: 8,
+      thrust: 9999,   //
+      maxSpeed: 7,
+      xenoGen: .25,
+      arch: EngineArch.rear
   ),
 };

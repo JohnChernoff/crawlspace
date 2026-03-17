@@ -167,20 +167,20 @@ class MovementController extends FugueController {
 
     // For NPCs with free movement, or non-Newtonian moves, use full preview
     // first and handle energy separately below.
-    var preview = ship.nav.previewMove(
+    var preview = ship.nav.movePreviewer.previewMove(
         desiredLocation.cell,
         throttle: actualThrottle,
         newtonian: newtonian
     );
 
     print("Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}");
-
+    bool ignoreEngineFail = true;
     if (newtonian && (!ship.npc || !npcFreeMovement)) {
       final double available = ship.systemControl.getCurrentEnergy();
-      if (available <= 0) {
+      if (available <= 0 && !ignoreEngineFail) {
         // Completely out of energy — coast as pure drift, engine flagged as failed.
         // In stop mode this means the ship can no longer brake; it will overshoot.
-        preview = ship.nav.previewMove(
+        preview = ship.nav.movePreviewer.previewMove(
             desiredLocation.cell,
             throttle: actualThrottle,
             newtonian: newtonian,
@@ -188,10 +188,10 @@ class MovementController extends FugueController {
         if (actualThrottle == ThrottleMode.stop) {
           fm.msg("Warning: out of energy, cannot complete braking burn!");
         }
-      } else if (available < preview.energyRequired && preview.energyRequired > 0) {
+      } else if (available < preview.energyRequired && preview.energyRequired > 0 && !ignoreEngineFail) {
         // Partial energy — scale thrust proportionally, cost is exactly what's available.
         final double thrustFraction = available / preview.energyRequired;
-        preview = ship.nav.previewMove(
+        preview = ship.nav.movePreviewer.previewMove(
             desiredLocation.cell,
             throttle: actualThrottle,
             newtonian: newtonian,
@@ -258,19 +258,20 @@ class MovementController extends FugueController {
 
   void cruise(Ship? ship) {
     if (ship == null) return;
-    final heading = ship.nav.heading;
-    // Already at destination or no heading set.
-    if (heading == null || ship.loc.cell == heading.cell) {
+
+    if (ship.nav.heading == null || ship.loc.cell == ship.nav.heading?.cell) {
+      print("arrived");
       ship.nav.heading = null;
       ship.nav.isBraking = false;
-      if (ship.nav.speed > 0.05) {
-        // Residual velocity — kill it in place.
-        ship.nav.setVelocity(0, 0, 0);
-      }
+      ship.nav.setVelocity(0, 0, 0); // for stop/cruise arrival
       loiter(ship);
       return;
     }
-    moveShip(ship, heading.cell.loc);
+    final result = moveShip(ship, ship.nav.heading!.cell.loc);
+    print("current     = ${ship.loc.cell.coord}");
+    print("heading     = ${ship.nav.heading?.cell.coord}");
+    print("desiredCell = ${result.preview?.desiredCell?.coord}");
+    print("actualCell  = ${result.preview?.actualCell?.coord}");
   }
 
   void loiter(Ship? ship, {int auts = 10}) { //TODO: what happens if ship is moving?

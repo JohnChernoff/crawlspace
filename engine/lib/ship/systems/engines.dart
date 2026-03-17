@@ -23,6 +23,30 @@ enum EngineType {
   antimatter;
 }
 
+enum EngineArch {
+  rear,
+  center,
+  distributed;
+
+  double get forwardFactor => switch (this) {
+    EngineArch.rear => 1.00,
+    EngineArch.center => 0.90,
+    EngineArch.distributed => 0.82,
+  };
+
+  double get lateralFactor  => switch (this) {
+    EngineArch.rear => 0.45,
+    EngineArch.center => 0.75,
+    EngineArch.distributed => 1.00,
+  };
+
+  double get reverseFactor => switch (this) {
+    EngineArch.rear => 0.55,
+    EngineArch.center => 0.80,
+    EngineArch.distributed => 0.95,
+  };
+}
+
 class Engine extends ShipSystem {
   int baseAutPerUnitTraversal; // BAPUT
   double efficiency;
@@ -32,6 +56,7 @@ class Engine extends ShipSystem {
   double thrust;
   double maxSpeed;
 
+  EngineArch arch;
   Domain domain;
   EngineType engineType;
   EngineEgo ego;
@@ -67,6 +92,7 @@ class Engine extends ShipSystem {
     super.repairDifficulty,
     required this.domain,
     required this.engineType,
+    required this.arch,
     this.ego = EngineEgo.none,
     this.xenoGen = .025,
     this.xenoCastBonus = const {},
@@ -104,6 +130,7 @@ class Engine extends ShipSystem {
       baseAutPerUnitTraversal: data.baseAutPerUnitTraversal,
       thrust: data.thrust,
       maxSpeed: data.maxSpeed,
+      arch: data.arch
     );
   }
 }
@@ -116,6 +143,7 @@ class EngineData {
   final double maxSpeed;
   final Domain domain;
   final EngineType engineType;
+  final EngineArch arch;
   final EngineEgo ego;
   final double xenoGen;
   final Map<XenomancySchool,int> xenoCastBonus;
@@ -129,6 +157,7 @@ class EngineData {
     this.maxSpeed = 2.5,
     required this.domain,
     required this.engineType,
+    required this.arch,
     this.xenoGen = .025,
     this.xenoCastBonus = const {},
     this.xenoPowerBonus = const {},

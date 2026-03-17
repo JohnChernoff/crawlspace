@@ -138,7 +138,7 @@ class FugueEngine {
     combatRnd = Random(seed ^ 0xABCDEF);
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
     Ship playShip = Ship("HMS Sebastian",
-        shipClass: ShipClass.fromEnum(ShipClassType.hermes),
+        shipClass: ShipClass.fromEnum(ShipClassType.barge),
         location: SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),
         generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
         sensor: Sensor.fromStock(StockSystem.senFed1),
@@ -146,8 +146,9 @@ class FugueEngine {
         subEngine: Engine.fromStock(StockSystem.engBasicFedSub),
         hyperEngine: Engine.fromStock(StockSystem.engBasicFedHyper),
         shield: Shield.fromStock(StockSystem.shdBasicEnergon),
-        weapons: [Weapon.fromStock(StockSystem.wepFedLaser3),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
-        ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50});
+        //weapons: [Weapon.fromStock(StockSystem.wepFedLaser3),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
+        //ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50}
+        );
     player = Player(playerName,loc: AboardShip(playShip)); //playShip.pilot = player;
     player.system.visited = true;
     addShip(playShip);

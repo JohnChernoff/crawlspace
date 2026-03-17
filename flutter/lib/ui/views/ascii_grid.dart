@@ -36,7 +36,7 @@ class _AsciiGridState extends State<AsciiGrid> {
     if (fm.inputMode == InputMode.movementTarget &&
         fm.playerShip != null &&
         fm.player.targetLoc != null) {
-      preview = fm.playerShip!.nav.previewMove(
+      preview = fm.playerShip!.nav.movePreviewer.previewMove(
           fm.player.targetLoc!.cell,
           throttle: fm.movementController.throttle
       );

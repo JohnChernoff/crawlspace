@@ -1,4 +1,5 @@
 import 'package:crawlspace_engine/item.dart';
+import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 import '../ship/ship.dart';
 import '../ship/systems/shields.dart';
@@ -57,16 +58,18 @@ class ShipClassSlot {
 class ShipClass {
   final String name;
   final ShipType type;
+  final EngineArch engineArch;
   final Inventory<SystemSlot> slots;
-  final double mass, volume, maxXeno;
-  const ShipClass(this.name,this.type,this.slots,this.mass,this.volume,this.maxXeno);
+  final double mass, volume, maxXeno, handling;
+  const ShipClass(this.name,this.type,this.slots,this.mass,this.volume,this.maxXeno,this.engineArch, this.handling);
   factory ShipClass.fromEnum(ShipClassType classType) {
     Inventory<SystemSlot> slotInv = Inventory();
     final allSlots = [...classType.type.slots, ...classType.extras];
     for (final s in allSlots) {
       for (int i=0;i<s.num;i++) slotInv.add(SystemSlot(s.type, classType.corpMap[s.type] ?? Corporation.genCorp));
     }
-    return ShipClass(classType.name, classType.type, slotInv, classType.mass, classType.volume, classType.maxXeno);
+    return ShipClass(classType.name, classType.type, slotInv, classType.mass, classType.volume, classType.maxXeno,
+        classType.engineArch, classType.handling);
   }
 }
 
@@ -338,7 +341,7 @@ enum ShipClassType {
   // ── Freighters ────────────────────────────────────────────────────────────
   barge("Barge",
       type: ShipType.freighter,
-      mass: 12000, volume: 20000, maxXeno: 2,
+      mass: 4000, volume: 20000, maxXeno: 2, engineArch: EngineArch.rear,
       corpMap: {}),   // all GenCorp — this is the bottom of the market
 
   condor("Condor",   // Lopez freighter — excellent converters
@@ -446,12 +449,17 @@ enum ShipClassType {
   final List<ShipClassSlot> extras;
   final ShipType type;
   final double mass, volume, maxXeno;
+  final EngineArch engineArch;
+  final double handling;
+  //double get maneuverability => mass / handling;
 
   const ShipClassType(this.className, {
     required this.type,
     required this.mass,
     required this.volume,
     required this.maxXeno,
+    this.engineArch = EngineArch.center,
+    this.handling = 1,
     this.extras = const [],
     this.corpMap = const {},
   });
