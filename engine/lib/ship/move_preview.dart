@@ -36,6 +36,9 @@ class MovePreviewer {
     double energyForAuts(int auts, double efficiency) {
       if (noEngine) return 0;
       if (energyOverride != null) return energyOverride;
+
+
+
       if (baseEnergy != null) return baseEnergy / efficiency;
       return engine.thrust / efficiency;
     }
@@ -214,12 +217,12 @@ class MovePreviewer {
 
     // ── Same-cell result (speed too low to cross a cell boundary) ─────────
     if (finalStep.x == 0 && finalStep.y == 0 && finalStep.z == 0) {
-      final int sameAuts = max(1, (baseAUT * 0.25).round());
+      //final int sameAuts = max(1, (baseAUT * 0.25).round());
       return MovementPreview(
         desiredCell: desiredCell,
         actualCell: ship.loc.cell,
-        auts: sameAuts,
-        energyRequired: energyForAuts(sameAuts, efficiency),
+        auts: auts,
+        energyRequired: energyForAuts(auts, efficiency),
         newVelX: nextVelX,
         newVelY: nextVelY,
         newVelZ: nextVelZ,
@@ -267,11 +270,18 @@ class MovePreviewer {
     final double dist = ship.loc.distCell(actualCell);
     final int auts = max(1, (baseAUT * dist / forwardSpeed).round());
 
+    final energyScale = 1;
+    final dvx = nextVelX - ship.nav.velX;
+    final dvy = nextVelY - ship.nav.velY;
+    final dvz = nextVelZ - ship.nav.velZ;
+    final deltaV = sqrt((dvx * dvx) + (dvy * dvy) + (dvz * dvz));
+    final energy = engine != null ? (ship.currentMass * deltaV * energyScale) / engine.efficiency : 0;
+
     return MovementPreview(
       desiredCell: desiredCell,
       actualCell: actualCell,
       auts: auts,
-      energyRequired: energyForAuts(auts, efficiency),
+      energyRequired: energy.toDouble(), //energyForAuts(auts, efficiency),
       newVelX: nextVelX,
       newVelY: nextVelY,
       newVelZ: nextVelZ,
