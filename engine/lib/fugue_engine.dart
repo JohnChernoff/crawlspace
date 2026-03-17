@@ -311,7 +311,10 @@ class FugueEngine {
       }
       auTick++;
       player.tick(this);
-      playShip?.tick(fm: this);
+      if (playShip != null) {
+        final tickResult = playShip.tick(fm: this);
+        if (tickResult.newCell) wakePilot(player);
+      }
       //if (playShip != null && playShip.loc is ImpulseLocation) {
       for (final cell in player.loc.map.values) {
         cell.effects.tickAll();
@@ -329,6 +332,11 @@ class FugueEngine {
     glog("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}",
         level: DebugLevel.Fine);
     return playerShip?.loc.domain == domain;
+  }
+
+  void wakePilot(Pilot p) {
+    p.auCooldown = 0;
+    update();
   }
 
   void sanityCheck(Ship? ship) {

@@ -309,7 +309,8 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ),
         CruiseIntent: CallbackAction<CruiseIntent>(
             onInvoke: (_) {
-              fm.movementController.cruise(fm.playerShip);
+              //fm.movementController.cruise(fm.playerShip);
+              fm.movementController.loiter(fm.playerShip);
               return null;
             }
         ),
@@ -354,17 +355,9 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
               if (fm.inputMode == InputMode.main) {
                 fm.combatController.awaitNextWeapon(fm.playerShip);
               } else if (fm.inputMode == InputMode.target) {
-                fm.exitInputMode();
                 fm.xenoControl.confirmTarget();
               } else if (fm.inputMode == InputMode.movementTarget && fm.playerShip != null) {
-                final loc = fm.player.targetLoc;
-                if (loc != null) {
-                  fm.movementController.moveShip(
-                      fm.playerShip!,
-                      loc.cell.loc
-                  );
-                }
-                fm.exitInputMode();
+                fm.movementController.confirmTarget();
               }
               return null;
             }

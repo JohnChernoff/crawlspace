@@ -73,6 +73,7 @@ class Position {
 class ShipNav {
   Ship ship;
   Vec3 vel = Vec3(0, 0, 0);
+  bool get moving => vel.mag > 0;
 
   Ship? _targetShip;
   Ship? get targetShip => ship.sameLevel(_targetShip) ? _targetShip : null;
@@ -87,6 +88,7 @@ class ShipNav {
   SpaceLocation? _heading;
   SpaceLocation? get heading => _heading;
   set heading(SpaceLocation? h) {
+    print("Heading: $h");
     if (h != _heading) {
       isBraking = false;
     }

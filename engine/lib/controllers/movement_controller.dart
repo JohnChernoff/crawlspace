@@ -97,14 +97,17 @@ class MovementController extends FugueController {
   void handleMove(Ship ship, Coord3D vec) {
     if (fm.inputMode == InputMode.main) {
       if (ship.loc.domain == Domain.impulse) {
-        fm.movementController.acquireTarget(vec).then((loc) {
-          if (loc != null) fm.movementController.moveShip(ship, loc);
+        fm.movementController.acquireTarget(vec).then((loc) { //print("Target acquired");
+          if (loc != null) {
+            ship.nav.heading = loc;
+            moveShip(ship,loc);
+          }
         });
       } else {
         fm.movementController.vectorShip(ship,vec);
       }
     }
-    else if (fm.inputMode.targeting) {
+    else if (fm.inputMode.targeting) { //print("Vectoring....");
       fm.movementController.vectorTarget(vec);
     }
   }
@@ -146,7 +149,8 @@ class MovementController extends FugueController {
       }
     }
     print("Action AUTs: ${result.preview?.auts}");
-    fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: result.preview?.auts ?? 1);
+    //ship.tick now handles momentum based movement
+    if (!newtonian) fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: result.preview?.auts ?? 1);
     assert(ship.loc == ship.loc.cell.loc);
     fm.update();
     return result;
@@ -220,7 +224,6 @@ class MovementController extends FugueController {
       ship.systemControl.burnEnergy(preview.energyRequired);
     }
     print("AUTs: ${preview.auts}");
-    ship.nav.heading = desiredLocation;
     ship.nav.setVelocity(
         preview.newState.vel.x,
         preview.newState.vel.y,
@@ -231,6 +234,7 @@ class MovementController extends FugueController {
     // not have failed, otherwise the ship couldn't execute its braking burn).
     final bool arrived = preview.actualCell == desiredLocation.cell;
     if (arrived && actualThrottle == ThrottleMode.stop && !preview.engineFail) {
+      print("Clearing heading");
       ship.nav.heading = null; // also clears isBraking via the heading setter
       ship.nav.setVelocity(0, 0, 0);
     }

@@ -9,6 +9,7 @@ abstract class FugueController {
   FugueController(this.fm);
 
   void confirmTarget() {
+    fm.exitInputMode();
     targetCompleter?.complete(fm.player.targetLoc);
   }
 

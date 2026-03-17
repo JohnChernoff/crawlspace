@@ -27,6 +27,12 @@ import 'systems/shields.dart';
 import 'systems/ship_system.dart';
 import 'systems/weapons.dart';
 
+class TickResult {
+  final double energy;
+  final bool newCell;
+  const TickResult(this.energy,this.newCell);
+}
+
 enum ShieldHitType {
   none,
   absorbed,
@@ -367,7 +373,7 @@ class Ship extends Item implements Locatable {
   double get availableSpace => shipClass.volume - currentVolume;
   bool okVolume(double m) => availableSpace > m;
 
-  double tick({FugueEngine? fm}) {
+  TickResult tick({FugueEngine? fm}) {
     final dryRun = fm == null; //print("Tick... $dryRun");
     double totalRecharge = 0, totalBurn = 0;
     for (final rss in systemControl.rechargables) {
@@ -404,7 +410,13 @@ class Ship extends Item implements Locatable {
         effect.apply(this,fm);
       }
     }
-    return totalRecharge - totalBurn;
+    final newCell;
+    if (!dryRun && nav.moving) {
+      final prevLoc = loc.cell.coord;
+      fm.movementController.moveShip(this, nav.heading ?? loc);
+       newCell = (loc.cell.coord != prevLoc);
+    } else newCell = false;
+    return TickResult(totalRecharge - totalBurn, newCell);
   }
 
   void scanSystem(System system, FugueEngine fm) {
@@ -451,7 +463,7 @@ class Ship extends Item implements Locatable {
     if (!tactical) {
       blocks.add(TextBlock("Energy: ${systemControl.getCurrentEnergy().toStringAsFixed(2)}, ",GameColors.green,false));
       blocks.add(TextBlock("%: ${systemControl.currentEnergyPercentage.round().toStringAsFixed(2)}",GameColors.lightBlue,true));
-      blocks.add(TextBlock("Energy Rate: ${tick().toStringAsFixed(2)}",GameColors.green,true));
+      blocks.add(TextBlock("Energy Rate: ${tick().energy.toStringAsFixed(2)}",GameColors.green,true));
     }
     blocks.add(TextBlock("Xeno Matter: ${xenoMatter.toStringAsFixed(2)}",GameColors.orange,true));
     for (final s in systemControl.getInstalledSystems()) {
