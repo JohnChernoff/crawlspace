@@ -345,7 +345,7 @@ class Ship extends Item implements Locatable {
         if (w.cooldown < t) t = w.cooldown;
       }
     }
-    return t;
+    return t == 999 ? 0 : t;
   }
 
   double get currentMass {
@@ -473,6 +473,7 @@ class Ship extends Item implements Locatable {
       blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
     }
     if (!tactical && !abbrev) {
+      blocks.add(TextBlock("Position: ${nav.pos}", GameColors.gray, true));
       blocks.add(TextBlock("Heading: ${nav.heading?.loc.cell.coord}", GameColors.gray, true));
       blocks.add(TextBlock("Velocity: ${nav.velocityString()}", GameColors.gray, true));
       blocks.add(TextBlock("Speed: ${nav.speed.toStringAsFixed(2)}", GameColors.gray, true));

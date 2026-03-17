@@ -65,6 +65,9 @@ class Position {
       (x + .5).floor(),
       (y + .5).floor(),
       (z + .5).floor());
+
+  @override
+  String toString() => "[${x.toStringAsFixed(2)},${y.toStringAsFixed(2)},${z.toStringAsFixed(2)}]";
 }
 
 class ShipNav {
@@ -268,6 +271,20 @@ class ShipNav {
       next = next * (maxSpeed / m);
     }
     return next;
+  }
+
+  bool wouldLeaveMapSoon({
+    required Position pos,
+    required Vec3 vel,
+    required CellMap map,
+    int steps = 4,
+  }) {
+    var p = pos;
+    for (int i = 0; i < steps; i++) {
+      p = Position(p.x + vel.x, p.y + vel.y, p.z + vel.z);
+      if (map[p.coord] == null) return true;
+    }
+    return false;
   }
 
 

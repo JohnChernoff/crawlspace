@@ -291,5 +291,86 @@ class MovePreviewer {
     return last!;
   }
 
+  MovementPreview moveUntilNextCell(
+      GridCell? desiredCell, {
+        ThrottleMode throttle = ThrottleMode.full,
+        bool drift = false,
+        bool newtonian = true,
+        double thrustFraction = 1.0,
+        double? energyOverride,
+        int maxSteps = 50,
+      }) {
+    var state = NavState.fromShip(ship);
+    final startCell = state.pos.coord;
+
+    var ctx = MoveContext(
+      ship: ship,
+      engine: (throttle == ThrottleMode.drift || drift)
+          ? null
+          : ship.systemControl.getEngine(ship.loc.domain),
+      currentCell: ship.loc.cell,
+      map: ship.loc.map,
+    );
+
+    MovementPreview? last;
+    int totalAuts = 0;
+    double totalEnergy = 0.0;
+
+    for (int i = 0; i < maxSteps; i++) {
+      last = previewFixedStep(
+        state: state,
+        ctx: ctx,
+        desiredCell: desiredCell,
+        throttle: throttle,
+        drift: drift,
+        newtonian: newtonian,
+        thrustFraction: thrustFraction,
+        energyOverride: energyOverride,
+      );
+
+      totalAuts += last.auts;
+      totalEnergy += last.energyRequired ?? 0.0;
+      state = last.newState;
+
+      ctx = MoveContext(
+        ship: ship,
+        engine: ctx.engine,
+        currentCell: last.actualCell ?? ctx.currentCell,
+        map: ctx.map,
+      );
+
+      if (last.engineFail || last.emergencyDecel != null) {
+        return MovementPreview(
+          desiredCell: desiredCell,
+          actualCell: last.actualCell,
+          auts: totalAuts,
+          energyRequired: totalEnergy,
+          emergencyDecel: last.emergencyDecel,
+          engineFail: last.engineFail,
+          newState: state,
+        );
+      }
+
+      if (state.pos.coord != startCell) {
+        return MovementPreview(
+          desiredCell: desiredCell,
+          actualCell: last.actualCell,
+          auts: totalAuts,
+          energyRequired: totalEnergy,
+          engineFail: last.engineFail,
+          newState: state,
+        );
+      }
+    }
+
+    return MovementPreview(
+      desiredCell: desiredCell,
+      actualCell: ctx.currentCell,
+      auts: totalAuts,
+      energyRequired: totalEnergy,
+      engineFail: false,
+      newState: state,
+    );
+  }
 }
 

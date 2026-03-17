@@ -133,6 +133,7 @@ class MovementController extends FugueController {
     } else if ((result.preview?.emergencyDecel ?? 0) > 0) {
       String barrier = ship.loc.domain == Domain.system ? "The Oort Cloud" : "Impulse Wake Turbulence";
       fm.msg("${ship.name} crashes into $barrier, emergency deacceration: ${result.preview?.emergencyDecel}");
+      ship.nav.setVelocity(0, 0, 0);
     } else {
       final nextCell = result.preview?.actualCell;
       if (nextCell != null) {
@@ -164,10 +165,8 @@ class MovementController extends FugueController {
 
     // For NPCs with free movement, or non-Newtonian moves, use full preview
     // first and handle energy separately below.
-    var preview = ship.nav.movePreviewer.previewFixedStep(
-        state: NavState.fromShip(ship),
-        ctx: MoveContext.fromShip(ship),
-        desiredCell: desiredLocation.cell,
+    var preview = ship.nav.movePreviewer.moveUntilNextCell(
+        desiredLocation.cell,
         throttle: actualThrottle,
         newtonian: newtonian
     );
