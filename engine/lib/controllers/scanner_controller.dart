@@ -56,9 +56,9 @@ class ScannerController extends FugueController {
       final tLoc = playShip.nav.targetShip?.loc;
       if (tLoc != null && tLoc.domain == playShip.loc.domain) {
         return switch(targetPathMode) {
-          TargetPathMode.safe => tLoc.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.map.size, fm.mapRnd, jitter: 0, minHaz: 0),
-          TargetPathMode.safest => tLoc.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.map.size, fm.mapRnd, jitter: 0, forceHaz: true),
-          TargetPathMode.direct => tLoc.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.map.size, fm.mapRnd, jitter: 0,  ignoreHaz: true),
+          TargetPathMode.safe => tLoc.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.map.dim.maxDim, fm.mapRnd, jitter: 0, minHaz: 0),
+          TargetPathMode.safest => tLoc.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.map.dim.maxDim, fm.mapRnd, jitter: 0, forceHaz: true),
+          TargetPathMode.direct => tLoc.map.greedyPath(playShip.loc.cell, tLoc.cell, tLoc.map.dim.maxDim, fm.mapRnd, jitter: 0,  ignoreHaz: true),
         };
       }
     }

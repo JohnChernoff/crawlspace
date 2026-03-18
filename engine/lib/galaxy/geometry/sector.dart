@@ -19,7 +19,7 @@ class SectorCell extends GridCell {
   int impulseSeed;
   @override
   SectorMap get map => system.impulseCache.putIfAbsent(coord,
-        () => system.generateImpulseMap(this, system.impulseMapSize, Random(impulseSeed)),
+        () => system.generateImpulseMap(this, system.impulseMapDim, Random(impulseSeed)),
   );
 
   SectorCell(
@@ -72,5 +72,5 @@ class SectorCell extends GridCell {
 }
 
 class EmptyImpulse extends SectorMap {
-  EmptyImpulse() : super(0, {});
+  EmptyImpulse() : super(GridDim(0, 0, 0), {});
 }

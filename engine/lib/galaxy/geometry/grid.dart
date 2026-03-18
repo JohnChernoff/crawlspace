@@ -61,11 +61,11 @@ abstract class GridCell implements Locatable {
 
 class MappedGrid<T extends GridCell> extends DenseCellMap<T> {
   @override
-  final int size;
+  final GridDim dim;
 
   final Map<Coord3D, T> _cells;
 
-  MappedGrid(this.size, Map<Coord3D, T> cells) : _cells = cells;
+  MappedGrid(this.dim, Map<Coord3D, T> cells) : _cells = cells;
 
   @override
   T? operator [](Coord3D coord) => _cells[coord];
@@ -91,7 +91,8 @@ class MappedGrid<T extends GridCell> extends DenseCellMap<T> {
 }
 
 abstract class CellMap<T extends GridCell> {
-  int get size;
+  //int get size;
+  GridDim get dim;
 
   T? operator [](Coord3D coord);
   void operator []=(Coord3D coord, T value);
@@ -101,18 +102,18 @@ abstract class CellMap<T extends GridCell> {
 
   bool containsCoord(Coord3D c) =>
       c.x >= 0 && c.y >= 0 && c.z >= 0 &&
-          c.x < size && c.y < size && c.z < size;
+          c.x < dim.mx && c.y < dim.my && c.z < dim.mz;
 
   bool containsXYZ(int x, int y, int z) =>
       x >= 0 && y >= 0 && z >= 0 &&
-          x < size && y < size && z < size;
+          x < dim.mx && y <  dim.my && z < dim.mz;
 
   T rndCell(Random rnd, {List<T>? cellList}) {
     final list = cellList ?? values.toList();
     return list[rnd.nextInt(list.length)];
   }
 
-  Coord3D rndCoord(Random rnd) => Coord3D.random(size, rnd);
+  Coord3D rndCoord(Random rnd) => Coord3D.random(dim, rnd);
 
   void growHazard(T cell, Hazard hazard, double strength, Random rnd, {spreadFactor = .25}) {
     cell.hazMap[hazard] = strength;
@@ -131,11 +132,11 @@ abstract class CellMap<T extends GridCell> {
     final cz = cell.coord.z;
 
     final minX = max(cx - distance, 0);
-    final maxX = min(cx + distance, size - 1);
+    final maxX = min(cx + distance, dim.mx - 1);
     final minY = max(cy - distance, 0);
-    final maxY = min(cy + distance, size - 1);
+    final maxY = min(cy + distance, dim.my - 1);
     final minZ = max(cz - distance, 0);
-    final maxZ = min(cz + distance, size - 1);
+    final maxZ = min(cz + distance, dim.mz - 1);
 
     for (int x = minX; x <= maxX; x++) {
       for (int y = minY; y <= maxY; y++) {
@@ -155,22 +156,28 @@ abstract class CellMap<T extends GridCell> {
       adjacentCells(cell, distance: distance).toList();
 
   List<T> getOppositeEdgeCells(T cell) {
-    final edge = size-1;
+    final xMax = dim.mx - 1;
+    final yMax = dim.my - 1;
+    final zMax = dim.mz - 1;
+
     if (cell.coord.x == 0) {
-      return values.where((c) => c.coord.x == edge).toList();
-    } else if (cell.coord.x == edge) {
+      return values.where((c) => c.coord.x == xMax).toList();
+    } else if (cell.coord.x == xMax) {
       return values.where((c) => c.coord.x == 0).toList();
     }
+
     if (cell.coord.y == 0) {
-      return values.where((c) => c.coord.y == edge).toList();
-    } else if (cell.coord.y == edge) {
+      return values.where((c) => c.coord.y == yMax).toList();
+    } else if (cell.coord.y == yMax) {
       return values.where((c) => c.coord.y == 0).toList();
     }
+
     if (cell.coord.z == 0) {
-      return values.where((c) => c.coord.z == edge).toList();
-    } else if (cell.coord.z == edge) {
+      return values.where((c) => c.coord.z == zMax).toList();
+    } else if (cell.coord.z == zMax) {
       return values.where((c) => c.coord.z == 0).toList();
     }
+
     return [];
   }
 
@@ -211,6 +218,60 @@ abstract class DenseCellMap<T extends GridCell> extends CellMap<T> {
 
 abstract class LazyCellMap<T extends GridCell> extends CellMap<T> {
   T getOrCreate(Coord3D coord);
+}
+
+class GridDim {
+  final int mx;
+  final int my;
+  final int mz;
+  double get maxDist => sqrt(
+    pow(mx - 1, 2) +
+        pow(my - 1, 2) +
+        pow(mz - 1, 2),
+  );
+  int get maxDim => [mx, my, mz].reduce(max);
+  int get maxXY => max(mx, my);
+  int get depth => mz;
+
+  const GridDim(this.mx,this.my,this.mz);
+
+}
+
+class LazyMappedGrid<T extends GridCell> extends LazyCellMap<T> {
+  @override
+  final GridDim dim;
+
+  final Map<Coord3D, T> _cells = {};
+  final T Function(Coord3D coord) _factory;
+
+  LazyMappedGrid(this.dim, this._factory);
+
+  @override
+  T? operator [](Coord3D coord) =>
+      containsCoord(coord) ? getOrCreate(coord) : null;
+
+  @override
+  void operator []=(Coord3D coord, T value) {
+    if (!containsCoord(coord)) return;
+    _cells[coord] = value;
+  }
+
+  @override
+  T? atXYZ(int x, int y, int z) {
+    if (!containsXYZ(x, y, z)) return null;
+    return getOrCreate(Coord3D(x, y, z));
+  }
+
+  @override
+  T getOrCreate(Coord3D coord) {
+    if (!containsCoord(coord)) {
+      throw StateError('Out of bounds: $coord');
+    }
+    return _cells.putIfAbsent(coord, () => _factory(coord));
+  }
+
+  @override
+  Iterable<T> get values => _cells.values;
 }
 
 

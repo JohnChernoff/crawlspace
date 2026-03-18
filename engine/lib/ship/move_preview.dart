@@ -233,7 +233,7 @@ class MovePreviewer {
       final attemptedSpeed = sqrt((vx * vx) + (vy * vy) + (vz * vz));
       final bounceCell = ctx.map.values.isEmpty ? ctx.currentCell
           : ctx.map.values
-          .where((c) => c.coord.isEdge(ctx.map.size))
+          .where((c) => c.coord.isEdge(ctx.map.dim))
           .fold<GridCell>(ctx.map.values.first, (best, c) =>
       oldPos.coord.distance(c.coord) < oldPos.coord.distance(best.coord) ? c : best);
       //print("CTX: ${ctx.map.runtimeType}"); print("Bounce Cell: ${bounceCell.coord}");

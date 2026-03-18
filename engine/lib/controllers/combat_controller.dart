@@ -47,7 +47,7 @@ class CombatController extends FugueController {
                   rangedMishap = true;
                 } else {
                   final path = ship.loc.map.greedyPath(ship.loc.cell,
-                      ship.nav.targetShip!.loc.cell, ship.loc.map.size, fm.combatRnd, jitter: 0, ignoreHaz: true);
+                      ship.nav.targetShip!.loc.cell, ship.loc.map.dim.maxDim, fm.combatRnd, jitter: 0, ignoreHaz: true);
                   final obstacle = path.firstWhereOrNull((c) => c.hazLevel > 0);
                   if (obstacle != null) {
                     fm.msgController.addMsg("${result.weapon.ammo!.name} hits ${obstacle.hazMap.entries.firstWhere((o) => o.value > 0).key.name}!");

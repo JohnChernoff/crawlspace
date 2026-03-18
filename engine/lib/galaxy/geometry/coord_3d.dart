@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'grid.dart';
+
 const noCoord = const Coord3D(999999, 999999, 999999);
 class Coord3D {
   final int x,y,z;
@@ -13,13 +15,18 @@ class Coord3D {
     return sqrt((dx*dx) + (dy*dy) + (dz*dz));
   }
 
-  factory Coord3D.random(int size, Random rnd) {
-    return Coord3D(rnd.nextInt(size),rnd.nextInt(size),rnd.nextInt(size));
+  factory Coord3D.random(GridDim dim, Random rnd) {
+    return Coord3D(rnd.nextInt(dim.mx),rnd.nextInt(dim.my),rnd.nextInt(dim.mz));
   }
 
-  bool isEdge(int size) {
-    final edge = size-1;
-    return x == 0 || y == 0 || z == 0 || x == edge || y == edge || z == edge;
+  bool isEdge(GridDim dim) {
+    final xMax = dim.mx - 1;
+    final yMax = dim.my - 1;
+    final zMax = dim.mz - 1;
+
+    return x == 0 || x == xMax ||
+        y == 0 || y == yMax ||
+        z == 0 || z == zMax;
   }
 
   int distanceFromEdge(int size, {bool euclidian = true}) {

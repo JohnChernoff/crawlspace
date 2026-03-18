@@ -35,8 +35,8 @@ enum StellarClass {
 typedef SystemMap = MappedGrid<SectorCell>;
 
 class System extends GridCell implements Nameable {
-  final systemMapSize = 8;
-  final impulseMapSize = 12; //minimums?
+  final systemMapDim = GridDim(8, 8, 8);
+  final impulseMapDim = GridDim(16, 16, 4); //minimums?
   String name;
   String get selectionName => name;
   Set<System> links = HashSet();
@@ -90,11 +90,11 @@ class System extends GridCell implements Nameable {
   }
 
   SystemMap createSystemMap(double nebulaFactor, double ionFactor, double blackFactor, Galaxy g) {
-    int size = systemMapSize;
+    final dim = systemMapDim;
     Map<Coord3D,SectorCell> cells = {};
-    for (int x=0;x<size;x++) {
-      for (int y=0;y<size;y++) {
-        for (int z=0;z<size;z++) {
+    for (int x=0;x<dim.mx;x++) {
+      for (int y=0;y<dim.my;y++) {
+        for (int z=0;z<dim.mz;z++) {
           Map<Hazard, double> hazMap = {
             Hazard.nebula : (nebulaFactor > g.rnd.nextDouble() ? 1 : 0),
             Hazard.ion : (ionFactor > g.rnd.nextDouble() ? 1 : 0),
@@ -107,10 +107,10 @@ class System extends GridCell implements Nameable {
       }
     }
 
-    final map = SystemMap(size, cells);
-    for (int x=0;x<size;x++) {
-      for (int y=0;y<size;y++) {
-        for (int z=0;z<size;z++) {
+    final map = SystemMap(dim, cells);
+    for (int x=0;x<map.dim.mx;x++) {
+      for (int y=0;y<map.dim.my;y++) {
+        for (int z=0;z<map.dim.mz;z++) {
           final c = map.at(Coord3D(x, y, z)); //use copy
           for (final h in c.hazMap.entries) {
             if (h.value == 1) { //print("System: $name, Adding hazard -> ${c.coord}");
@@ -174,8 +174,8 @@ class System extends GridCell implements Nameable {
 
   ImpulseLocation rndImpLoc(Galaxy g) => ImpulseLocation(
       this,
-      Coord3D.random(systemMapSize,g.rnd),
-      Coord3D.random(impulseMapSize,g.rnd));
+      Coord3D.random(systemMapDim,g.rnd),
+      Coord3D.random(impulseMapDim,g.rnd));
 
   String shortString(Galaxy g, {bool showVisit = false}) {
     return "$name ("
@@ -211,15 +211,15 @@ class System extends GridCell implements Nameable {
   @override
   SpaceLocation get loc => throw UnimplementedError();
 
-  SectorMap generateImpulseMap(SectorCell sector, int size, Random rnd) {
+  SectorMap generateImpulseMap(SectorCell sector, GridDim dim, Random rnd) {
     final sectorIon = sector.hazMap[Hazard.ion] ?? 0;
     final sectorNeb = sector.hazMap[Hazard.nebula] ?? 0;
 
     final cells = <Coord3D, ImpulseCell>{};
 
-    for (int x = 0; x < size; x++) {
-      for (int y = 0; y < size; y++) {
-        for (int z = 0; z < size; z++) {
+    for (int x = 0; x < dim.mx; x++) {
+      for (int y = 0; y < dim.my; y++) {
+        for (int z = 0; z < dim.mz; z++) {
           final c = Coord3D(x, y, z);
           cells[c] = ImpulseCell(
             sector,
@@ -228,13 +228,13 @@ class System extends GridCell implements Nameable {
               Hazard.nebula: rnd.nextDouble() < sectorNeb ? sectorNeb : 0,
               Hazard.ion: rnd.nextDouble() < sectorIon ? sectorIon : 0,
               Hazard.roid: sector.hazMap[Hazard.roid] ?? 0,
-              Hazard.wake: c.isEdge(size) ? 1 : 0,
+              Hazard.wake: c.isEdge(dim) ? 1 : 0,
             },
           );
         }
       }
     }
-    final impMap = SectorMap(size, cells);
+    final impMap = SectorMap(dim, cells);
     if (sector.hasHaz(Hazard.roid)) {
       PathGenerator.generate(impMap, 4, 0, rnd, haz: Hazard.roid);
     }
@@ -243,5 +243,5 @@ class System extends GridCell implements Nameable {
 }
 
 class EmptySector extends SystemMap {
-  EmptySector() : super(0, const {});
+  EmptySector() : super(GridDim(0, 0, 0), const {});
 }

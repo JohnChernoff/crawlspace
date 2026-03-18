@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_flutter/main.dart';
 import 'package:crawlspace_flutter/ui/views/alpha_select.dart';
+import 'package:crawlspace_flutter/ui/views/new/ascii_grid_fast.dart';
 import 'package:flutter/material.dart';
 import '../inputs/menu_input.dart';
 import '../inputs/ship_input.dart';
@@ -71,7 +72,7 @@ class AsciiViewState extends State<AsciiView> {
                   nebula: widget.fugueModel.playerShip!.inNebula)))
         ])),
         if (currentView == ViewType.normal) Expanded(child: Row(children: [
-          Expanded(child: AspectRatio(aspectRatio: 2, child: AsciiGrid(widget.fugueModel)))
+          Expanded(child: AspectRatio(aspectRatio: 2, child: AsciiGridFast(widget.fugueModel)))
         ]))
       ]));
   }

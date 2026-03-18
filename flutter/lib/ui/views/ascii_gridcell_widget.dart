@@ -37,14 +37,14 @@ class GridCellWidget extends StatefulWidget {
 class GridCellWidgetState extends State<GridCellWidget> {
   @override
   Widget build(BuildContext context) {
-    final mapSize = widget.playShip.loc.map.size;
-    final maxZ = max(1, mapSize - 1);
+    final dim = widget.playShip.loc.map.dim;
+    final maxZ = max(1, dim.mz - 1);
     final rawT = widget.cell.coord.z / maxZ;
     final t = sqrt(rawT); // boosts near depths
     final depthFactor = 0.6 + 0.6 * t; // min 0.6, max 1.2
     final opacity = 0.55 + 0.45 * t;  //final offsetY = (1 - t) * 24; // stronger offset for ASCII
     final distFromPlayer = widget.playShip.distanceFromLocation(widget.cell.loc); //widget.cell.distance(widget.playShip.loc.cell.coord);
-    final maxDist = sqrt(3) * mapSize; // diagonal of grid
+    final maxDist = dim.maxDist;
     // Normalize 0.0 → 1.0, closer = higher value
     final proximityFactor = 1.0 - (distFromPlayer / maxDist).clamp(0, 1);
     // Color intensity based on proximity

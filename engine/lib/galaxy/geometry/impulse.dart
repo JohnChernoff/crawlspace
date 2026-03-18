@@ -74,5 +74,5 @@ class ImpulseCell extends GridCell {
 
 class EmptySubImpulse extends ImpulseMap {
   static final instance = EmptySubImpulse._();
-  EmptySubImpulse._() : super(0, const {});
+  EmptySubImpulse._() : super(GridDim(0, 0, 0), const {});
 }

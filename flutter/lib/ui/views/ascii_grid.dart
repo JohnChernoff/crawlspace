@@ -52,14 +52,14 @@ class _AsciiGridState extends State<AsciiGrid> {
       if (playship != null) {
         final map = playship.loc.map;
         List<Widget> stacks = [];
-        int mapSize = playship.loc.map.size;
-        final cellWidth = (bc.maxWidth / mapSize) * cellScaleFactor;
-        final cellHeight = (bc.maxHeight / mapSize) * cellScaleFactor;
+        final dim = playship.loc.map.dim;
+        final cellWidth = (bc.maxWidth / dim.mx) * cellScaleFactor;
+        final cellHeight = (bc.maxHeight / dim.my) * cellScaleFactor;
         final scannedCell =
             fm.playerShip?.nav.targetShip?.loc.cell ??
                 fm.scannerController.currentScanSelection;
-        for (int y = 0; y < mapSize; y++) {
-          for (int x = 0; x < mapSize; x++) {
+        for (int y = 0; y < dim.my; y++) {
+          for (int x = 0; x < dim.mx; x++) {
             final widgets = createStack(x,y,cellHeight/2,map,playship,scannedCell,preview,
                 showAllCellsOnZPlane: fm.scannerController.showAllCellsOnZPlane);
             stacks.add(ColoredBox(color: Colors.black, child: Stack(
@@ -67,7 +67,7 @@ class _AsciiGridState extends State<AsciiGrid> {
                 children: List.generate(widgets.length, (depth) {
                   final widget = widgets.elementAt(depth);
                   final z = widget.cell.coord.z;
-                  final maxZ = mapSize - 1;
+                  final maxZ = dim.mz - 1;
                   final t = maxZ > 0 ? z / maxZ : 0.0;
                   final cellSize = cellHeight / 2;
                   final xPos = (cellWidth - cellSize) * t;
@@ -85,7 +85,7 @@ class _AsciiGridState extends State<AsciiGrid> {
             child: Padding(padding: const EdgeInsets.all(1.0), child: GridView.count(
               mainAxisSpacing: 1,
               crossAxisSpacing: 1,
-              crossAxisCount: map.size,
+              crossAxisCount: map.dim.maxXY,
               childAspectRatio: bc.maxWidth / bc.maxHeight,
               children: stacks,
             )));
@@ -106,7 +106,7 @@ class _AsciiGridState extends State<AsciiGrid> {
     final cellWidgets = <GridCellWidget>[];
     final invert = map is SectorMap && map.values.any((e) => e.hazLevel > 0);
     final targetPath = widget.fugueModel.scannerController.targetPath;
-    for (int z = 0; z < map.size; z++) {
+    for (int z = 0; z < map.dim.mz; z++) {
       final cell = map[Coord3D(x,y,z)]!;
       final uiTarget = widget.fugueModel.inputMode.targeting && widget.fugueModel.player.targetLoc?.cell == cell;
       //final scanned = scannedCell?.coord == cell.coord && playship.canScan(cell);
