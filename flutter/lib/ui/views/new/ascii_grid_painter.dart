@@ -47,14 +47,18 @@ class AsciiGridPainter extends CustomPainter {
           final cell = entry.cell;
           final z = cell.coord.z;
           final t = dim.mz <= 1 ? 0.0 : z / (dim.mz - 1);
-
-          final dx = baseRect.left + (cellW - layerSize) * t;
-          final dy = baseRect.top + (cellH - layerSize) * t;
+          //final tRaw = dim.mz <= 1 ? 0.0 : z / (dim.mz - 1);
+          //final t = pow(tRaw, 0.9); // tweak this
+          final stackXInset = 4; //cellW * 0.04;
+          final zLiftPerLayer = 1; //max(1.0, cellH * 0.015);
+          final dx = baseRect.left - stackXInset + (cellW - layerSize) * t;
+          final dy = baseRect.top - (cell.coord.z * zLiftPerLayer) + (cellH - layerSize) * t;
 
           final state = _renderStateForCell(cell, fm, ship);
           final glyph = _glyphForCell(cell, ship);
           final color = _colorForCell(cell, ship, state);
           final fontSize = _fontSizeForCell(layerSize, z, dim);
+          //final fontSize = _fontSizeForCell(effectiveLayerSize * 0.9, z, dim);
 
           final paragraph = _getParagraph(glyph, color, fontSize);
           canvas.drawParagraph(paragraph, Offset(dx, dy));
@@ -63,10 +67,11 @@ class AsciiGridPainter extends CustomPainter {
             _paintTargetMarker(canvas, Rect.fromLTWH(dx, dy, layerSize, layerSize), fontSize);
           }
 
+          final layerRect = Rect.fromLTWH(dx, dy, layerSize, layerSize);
           if (state.inTargetPath) {
             _paintCellOutline(
               canvas,
-              baseRect,
+              layerRect,
               color: Colors.white,
               strokeWidth: 1.5,
             );
@@ -75,7 +80,7 @@ class AsciiGridPainter extends CustomPainter {
           if (state.targeted) {
             _paintCellOutline(
               canvas,
-              baseRect,
+              layerRect,
               color: Colors.redAccent,
               strokeWidth: 2.0,
             );
@@ -132,7 +137,7 @@ class AsciiGridPainter extends CustomPainter {
     }
 
     // 6. Empty
-    return ".";
+    return fm.playerShip?.loc.domain == Domain.impulse ? "." : " ";
   }
 
   void _paintTargetMarker(
@@ -347,7 +352,7 @@ _CellRenderState _renderStateForCell(
   final targetLoc = fm.player.targetLoc;
   final targetPath = fm.scannerController.targetPath;
 
-  final scanned = false; //fm.player.scanned.contains(cell.loc); //TODO: add back
+  final scanned = fm.scannerController.currentScanSelection?.loc == cell.loc;
   final targeted = targetLoc?.cell == cell;
   final inTargetPath = targetPath.any((loc) => loc == cell);
   final uiTarget = targeted; // or separate this if you distinguish cursor vs final target
