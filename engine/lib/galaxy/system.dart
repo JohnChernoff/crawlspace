@@ -36,7 +36,7 @@ typedef SystemMap = MappedGrid<SectorCell>;
 
 class System extends GridCell implements Nameable {
   final systemMapSize = 8;
-  final impulseMapSize = 8; //minimums?
+  final impulseMapSize = 12; //minimums?
   String name;
   String get selectionName => name;
   Set<System> links = HashSet();

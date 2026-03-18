@@ -31,15 +31,6 @@ enum MoveResultType {
   bool get moving => this == moved || this == unsafeDestination;
 }
 
-enum ThrottleMode {
-  full(1.0),
-  half(0.5),
-  stop(0.0),
-  drift(0.0);
-  final double speedFactor;
-  const ThrottleMode(this.speedFactor);
-}
-
 class MovementPreview {
   final GridCell? desiredCell;
   final GridCell? actualCell;
@@ -62,16 +53,16 @@ class MovementPreview {
 
 class MovementController extends FugueController {
   bool npcFreeMovement = true;
-  ThrottleMode _throttle = ThrottleMode.full;
-  ThrottleMode get throttle => _throttle;
-  void set throttle(ThrottleMode mode) {
-    _throttle = mode;
-    fm.msg("Throttle: $mode");
-    fm.update();
-  }
+
   /// Small passive stabilization so ships do not drift forever.
 
   MovementController(super.fm);
+
+  void setThrottle(ThrottleMode mode, Ship ship) {
+    ship.nav.throttle = mode;
+    fm.msg("Throttle: $mode");
+    fm.update();
+  }
 
   Future<SpaceLocation?> acquireTarget(Coord3D v) {
     final loc = fm.player.loc;
@@ -100,6 +91,9 @@ class MovementController extends FugueController {
         fm.movementController.acquireTarget(vec).then((loc) {
           if (loc != null) {
             ship.nav.heading = loc;
+            print(ship.systemControl.engine?.name);
+            print("Current Loc: ${ship.loc.cell.coord} , New Heading: ${loc.cell.coord}");
+            print("Mass: ${ship.currentMass}, Vol: ${ship.volume}, Thrust: ${ship.systemControl.engine?.thrust}, Throttle: ${ship.nav.throttle}");
             // Don't call moveShip directly — set the heading and hand off to
             // the turn engine.  tick() will call cruise()/moveShip when it runs.
             fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: 100);
@@ -170,8 +164,6 @@ class MovementController extends FugueController {
 
     if (desiredLocation == null) return MoveResult(null, MoveResultType.badDestination);
 
-    final ThrottleMode actualThrottle = throttleOverride ?? throttle;
-
     // For NPCs with free movement, or non-Newtonian moves, use full preview
     // first and handle energy separately below.
     var preview = newtonian
@@ -179,15 +171,17 @@ class MovementController extends FugueController {
       state: NavState.fromShip(ship),
       ctx: MoveContext.fromShip(ship),
       desiredCell: desiredLocation.cell,
-      throttle: actualThrottle,
+      throttleOverride: throttleOverride,
       newtonian: true)
         : ship.nav.movePreviewer.moveUntilNextCell(
       desiredLocation.cell,
-      throttle: actualThrottle,
+      throttleOverride: throttleOverride,
       newtonian: false,
     );
 
-    print("Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}");
+    final actualThrottle = throttleOverride ?? ship.nav.throttle;
+
+    //print("Tick: ${fm.auTick}, Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}");
     // IMPORTANT: energy is burned here in reportMove, and moveUntilNextCell
     // already accumulates energyRequired across sub-steps for display.
     // The two MUST NOT both call burnEnergy — reportMove is the single point
@@ -205,7 +199,7 @@ class MovementController extends FugueController {
             state: NavState.fromShip(ship),
             ctx: MoveContext.fromShip(ship),
             desiredCell: desiredLocation.cell,
-            throttle: actualThrottle,
+            throttleOverride: throttleOverride,
             newtonian: newtonian,
             drift: true);
         if (actualThrottle == ThrottleMode.stop) {
@@ -218,7 +212,7 @@ class MovementController extends FugueController {
             state: NavState.fromShip(ship),
             ctx: MoveContext.fromShip(ship),
             desiredCell: desiredLocation.cell,
-            throttle: actualThrottle,
+            throttleOverride: throttleOverride,
             newtonian: newtonian,
             thrustFraction: thrustFraction,
             energyOverride: available);
@@ -253,7 +247,7 @@ class MovementController extends FugueController {
     // not have failed, otherwise the ship couldn't execute its braking burn).
     final bool arrived = preview.actualCell == desiredLocation.cell;
     if (arrived && actualThrottle == ThrottleMode.stop && !preview.engineFail) {
-      fm.msg("Arrived...");
+      if (ship.playship) fm.msg("Arrived...");
       ship.nav.resetMotionState();
       ship.nav.pos = Position.fromCoord(desiredLocation.cell.coord);
     }

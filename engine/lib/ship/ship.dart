@@ -412,13 +412,14 @@ class Ship extends Item implements Locatable {
       }
     }
     final newCell;
-    if (!dryRun && (nav.moving || nav.activeHeading)) {
-      if (fm.aiRnd.nextDouble() < moveProbability) {
+    if (!dryRun && loc.domain == Domain.impulse && (nav.moving || nav.activeHeading)) {
+      if (fm.auTick % 4 == 0) { //(fm.aiRnd.nextDouble() < 1) { //moveProbability) {
         final prevLoc = loc.cell.coord;
         fm.movementController.moveShip(this, nav.heading ?? loc);
         newCell = (loc.cell.coord != prevLoc);
       } else newCell = false;
     } else newCell = false;
+    if (newCell) print ("Moved: ${fm?.auTick}");
     return TickResult(totalRecharge - totalBurn, newCell);
   }
 
@@ -487,14 +488,17 @@ class Ship extends Item implements Locatable {
       final fit = (volley.efficiencyAt(dist) * 100).round();
       blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
     }
-    if (!tactical && !abbrev) {
+    if (!tactical) {
       blocks.add(TextBlock("Position: ${nav.pos}", GameColors.gray, true));
       blocks.add(TextBlock("Heading: ${nav.heading?.loc.cell.coord}", GameColors.gray, true));
       blocks.add(TextBlock("Velocity: ${nav.velocityString()}", GameColors.gray, true));
       blocks.add(TextBlock("Speed: ${nav.speed.toStringAsFixed(2)}", GameColors.gray, true));
-      blocks.add(TextBlock("Total mass: ${currentMass.toStringAsFixed(2)}", GameColors.gray, true));
-      blocks.add(TextBlock("Remaining capacity: ${availableSpace.toStringAsFixed(2)}", GameColors.gray, true));
-      blocks.add(TextBlock("Total scrap value: ${scrapVal.toStringAsFixed(2)}", GameColors.gray, true));
+      blocks.add(TextBlock("Throttle: ${nav.throttle}", GameColors.gray, true));
+      if (!abbrev) {
+        blocks.add(TextBlock("Total mass: ${currentMass.toStringAsFixed(2)}", GameColors.gray, true));
+        blocks.add(TextBlock("Remaining capacity: ${availableSpace.toStringAsFixed(2)}", GameColors.gray, true));
+        blocks.add(TextBlock("Total scrap value: ${scrapVal.toStringAsFixed(2)}", GameColors.gray, true));
+      }
     }
     blocks.add(const TextBlock("",GameColors.black,true));
     if (nav.targetCoord != null) blocks.add(TextBlock("Scanning Coord: $nav.targetCoord", GameColors.orange, true));

@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import '../controllers/movement_controller.dart';
@@ -11,19 +10,20 @@ class MovePreviewer {
   Ship ship;
   ShipNav get nav => ship.nav;
   MovePreviewer(this.ship);
-
   int counter = 0;
 
   MovementPreview previewFixedStep({
     required NavState state,
     required MoveContext ctx,
     required GridCell? desiredCell,
-    ThrottleMode throttle = ThrottleMode.full,
+    ThrottleMode? throttleOverride,
     bool drift = false,
     bool newtonian = true,
     double thrustFraction = 1.0,
     double? energyOverride,
+    bool selecting = false,
   }) {
+    final throttle = throttleOverride ?? ship.nav.throttle;
     counter++;
     const int auts = 1;
     if (desiredCell == null) return MovementPreview(desiredCell: null, newState: state);
@@ -105,7 +105,7 @@ class MovePreviewer {
         );
       }
 
-      final guidance = nav.computeGuidanceVelocity(
+      final guidance = nav.autoPilot.computeGuidanceVelocity(
         pos: state.pos,
         vel: state.vel,
         targetCell: desiredCell,
@@ -133,7 +133,7 @@ class MovePreviewer {
 
       // Use whichever budget feels best.
       // For now, use forward accel as the main steering budget.
-      final next = nav.steerVelocityTowardDirectional(
+      final next = nav.autoPilot.steerVelocityTowardDirectional(
           current: current,
           desired: guidance.desiredVelocity,
           forwardDir: targetDir,
@@ -158,18 +158,9 @@ class MovePreviewer {
       vy = next.y;
       vz = next.z;
 
-      print(
-          "GUIDE d:${mag.toStringAsFixed(2)} "
-              "close:${guidance.closingSpeed.toStringAsFixed(2)} "
-              "lat:${guidance.lateralSpeed.toStringAsFixed(2)} "
-              "stop:${guidance.stopSpeed.toStringAsFixed(2)} "
-              "T:${guidance.horizon.toStringAsFixed(2)} "
-              "dv:[${guidance.desiredVelocity.x.toStringAsFixed(2)},"
-              "${guidance.desiredVelocity.y.toStringAsFixed(2)},"
-              "${guidance.desiredVelocity.z.toStringAsFixed(2)}]"
-      );
+      if (!selecting) print("GUIDE d:${mag.toStringAsFixed(2)}, $guidance");
     } else if (!noEngine) {
-      final guidance = nav.computeGuidanceVelocity(
+      final guidance = nav.autoPilot.computeGuidanceVelocity(
         pos: state.pos,
         vel: state.vel,
         targetCell: desiredCell,
@@ -195,7 +186,7 @@ class MovePreviewer {
           ? (targetDir + current.normalized() * 0.4).normalized()
           : targetDir;
 
-      final next = nav.steerVelocityTowardDirectional(
+      final next = nav.autoPilot.steerVelocityTowardDirectional(
           current: current,
           desired: guidance.desiredVelocity,
           forwardDir: blendedForward,
@@ -245,8 +236,7 @@ class MovePreviewer {
           .where((c) => c.coord.isEdge(ctx.map.size))
           .fold<GridCell>(ctx.map.values.first, (best, c) =>
       oldPos.coord.distance(c.coord) < oldPos.coord.distance(best.coord) ? c : best);
-      print("CTX: ${ctx.map.runtimeType}");
-      print("Bounce Cell: ${bounceCell.coord}");
+      //print("CTX: ${ctx.map.runtimeType}"); print("Bounce Cell: ${bounceCell.coord}");
       return MovementPreview(
         desiredCell: desiredCell,
         actualCell: bounceCell,
@@ -270,13 +260,14 @@ class MovePreviewer {
 
   MovementPreview previewMoves(
       GridCell? desiredCell, {
-        ThrottleMode throttle = ThrottleMode.full,
+        ThrottleMode? throttleOverride,
         bool drift = false,
         bool newtonian = true,
         double thrustFraction = 1.0,
         double? energyOverride,
         int auts = 1,
       }) {
+    final throttle = throttleOverride ?? ship.nav.throttle;
     var state = NavState.fromShip(ship);
     MovementPreview? last;
 
@@ -294,7 +285,7 @@ class MovePreviewer {
         state: state,
         ctx: ctx,
         desiredCell: desiredCell,
-        throttle: throttle,
+        throttleOverride: throttle,
         drift: drift,
         newtonian: newtonian,
         thrustFraction: thrustFraction,
@@ -318,13 +309,14 @@ class MovePreviewer {
 
   MovementPreview moveUntilNextCell(
       GridCell? desiredCell, {
-        ThrottleMode throttle = ThrottleMode.full,
+        ThrottleMode? throttleOverride,
         bool drift = false,
         bool newtonian = true,
         double thrustFraction = 1.0,
         double? energyOverride,
         int maxSteps = 50,
       }) {
+    final throttle = throttleOverride ?? ship.nav.throttle;
     var state = NavState.fromShip(ship);
     final startCell = state.pos.coord;
 
@@ -346,7 +338,7 @@ class MovePreviewer {
         state: state,
         ctx: ctx,
         desiredCell: desiredCell,
-        throttle: throttle,
+        throttleOverride: throttle,
         drift: drift,
         newtonian: newtonian,
         thrustFraction: thrustFraction,

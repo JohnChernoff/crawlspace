@@ -192,7 +192,7 @@ enum ShipClassType {
   // ── Skiffs ────────────────────────────────────────────────────────────────
   hermes("Hermes",
       type: ShipType.skiff,
-      mass: 500, volume: 750, maxXeno: 6, maxSpeed: 02.5,  // commit
+      mass: 2000, volume: 1500, maxXeno: 6, maxSpeed: 11.00,  // commit
       corpMap: {
         ShipSystemType.engine: Corporation.smythe,
         ShipSystemType.shield: Corporation.smythe,

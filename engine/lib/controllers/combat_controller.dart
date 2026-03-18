@@ -99,6 +99,7 @@ class CombatController extends FugueController {
         final hullReduction = resistanceReduction(hullResistance);
         final hullDmg = result.toHull * (1 - hullReduction);
         fm.msgController.addMsg("${ship.name} takes ${hullDmg.round()} hull damage$suffix");
+        fm.wakePilot(ship.pilot);
         if (ship.takeHullDamage(hullDmg)) explode(ship);
       }
     }

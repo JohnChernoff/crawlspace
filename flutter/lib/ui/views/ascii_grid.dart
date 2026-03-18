@@ -42,7 +42,7 @@ class _AsciiGridState extends State<AsciiGrid> {
           state: NavState.fromShip(ship),
           ctx: MoveContext.fromShip(ship),
           desiredCell: fm.player.targetLoc!.cell,
-          throttle: fm.movementController.throttle
+          selecting: true
       );
     }
 
