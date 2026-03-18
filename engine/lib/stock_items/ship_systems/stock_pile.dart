@@ -17,7 +17,7 @@ enum StockSystem {
   engBasicFedHyper(ShipSystemType.engine,1,.9),
   engMovSub1(ShipSystemType.engine,3,.75, manufacturer: Corporation.rimbaud),
   engVorImp1(ShipSystemType.engine,5,.5, manufacturer: Corporation.nimrod),
-  enOrbBlock(ShipSystemType.engine,5,.5, manufacturer: Corporation.genCorp),
+  engOrbBlock(ShipSystemType.engine,5,.5, manufacturer: Corporation.genCorp),
 
   genBasicNuclear(ShipSystemType.power,1,.9),
   genZemlinsky(ShipSystemType.power,2,.75),

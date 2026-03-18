@@ -112,8 +112,9 @@ class Ship extends Item implements Locatable {
   bool autoShutdown = false;
   EffectMap<ShipEffect> effectMap = EffectMap();
   late ShipNav nav = ShipNav(this);
-
+  double get moveProbability => .1; //TODO: tweak
   double get volume => shipClass.volume;
+  double get maxSpeed =>  hull.material.speedMult * shipClass.maxSpeed; // sqrt(volume * mass));
 
   Ship(super.name, {
     this.owner,
@@ -374,7 +375,7 @@ class Ship extends Item implements Locatable {
   bool okVolume(double m) => availableSpace > m;
 
   TickResult tick({FugueEngine? fm}) {
-    final dryRun = fm == null; //print("Tick... $dryRun");
+    final dryRun = fm == null; //if (!dryRun) print("Tick... $dryRun");
     double totalRecharge = 0, totalBurn = 0;
     for (final rss in systemControl.rechargables) {
       if (rss.currentEnergy < rss.currentMaxEnergy) { //print(rss.name); print(rss.rechargeRate);
@@ -412,9 +413,11 @@ class Ship extends Item implements Locatable {
     }
     final newCell;
     if (!dryRun && (nav.moving || nav.activeHeading)) {
-      final prevLoc = loc.cell.coord;
-      fm.movementController.moveShip(this, nav.heading ?? loc);
-       newCell = (loc.cell.coord != prevLoc);
+      if (fm.aiRnd.nextDouble() < moveProbability) {
+        final prevLoc = loc.cell.coord;
+        fm.movementController.moveShip(this, nav.heading ?? loc);
+        newCell = (loc.cell.coord != prevLoc);
+      } else newCell = false;
     } else newCell = false;
     return TickResult(totalRecharge - totalBurn, newCell);
   }

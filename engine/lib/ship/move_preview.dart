@@ -12,6 +12,8 @@ class MovePreviewer {
   ShipNav get nav => ship.nav;
   MovePreviewer(this.ship);
 
+  int counter = 0;
+
   MovementPreview previewFixedStep({
     required NavState state,
     required MoveContext ctx,
@@ -22,6 +24,7 @@ class MovePreviewer {
     double thrustFraction = 1.0,
     double? energyOverride,
   }) {
+    counter++;
     const int auts = 1;
     if (desiredCell == null) return MovementPreview(desiredCell: null, newState: state);
     final desiredCoord = desiredCell.coord;
@@ -73,8 +76,8 @@ class MovePreviewer {
     final double lAccel = noEngine ? 0.0 : nav.lateralAccel(thrust) * thrustScale;
     final double rAccel = noEngine ? 0.0 : nav.reverseAccel(thrust) * thrustScale;
 
-    final double maxSpeed = engine?.maxSpeed ?? 0;
-    final double efficiency = engine?.efficiency ?? 0.1;
+    final double maxSpeed = noEngine ? 0.0 : ctx.ship.maxSpeed;
+    final double efficiency = engine?.efficiency ?? 0.1; //TODO: use this in energy calculations
 
     // Start from current velocity — no damping yet.
     double vx = state.vel.x;

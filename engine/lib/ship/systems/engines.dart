@@ -54,8 +54,7 @@ class Engine extends ShipSystem {
   /// Hidden movement-model stats.
   /// Keep defaults conservative so existing stock data still works.
   double thrust;
-  double maxSpeed;
-
+  //double maxSpeed;
   EngineArch arch;
   Domain domain;
   EngineType engineType;
@@ -74,7 +73,6 @@ class Engine extends ShipSystem {
     } else {
       sb.writeln("Base aut per unit traversal (BAPUT): $baseAutPerUnitTraversal");
       sb.writeln("Thrust: ${thrust.toStringAsFixed(2)}");
-      sb.writeln("Max speed: ${maxSpeed.toStringAsFixed(2)}");
     }
     sb.writeln("Efficiency: $efficiency");
     sb.writeln("Xeno production (per aut): $xenoGen");
@@ -99,8 +97,7 @@ class Engine extends ShipSystem {
     this.xenoPowerBonus = const {},
     required this.baseAutPerUnitTraversal,
     required this.efficiency,
-    this.thrust = 1.0,
-    this.maxSpeed = 2.5,
+    this.thrust = 1000.0,
     required super.baseCost,
     required super.baseRepairCost,
     required super.powerDraw,
@@ -129,7 +126,6 @@ class Engine extends ShipSystem {
       efficiency: data.efficiency,
       baseAutPerUnitTraversal: data.baseAutPerUnitTraversal,
       thrust: data.thrust,
-      maxSpeed: data.maxSpeed,
       arch: data.arch
     );
   }
@@ -140,7 +136,6 @@ class EngineData {
   final int baseAutPerUnitTraversal;
   final double efficiency;
   final double thrust;
-  final double maxSpeed;
   final Domain domain;
   final EngineType engineType;
   final EngineArch arch;
@@ -154,7 +149,6 @@ class EngineData {
     required this.baseAutPerUnitTraversal,
     required this.efficiency,
     this.thrust = 100,
-    this.maxSpeed = 2.5,
     required this.domain,
     required this.engineType,
     required this.arch,

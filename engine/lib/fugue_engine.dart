@@ -138,7 +138,7 @@ class FugueEngine {
     combatRnd = Random(seed ^ 0xABCDEF);
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
     Ship playShip = Ship("HMS Sebastian",
-        shipClass: ShipClass.fromEnum(ShipClassType.barge),
+        shipClass: ShipClass.fromEnum(ShipClassType.hermes),
         location: SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),
         generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
         sensor: Sensor.fromStock(StockSystem.senFed1),
@@ -320,7 +320,8 @@ class FugueEngine {
         cell.effects.tickAll();
       }//}
     } while (!player.ready);
-    if (playShip != null) {
+
+    if (playShip != null) { //print("Counter..."); //print(playShip.nav.movePreviewer.counter);
       final loc = playShip.loc; if (loc is ImpulseLocation) {
         if (loc.sectorCell.hasHaz(Hazard.ion)) {
           loc.cell.hodgeTick(Hazard.ion, mapRnd);

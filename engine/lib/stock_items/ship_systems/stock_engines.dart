@@ -44,8 +44,7 @@ final Map<StockSystem, EngineData> stockEngines = {
     engineType: EngineType.nuclear,
     efficiency: .5,
     baseAutPerUnitTraversal: 10,
-    thrust: 1000,   // accel ≈ 1000/900 ≈ 1.11 → stop from 2.6 in ~3 cells
-    maxSpeed: 2.6,
+    thrust: 250,   // accel ≈ 1000/900 ≈ 1.11 → stop from 2.6 in ~3 cells
     arch: EngineArch.center
   ),
 
@@ -64,7 +63,6 @@ final Map<StockSystem, EngineData> stockEngines = {
     efficiency: .5,
     baseAutPerUnitTraversal: 10,
     thrust: 500,    // sublight: lower accel is fine, map is much larger
-    maxSpeed: 2.2,
     arch: EngineArch.center
   ),
 
@@ -83,7 +81,6 @@ final Map<StockSystem, EngineData> stockEngines = {
     efficiency: .5,
     baseAutPerUnitTraversal: 10,
     thrust: 0,      // unused for non-Newtonian hyperspace
-    maxSpeed: 0,    // unused for non-Newtonian hyperspace
     arch: EngineArch.center
   ),
 
@@ -102,7 +99,6 @@ final Map<StockSystem, EngineData> stockEngines = {
     efficiency: .7,
     baseAutPerUnitTraversal: 7,
     thrust: 750,    // better than Fed sub, still sublight so accel is relaxed
-    maxSpeed: 3.0,
     arch: EngineArch.center
   ),
 
@@ -121,15 +117,14 @@ final Map<StockSystem, EngineData> stockEngines = {
     efficiency: .9,
     baseAutPerUnitTraversal: 8,
     thrust: 2000,   // high-end impulse: stop from 3.4 in ~3 cells at ~800kg loaded
-    maxSpeed: 3.4,
     xenoGen: .25,
     xenoCastBonus: {XenomancySchool.dark: 2},
     arch: EngineArch.center
   ),
 
-  StockSystem.enOrbBlock: EngineData(
+  StockSystem.engOrbBlock: EngineData(
       systemData: ShipSystemData.fromStock(
-        StockSystem.enOrbBlock,
+        StockSystem.engOrbBlock,
         "Orblix Gravitronic Blockade Runner",
         about: "Goes real fast in a straight line.",
         mass: 280,
@@ -142,7 +137,6 @@ final Map<StockSystem, EngineData> stockEngines = {
       efficiency: .9,
       baseAutPerUnitTraversal: 8,
       thrust: 9999,   //
-      maxSpeed: 7,
       xenoGen: .25,
       arch: EngineArch.rear
   ),

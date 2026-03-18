@@ -102,7 +102,7 @@ class MovementController extends FugueController {
             ship.nav.heading = loc;
             // Don't call moveShip directly — set the heading and hand off to
             // the turn engine.  tick() will call cruise()/moveShip when it runs.
-            fm.pilotController.action(ship.pilot, ActionType.movement);
+            fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: 100);
           }
         });
       } else {
@@ -153,8 +153,7 @@ class MovementController extends FugueController {
           ship.move(ship.loc.withCell(nextCell), fm.shipRegistry);
         }
       }
-    }
-    print("Action AUTs: ${result.preview?.auts}");
+    } //print("Action AUTs: ${result.preview?.auts}");
     //ship.tick now handles momentum based movement
     if (!newtonian) fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: result.preview?.auts ?? 1);
     assert(ship.loc == ship.loc.cell.loc);
@@ -175,10 +174,17 @@ class MovementController extends FugueController {
 
     // For NPCs with free movement, or non-Newtonian moves, use full preview
     // first and handle energy separately below.
-    var preview = ship.nav.movePreviewer.moveUntilNextCell(
-        desiredLocation.cell,
-        throttle: actualThrottle,
-        newtonian: newtonian
+    var preview = newtonian
+        ? ship.nav.movePreviewer.previewFixedStep(
+      state: NavState.fromShip(ship),
+      ctx: MoveContext.fromShip(ship),
+      desiredCell: desiredLocation.cell,
+      throttle: actualThrottle,
+      newtonian: true)
+        : ship.nav.movePreviewer.moveUntilNextCell(
+      desiredLocation.cell,
+      throttle: actualThrottle,
+      newtonian: false,
     );
 
     print("Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}");
@@ -235,8 +241,8 @@ class MovementController extends FugueController {
     } else {
       // NPC free movement — burn what we can, don't penalise.
       ship.systemControl.burnEnergy(preview.energyRequired);
-    }
-    print("AUTs: ${preview.auts}");
+    } //print("AUTs: ${preview.auts}");
+
     ship.nav.setVelocity(
         preview.newState.vel.x,
         preview.newState.vel.y,
@@ -247,8 +253,9 @@ class MovementController extends FugueController {
     // not have failed, otherwise the ship couldn't execute its braking burn).
     final bool arrived = preview.actualCell == desiredLocation.cell;
     if (arrived && actualThrottle == ThrottleMode.stop && !preview.engineFail) {
-      print("Clearing heading");
+      fm.msg("Arrived...");
       ship.nav.resetMotionState();
+      ship.nav.pos = Position.fromCoord(desiredLocation.cell.coord);
     }
 
     final newCell = preview.actualCell;
@@ -295,7 +302,7 @@ class MovementController extends FugueController {
     print("actualCell  = ${result.preview?.actualCell?.coord}");
   }
 
-  void loiter(Ship? ship, {int auts = 10}) { //TODO: what happens if ship is moving?
-    if (ship != null) fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: auts);
+  void loiter(Ship? ship, {int auts = 10}) {
+    if (ship != null) fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: ship.nav.moving ? 100 : auts);
   }
 }
