@@ -6,7 +6,7 @@ import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:flutter/material.dart';
-import '../../options.dart';
+import '../../../options.dart';
 
 class GridCellWidget extends StatefulWidget {
   final double size;

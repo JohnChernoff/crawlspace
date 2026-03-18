@@ -1,8 +1,6 @@
 import 'dart:math';
 import 'dart:ui' as ui;
-
 import 'package:crawlspace_engine/controllers/movement_controller.dart';
-import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:crawlspace_engine/galaxy/geometry/impulse.dart';
@@ -10,7 +8,6 @@ import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:flutter/material.dart';
-
 import '../../../options.dart';
 
 class AsciiGridPainter extends CustomPainter {
@@ -37,10 +34,6 @@ class AsciiGridPainter extends CustomPainter {
     final layerSize = cellH / 2;
 
     final paint = Paint();
-    final paragraphStyle = ui.ParagraphStyle(
-      fontFamily: 'FixedSys',
-      textAlign: TextAlign.center,
-    );
 
     for (int y = 0; y < dim.my; y++) {
       for (int x = 0; x < dim.mx; x++) {
@@ -62,13 +55,6 @@ class AsciiGridPainter extends CustomPainter {
           final glyph = _glyphForCell(cell, ship);
           final color = _colorForCell(cell, ship, state);
           final fontSize = _fontSizeForCell(layerSize, z, dim);
-
-          final builder = ui.ParagraphBuilder(paragraphStyle)
-            ..pushStyle(ui.TextStyle(
-              color: color,
-              fontSize: fontSize,
-            ))
-            ..addText(glyph);
 
           final paragraph = _getParagraph(glyph, color, fontSize);
           canvas.drawParagraph(paragraph, Offset(dx, dy));
@@ -361,7 +347,7 @@ _CellRenderState _renderStateForCell(
   final targetLoc = fm.player.targetLoc;
   final targetPath = fm.scannerController.targetPath;
 
-  final scanned = false; //fm.player.scanned.contains(cell.loc);
+  final scanned = false; //fm.player.scanned.contains(cell.loc); //TODO: add back
   final targeted = targetLoc?.cell == cell;
   final inTargetPath = targetPath.any((loc) => loc == cell);
   final uiTarget = targeted; // or separate this if you distinguish cursor vs final target
