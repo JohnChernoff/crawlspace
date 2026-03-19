@@ -15,16 +15,12 @@ import '../../ship/ship.dart';
 enum Domain {hyperspace,system,impulse}
 
 abstract class GridCell implements Locatable {
-  Set<Item> _itemCache = {};
-  IList<Item> get itemz => _itemCache.toIList();
   final Coord3D coord;
   final Map<Hazard,double> hazMap;
   final EffectMap<CellEffect> effects = EffectMap();
   CellMap get map;
 
-  GridCell({Galaxy? g, this.coord = noCoord,this.hazMap = const {}}) {
-    if (g != null) scanItems(g.items);
-  }
+  GridCell({this.coord = noCoord,this.hazMap = const {}});
 
   double distCell(GridCell cell) => loc.dist(cell.loc);
   double dist(SpaceLocation loc) => this.loc.dist(loc);
@@ -32,13 +28,7 @@ abstract class GridCell implements Locatable {
   bool isEmpty(Galaxy g, {countPlayer = true});
   void clearHazard(Hazard haz) => hazMap.remove(haz);
   void clearHazards() => hazMap.clear();
-  void scanItems(ItemRegistry itemReg) => _itemCache = itemReg.atLocation(loc) ?? {};
-  void addItem(Item i, SpaceLocation loc, ItemRegistry reg) {
-    reg.addItem(i,loc); scanItems(reg);
-  }
-  void removeItem(Item i,ItemRegistry reg) {
-    reg.removeItem(i); scanItems(reg);
-  }
+
 
   String toScannerString(Galaxy g) {
     StringBuffer sb = StringBuffer(toString());

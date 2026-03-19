@@ -124,7 +124,7 @@ class MenuController extends FugueController {
     final ctx = currentMenu;
     final full = ctx.builder();
 
-    if (full.isEmpty) { //fm.msgController.addMsg(ctx.nothingTxt);
+    if (full.isEmpty) { //msg(ctx.nothingTxt);
       if (emptyExit || ctx.noExit) { print("Hrumph");
         exitMenu();
         return false;

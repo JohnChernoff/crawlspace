@@ -62,13 +62,13 @@ mixin GeneralInputMixin {
   Map<Type, Action<Intent>> get generalActions => {
     VersionIntent: CallbackAction<VersionIntent>(
         onInvoke: (_) { //print("Full Screen Toggle");
-          fm.msgController.addMsg("Crawlspace, version ${fm.version}");
+          fm.msg("Crawlspace, version ${fm.version}");
           return null;
         }
     ),
     HelpIntent: CallbackAction<HelpIntent>(
         onInvoke: (_) {
-          rootBundle.loadString('assets/help/help.txt').then((file) => fm.msgController.addMsg(file));
+          rootBundle.loadString('assets/help/help.txt').then((file) => fm.msg(file));
           return null;
         }
     ),

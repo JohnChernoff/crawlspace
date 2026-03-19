@@ -25,7 +25,6 @@ class SectorCell extends GridCell {
   SectorCell(
       this.system,
       this.impulseSeed, {
-        super.g,
         super.coord,
         super.hazMap,
         this.starClass,

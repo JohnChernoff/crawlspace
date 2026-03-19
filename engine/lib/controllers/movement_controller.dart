@@ -117,9 +117,10 @@ class MovementController extends FugueController {
       SpaceLocation desiredLocation, {
         double baseEnergy = 20,
         ThrottleMode? throttleOverride,
+        aiNewtonian = false
       }) { //print(StackTrace.current);
 
-    bool newtonian = ship.loc.domain == Domain.impulse;
+    bool newtonian = ship.loc.domain == Domain.impulse && (ship.playship || aiNewtonian);
     final result = reportMove(ship, desiredLocation, throttleOverride: throttleOverride, newtonian: newtonian);
     //fm.msg(result.resultType.name);
 
@@ -160,6 +161,7 @@ class MovementController extends FugueController {
       SpaceLocation? desiredLocation, {
         bool newtonian = true,
         ThrottleMode? throttleOverride,
+        bool ignoreEngineFail = false
       }) {
 
     if (desiredLocation == null) return MoveResult(null, MoveResultType.badDestination);
@@ -189,7 +191,6 @@ class MovementController extends FugueController {
     // verify the partial-energy re-preview path doesn't burn twice (the
     // previewFixedStep call below is read-only; only the explicit burnEnergy
     // calls below this comment actually spend energy).
-    bool ignoreEngineFail = true; // TODO: set false once double-burn is fully audited
     if (newtonian && (!ship.npc || !npcFreeMovement)) {
       final double available = ship.systemControl.getCurrentEnergy();
       if (available <= 0 && !ignoreEngineFail) {

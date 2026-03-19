@@ -7,6 +7,7 @@ import 'package:crawlspace_engine/galaxy/models/topology.dart';
 import 'package:crawlspace_engine/galaxy/models/trade_model.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/reg/reg.dart';
+import 'package:crawlspace_engine/rng/item_gen.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'flow_field.dart';
 import '../fugue_engine.dart';
@@ -129,6 +130,7 @@ class Galaxy {
     }
 
     tradeMod = TradeModel(this);
+    ItemGen().generateItems(this);
     maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
     formed = true;
   }

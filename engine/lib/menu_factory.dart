@@ -235,7 +235,7 @@ class MenuFactory {
         ? ship.cargo.filterType<Item>().filter((i) => shop.canBuy(i))
         : ship.cargo;
 
-    final menu = buildInventoryMenu(items,action: (i) => fm.msgController.addMsg(
+    final menu = buildInventoryMenu(items,action: (i) => fm.msg(
         shop.transactionBuy(i, ship: ship)));
 
     return <MenuEntry>[

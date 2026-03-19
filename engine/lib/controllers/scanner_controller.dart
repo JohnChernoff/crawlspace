@@ -185,7 +185,7 @@ class ScannerController extends FugueController {
         : 0;
     targetPathMode = TargetPathMode.values.elementAt(i);
     if (targetPathMode == TargetPathMode.safest) targetPathMode = TargetPathMode.direct; // skipping safest for now
-    fm.msgController.addMsg("Scanner Target Path Mode: ${targetPathMode.name}");
+    fm.msg("Scanner Target Path Mode: ${targetPathMode.name}");
     fm.update();
   }
 

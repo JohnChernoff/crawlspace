@@ -50,7 +50,7 @@ class ImpulseCell extends GridCell {
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
     if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;
-    if (mode.scaningItems && itemz.isNotEmpty) return true;
+    if (mode.scaningItems && g.items.anyAt(loc)) return true;
     return false;
   }
 
@@ -60,24 +60,18 @@ class ImpulseCell extends GridCell {
     if (ships.isNotEmpty && (countPlayer || ships.any((s) => s.npc))) return false;
     if (hasPlanet(g)) return false;
     if (hazLevel > 0) return false;
-    if (itemz.isNotEmpty) return false;
+    if (g.items.anyAt(loc)) return false;
     return true;
   }
 
   @override
   String toScannerString(Galaxy g) {
     StringBuffer sb = StringBuffer(super.toScannerString(g));
+    for (Item item in g.items.atLocation(loc)) {
+      sb.write("\n${item.name}\n");
+    }
     Planet? planet = getPlanet(g);
     if (planet != null) sb.write(planet.name);
-    return sb.toString();
-  }
-
-  @override
-  String toString() {
-    StringBuffer sb = StringBuffer(super.toString());
-    for (Item item in itemz) {
-      sb.write("\n${item.name}");
-    }
     return sb.toString();
   }
 

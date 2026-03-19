@@ -44,7 +44,7 @@ class MovePreviewer {
           desiredCell: desiredCell,
           actualCell: desiredCell,
           auts: travelAuts,
-          energyRequired: engine.efficiency * 20, //TODO: fix
+          energyRequired: engine.efficiency * 20, //TODO: fix?
           newState: state.copyWith(pos: Position.fromCoord(desiredCell.coord)),
         );
       } else {

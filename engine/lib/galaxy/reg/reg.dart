@@ -107,7 +107,9 @@ class ItemRegistry {
   }
 
   ItemSet inSystem(System sys) => _repository.entries.where((m) => m.key.system == sys).toSet();
-  Set<Item>? atLocation(SpaceLocation loc) => _repository[loc];
+  Set<Item>? atLocationOrNull(SpaceLocation loc) => _repository[loc];
+  Set<Item> atLocation(SpaceLocation loc) => _repository[loc] ?? {};
+  bool anyAt(SpaceLocation loc) => atLocation(loc).isNotEmpty;
 //Set<Item> atCell(GridCell cell) => _repository.entries.where((m) => m.key.cell == cell).expand((e) => e.value).toSet();
 }
 

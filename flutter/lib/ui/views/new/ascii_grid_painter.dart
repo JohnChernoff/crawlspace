@@ -10,6 +10,8 @@ import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:flutter/material.dart';
 import '../../../options.dart';
 
+//TODO: remove target when not targeting
+
 class AsciiGridPainter extends CustomPainter {
   final FugueEngine fm;
   final MovementPreview? preview;
@@ -133,7 +135,7 @@ class AsciiGridPainter extends CustomPainter {
 
     if (cell is ImpulseCell) {
       if (cell.hasPlanet(fm.galaxy)) return "O";
-      if (cell.itemz.isNotEmpty) return "\$";
+      if (fm.galaxy.items.anyAt(cell.loc)) return "\$";
     }
 
     // 6. Empty

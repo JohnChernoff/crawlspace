@@ -24,13 +24,13 @@ class LayerTransitController extends FugueController {
 
   void selectHyperSpaceLink() {
     Ship? ship = fm.playerShip; if (ship == null) {
-      fm.msgController.addMsg("No ship!"); return;
+      fm.msg("No ship!"); return;
     }
     final cell = ship.loc.cell; if (cell is! SectorCell) {
-      fm.msgController.addMsg("Wrong layer!"); return;
+      fm.msg("Wrong layer!"); return;
     }
     final star = cell.starClass; if (star == null) {
-      fm.msgController.addMsg("No star!"); return;
+      fm.msg("No star!"); return;
     }
     fm.menuController.showMenu(() => fm.menuFactory.buildHyperspaceMenu(ship.loc.system), headerTxt: "Hyperspace");
   }
@@ -40,7 +40,7 @@ class LayerTransitController extends FugueController {
         fm.player.system, ignoreTraffic: true) ?? fm.galaxy.getRandomSystem(excludeSystems: [fm.player.system]);
     if (newSystem(fm.player,system)) {
       //ship.warps.value--;
-      fm.msgController.addMsg("*** EMERGENCY WARP ACTIVATED ***");
+      fm.msg("*** EMERGENCY WARP ACTIVATED ***");
     }
     fm.pilotController.action(ship.pilot,ActionType.warp);
   }
@@ -58,13 +58,13 @@ class LayerTransitController extends FugueController {
             if (ship.itinerary != null) {
               if (ship.itinerary!.last == system) {
                 ship.itinerary = null;
-                if (ship.playship) fm.msgController.addMsg("You have arrived at your destination");
+                if (ship.playship) fm.msg("You have arrived at your destination");
               }
               else ship.itinerary = fm.galaxy.topo.graph.shortestPath(system, ship.itinerary!.last);
             }
             fm.update();
             if (ship.playship) {
-              fm.msgController.addMsg("New System: ${system.name}");
+              fm.msg("New System: ${system.name}");
               fm.scannerController.reset();
             }
             ship.scanSystem(system,fm);
@@ -79,10 +79,10 @@ class LayerTransitController extends FugueController {
   void createAndEnterImpulse({int gridSize = 8, int minDist = 4}) {
     Ship? playShip = fm.playerShip;
     if (playShip == null) {
-      fm.msgController.addMsg("You're not in a ship."); return;
+      fm.msg("You're not in a ship."); return;
     }
     if (playShip.loc is! SectorLocation) {
-      fm.msgController.addMsg("Error: ship not at system level"); return;
+      fm.msg("Error: ship not at system level"); return;
     }
     glog("Creating impulse map...",level: DebugLevel.Fine); //Entering")
     SpaceLocation sysLoc = playShip.loc;
@@ -92,10 +92,10 @@ class LayerTransitController extends FugueController {
       fm.update();
       final ships = List.of(fm.galaxy.ships.atCell(sysLoc.cell)); //avoids ConcurrentModificationError (hopefully)
       try {
-        fm.msgController.addMsg("Entering impulse...");
+        fm.msg("Entering impulse...");
         for (final ship in ships) {
           final h = ship.pilot.hostilityToward(fm.player.faction.species, fm.galaxy.civMod);
-          fm.msgController.addMsg("${ship.name}${ship.pilot.hostile ? "(hostile)" : "(friendly)"} (${h.toStringAsFixed(2)}) is here");
+          fm.msg("${ship.name}${ship.pilot.hostile ? "(hostile)" : "(friendly)"} (${h.toStringAsFixed(2)}) is here");
           if (ship != playShip) _enterImpulse(impMap,ship);
         }
       } on ConcurrentModificationError {
@@ -142,7 +142,7 @@ class LayerTransitController extends FugueController {
         if (ship.activeEffect(ShipEffect.folding)) {
           ships.forEach((s) => _exitImpulse(s, impLoc));
         } else {
-          fm.msgController.addMsg("You cannot accelerate to system travel with hostile vessels in the area");
+          fm.msg("You cannot accelerate to system travel with hostile vessels in the area");
           return;
         }
       } else {
@@ -151,12 +151,12 @@ class LayerTransitController extends FugueController {
       fm.audioController.newTrack(newMood: MusicalMood.space);
       fm.pilotController.action(ship.pilot, ActionType.movement);
     } else {
-      fm.msgController.addMsg("Error: ship not at impulse level");
+      fm.msg("Error: ship not at impulse level");
     }
   }
 
   void _exitImpulse(Ship ship, ImpulseLocation impLoc) {
-    fm.msgController.addMsg("Exiting impulse, resuming system travel");
+    fm.msg("Exiting impulse, resuming system travel");
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: true, silent: true);
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.impulse, activeOnly: false), ship, on: false, silent: true);
     ship.move(impLoc.sector, fm.galaxy.ships);

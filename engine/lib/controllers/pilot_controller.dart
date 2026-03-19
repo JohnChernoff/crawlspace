@@ -56,7 +56,7 @@ class PilotController extends FugueController {
   void toggleSystem(ShipSystem? system, Ship ship, {bool? on, silent = false}) {
     if (system != null) {
       if (ship.systemControl.toggleSystem(system, on: on)) {
-        if (!silent) fm.msgController.addMsg("${system.type.name}: ${system.active ? 'on' : 'off'}");
+        if (!silent) fm.msg("${system.type.name}: ${system.active ? 'on' : 'off'}");
       } else {
         fm.msg("Cannot activate system (insufficient energy)");
       }
@@ -103,7 +103,7 @@ class PilotController extends FugueController {
     Ship? ship = fm.getShip(pilot); if (ship != null) {
       for (final h in ship.loc.cell.hazMap.entries) {
         final msg = h.key.effectPerTurn(ship, auts, fm);
-        if (msg != null) fm.msgController.addMsg(msg);
+        if (msg != null) fm.msg(msg);
       }
     }
     fm.update();
@@ -146,7 +146,7 @@ class PilotController extends FugueController {
                 }
               }
             } else {
-              fm.msgController.addMsg("${ship.name} flees!");
+              fm.msg("${ship.name} flees!");
               final idealCells = ship.loc.map.values
                   .sorted((c1,c2) => playLoc.distCell(c2).compareTo(playLoc.distCell(c1)));
               ship.nav.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd);
@@ -170,7 +170,7 @@ class PilotController extends FugueController {
     Ship? ship = fm.galaxy.ships.byPilot(pilot);
     if (ship != null) {
       ship.itinerary = fm.galaxy.topo.graph.path(pilot.system, system);
-      fm.msgController.addMsg("Course plotted: ${ship.itinerary!.map((s) => s.name).reduce((i,l) => "${l} - ${i}")}");
+      fm.msg("Course plotted: ${ship.itinerary!.map((s) => s.name).reduce((i,l) => "${l} - ${i}")}");
     }
   }
 
@@ -179,10 +179,10 @@ class PilotController extends FugueController {
   energyScoop() {
     Ship? ship = fm.playerShip;
     if (ship == null) {
-      fm.msgController.addMsg("You're not in a ship."); return;
+      fm.msg("You're not in a ship."); return;
     }
     double amount = 50; //((ship.energyConvertor.value/(Rng.biasedRndInt(rnd,mean: 50, min: 25, max: 80))) * player.system.starClass.power).floor();
-    fm.msgController.addMsg("Scooping class ${fm.player.system.starClass.name} star... gained ${ship.systemControl.recharge(amount)} energy");
+    fm.msg("Scooping class ${fm.player.system.starClass.name} star... gained ${ship.systemControl.recharge(amount)} energy");
     fm.pilotController.action(fm.player,ActionType.energyScoop);
   }
 
@@ -190,21 +190,22 @@ class PilotController extends FugueController {
     int m = 0;
     Ship? ship = fm.playerShip; if (ship != null) {
       final cell = ship.loc.cell; if (cell is ImpulseCell) {
-        for (final i in List.of(cell.itemz)) {
+        final items = fm.galaxy.items.atLocation(cell.loc);
+        for (final i in List.of(items)) {
           if (i is ShipSystem) {
             if (ship.addScrap(i)) {
               m++;
-              fm.msgController.addMsg("Scrapping: ${i.name}");
-              cell.removeItem(i,fm.galaxy.items);
+              fm.msg("Scrapping: ${i.name}");
+              fm.galaxy.items.removeItem(i);
             }
             else {
-              fm.msgController.addMsg("Couldn't scrap: ${i.name}");
+              fm.msg("Couldn't scrap: ${i.name}");
             }
           } else {
             m++;
-            cell.removeItem(i,fm.galaxy.items);
+            fm.galaxy.items.removeItem(i);
             ship.inventory.add(i);
-            fm.msgController.addMsg("Added: ${i.name}");
+            fm.msg("Added: ${i.name}");
           }
         }
       }
@@ -217,7 +218,7 @@ class PilotController extends FugueController {
   void jettison(Ship? ship) {
     if (ship != null) {
       final s = ship.jettisonScrap(); if (s != null) {
-        fm.msgController.addMsg("${ship.name} jettisons ${s.name}");
+        fm.msg("${ship.name} jettisons ${s.name}");
         fm.pilotController.action(ship.pilot, ActionType.scrap);
       }
     }
@@ -227,7 +228,7 @@ class PilotController extends FugueController {
     final available = fm.menuController.showMenu(() => uninstall
       ? fm.menuFactory.buildUninstallMenu(ship)
       : fm.menuFactory.buildInstallMenu(ship)); //show menu anyhow
-    if (!available) fm.msgController.addMsg("No available system");
+    if (!available) fm.msg("No available system");
   }
 
   void hailShip(Ship ship) {
