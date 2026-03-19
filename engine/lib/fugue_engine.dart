@@ -58,8 +58,10 @@ enum InputMode {
 
 //cargo systems?  passengers, smuggling? cloaking systems?
 //hyperspace landing spot?   Graph not detecting player location?
-//TODO: add music, add launchers, one shield/generator per ship, Galaxy menu/refresh log, themed tavern games/activities
-//hostility calc, pacification/bribes, swap , and . keys, more intuitive key commands, etc.
+//TODO: add music, themed tavern games/activities
+//spell effects, concise readouts, direct impulse movements(?), clearer display
+//hailing,pacification/bribes, more intuitive key commands, etc.
+//ui target display, slow impulse level generation, impulse level hazards, objects
 class FugueEngine {
   final _listeners = <void Function()>[];
 
@@ -72,7 +74,7 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1r";
+  final String version = "0.1s";
   final Galaxy galaxy;
   late Player player;
   int numAgents = 3;
@@ -141,8 +143,8 @@ class FugueEngine {
         subEngine: Engine.fromStock(StockSystem.engBasicFedSub),
         hyperEngine: Engine.fromStock(StockSystem.engBasicFedHyper),
         shield: Shield.fromStock(StockSystem.shdBasicEnergon),
-        //weapons: [Weapon.fromStock(StockSystem.wepFedLaser3),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
-        //ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50}
+        weapons: [Weapon.fromStock(StockSystem.wepFedLaser3),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
+        ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50}
         );
     player = Player(playerName,loc: AboardShip(playShip)); //playShip.pilot = player;
     player.system.visited = true;

@@ -487,6 +487,7 @@ class Ship extends Item implements Locatable {
       final volley = volleyRangeProfile(maxRange: impulseMapSize * 2);
       final fit = (volley.efficiencyAt(dist) * 100).round();
       blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
+      blocks.addAll(combatText());
     }
     if (!tactical) {
       blocks.add(TextBlock("Position: ${nav.pos}", GameColors.gray, true));
@@ -505,6 +506,42 @@ class Ship extends Item implements Locatable {
     if (showScannedShip && !tactical && (nav.targetShip != null && nav.targetShip!.npc)) {
       blocks.add(const TextBlock("Scanning Ship: ", GameColors.orange, true));
       blocks.addAll(nav.targetShip!.status(tactical: true));
+    }
+    return blocks;
+  }
+
+  List<TextBlock> combatText() {
+    final target = nav.targetShip;
+    if (target == null) return [];
+
+    final dist = distance(l: target.loc); //TODO: use pos distances
+    final profile = volleyRangeProfile();
+    final inRange = profile.usableBand != null &&
+        dist >= profile.usableBand!.start &&
+        dist <= profile.usableBand!.end;
+
+    // Project distance in N AUTs
+    final ghostPos = Position(
+      nav.pos.x + nav.vel.x,
+      nav.pos.y + nav.vel.y,
+      nav.pos.z + nav.vel.z,
+    );
+    // future dist approximation...
+
+    final blocks = <TextBlock>[];
+    blocks.add(TextBlock("TARGET: ${target.name} dist:${dist.toStringAsFixed(1)} ",
+        inRange ? GameColors.green : GameColors.red, false));
+    blocks.add(TextBlock(profile.asciiBars(), GameColors.cyan, true));
+
+    for (final w in systemControl.availableWeapons) {
+      final wInRange = w.accuracyRangeConfig.rangeMultiplier(dist) > 0;
+      final col = w.cooldown == 0
+          ? (wInRange ? GameColors.green : GameColors.orange)
+          : GameColors.gray;
+      blocks.add(TextBlock(
+          "${w.name.substring(0,min(10,w.name.length))} "
+              "${'█' * (10 - min(10,w.cooldown))}${'░' * min(10,w.cooldown)} "
+              "${w.cooldown} AUTs ", col, true));
     }
     return blocks;
   }

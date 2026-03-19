@@ -84,6 +84,7 @@ class Position {
 class ShipNav {
   Ship ship;
   Vec3 _vel = Vec3(0, 0, 0);
+  Vec3 get vel => _vel;
   bool get moving => _vel.mag > 0;
 
   Ship? _targetShip;

@@ -125,7 +125,7 @@ class MovementController extends FugueController {
     //fm.msg(result.resultType.name);
 
     if (result.preview?.engineFail ?? false) {
-      fm.msg("Warning: engine failure");
+      if (ship.playship) fm.msg("Warning: engine failure");
     }
 
     if (result.resultType == MoveResultType.rejected) {
