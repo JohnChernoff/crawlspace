@@ -45,10 +45,20 @@ class SectorCell extends GridCell {
   }
 
   @override
+  String toScannerString(Galaxy g) {
+    StringBuffer sb = StringBuffer(super.toScannerString(g));
+    int i = sb.isEmpty ? 0 : 1;
+    for (final planet in g.planets.inSector(loc)) {
+      final comma = i++ > 1 ? "," : "";
+      sb.write("$comma${planet.name}");
+    }
+    return sb.toString();
+  }
+
+  @override
   String toString() {
     StringBuffer sb = StringBuffer(super.toString());
     if (starClass != null) sb.write("Class ${starClass?.name} Star");
-    //if (planet != null) sb.write("${planet!.shortString()}");
     return sb.toString();
   }
 

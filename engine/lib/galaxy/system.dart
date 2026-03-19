@@ -121,7 +121,7 @@ class System extends GridCell implements Nameable {
     }
 
     if (blackFactor > g.rnd.nextDouble()) map.rndCell(g.rnd).blackHole = true;
-    final List<SectorCell> starCells = map.values.where((c) => c.hasPlanets(g) && c.blackHole == false).toList();
+    final List<SectorCell> starCells = map.values.where((c) => !c.hasPlanets(g) && c.blackHole == false).toList();
     final starCell = map.rndCell(g.rnd, cellList:  starCells);
     starCell.clearHazards();
     starCell.starClass = starClass;

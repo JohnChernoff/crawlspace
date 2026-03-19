@@ -45,8 +45,8 @@ abstract class GridCell implements Locatable {
     final hazards = hazMap.entries.where((h) => h.key != Hazard.wake && h.value > 0);
     for (final haz in hazards) sb.write("${haz.key.shortName}: ${haz.value.toStringAsFixed(2)} ");
     final ships = g.ships.atCell(this);
-    if (ships.length > 1 || sb.length > 0) for (Ship ship in ships) sb.write("\n$ship");
-    else if (ships.length == 1) sb.write("${ships.first}");
+    if (ships.length > 1 || sb.length > 0) for (Ship ship in ships) sb.write("\n$ship ");
+    else if (ships.length == 1) sb.write("${ships.first} ");
     return "$coord $sb";
   }
 

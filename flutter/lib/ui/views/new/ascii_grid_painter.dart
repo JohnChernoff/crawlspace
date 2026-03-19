@@ -131,8 +131,9 @@ class AsciiGridPainter extends CustomPainter {
       if (cell.blackHole) return "-";
     }
 
-    if (cell is ImpulseCell && cell.itemz.isNotEmpty) {
-      return "\$";
+    if (cell is ImpulseCell) {
+      if (cell.hasPlanet(fm.galaxy)) return "O";
+      if (cell.itemz.isNotEmpty) return "\$";
     }
 
     // 6. Empty
@@ -190,6 +191,10 @@ class AsciiGridPainter extends CustomPainter {
       if (!s.npc) return shipColor;
     }
 
+    if (state.sameDepthAndNotEmpty) {
+      return depthColor;
+    }
+
     // NPC ships
     for (final s in ships) {
       if (s.npc && player.canScan(cell)) {
@@ -211,10 +216,6 @@ class AsciiGridPainter extends CustomPainter {
 
     if (hazards.isNotEmpty) {
       return Color(hazards.first.color.argb);
-    }
-
-    if (state.sameDepthAndNotEmpty) {
-      return depthColor;
     }
 
     final dim = player.loc.map.dim;
@@ -304,16 +305,13 @@ List<_PaintCell> _visibleCellsAtXY(
     Ship ship,
     ) {
   final dim = map.dim;
-  final scanner = ship.loc.map; // you may want fm.scannerController instead
   final result = <_PaintCell>[];
 
   for (int z = 0; z < dim.mz; z++) {
     final cell = map.atXYZ(x, y, z);
     if (cell == null) continue;
-
-    // replicate your scannable logic
+    //TODO: add scanner logic
     //if (!cell.scannable(ScannerMode.active, ship.registry)) continue;
-
     result.add(_PaintCell(cell));
   }
 

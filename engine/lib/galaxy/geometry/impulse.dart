@@ -14,6 +14,7 @@ typedef ImpulseMap = MappedGrid<ImpulseCell>;
 class ImpulseCell extends GridCell {
 
   Planet? getPlanet(Galaxy g) => g.planets.byImpulse(loc);
+  bool hasPlanet(Galaxy g) => getPlanet(g) != null;
   ImpulseMap map;
   SectorCell sector;
 
@@ -45,6 +46,7 @@ class ImpulseCell extends GridCell {
   bool scannable(ScannerMode mode, Galaxy g) {
     if (mode == ScannerMode.all) return true;
     if (mode.scaningShips && g.ships.atCell(this).isNotEmpty) return true;
+    if (mode.scaningPlanets && hasPlanet(g)) return true;
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
     if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;
@@ -56,9 +58,18 @@ class ImpulseCell extends GridCell {
   bool isEmpty(Galaxy g, {countPlayer = true}) {
     final ships = g.ships.atCell(this);
     if (ships.isNotEmpty && (countPlayer || ships.any((s) => s.npc))) return false;
+    if (hasPlanet(g)) return false;
     if (hazLevel > 0) return false;
     if (itemz.isNotEmpty) return false;
     return true;
+  }
+
+  @override
+  String toScannerString(Galaxy g) {
+    StringBuffer sb = StringBuffer(super.toScannerString(g));
+    Planet? planet = getPlanet(g);
+    if (planet != null) sb.write(planet.name);
+    return sb.toString();
   }
 
   @override

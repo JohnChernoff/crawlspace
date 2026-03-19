@@ -102,9 +102,9 @@ class ScannerController extends FugueController {
           .sorted((a,b) => fm.galaxy.ships.atCell(b).length.compareTo(fm.galaxy.ships.atCell(a).length));
       for (final cell in cells) {
         if (!cell.isEmpty(fm.galaxy)) {
-          currentScan.add(cell);
+          currentScan.add(cell); //print("Cell: ${cell.coord}");
+          blocks.add(TextBlock(cell.toScannerString(fm.galaxy), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
         }
-        blocks.add(TextBlock(cell.toScannerString(fm.galaxy), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
       }
       for (final m in sensorList) {
         blocks.add(TextBlock(m.key.toString(), GameColors.white, true));
