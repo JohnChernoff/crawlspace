@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/rng/drinks_gen.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
+import 'package:crawlspace_engine/galaxy/geometry/impulse.dart';
 import 'package:crawlspace_engine/rng/ship_gen.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/stock_items/ship_systems/stock_pile.dart';
@@ -12,7 +13,6 @@ import '../menu.dart';
 import '../actors/pilot.dart';
 import '../galaxy/planet.dart';
 import '../actors/player.dart';
-import '../galaxy/geometry/sector.dart';
 import '../ship/ship.dart';
 import '../shop.dart';
 import '../galaxy/system.dart';
@@ -27,30 +27,32 @@ class PlanetsideController extends FugueController {
     Ship? ship = fm.playerShip; if (ship == null) {
       fm.msgController.addMsg("No ship!"); return;
     }
-    final cell = ship.loc.cell; if (cell is! SectorCell) {
-      fm.msgController.addMsg("Wrong layer!"); return;
-    }
-    final planet = cell.planet; if (planet == null) {
-      fm.msgController.addMsg("No planet!"); return;
-    }
-    fm.player.locale = AtEnvironment(planet);
-    if (fm.pilotController.action(fm.player,ActionType.planetLand)) {
-      if (planet.homeworld && planet.species == StockSpecies.humanoid.species) {
-        fm.homecoming(home: true);
-      } else {
-        fm.menuController.showMenu(() => fm.menuFactory.buildPlanetMenu(planet),
-            level: MenuLevel.planet, headerTxt: planet.name, noExit: true);
-        fm.audioController.newTrack(newMood: MusicalMood.planet);
-        fm.msgController.addMsg("Landing on ${planet.name}");
-        fm.msgController.addMsg(planet.shortDesc ?? "What a dump");
-        if (fm.player.tradeTarget?.destination == planet) {
-          fm.msgController.addMsg(
-              "You deliver your cargo.  Reward: ${fm.player.tradeTarget
-                  ?.reward}");
-          fm.player.credits += fm.player.tradeTarget?.reward ?? 0;
-          fm.player.tradeTarget = null;
+    final cell = ship.loc.cell;
+    if (cell is ImpulseCell) {
+      final planet = cell.getPlanet(fm.galaxy); if (planet == null) {
+        fm.msgController.addMsg("No planet!"); return;
+      }
+      fm.player.locale = AtEnvironment(planet);
+      if (fm.pilotController.action(fm.player,ActionType.planetLand)) {
+        if (planet.homeworld && planet.species == StockSpecies.humanoid.species) {
+          fm.homecoming(home: true);
+        } else {
+          fm.menuController.showMenu(() => fm.menuFactory.buildPlanetMenu(planet),
+              level: MenuLevel.planet, headerTxt: planet.name, noExit: true);
+          fm.audioController.newTrack(newMood: MusicalMood.planet);
+          fm.msgController.addMsg("Landing on ${planet.name}");
+          fm.msgController.addMsg(planet.shortDesc ?? "What a dump");
+          if (fm.player.tradeTarget?.destination == planet) {
+            fm.msgController.addMsg(
+                "You deliver your cargo.  Reward: ${fm.player.tradeTarget
+                    ?.reward}");
+            fm.player.credits += fm.player.tradeTarget?.reward ?? 0;
+            fm.player.tradeTarget = null;
+          }
         }
       }
+    } else {
+      fm.msgController.addMsg("Wrong layer!"); return;
     }
   }
 
@@ -202,7 +204,7 @@ class PlanetsideController extends FugueController {
       });
     }
     if (fm.aiRnd.nextDouble() < .25) { //(env.rapport * .1)) { //TODO: debug settings
-      final nearestItem = fm.galaxy.itemRepository.nearestItem(fm.player.system);
+      final nearestItem = fm.galaxy.items.nearestItem(fm.player.system);
       fm.msg("Psst - there's treasure at ${nearestItem.key}");
     }
     final security = env is Planet ? (env.population + env.fedLvl) / 2.0 : 0.5;

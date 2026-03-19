@@ -23,7 +23,7 @@ class MenuFactory {
   const MenuFactory(this.fm);
 
   Menu buildInventoryUseMenu(Pilot pilot) {
-    final ship = fm.shipRegistry.byPilot(pilot);
+    final ship = fm.galaxy.ships.byPilot(pilot);
     if (ship != null) {
       final menu = ship.inventory.filterType<Activator>();
       return menu.isEmpty ? [TextEntry(label: "No usable items")] : buildInventoryMenu(menu,
@@ -47,7 +47,7 @@ class MenuFactory {
   }
 
   Menu buildXenoMenu(Pilot pilot, {void Function(XenomancySpell spell)? action}) {
-    final ship = fm.shipRegistry.byPilot(pilot);
+    final ship = fm.galaxy.ships.byPilot(pilot);
     if (ship == null) return [];
     return List.generate(pilot.knownSpells.length,(i) {
       final spell = pilot.knownSpells.entries.elementAt(i);

@@ -12,11 +12,11 @@ void main() {
     print("Distance: ${engine.galaxy.topo.distance(rndSys, engine.galaxy.fedHomeSystem)}");
     engine.populateSystem(rndSys,numShips: 3);
   }
-  for (final ship in engine.shipRegistry.all) {
+  for (final ship in engine.galaxy.ships.all) {
     print("${ship.shipClass.name}: ${ship.systemControl.getInstalledSystems(types: [ShipSystemType.weapon]).map((s) => s.name)}");
     //print("${ship.shipClass.name}: ${ship.systemControl.getInstalledSystems().map((s) => s.name)}");
   }
-  final erghs = engine.shipRegistry.all.where((s) => s.systemControl.getEngine(Domain.impulse, activeOnly: false) == null);
+  final erghs = engine.galaxy.ships.all.where((s) => s.systemControl.getEngine(Domain.impulse, activeOnly: false) == null);
   for (final ergh in erghs) {
     print("No engine: $ergh");
     print("${ergh.shipClass.name}: ${ergh.systemControl.getInstalledSystems().map((s) => s.name)}");

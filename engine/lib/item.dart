@@ -88,7 +88,7 @@ class Activator extends Item {
     if (ready) {
       consumeCharge();
       if (!ready && !isRod) { //TODO: pilot inventory?
-        fm.shipRegistry.byPilot(pilot)?.inventory.remove(this);
+        fm.galaxy.ships.byPilot(pilot)?.inventory.remove(this);
       }
       return onActivate(fm,pilot);
     } return false;

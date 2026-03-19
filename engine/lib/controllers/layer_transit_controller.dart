@@ -53,7 +53,7 @@ class LayerTransitController extends FugueController {
           if (action) fm.pilotController.action(pilot,ActionType.sector);
           if (ship.loc.domain == Domain.system) { //didn't get pulled into impulse
             final stars = system.map.values.where((c) => c.starClass != null);
-            ship.move(SectorLocation(system,stars.first.coord),fm.shipRegistry);
+            ship.move(SectorLocation(system,stars.first.coord),fm.galaxy.ships);
             system.visit(fm);
             if (ship.itinerary != null) {
               if (ship.itinerary!.last == system) {
@@ -90,7 +90,7 @@ class LayerTransitController extends FugueController {
       final impMap = sysLoc.cell.map;
       _enterImpulse(impMap,playShip,cell: impMap.values.firstWhere((c) => c.hazLevel == 0));
       fm.update();
-      final ships = List.of(fm.shipRegistry.atCell(sysLoc.cell)); //avoids ConcurrentModificationError (hopefully)
+      final ships = List.of(fm.galaxy.ships.atCell(sysLoc.cell)); //avoids ConcurrentModificationError (hopefully)
       try {
         fm.msgController.addMsg("Entering impulse...");
         for (final ship in ships) {
@@ -127,7 +127,7 @@ class LayerTransitController extends FugueController {
           }
         }
       }
-      ship.move(ImpulseLocation(ship.loc.system,sysLoc.cell.coord,targetCell.coord),fm.shipRegistry);
+      ship.move(ImpulseLocation(ship.loc.system,sysLoc.cell.coord,targetCell.coord),fm.galaxy.ships);
       ship.nav.resetMotionState();
       fm.audioController.newTrack(newMood: MusicalMood.danger);
     } //fm.pilotController.action(ship.pilot, ActionType.movement);
@@ -137,7 +137,7 @@ class LayerTransitController extends FugueController {
     if (ship == null) return;
     final impLoc = ship.loc;
     if (impLoc is ImpulseLocation) {
-      final ships = fm.shipRegistry.atDomain(impLoc);
+      final ships = fm.galaxy.ships.atDomain(impLoc);
       if (ship == fm.playerShip && ships.length > 1 && ships.any((s) => s.pilot.hostile)) {
         if (ship.activeEffect(ShipEffect.folding)) {
           ships.forEach((s) => _exitImpulse(s, impLoc));
@@ -159,7 +159,7 @@ class LayerTransitController extends FugueController {
     fm.msgController.addMsg("Exiting impulse, resuming system travel");
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: true, silent: true);
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.impulse, activeOnly: false), ship, on: false, silent: true);
-    ship.move(impLoc.sector, fm.shipRegistry);
+    ship.move(impLoc.sector, fm.galaxy.ships);
     ship.nav.resetMotionState();
   }
 

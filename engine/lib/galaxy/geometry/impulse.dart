@@ -1,9 +1,10 @@
 import 'dart:math';
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
-import 'package:crawlspace_engine/ship/ship_reg.dart';
 import '../../controllers/scanner_controller.dart';
+import '../planet.dart';
 import 'grid.dart';
 import '../hazards.dart';
 import '../../item.dart';
@@ -12,6 +13,7 @@ typedef ImpulseMap = MappedGrid<ImpulseCell>;
 
 class ImpulseCell extends GridCell {
 
+  Planet? getPlanet(Galaxy g) => g.planets.byImpulse(loc);
   ImpulseMap map;
   SectorCell sector;
 
@@ -40,9 +42,9 @@ class ImpulseCell extends GridCell {
   }
 
   @override
-  bool scannable(ScannerMode mode, ShipRegistry reg) {
+  bool scannable(ScannerMode mode, Galaxy g) {
     if (mode == ScannerMode.all) return true;
-    if (mode.scaningShips && reg.atCell(this).isNotEmpty) return true;
+    if (mode.scaningShips && g.ships.atCell(this).isNotEmpty) return true;
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
     if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;
@@ -51,8 +53,8 @@ class ImpulseCell extends GridCell {
   }
 
   @override
-  bool isEmpty(ShipRegistry reg, {countPlayer = true}) {
-    final ships = reg.atCell(this);
+  bool isEmpty(Galaxy g, {countPlayer = true}) {
+    final ships = g.ships.atCell(this);
     if (ships.isNotEmpty && (countPlayer || ships.any((s) => s.npc))) return false;
     if (hazLevel > 0) return false;
     if (itemz.isNotEmpty) return false;

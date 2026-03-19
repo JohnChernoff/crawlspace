@@ -95,7 +95,7 @@ class _AsciiGridState extends State<AsciiGrid> {
   }
 
   Set<Ship> shipsAt(GridCell cell) {
-    return widget.fugueModel.shipRegistry.atCell(cell);
+    return widget.fugueModel.galaxy.ships.atCell(cell);
   }
 
   List<GridCellWidget> createStack(int x, int y, double size, CellMap<GridCell> map, Ship playship,
@@ -117,19 +117,19 @@ class _AsciiGridState extends State<AsciiGrid> {
       final inTargetPath = targetPath.contains(cell);
       if (showAllCellsOnZPlane) {
         cellWidgets.add(GridCellWidget(cell,size,shipsAt(cell),playship, scanned: scanned, invert: invert, uiTarget: uiTarget,
-            reg: widget.fugueModel.shipRegistry, inTargetPath: inTargetPath,
+            galaxy: widget.fugueModel.galaxy, inTargetPath: inTargetPath,
           movePreviewActual: preview?.actualCell == cell,));
       }
       else {
         if (scannedCell?.coord == cell.coord) { //print("Adding scanned coord: ${cell.coord}");
           cellWidgets.add(GridCellWidget(cell,size,shipsAt(scannedCell!), playship, scanned: scanned, invert: invert, uiTarget: uiTarget,
-              reg: widget.fugueModel.shipRegistry, inTargetPath: inTargetPath, movePreviewActual: preview?.actualCell == cell));
+              galaxy: widget.fugueModel.galaxy, inTargetPath: inTargetPath, movePreviewActual: preview?.actualCell == cell));
         } else {
           if (shipCoord == cell.coord) {
             closestCell = cell; break;
           }
-          else if (!cell.isEmpty(widget.fugueModel.shipRegistry)) {
-            if (closestCell.isEmpty(widget.fugueModel.shipRegistry) ||
+          else if (!cell.isEmpty(widget.fugueModel.galaxy)) {
+            if (closestCell.isEmpty(widget.fugueModel.galaxy) ||
                 playship.distance(c: cell.coord) < playship.distance(c: closestCell.coord)) {
               closestCell = cell; //print("Closer cell: $closestCell");
             }
@@ -140,7 +140,7 @@ class _AsciiGridState extends State<AsciiGrid> {
     if (!showAllCellsOnZPlane && (cellWidgets.isEmpty || cellWidgets.first.cell.dist(playship.loc) > closestCell.dist(playship.loc))) {
       final uiTarget = widget.fugueModel.inputMode == InputMode.target && widget.fugueModel.player.targetLoc?.cell == closestCell;
       cellWidgets.add(GridCellWidget(closestCell,size,shipsAt(closestCell), playship,
-        reg: widget.fugueModel.shipRegistry, invert: invert, uiTarget: uiTarget, movePreviewActual: preview?.actualCell == closestCell));
+        galaxy: widget.fugueModel.galaxy, invert: invert, uiTarget: uiTarget, movePreviewActual: preview?.actualCell == closestCell));
       //if (cellWidgets.length > 1) print("adding closest coord: ${closestCell.coord}");
     } else {
       cellWidgets.sort((a, b) => a.cell.coord.z.compareTo(b.cell.coord.z)); // IMPORTANT: back → front

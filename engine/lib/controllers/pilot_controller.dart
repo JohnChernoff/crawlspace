@@ -37,7 +37,7 @@ class PilotController extends FugueController {
   PilotController(super.fm);
 
   void castEffect(Pilot pilot) {
-    final ship = fm.shipRegistry.byPilot(pilot);
+    final ship = fm.galaxy.ships.byPilot(pilot);
     if (ship != null) {
       fm.menuController.showMenu(
           () => fm.menuFactory.buildXenoMenu(pilot, action: (s) {
@@ -119,7 +119,7 @@ class PilotController extends FugueController {
     if (pilot.ready) { //print("${ship.name}'s turn...");
       final hostile = pilot.setHostilityToPlayer(fm); //TODO: unset/refresh this somewhere?
       final playLoc = fm.playerShip != null ? ship.detect(fm.playerShip!) : null;
-      if (playLoc != null && hostile && fm.shipRegistry.atDomain(ship.loc).contains(fm.playerShip)) {
+      if (playLoc != null && hostile && fm.galaxy.ships.atDomain(ship.loc).contains(fm.playerShip)) {
         final loc = ship.loc;
         final target = ship.nav.targetShip = fm.playerShip;
         if (target == null) {
@@ -167,7 +167,7 @@ class PilotController extends FugueController {
   }
 
   void plotCourse(Pilot pilot,System system) {
-    Ship? ship = fm.shipRegistry.byPilot(pilot);
+    Ship? ship = fm.galaxy.ships.byPilot(pilot);
     if (ship != null) {
       ship.itinerary = fm.galaxy.topo.graph.path(pilot.system, system);
       fm.msgController.addMsg("Course plotted: ${ship.itinerary!.map((s) => s.name).reduce((i,l) => "${l} - ${i}")}");
@@ -195,14 +195,14 @@ class PilotController extends FugueController {
             if (ship.addScrap(i)) {
               m++;
               fm.msgController.addMsg("Scrapping: ${i.name}");
-              cell.removeItem(i,fm.galaxy.itemRepository);
+              cell.removeItem(i,fm.galaxy.items);
             }
             else {
               fm.msgController.addMsg("Couldn't scrap: ${i.name}");
             }
           } else {
             m++;
-            cell.removeItem(i,fm.galaxy.itemRepository);
+            cell.removeItem(i,fm.galaxy.items);
             ship.inventory.add(i);
             fm.msgController.addMsg("Added: ${i.name}");
           }

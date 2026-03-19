@@ -3,11 +3,10 @@ import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
-import 'package:crawlspace_engine/galaxy/models/item_reg.dart';
-import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import '../../controllers/scanner_controller.dart';
 import '../../item.dart';
+import '../reg/reg.dart';
 import 'coord_3d.dart';
 import '../../effects.dart';
 import '../hazards.dart';
@@ -24,13 +23,13 @@ abstract class GridCell implements Locatable {
   CellMap get map;
 
   GridCell({Galaxy? g, this.coord = noCoord,this.hazMap = const {}}) {
-    if (g != null) scanItems(g.itemRepository);
+    if (g != null) scanItems(g.items);
   }
 
   double distCell(GridCell cell) => loc.dist(cell.loc);
   double dist(SpaceLocation loc) => this.loc.dist(loc);
 
-  bool isEmpty(ShipRegistry reg, {countPlayer = true});
+  bool isEmpty(Galaxy g, {countPlayer = true});
   void clearHazard(Hazard haz) => hazMap.remove(haz);
   void clearHazards() => hazMap.clear();
   void scanItems(ItemRegistry itemReg) => _itemCache = itemReg.atLocation(loc) ?? {};
@@ -41,17 +40,17 @@ abstract class GridCell implements Locatable {
     reg.removeItem(i); scanItems(reg);
   }
 
-  String toScannerString(ShipRegistry reg) {
+  String toScannerString(Galaxy g) {
     StringBuffer sb = StringBuffer(toString());
     final hazards = hazMap.entries.where((h) => h.key != Hazard.wake && h.value > 0);
     for (final haz in hazards) sb.write("${haz.key.shortName}: ${haz.value.toStringAsFixed(2)} ");
-    final ships = reg.atCell(this);
+    final ships = g.ships.atCell(this);
     if (ships.length > 1 || sb.length > 0) for (Ship ship in ships) sb.write("\n$ship");
     else if (ships.length == 1) sb.write("${ships.first}");
     return "$coord $sb";
   }
 
-  bool scannable(ScannerMode mode, ShipRegistry reg);
+  bool scannable(ScannerMode mode, Galaxy g);
   double get hazLevel => hazMap.entries.where((h) => h.key != Hazard.wake).map((el) => el.value).sum;
   bool hasHaz(Hazard h) => hazMap.containsKey(h) && hazMap[h]! > 0;
 

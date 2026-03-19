@@ -1,10 +1,10 @@
 import 'dart:math';
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:crawlspace_engine/galaxy/geometry/impulse.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
-import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:flutter/material.dart';
 import '../../../options.dart';
 
@@ -18,15 +18,15 @@ class GridCellWidget extends StatefulWidget {
   final Set<Ship> ships;
   final GridCell cell;
   final bool invert;
-  final ShipRegistry reg;
+  final Galaxy galaxy;
   final bool movePreviewActual;
 
   const GridCellWidget(this.cell,this.size,this.ships,this.playShip,
-      {super.key, required this.reg, this.inTargetPath = false, this.targeted = false,
+      {super.key, required this.galaxy, this.inTargetPath = false, this.targeted = false,
         this.scanned = false, this.invert = false, this.uiTarget = false, this.movePreviewActual = true});
 
   bool get sameDepth => (cell.coord.z - playShip.loc.cell.coord.z).abs() == 0;
-  bool get sameDepthAndNotEmpty => sameDepth && !cell.isEmpty(reg);
+  bool get sameDepthAndNotEmpty => sameDepth && !cell.isEmpty(galaxy);
   bool get selected => scanned || targeted;
   bool get special => scanned || targeted || sameDepthAndNotEmpty;
 
@@ -119,7 +119,7 @@ class GridCellWidgetState extends State<GridCellWidget> {
     }
 
     if (cell is SectorCell) {
-      if (cell.planet != null) stack.add(Text("O", style: style));
+      if (cell.hasPlanets(widget.galaxy)) stack.add(Text("O", style: style));
       if (cell.starClass != null) stack.add(Text("✦", style: style));
       if (cell.blackHole) stack.add(Text("-", style: style));
     } else if (cell is ImpulseCell) {

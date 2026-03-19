@@ -4,7 +4,6 @@ import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
-import 'package:crawlspace_engine/ship/ship_reg.dart';
 import '../color.dart';
 import '../item.dart';
 import 'geometry/coord_3d.dart';
@@ -122,7 +121,7 @@ class System extends GridCell implements Nameable {
     }
 
     if (blackFactor > g.rnd.nextDouble()) map.rndCell(g.rnd).blackHole = true;
-    final List<SectorCell> starCells = map.values.where((c) => c.planet == null && c.blackHole == false).toList();
+    final List<SectorCell> starCells = map.values.where((c) => c.hasPlanets(g) && c.blackHole == false).toList();
     final starCell = map.rndCell(g.rnd, cellList:  starCells);
     starCell.clearHazards();
     starCell.starClass = starClass;
@@ -131,8 +130,8 @@ class System extends GridCell implements Nameable {
   }
 
   //which to use - g.fedLevel.val(this) or g.fedMod.fedPressure[this]
-  void addPlanets(Galaxy g, Random rnd, {List<Planet> pList = const []}) {
-    List<Planet> planetList = pList.toList();
+  List<Planet> generatePlanets(Galaxy g, Random rnd) {
+    List<Planet> planetList = [];
     final n = Rng.biasedRndInt(rnd, mean: Galaxy.avgPlanets, min: 0, max: Galaxy.maxPlanets);
     for (int i = 0; i < n; i++) {//print("Adding planet to $name");
       final fed = g.fedKernel.val(this);
@@ -141,8 +140,9 @@ class System extends GridCell implements Nameable {
       final res = g.civKernel.val(this);
       final dust = min(1.0, comm * 0.7 + tech * 0.3);
       //print("res: $res, comm: $comm, dust: $dust");
-      final cellList = map.values.where((sc) => sc.planet == null && !sc.blackHole).toList();
-      final loc = SectorLocation(this,map.rndCell(rnd, cellList: cellList).coord);
+
+      final loc = g.planets.randomUnoccupiedLocation(this, rnd);
+
       final planet = Planet(
         g.nameGenerator.generatePlanetName(),
         Rng.betaRnd(rnd, fed, 15),
@@ -154,13 +154,11 @@ class System extends GridCell implements Nameable {
         commerce: Rng.betaRnd(rnd, comm, 10),
         industry: Rng.betaRnd(rnd, dust, 6),
       );
+
+      g.planets.register(planet, loc);
       planetList.add(planet);
     }
-    for (final planet in planetList) {
-      planets.add(planet);
-      planet.loc.cell.planet = planet;
-      planet.loc.cell.clearHazards();
-    }
+    return planetList;
   }
 
   void explore(int depth, {System? sys}) { //msgController.addMsg("Exploring: ${system.name} , depth: $depth");
@@ -203,10 +201,10 @@ class System extends GridCell implements Nameable {
   int get hashCode => name.hashCode;
 
   @override
-  bool isEmpty(ShipRegistry reg, {countPlayer = true}) => false;
+  bool isEmpty(Galaxy g, {countPlayer = true}) => false;
 
   @override
-  bool scannable(ScannerMode mode, ShipRegistry reg) => true;
+  bool scannable(ScannerMode mode, Galaxy g) => true;
 
   @override
   SpaceLocation get loc => throw UnimplementedError();

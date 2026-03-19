@@ -1,4 +1,3 @@
-import 'package:crawlspace_engine/controllers/movement_controller.dart';
 import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';

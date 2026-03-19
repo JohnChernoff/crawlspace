@@ -2,9 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
-import 'package:crawlspace_engine/actors/pilot_reg.dart';
 import 'package:crawlspace_engine/rng/ship_gen.dart';
-import 'package:crawlspace_engine/ship/ship_reg.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
@@ -78,7 +76,7 @@ class FugueEngine {
   final Galaxy galaxy;
   late Player player;
   int numAgents = 3;
-  Iterable<Agent> get agents => _pilotRegistry.npcs.whereType<Agent>();
+  Iterable<Agent> get agents => galaxy.pilots.npcs.whereType<Agent>();
   late Random combatRnd,mapRnd,speciesRnd,aiRnd,effectRnd,itemRnd,audioRnd,eventRnd;
   int auTick = 0;
   String get result => blownUp ? "blown up" : isVictorious ? "victorious" : "vanquished";
@@ -88,12 +86,9 @@ class FugueEngine {
   bool get gameOver => victory != null || blownUp;
   int get score => auTick + (player.starOne ? 500 : 0) +
       (galaxy.discoveredSystems() * 2) + (player.piratesVanquished * 3) + (isVictorious ? 1000 : 0);
-  final ShipRegistry _shipRegistry = ShipRegistry();
-  ShipRegistry get shipRegistry => _shipRegistry;
-  final PilotRegistry _pilotRegistry = PilotRegistry();
-  Ship? getShip(Pilot pilot) => _shipRegistry.byPilot(pilot);
+  Ship? getShip(Pilot pilot) => galaxy.ships.byPilot(pilot);
   Ship? get playerShip => getShip(player);
-  Iterable<Pilot> get activePilots => _pilotRegistry.withShips(shipRegistry, npc: true);
+  Iterable<Pilot> get activePilots => galaxy.pilots.withShips(galaxy.ships, npc: true);
   Iterable<Pilot> get availablePilots => activePilots.where((p) => p.auCooldown == 0);
 
   late final MenuFactory menuFactory = MenuFactory(this);
@@ -173,8 +168,7 @@ class FugueEngine {
   }
 
   void addShip(Ship ship) {
-    _shipRegistry.add(ship);
-    _pilotRegistry.add(ship.pilot);
+    galaxy.ships.add(ship);
   }
 
   void populateSystem(System system, {int? numShips, int maxShips = 8}) {
@@ -192,11 +186,11 @@ class FugueEngine {
   void newShip(Pilot pilot, Ship ship) {
     final loc = pilot.locale;
     if (loc is AtEnvironment) {
-      _shipRegistry.undock(ship, loc.env);
-      final formerShip = _shipRegistry.byPilot(pilot);
-      if (formerShip != null) _shipRegistry.dock(ship, loc.env);
+      galaxy.ships.undock(ship, loc.env);
+      final formerShip = galaxy.ships.byPilot(pilot);
+      if (formerShip != null) galaxy.ships.dock(ship, loc.env);
     }
-    _shipRegistry.changePilot(ship, pilot);
+    galaxy.ships.changePilot(ship, pilot);
   }
 
   void outOfEnergy() {
@@ -266,7 +260,7 @@ class FugueEngine {
 
   int jumps(List<System>? path) => (path?.length ?? 0) - 1;
 
-  bool agentAt(System system) => _pilotRegistry.npcs.any((p) => p is Agent && p.system == system);
+  bool agentAt(System system) => galaxy.pilots.npcs.any((p) => p is Agent && p.system == system);
   AgentSystemReport agentReport(System s) {
     for (final agent in agents) {
       final report = agent.playerReportFor(s);
@@ -296,13 +290,13 @@ class FugueEngine {
       for (Pilot p in pilots) { //print("${p.name}'s turn");
         try {
           p.tick(this);
-          Ship? ship = shipRegistry.byPilot(p);
+          Ship? ship = galaxy.ships.byPilot(p);
           if (ship != null) {
             final loc = ship.loc;
             if (loc.system == playerShip?.loc.system && player.locale is AboardShip) {
               pilotController.npcShipAct(ship);
             } else if (loc is ImpulseLocation) { //escape impulse
-              ship.move(loc, shipRegistry);
+              ship.move(loc, galaxy.ships);
             }
           }
         } on ConcurrentModificationError {
@@ -327,7 +321,7 @@ class FugueEngine {
           loc.cell.hodgeTick(Hazard.ion, mapRnd);
         }
       }
-      for (final s in _shipRegistry.atDomain(playShip.loc).where((s) => s.npc)) playShip.detect(s);
+      for (final s in galaxy.ships.atDomain(playShip.loc).where((s) => s.npc)) playShip.detect(s);
     }
     update();
     glog("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}",
@@ -346,8 +340,8 @@ class FugueEngine {
       print("ship.loc: ${ship.loc}");
       print("cell.loc: ${cell.loc}");
       print("equal: ${ship.loc == cell.loc}");
-      print("atLocation(ship.loc): ${shipRegistry.atLocation(ship.loc)}");
-      print("atCell(cell): ${shipRegistry.atCell(cell)}");
+      print("atLocation(ship.loc): ${galaxy.ships.atLocation(ship.loc)}");
+      print("atCell(cell): ${galaxy.ships.atCell(cell)}");
     } else {
       print("No ship");
     }

@@ -93,7 +93,7 @@ class ActivatorFactory {
 
   static Activator generateWarpScroll(double quality) {
     return Activator.fromStock(StockActivator.emergencyWarpScroll, (fm,pilot) {
-      final ship = fm.shipRegistry.byPilot(pilot); if (ship != null) {
+      final ship = fm.galaxy.ships.byPilot(pilot); if (ship != null) {
         fm.layerTransitController.emergencyWarp(ship);
         return true;
       } else return false;

@@ -6,7 +6,7 @@ import 'package:crawlspace_engine/galaxy/models/flow_model.dart';
 import 'package:crawlspace_engine/galaxy/models/topology.dart';
 import 'package:crawlspace_engine/galaxy/models/trade_model.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
-import 'package:crawlspace_engine/galaxy/models/item_reg.dart';
+import 'package:crawlspace_engine/galaxy/reg/reg.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'flow_field.dart';
 import '../fugue_engine.dart';
@@ -70,13 +70,17 @@ class Galaxy {
   late CivModel civMod;
   late HeatModel heatMod;
   late FederationModel fedMod;
-  late ItemRegistry itemRepository;
   late TradeModel tradeMod;
   late CorpModel corpMod;
   late CivKernelField civKernel;
   late TechKernelField techKernel;
   late CommerceKernelField commerceKernel;
   late AuthorityKernelField fedKernel;
+  late RegModel rm;
+  PlanetRegistry get planets => rm.planets;
+  ShipRegistry get ships => rm.ships;
+  ItemRegistry get items => rm.items;
+  PilotRegistry get pilots => rm.pilots;
   bool formed = false;
 
   // Static (computed at gen, recomputed on tickCentury)
@@ -87,7 +91,9 @@ class Galaxy {
 // flowFields["tradeFlow"] — actual goods moving along routes
 // flowFields["priceSignal"] — price information diffusing through gossip
 
-  Galaxy(this.name, {int? seed}) : rnd = seed != null ?  Random(seed) : Random(), nameGenerator = NameGenerator(seed ?? 1) {
+  Galaxy(this.name, {int? seed}) :
+        rnd = seed != null ?  Random(seed) : Random(),
+        nameGenerator = NameGenerator(seed ?? 1) {
     fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub, map: EmptySector());
     fed1 = System("Movelia", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub, map: EmptySector());
     fed2 = System("Sargon", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.normal, map: EmptySector());
@@ -97,6 +103,7 @@ class Galaxy {
     final t0 = DateTime.now(); _createMap(); final t1 = DateTime.now();
     glog("Galaxy gen took ${t1.difference(t0).inMilliseconds} ms",level: DebugLevel.Highest);
 
+    rm = RegModel(this);
     topo = GalaxyTopology(this);
     civMod = CivModel(this);
     civMod.generatePolitics(rnd);
@@ -114,15 +121,14 @@ class Galaxy {
       final species = getHomeworldSpecies(s);
       if (species != null) {
         final homeWorld = Planet(species.homeWorld, 1, 1, rnd, homeworld: true, species: species,
-            locale: SectorLocation(s, s.map.rndCoord(rnd)), population: 1, industry: 1, commerce: 1);
-        s.addPlanets(this, rnd, pList: [homeWorld]);
-      } else {
-        s.addPlanets(this, rnd);
+            locale: planets.randomUnoccupiedLocation(s,rnd),
+            population: 1, industry: 1, commerce: 1);
+        planets.register(homeWorld, homeWorld.loc);
       }
+      s.generatePlanets(this, rnd);
     }
 
     tradeMod = TradeModel(this);
-    itemRepository = ItemRegistry(this);
     maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
     formed = true;
   }

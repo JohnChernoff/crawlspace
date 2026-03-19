@@ -95,8 +95,7 @@ class AsciiGridPainter extends CustomPainter {
   }
 
   String _glyphForCell(GridCell cell, Ship player) {
-    final reg = fm.shipRegistry;
-    final ships = reg.atCell(cell);
+    final ships = fm.galaxy.ships.atCell(cell);
 
     // 1. Player ship
     for (final s in ships) {
@@ -127,7 +126,7 @@ class AsciiGridPainter extends CustomPainter {
 
     // 5. Special cells
     if (cell is SectorCell) {
-      if (cell.planet != null) return "O";
+      if (cell.hasPlanets(fm.galaxy)) return "O";
       if (cell.starClass != null) return "✦";
       if (cell.blackHole) return "-";
     }
@@ -180,8 +179,7 @@ class AsciiGridPainter extends CustomPainter {
       Ship player,
       _CellRenderState state,
       ) {
-    final reg = fm.shipRegistry;
-    final ships = reg.atCell(cell);
+    final ships = fm.galaxy.ships.atCell(cell);
 
     if (state.selected) {
       return state.sameDepthAndNotEmpty ? scanDepthColor : scanColor;
@@ -348,7 +346,6 @@ _CellRenderState _renderStateForCell(
     FugueEngine fm,
     Ship player,
     ) {
-  final reg = fm.shipRegistry;
   final targetLoc = fm.player.targetLoc;
   final targetPath = fm.scannerController.targetPath;
 
@@ -357,7 +354,7 @@ _CellRenderState _renderStateForCell(
   final inTargetPath = targetPath.any((loc) => loc == cell);
   final uiTarget = targeted; // or separate this if you distinguish cursor vs final target
   final sameDepth = (cell.coord.z - player.loc.cell.coord.z).abs() == 0;
-  final sameDepthAndNotEmpty = sameDepth && !cell.isEmpty(reg);
+  final sameDepthAndNotEmpty = sameDepth && !cell.isEmpty(fm.galaxy);
 
   return _CellRenderState(
     scanned: scanned,

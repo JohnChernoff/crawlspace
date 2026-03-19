@@ -134,17 +134,17 @@ class MovementController extends FugueController {
       fm.msg("${ship.name} crashes into $barrier, emergency deacceration: ${result.preview?.emergencyDecel}");
       final bounceCell = result.preview?.actualCell;
       if (bounceCell != null && bounceCell != ship.loc.cell) {
-        ship.move(ship.loc.withCell(bounceCell), fm.shipRegistry);
+        ship.move(ship.loc.withCell(bounceCell), fm.galaxy.ships);
       }
       ship.nav.resetMotionState();
     } else {
       final nextCell = result.preview?.actualCell;
       if (nextCell != null) {
         if (result.resultType == MoveResultType.impEnter) {
-          ship.move(ship.loc.withCell(nextCell), fm.shipRegistry); //even if its the same cell
+          ship.move(ship.loc.withCell(nextCell), fm.galaxy.ships); //even if its the same cell
           fm.layerTransitController.createAndEnterImpulse();
         } else if (nextCell != ship.loc.cell) {
-          ship.move(ship.loc.withCell(nextCell), fm.shipRegistry);
+          ship.move(ship.loc.withCell(nextCell), fm.galaxy.ships);
         }
       }
     } //print("Action AUTs: ${result.preview?.auts}");
@@ -255,7 +255,7 @@ class MovementController extends FugueController {
     final newCell = preview.actualCell;
     if (newCell == null) return MoveResult(preview,MoveResultType.error);
     if (ship.loc.domain == Domain.impulse) {
-      if (fm.shipRegistry.atCell(newCell).isNotEmpty) {
+      if (fm.galaxy.ships.atCell(newCell).isNotEmpty) {
         return MoveResult(preview,MoveResultType.impCollision); //TODO: fix
       }
       if (ship.pilot.safeMovement &&
@@ -265,8 +265,8 @@ class MovementController extends FugueController {
       }
     } else if (ship.loc.domain == Domain.system) {
       final playerEncounter =
-          (ship.playship && fm.shipRegistry.atCell(newCell).any((s) => s.npc)) ||
-              (ship.npc && fm.shipRegistry.atCell(newCell).contains(fm.playerShip));
+          (ship.playship && fm.galaxy.ships.atCell(newCell).any((s) => s.npc)) ||
+              (ship.npc && fm.galaxy.ships.atCell(newCell).contains(fm.playerShip));
       if (playerEncounter) {
         if (ship.npc && fm.playerShip!.activeEffect(ShipEffect.folding)) {
           return MoveResult(preview, MoveResultType.rejected);

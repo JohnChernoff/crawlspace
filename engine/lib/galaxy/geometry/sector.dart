@@ -1,9 +1,7 @@
 import 'dart:math';
-
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
-import 'package:crawlspace_engine/galaxy/planet.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
-import 'package:crawlspace_engine/ship/ship_reg.dart';
 import '../../controllers/scanner_controller.dart';
 import 'grid.dart';
 import '../hazards.dart';
@@ -13,7 +11,9 @@ typedef SectorMap = MappedGrid<ImpulseCell>;
 
 class SectorCell extends GridCell {
   final System system;
-  Planet? planet;
+  //Set<Planet> planets(PlanetRegistry reg) => reg.inSector(loc);
+  int numPlanets(Galaxy g) => g.planets.inSector(loc).length;
+  bool hasPlanets(Galaxy g) => numPlanets(g) > 0;
   StellarClass? starClass;
   bool starOne, blackHole;
   int impulseSeed;
@@ -28,17 +28,16 @@ class SectorCell extends GridCell {
         super.g,
         super.coord,
         super.hazMap,
-        this.planet,
         this.starClass,
         this.starOne = false,
         this.blackHole = false,
       });
 
   @override
-  bool isEmpty(ShipRegistry reg, {countPlayer = true}) { //print("Chceking enpty");
-    final ships = reg.atCell(this);
+  bool isEmpty(Galaxy g, {countPlayer = true}) { //print("Chceking enpty");
+    final ships = g.ships.atCell(this);
     if (ships.isNotEmpty && (countPlayer || ships.any((s) => s.npc))) return false;
-    if (planet != null) return false;
+    if (hasPlanets(g)) return false;
     if (starClass != null) return false;
     if (starOne || blackHole) return false;
     if (hazLevel > 0) return false;
@@ -49,15 +48,15 @@ class SectorCell extends GridCell {
   String toString() {
     StringBuffer sb = StringBuffer(super.toString());
     if (starClass != null) sb.write("Class ${starClass?.name} Star");
-    if (planet != null) sb.write("${planet!.shortString()}");
+    //if (planet != null) sb.write("${planet!.shortString()}");
     return sb.toString();
   }
 
   @override //TODO: Nebula Effects
-  bool scannable(ScannerMode mode,ShipRegistry reg) {
+  bool scannable(ScannerMode mode,Galaxy g) {
     if (mode == ScannerMode.all) return true;
-    if (mode.scaningShips && reg.atCell(this).isNotEmpty) return true;
-    if (mode.scaningPlanets && planet != null) return true;
+    if (mode.scaningShips && g.ships.atCell(this).isNotEmpty) return true;
+    if (mode.scaningPlanets && hasPlanets(g)) return true;
     if (mode.scaningStars && starClass != null) return true;
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;

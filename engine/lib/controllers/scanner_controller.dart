@@ -2,7 +2,7 @@ import 'package:collection/collection.dart';
 import '../fugue_engine.dart';
 import '../color.dart';
 import '../galaxy/geometry/grid.dart';
-import '../galaxy/models/item_reg.dart';
+import '../galaxy/reg/reg.dart';
 import '../galaxy/system.dart';
 import '../ship/ship.dart';
 import 'fugue_controller.dart';
@@ -97,14 +97,14 @@ class ScannerController extends FugueController {
       return [TextBlock("In Nebula", GameColors.red, true)];
     } else {
       final cells = ship.loc.map.values
-          .where((c) => c.scannable(mode ?? scannerMode,fm.shipRegistry))
+          .where((c) => c.scannable(mode ?? scannerMode,fm.galaxy))
           .sorted((c1,c2) => c1.dist(ship.loc).compareTo(c2.dist(ship.loc)))
-          .sorted((a,b) => fm.shipRegistry.atCell(b).length.compareTo(fm.shipRegistry.atCell(a).length));
+          .sorted((a,b) => fm.galaxy.ships.atCell(b).length.compareTo(fm.galaxy.ships.atCell(a).length));
       for (final cell in cells) {
-        if (!cell.isEmpty(fm.shipRegistry)) {
+        if (!cell.isEmpty(fm.galaxy)) {
           currentScan.add(cell);
         }
-        blocks.add(TextBlock(cell.toScannerString(fm.shipRegistry), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
+        blocks.add(TextBlock(cell.toScannerString(fm.galaxy), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
       }
       for (final m in sensorList) {
         blocks.add(TextBlock(m.key.toString(), GameColors.white, true));
@@ -115,7 +115,7 @@ class ScannerController extends FugueController {
   }
 
   void refreshSensors(System system) {
-    final list = fm.galaxy.itemRepository.inSystem(system).where((m) => m.value.any((i) => i.scanned?.system == true)).toSet();
+    final list = fm.galaxy.items.inSystem(system).where((m) => m.value.any((i) => i.scanned?.system == true)).toSet();
     sensorList = list;
   }
 
@@ -141,7 +141,7 @@ class ScannerController extends FugueController {
     final scannedCell = cell ?? currentScanSelection;
     if (scannedCell == null || !currentScan.contains(scannedCell)) return;
     Ship? playShip = fm.playerShip; if (playShip != null) {
-      final ships = fm.shipRegistry.atCell(scannedCell).where((s) => s.npc).toList();
+      final ships = fm.galaxy.ships.atCell(scannedCell).where((s) => s.npc).toList();
       if (ships.length > 1) {
         currentScannedShipIndex++;
         if (currentScannedShipIndex >= ships.length) currentScannedShipIndex = 0;

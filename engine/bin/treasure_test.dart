@@ -9,6 +9,6 @@ void main() {
     //final rndSys = humanSpace.elementAt(fm.itemRnd.nextInt(humanSpace.length));
     final rndSys = fm.galaxy.rndLoc(fm.itemRnd).system;
     print("System: ${rndSys.name}");
-    print(fm.galaxy.itemRepository.inSystem(rndSys));
+    print(fm.galaxy.items.inSystem(rndSys));
   }
 }
