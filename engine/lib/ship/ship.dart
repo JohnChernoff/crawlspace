@@ -410,6 +410,7 @@ class Ship extends HangarShip {
       }
     }
     if (!tactical && nav.targetShip != null) {
+
       final sustained = sustainedRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
       blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
       final dist = distanceFrom(nav.targetShip!).round();
@@ -443,34 +444,55 @@ class Ship extends HangarShip {
     final target = nav.targetShip;
     if (target == null) return [];
 
-    final dist = distance(l: target.loc); //TODO: use pos distances
+    final dist = distance(l: target.loc);
+    final projDist = nav.projectedTargetDist;
+    final trend = nav.trendGlyph;
     final profile = volleyRangeProfile();
+
     final inRange = profile.usableBand != null &&
         dist >= profile.usableBand!.start &&
         dist <= profile.usableBand!.end;
+    final projInRange = projDist != null && profile.usableBand != null &&
+        projDist >= profile.usableBand!.start &&
+        projDist <= profile.usableBand!.end;
 
-    // Project distance in N AUTs
-    final ghostPos = Position(
-      nav.pos.x + nav.vel.x,
-      nav.pos.y + nav.vel.y,
-      nav.pos.z + nav.vel.z,
-    );
-    // future dist approximation...
+    final rangeColor = inRange
+        ? (projInRange ? GameColors.green : GameColors.orange)
+        : (projInRange ? GameColors.lightBlue : GameColors.red);
 
     final blocks = <TextBlock>[];
-    blocks.add(TextBlock("TARGET: ${target.name} dist:${dist.toStringAsFixed(1)} ",
-        inRange ? GameColors.green : GameColors.red, false));
+
+    // Header line
+    blocks.add(TextBlock(
+        "TARGET: ${target.name} "
+            "dist:${dist.toStringAsFixed(1)}$trend"
+            "->${projDist?.toStringAsFixed(1) ?? '?'} ",
+        rangeColor, false));
     blocks.add(TextBlock(profile.asciiBars(), GameColors.cyan, true));
 
+    // Per-weapon lines
     for (final w in systemControl.availableWeapons) {
+      final maxCooldown = w.fireRate;
+      final filled = maxCooldown > 0
+          ? ((1 - w.cooldown / maxCooldown) * 10).round().clamp(0, 10)
+          : 10;
+      final empty = 10 - filled;
+
       final wInRange = w.accuracyRangeConfig.rangeMultiplier(dist) > 0;
+      final wProjInRange = projDist != null &&
+          w.accuracyRangeConfig.rangeMultiplier(projDist) > 0;
+
       final col = w.cooldown == 0
           ? (wInRange ? GameColors.green : GameColors.orange)
-          : GameColors.gray;
+          : (wProjInRange ? GameColors.lightBlue : GameColors.gray);
+
+      final readyStr = w.cooldown == 0 ? "READY" : "${w.cooldown}t";
+
       blocks.add(TextBlock(
-          "${w.name.substring(0,min(10,w.name.length))} "
-              "${'█' * (10 - min(10,w.cooldown))}${'░' * min(10,w.cooldown)} "
-              "${w.cooldown} AUTs ", col, true));
+          "${w.name.substring(0, min(10, w.name.length)).padRight(10)} "
+              "${'█' * filled}${'░' * empty} "
+              "$readyStr ",
+          col, true));
     }
     return blocks;
   }

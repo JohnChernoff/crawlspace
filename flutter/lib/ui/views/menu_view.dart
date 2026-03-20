@@ -83,7 +83,7 @@ class MenuWidgetState extends State<MenuWidget> {
                   }
                   final txtStyle = TextStyle(color: isEnabled ? Colors.white : Colors.grey, fontSize: textStyle.fontSize, height: 1.5);
                   final menuItem = blocks.isNotEmpty
-                      ? SizedBox(height: 20.0 * ((blocks.where((b) => b.newline).length)), child: TextBlockWidget(blocks, box: false))
+                      ? TextBlockWidget(blocks, box: false, wrap: true, scrollable: false)
                       : Text(letter != null ? "$letter: $label $disabledString" : label, style: txtStyle, // Better line spacing
                   );
                   return Padding(

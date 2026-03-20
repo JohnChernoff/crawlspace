@@ -100,7 +100,7 @@ class _FugueHomeState extends State<FugueHome> {
         builder: (BuildContext context, Widget? child) => Column(children: [
           model!.engine.gameOver
             ? gameOver() //Expanded(child: GalaxyView(fugueModel!,key: ValueKey(fugueModel))),
-            : Expanded(child: AsciiView(model!.engine,key: ValueKey(model!.engine))),
+            : Expanded(child: AsciiView(model!,key: ValueKey(model!.engine))),
         ]),
       )),
     ];

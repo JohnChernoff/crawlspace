@@ -78,6 +78,14 @@ class MenuFactory {
 
   Menu buildPlanetMenu(Planet planet) {
     return [
+      TextEntry(txtBlocks: List.generate(planet.descLines.length, (i) => TextBlock(planet.descLines[i],
+          switch(i) {
+            0 => GameColors.cyan,
+            1 => GameColors.lime,
+            2 => GameColors.white,
+            int() => throw UnimplementedError(),
+          },
+          true))),
       if (planet.tier(planet.population).atOrAbove(DistrictLvl.light))
         ActionEntry(letter:  "s",  label: "(s)cout the system", (m) => fm.planetsideController.scout(), exitAfter: false),
       if (planet.tier(planet.population).atOrAbove(DistrictLvl.medium))

@@ -8,6 +8,8 @@ import 'package:crawlspace_engine/stock_items/trade/goods.dart';
 import '../color.dart';
 import '../rng/descriptors.dart';
 import '../rng/drinks_gen.dart';
+import '../rng/plan_gen.dart';
+import 'galaxy.dart';
 
 enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   const DistrictLvl(this.shortString);
@@ -28,6 +30,12 @@ class Planet extends SpaceEnvironment<ImpulseLocation> {
   final bool homeworld;
   Species species;
   AlienDrink? drink;
+  void generateDesc(Galaxy g, Random rnd) {
+    shortDesc = PlanetDescGen.generateShortDesc(this, g, rnd);
+    _descLines = PlanetDescGen.generate(this, g, rnd);
+  }
+  List<String> _descLines = [];
+  List<String> get descLines => _descLines;
 
   // ── Trade state ────────────────────────────────────────────────────────────
   // Populated by TradeModel after galaxy construction — Planet itself has

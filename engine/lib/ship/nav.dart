@@ -87,6 +87,50 @@ class ShipNav {
   Vec3 get vel => _vel;
   bool get moving => _vel.mag > 0;
 
+  void applyForce(Vec3 force) {
+    _vel = Vec3(
+      _vel.x + force.x,
+      _vel.y + force.y,
+      _vel.z + force.z,
+    );
+  }
+
+  Position get projectedPosition => Position(
+    _pos.x + _vel.x,
+    _pos.y + _vel.y,
+    _pos.z + _vel.z,
+  );
+
+  Coord3D get projectedCoord => projectedPosition.coord;
+
+  double? get projectedTargetDist {
+    final target = targetShip;
+    if (target == null) return null;
+    final tp = target.nav.projectedPosition;
+    final mp = projectedPosition;
+    final dx = mp.x - tp.x;
+    final dy = mp.y - tp.y;
+    final dz = mp.z - tp.z;
+    return sqrt(dx*dx + dy*dy + dz*dz);
+  }
+  double? get targetDistTrend {
+    final current = targetShip == null ? null : ship.distance(l: targetShip!.loc);
+    final projected = projectedTargetDist;
+    if (current == null || projected == null) return null;
+    return projected - current;
+  }
+
+  String get trendGlyph {
+    final trend = targetDistTrend;
+    return switch(trend) {
+      null => "-",
+      < -0.3 => "↓",
+      > 0.3 => "↑",
+      _ => "→"
+    };
+  }
+
+
   Ship? _targetShip;
   Ship? get targetShip => ship.sameLevel(_targetShip) ? _targetShip : null;
   void set targetShip(Ship? ship) {

@@ -1,4 +1,5 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/utils.dart';
 import 'package:crawlspace_engine/actors/pilot.dart';
 import 'controllers/menu_controller.dart';
 import 'item.dart';
@@ -73,9 +74,16 @@ abstract class MenuEntry {
 }
 
 class TextEntry extends MenuEntry {
-  TextEntry({super.label,super.txtBlocks});
   @override
-  void activate(MenuController mc) => {};
+  List<TextBlock> get txtBlocks => rawBlocks ?? []; //rawBlocks?.expand((b) => Utils.wrapBlock(b, maxChar: maxChar)).toList() ?? [];
+  final List<TextBlock>? rawBlocks;
+  final int maxChar;
+
+  TextEntry({super.label, List<TextBlock>? txtBlocks, this.maxChar = 128})
+      : rawBlocks = txtBlocks;
+
+  @override
+  void activate(MenuController mc) {}
 }
 
 class ActionEntry extends MenuEntry {

@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:crawlspace_engine/controllers/movement_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:crawlspace_engine/galaxy/geometry/impulse.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
@@ -16,17 +17,25 @@ class AsciiGridPainter extends CustomPainter {
   final FugueEngine fm;
   final MovementPreview? preview;
   final bool showAllCellsOnZPlane;
+  final Coord3D? ghostCoord;
 
   AsciiGridPainter({
     required this.fm,
     required this.preview,
     required this.showAllCellsOnZPlane,
+    this.ghostCoord
   });
 
   @override
   void paint(Canvas canvas, Size size) {
     final ship = fm.playerShip;
     if (ship == null) return;
+
+    final targetPath = fm.scannerController.targetPath;
+    final targetPathCoords = targetPath.map((c) => c.coord).toSet();
+    final targetLoc = fm.player.targetLoc;
+    final scanSelection = fm.scannerController.currentScanSelection;
+    final playerZ = ship.loc.cell.coord.z;
 
     final map = ship.loc.map;
     final dim = map.dim;
@@ -56,7 +65,7 @@ class AsciiGridPainter extends CustomPainter {
           final dx = baseRect.left - stackXInset + (cellW - layerSize) * t;
           final dy = baseRect.top - (cell.coord.z * zLiftPerLayer) + (cellH - layerSize) * t;
 
-          final state = _renderStateForCell(cell, fm, ship);
+          final state = _renderStateForCell(cell, fm, ship, targetPathCoords, targetLoc?.cell,scanSelection,playerZ);
           final glyph = _glyphForCell(cell, ship);
           final color = _colorForCell(cell, ship, state);
           final fontSize = _fontSizeForCell(layerSize, z, dim);
@@ -222,8 +231,7 @@ class AsciiGridPainter extends CustomPainter {
 
     final dim = player.loc.map.dim;
     final dist = player.distanceFromLocation(cell.loc);
-    final proximity = 1.0 - (dist / dim.maxDist).clamp(0, 1);
-
+    final proximity = ((1.0 - (dist / dim.maxDist).clamp(0, 1)) * 8).round() / 8;
     return Color.lerp(farColor, nearColor, proximity)!;
   }
 
@@ -291,7 +299,9 @@ class AsciiGridPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant AsciiGridPainter oldDelegate) {
-    return true;
+    return oldDelegate.preview != preview ||
+        oldDelegate.ghostCoord != ghostCoord ||
+        oldDelegate.fm.auTick != fm.auTick; // only repaint on game tick
   }
 }
 
@@ -345,16 +355,22 @@ _CellRenderState _renderStateForCell(
     GridCell cell,
     FugueEngine fm,
     Ship player,
+    Set<Coord3D> targetPathCoords,
+    GridCell? targetCell,      // precomputed targetLoc?.cell
+    GridCell? scanSelection,   // precomputed currentScanSelection
+    int playerZ,
     ) {
-  final targetLoc = fm.player.targetLoc;
-  final targetPath = fm.scannerController.targetPath;
-
-  final scanned = fm.scannerController.currentScanSelection?.loc == cell.loc;
-  final targeted = targetLoc?.cell == cell;
-  final inTargetPath = targetPath.any((loc) => loc == cell);
+  final scanned = scanSelection?.loc == cell.loc;
+  final targeted = targetCell == cell;
+  final inTargetPath = targetPathCoords.contains(cell.coord);
+  final sameDepth = (cell.coord.z - playerZ).abs() == 0;
+  final sameDepthAndNotEmpty = sameDepth && (
+      cell.hazLevel > 0 ||
+          fm.galaxy.ships.atCell(cell).isNotEmpty ||
+          (cell is ImpulseCell && (cell.hasPlanet(fm.galaxy) || fm.galaxy.items.anyAt(cell.loc))) ||
+          (cell is SectorCell && (cell.hasPlanets(fm.galaxy) || cell.starClass != null || cell.blackHole))
+  );
   final uiTarget = targeted; // or separate this if you distinguish cursor vs final target
-  final sameDepth = (cell.coord.z - player.loc.cell.coord.z).abs() == 0;
-  final sameDepthAndNotEmpty = sameDepth && !cell.isEmpty(fm.galaxy);
 
   return _CellRenderState(
     scanned: scanned,

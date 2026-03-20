@@ -130,6 +130,11 @@ class Galaxy {
     }
 
     tradeMod = TradeModel(this);
+    for (final s in systems) {
+      for (final p in planets.inSystem(s)) {
+        p.generateDesc(this, rnd);
+      }
+    }
     ItemGen().generateItems(this);
     maxJumps = topo.distance(farthestSystem(fedHomeSystem), fedHomeSystem);
     formed = true;
