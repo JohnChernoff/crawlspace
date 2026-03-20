@@ -2,10 +2,9 @@ import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
-
+import '../../ship/ship.dart';
 import 'grid.dart';
 import 'impulse.dart';
-import '../../ship/ship.dart';
 import '../system.dart';
 
 sealed class SpaceLocation implements Locatable {

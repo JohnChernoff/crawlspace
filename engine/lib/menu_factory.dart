@@ -206,7 +206,7 @@ class MenuFactory {
           letter: letter(i),
           label: shop.hangar.elementAt(i).shopDesc,
           shop.hangar.elementAt(i),
-              (m) => fm.newShip(fm.player, shop.hangar.elementAt(i)),exitAfter: true)
+              (m) => fm.newShip(fm.player, shop.hangar.elementAt(i),shop),exitAfter: true)
     ];
   }
 

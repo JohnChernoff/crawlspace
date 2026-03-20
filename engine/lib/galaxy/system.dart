@@ -39,7 +39,7 @@ class System extends GridCell implements Nameable {
   String name;
   String get selectionName => name;
   Set<System> links = HashSet();
-  List<Planet> planets = []; //TODO: change to SpaceObject
+  List<Planet> planets(Galaxy g) => g.planets.inSystem(this).toList();
   bool starOne, blackHole;
   TrafficGenHint trafficGenHint;
   bool scouted = false;
@@ -81,9 +81,9 @@ class System extends GridCell implements Nameable {
     }
   }
 
-  void scout() {
+  void scout(Galaxy g) {
     scouted = true;
-    for (Planet planet in planets) {
+    for (Planet planet in planets(g)) {
       planet.known = true;
     }
   }
@@ -161,12 +161,12 @@ class System extends GridCell implements Nameable {
     return planetList;
   }
 
-  void explore(int depth, {System? sys}) { //msgController.addMsg("Exploring: ${system.name} , depth: $depth");
+  void explore(int depth, Galaxy g, {System? sys}) { //msgController.addMsg("Exploring: ${system.name} , depth: $depth");
     final system = sys ?? this;
-    system.scout();
+    system.scout(g);
     if (depth == 0) return;
     for (System link in system.links) {
-      if (!link.scouted) explore(depth-1,sys: system);
+      if (!link.scouted) explore(depth-1,g,sys: system);
     }
   }
 
@@ -187,11 +187,7 @@ class System extends GridCell implements Nameable {
     for (int i=0;i<links.length;i++) {
       linksStr.write(" ${links.elementAt(i).name} ");
     }
-    StringBuffer planetsStr = StringBuffer();
-    for (int i=0;i<planets.length;i++) {
-      planetsStr.write(" ${planets.elementAt(i).name} ");
-    }
-    return "$name (${links.length} links,${trafficGenHint.name}): $linksStr planets: $planetsStr \n";
+    return "$name (${links.length} links,${trafficGenHint.name})\n";
   }
 
   @override

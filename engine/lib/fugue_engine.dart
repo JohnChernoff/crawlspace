@@ -1,8 +1,10 @@
 import 'dart:math';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
 import 'package:crawlspace_engine/rng/ship_gen.dart';
+import 'package:crawlspace_engine/ship/hangar_ship.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
@@ -124,8 +126,8 @@ class FugueEngine {
     }
   }
 
-  FugueEngine(this.galaxy,String playerName,{seed = 0}) {
-    //rnd = Random(seed);
+  FugueEngine(this.galaxy,String playerName,{seed = 0}) { //rnd = Random(seed);
+    final xaxle = galaxy.fedHomeSystem.planets(galaxy).first;
     audioRnd = Random(seed ^0xAAAAAA);
     mapRnd = Random(seed ^0xBBBBBBB);
     speciesRnd = Random(seed ^ 0xC0FFEE);
@@ -134,7 +136,7 @@ class FugueEngine {
     effectRnd = Random(seed ^ 0xBEAD);
     combatRnd = Random(seed ^ 0xABCDEF);
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
-    Ship playShip = Ship("HMS Sebastian",
+    HangarShip pShip = HangarShip("HMS Sebastian",
         shipClass: ShipClass.fromEnum(ShipClassType.hermes),
         location: SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),
         generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
@@ -146,11 +148,11 @@ class FugueEngine {
         weapons: [Weapon.fromStock(StockSystem.wepFedLaser3),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
         ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50}
         );
-    player = Player(playerName,loc: AboardShip(playShip)); //playShip.pilot = player;
+    player = Player(playerName,loc: AtEnvironment(xaxle)); //playShip.pilot = player;
     player.system.visited = true;
-    addShip(playShip);
+    galaxy.ships.undock(pShip, player);
     for (final persona in AgentPersonality.values) {
-        Ship agentShip = Ship("Agent ${persona.name}",
+        HangarShip agentShip = HangarShip("Agent ${persona.name}",
             shipClass: ShipClass.fromEnum(ShipClassType.galaxy),
             location: SectorLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCoord(mapRnd)),
             generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
@@ -160,8 +162,8 @@ class FugueEngine {
             shield: Shield.fromStock(StockSystem.shdBasicEnergon),
             weapons: [Weapon.fromStock(StockSystem.wepPlasmaRay),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
             ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 250});
-        Agent(persona.name,persona,loc: AboardShip(agentShip),galaxy: galaxy);
-        addShip(agentShip);
+        final agent = Agent(persona.name,persona,loc: AtEnvironment(xaxle),galaxy: galaxy);
+        galaxy.ships.undock(agentShip, agent);
     }
     //print(_shipRegistry.all); //print(_pilotRegistry.all); //print (activePilots);
     msg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
@@ -185,14 +187,10 @@ class FugueEngine {
     } //print("Adding pirates: $numPirates");
   }
 
-  void newShip(Pilot pilot, Ship ship) {
-    final loc = pilot.locale;
-    if (loc is AtEnvironment) {
-      galaxy.ships.undock(ship, loc.env);
-      final formerShip = galaxy.ships.byPilot(pilot);
-      if (formerShip != null) galaxy.ships.dock(ship, loc.env);
-    }
-    galaxy.ships.changePilot(ship, pilot);
+  void newShip(Pilot pilot, HangarShip ship, SpaceEnvironment env) {
+    final formerShip = galaxy.ships.byPilot(pilot);
+    if (formerShip != null) galaxy.ships.dock(formerShip, env);
+    galaxy.ships.undock(ship, pilot);
   }
 
   void outOfEnergy() {

@@ -21,7 +21,7 @@ class AsciiGridFast extends StatelessWidget {
         ship.nav.pos.y + ship.nav.vel.y,
         ship.nav.pos.z + ship.nav.vel.z,
       );
-      ghostCoord = ghostPos.coord;;
+      ghostCoord = ghostPos.coord;
     } else {
       ghostCoord = null;
     }

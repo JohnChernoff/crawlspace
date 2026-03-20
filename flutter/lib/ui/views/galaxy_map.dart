@@ -186,7 +186,9 @@ class GalaxyMapState extends State<GalaxyMap> {
           : starSystem(sys, hex: false, borderCol: borderCol);
     }
     if (hq != null) return starSystem(sys, hex: true, borderCol: borderCol);
-    if (sys.planets.contains(widget.fugueModel.player.tradeTarget?.destination)) return diamondSystem(sys, borderCol: borderCol);
+    if (sys.planets(widget.fugueModel.galaxy).contains(widget.fugueModel.player.tradeTarget?.destination)) {
+      return diamondSystem(sys, borderCol: borderCol);
+    }
     return boxSystem(sys, borderCol: borderCol);
   }
 

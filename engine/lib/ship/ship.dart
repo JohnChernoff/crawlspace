@@ -5,8 +5,6 @@ import 'package:crawlspace_engine/effects.dart';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/rng/sys_gen.dart';
-import 'package:crawlspace_engine/ship/ship_sys.dart';
-import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import 'package:crawlspace_engine/ship/systems/weapon_profiler.dart';
 import '../fugue_engine.dart';
 import '../color.dart';
@@ -19,9 +17,8 @@ import '../item.dart';
 import '../galaxy/geometry/location.dart';
 import '../actors/pilot.dart';
 import '../actors/player.dart';
-import '../stock_items/stock_ships.dart';
+import 'hangar_ship.dart';
 import 'nav.dart';
-import 'systems/engines.dart';
 import 'systems/power.dart';
 import 'systems/shields.dart';
 import 'systems/ship_system.dart';
@@ -77,106 +74,55 @@ class Scrap extends Item {
   double get costEffectiveness => baseCost / mass;
 }
 
-
-
-class Ship extends Item implements Locatable {
-  @override
-  SpaceLocation get loc => _loc;
-  @override
-  int get baseCost => inventory.all.map((i) => i.baseCost).sum + shipClass.volume.round();
-  @override
-  String get shopDesc => dump(shop: true);
-  SpaceLocation _loc;
-  ShipClass shipClass;
-  Pilot? owner;
-  Pilot? _pilot;
-  Pilot get pilot => _pilot ?? nobody;
-  set pilot(Pilot? p) => _pilot = (p == nobody) ? null : p;
-  bool get hasPilot => _pilot != null;
+class Ship extends HangarShip {
+  Pilot pilot;
   double hullDamage = 0;
   int minCool = 0;
-  int impulseMapSize = 8;
-  Inventory<Item> inventory = Inventory();
-  InventoryView<Scrap> get scrapHeap => inventory.filterType<Scrap>();
-  InventoryView get cargo => inventory.filter((i) => i is! ShipSystem || !systemControl.isInstalled(i));
+  late RndSystemInstaller rndSystemInstaller;
   bool get playship => pilot is Player;
   bool get npc => !playship;
   bool sameLevel(Ship? ship) => ship?.loc.domain == loc.domain;
-  late Hull hull;
   bool get inNebula => loc.cell.hasHaz(Hazard.nebula);
-  List<ShipSystemType> multiSystems = [ShipSystemType.engine,ShipSystemType.weapon,ShipSystemType.launcher,ShipSystemType.ammo,ShipSystemType.quarters];
-  late ShipSystemControl systemControl;
-  late RndSystemInstaller rndSystemInstaller;
   List<System>? itinerary;
   double xenoMatter = 0;
   bool autoShutdown = false;
   EffectMap<ShipEffect> effectMap = EffectMap();
   late ShipNav nav = ShipNav(this);
   double get moveProbability => .1; //TODO: tweak
-  double get volume => shipClass.volume;
-  double get maxSpeed =>  hull.material.speedMult * shipClass.maxSpeed; // sqrt(volume * mass));
 
   Ship(super.name, {
-    this.owner,
+    super.owner,
     super.baseCost = 0,
     super.rarity = 1,
-    required this.shipClass,
-    required SpaceLocation location,
-    Pilot? pilot,
-    PowerGenerator? generator,
-    List<Weapon>? weapons,
-    Map<Ammo,int>? ammo,
-    Shield? shield,
-    Engine? impEngine,
-    Engine? subEngine,
-    Engine? hyperEngine,
-    Sensor? sensor,
-    HullMaterial hullMaterial = HullMaterial.basic,
-  }) : _loc = location, _pilot = pilot {
-    _pilot?.locale = AboardShip(this);
-    systemControl = ShipSystemControl(this);
+    required super.shipClass,
+    required super.location,
+    required this.pilot,
+    super.generator,
+    super.weapons,
+    super.ammo,
+    super.shield,
+    super.impEngine,
+    super.subEngine,
+    super.hyperEngine,
+    super.sensor,
+    super.hullMaterial,
+  }) {
+    pilot.locale = AboardShip(this);
     rndSystemInstaller = RndSystemInstaller(this, systemControl);
-    install(generator);
-    install(hyperEngine, active: false);
-    install(subEngine);
-    install(impEngine,active: false);
-    install(shield);
-    for (final w in weapons ?? []) {
-      install(w);
-    }
-    for (final a in (ammo ?? {}).entries) {
-      systemControl.addAmmo(a.key, a.value, setWeapon: true);
-    }
-    install(sensor);
-    hull = Hull.fromMaterial(hullMaterial,this);
   }
 
-  void install(ShipSystem? system, {bool active = true}) {
-    if (system != null) {
-      addToInventory(system);
-      final report = systemControl.installSystem(system);
-      if (report.result == InstallResult.success) systemControl.toggleSystem(system, on: active);
-      else print("Error installing ${system.name}: ${report.result.name}");
-    }
-  }
+  factory Ship.board(Pilot pilot, HangarShip s) => Ship(s.name,
+    pilot: pilot,
+    owner: s.owner,
+    baseCost: s.baseCost,
+    rarity: s.rarity,
+    shipClass: s.shipClass,
+    location: s.loc,
+  );
 
-  void move(SpaceLocation newLoc, ShipRegistry registry) {
-    registry.reIndex(this, newLoc);
-    _loc = newLoc;
-  }
-
-  void dock(SpaceEnvironment env, ShipRegistry registry) {
-    registry.dock(this, env);
-  }
-
-  void undock(SpaceEnvironment env, SpaceLocation launchLoc, ShipRegistry registry) {
-    registry.undock(this, env);
-  }
-
-  bool addToInventory(Item i) {
-    if (availableSpace < i.mass) return false;
-    inventory.add(i);
-    return true;
+  //shouldn't really do anything other than call the registry
+  void move(SpaceLocation newLoc, ShipRegistry registry) { //TODO: remove (quasi-literally)?
+    registry.move(this, newLoc);
   }
 
   SpaceLocation? detect(Ship ship) {
@@ -216,7 +162,7 @@ class Ship extends Item implements Locatable {
   }
 
   double distance({Ship? ship, SpaceLocation? l, Coord3D? c}) {
-    if (ship != null) return ship.loc.dist(loc);
+    if (ship != null) return ship.nav.pos.coord.distance(nav.pos.coord);
     if (l != null) return l.dist(loc);
     if (c != null) return c.distance(loc.cell.coord);
     glog("Warning: distance called with 0 arguments",error: true);
@@ -355,24 +301,7 @@ class Ship extends Item implements Locatable {
     return t == 999 ? 0 : t;
   }
 
-  double get currentMass {
-    double m = 0;
-    for (final a in systemControl.ammo) {
-      m += a.count * a.ammo.mass;
-    }
-    return inventory.all.fold<double>(0.0, (sum, s) => sum + s.mass) + m + shipClass.mass;
-  }
 
-  double get currentVolume {
-    double m = 0;
-    for (final a in systemControl.ammo) {
-      m += a.count * a.ammo.volume;
-    }
-    return inventory.all.fold<double>(0.0, (sum, s) => sum + s.volume) + m;
-  }
-
-  double get availableSpace => shipClass.volume - currentVolume;
-  bool okVolume(double m) => availableSpace > m;
 
   TickResult tick({FugueEngine? fm}) {
     final dryRun = fm == null; //if (!dryRun) print("Tick... $dryRun");
@@ -419,7 +348,7 @@ class Ship extends Item implements Locatable {
         newCell = (loc.cell.coord != prevLoc);
       } else newCell = false;
     } else newCell = false;
-    if (newCell) print ("Moved: ${fm?.auTick}");
+    //if (newCell) print ("Moved: ${fm?.auTick}");
     return TickResult(totalRecharge - totalBurn, newCell);
   }
 
@@ -481,10 +410,10 @@ class Ship extends Item implements Locatable {
       }
     }
     if (!tactical && nav.targetShip != null) {
-      final sustained = sustainedRangeProfile(maxRange: impulseMapSize * 2);
+      final sustained = sustainedRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
       blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
       final dist = distanceFrom(nav.targetShip!).round();
-      final volley = volleyRangeProfile(maxRange: impulseMapSize * 2);
+      final volley = volleyRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
       final fit = (volley.efficiencyAt(dist) * 100).round();
       blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
       blocks.addAll(combatText());
@@ -554,30 +483,7 @@ class Ship extends Item implements Locatable {
       });
   }
 
-  String dump({shop = false}) {
-    StringBuffer sb = StringBuffer();
-    if (!shop) {
-      sb.writeln(name);
-      sb.writeln(shipClass.name);
-    }
-    else {
-      sb.writeln("${shipClass.name} Class Starship");
-    }
-    for (final system in systemControl.systemMap) {
-      ShipSystem? s = system.system; if (s != null) {
-        sb.write("${s.name} ");
-        if (!shop) sb.write(s.active ? '+' : '-');
-        if (s is Weapon && s.ammo != null) {
-          sb.write(", ${s.ammo!.name}: ${systemControl.ammoFor(s.ammo!)}");
-        }
-        if (shop) sb.writeln();
-      } else if (!shop) {
-        sb.write("Empty");
-      }
-     if (!shop) sb.writeln(", Slot: ${system.slot}");
-    }
-    return sb.toString();
-  }
+
 
   @override
   String toString() {

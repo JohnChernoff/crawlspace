@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
+import 'package:crawlspace_engine/ship/hangar_ship.dart';
 import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 import '../actors/pilot.dart';
 import '../galaxy/galaxy.dart';
@@ -41,6 +42,12 @@ class ShipGenerator {
     ship.rndSystemInstaller.installRndEngine(Domain.system, techLvl, rnd); //no hyperspace
     ship.rndSystemInstaller.installRndShield(techLvl, rnd);
     ship.rndSystemInstaller.installRndWeapon(techLvl, rnd);
+
     return ship;
   }
+
+  static HangarShip generateHangarShip(System system, Galaxy galaxy, Random rnd, {isPirate = false}) {
+    return HangarShip.toHangar(generateShip(system, galaxy, rnd));
+  }
+
 }

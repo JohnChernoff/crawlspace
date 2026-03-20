@@ -42,7 +42,7 @@ class TransactionRecord {
 }
 
 final nowhere = AtEnvironment.fromSystem(SectorLocation(System("nowhere",StellarClass.A,Random(), map: EmptySector()),Coord3D(0,0,0)));
-final Pilot nobody = Pilot("nobody",loc:nowhere);
+//final Pilot nobody = Pilot("nobody",loc:nowhere);
 
 class Pilot implements Locatable {
   String name;
@@ -50,9 +50,6 @@ class Pilot implements Locatable {
   PilotLocale get locale => _locale;
   void set locale(PilotLocale l) { //print("Setting locale: ${l.name}");
     _locale = l;
-    if (l is AboardShip && this != nobody) {
-      l.ship.pilot = this;
-    }
   }
   late PilotLocale _locale;
   System get system => locale.loc.system;

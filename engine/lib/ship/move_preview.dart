@@ -346,7 +346,7 @@ class MovePreviewer {
       );
 
       totalAuts += last.auts;
-      totalEnergy += last.energyRequired ?? 0.0;
+      totalEnergy += last.energyRequired; //?? 0.0;
       state = last.newState;
 
       ctx = MoveContext(

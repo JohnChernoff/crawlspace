@@ -1,4 +1,5 @@
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/models/sub_model.dart';
 import 'dart:math';
 import 'package:collection/collection.dart';
@@ -6,10 +7,11 @@ import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import '../../actors/pilot.dart';
 import '../../actors/player.dart';
 import '../../item.dart';
+import '../../ship/hangar_ship.dart';
+import '../../ship/nav.dart';
 import '../../ship/ship.dart';
 import '../geometry/grid.dart';
 import '../geometry/location.dart';
-import '../geometry/object.dart';
 import '../planet.dart';
 import '../system.dart';
 
@@ -114,69 +116,79 @@ class ItemRegistry {
 }
 
 class ShipRegistry {
-  Set<Ship> get all => _all;
-  final Set<Ship> _all = {};
+  Set<HangarShip> get hangarShips => _all.whereType<HangarShip>().toSet();
+  Set<Ship> get activeShips => _all.whereType<Ship>().toSet();
+  Set<HangarShip> get all => _all;
+  final Set<HangarShip> _all = {};
   final Map<Pilot, Ship> _byPilot = {};
-  final Map<SpaceLocation, Set<Ship>> _byLoc = {};
-  final Map<SpaceEnvironment, Set<Ship>> _hangars = {};
-
-  Set<Ship> hangar(SpaceEnvironment env) => _hangars[env] ?? {};
+  final Map<SpaceLocation, Set<HangarShip>> _byLoc = {};
   Ship? byPilot(Pilot p) => _byPilot[p];
-  Set<Ship> atLocation(SpaceLocation loc) => Set.of(_byLoc[loc] ?? {});
+  Set<Ship> atLocation(SpaceLocation loc) => Set.of(_byLoc[loc] ?? {}).whereType<Ship>().toSet();
   Set<Ship> atCell(GridCell c) => atLocation(c.loc);
-  Set<Ship> atDomain(SpaceLocation loc) =>
-      _all.where((s) => s.loc.domain == loc.domain).toSet();
+  Set<Ship> atDomain(SpaceLocation loc) => atLocation(loc).where((s) => s.loc.domain == loc.domain).toSet();
+  Set<HangarShip> atHangarLocation(SpaceLocation loc) => Set.of(_byLoc[loc] ?? {}).whereType<HangarShip>().toSet();
 
   PilotRegistry pilots;
   ShipRegistry(this.pilots);
 
-  void add(Ship ship) {
+  void add(HangarShip ship) {
     _all.add(ship);
-    if (ship.hasPilot) _byPilot[ship.pilot] = ship; //TODO: get rid of nobody
     _byLoc.putIfAbsent(ship.loc, () => {}).add(ship);
-    pilots.add(ship.pilot);
+    if (ship is Ship) {
+      _byPilot[ship.pilot] = ship;
+      pilots.add(ship.pilot);
+    }
   }
 
-  void remove(Ship ship) {
+  void remove(HangarShip ship) {
     _all.remove(ship);
-    if (ship.hasPilot) _byPilot.remove(ship.pilot);
+    if (ship is Ship) {
+      _byPilot.remove(ship.pilot);
+    }
     _byLoc[ship.loc]?.remove(ship);
     if (_byLoc[ship.loc]?.isEmpty ?? false) {
       _byLoc.remove(ship.loc);
     }
-    for (final shp in _all.where((s) => s.nav.targetShip == ship)) {
+    for (final shp in activeShips.where((s) => s.nav.targetShip == ship)) {
       shp.nav.targetShip = null;
     }
   }
 
   // call before moving
-  void reIndex(Ship ship, SpaceLocation newLoc) {
+  void move(Ship ship, SpaceLocation newLoc) {
     _byLoc[ship.loc]?.remove(ship);
     if (_byLoc[ship.loc]?.isEmpty ?? false) {
       _byLoc.remove(ship.loc);
     }
     _byLoc.putIfAbsent(newLoc, () => {}).add(ship);
+    ship.loc = newLoc;
+    if (ship.nav.heading == null) ship.nav.pos = Position.fromCoord(ship.loc.cell.coord);
   }
 
   void changePilot(Ship ship, Pilot newPilot) {
-    if (ship.hasPilot) _byPilot.remove(ship.pilot);
+    _byPilot.remove(ship.pilot);
     ship.pilot = newPilot;
-    if (newPilot != nobody) _byPilot[newPilot] = ship;
+    _byPilot[newPilot] = ship;
   }
 
-  void undock(Ship ship, SpaceEnvironment env) {
-    _hangars[env]?.remove(ship);
-    _byLoc.putIfAbsent(ship.loc, () => {}).add(ship);
-    _all.add(ship);
+  void undock(HangarShip ship, Pilot pilot) {
+    remove(ship);
+    final undockedShip = Ship.board(pilot, ship);
+    add(undockedShip);
+    undockedShip.systemControl = ship.systemControl;
+    undockedShip.systemControl.ship = undockedShip; // fix back-reference
+    undockedShip.inventory = ship.inventory;
+    pilot.locale = AboardShip(undockedShip);
   }
 
   void dock(Ship ship, SpaceEnvironment env) {
-    _byLoc[ship.loc]?.remove(ship);
-    if (_byLoc[ship.loc]?.isEmpty ?? false) {
-      _byLoc.remove(ship.loc);
-    }
-    _all.remove(ship);
-    _hangars.putIfAbsent(env, () => {}).add(ship);
+    ship.pilot.locale = AtEnvironment(env);
+    remove(ship);
+    final dockedShip = HangarShip.toHangar(ship);
+    add(dockedShip);
+    dockedShip.systemControl = ship.systemControl;
+    dockedShip.systemControl.ship = dockedShip; // fix back-reference
+    dockedShip.inventory = ship.inventory;
   }
 }
 
@@ -186,7 +198,7 @@ class PilotRegistry {
   void add(Pilot p) => _all.add(p);
   void remove(Pilot p) => _all.remove(p);
 
-  Iterable<Pilot> get all => _all.where((p) => p != nobody);
+  Iterable<Pilot> get all => _all;
   Iterable<Pilot> get npcs => _all.where((p) => p is! Player);
   Iterable<Pilot> withShips(ShipRegistry ships, {npc = true}) =>
       (npc ? npcs : all).where((p) => ships.byPilot(p) != null);

@@ -1,13 +1,9 @@
 import 'dart:math';
 
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/ship/systems/weapon_profiler.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
-import '../color.dart';
-import '../fugue_engine.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/impulse.dart';
-import '../ship/nav.dart';
 import '../ship/ship.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';

@@ -8,7 +8,7 @@ import 'package:crawlspace_engine/stock_items/ship_systems/stock_pile.dart';
 
 void main() {
   final fm = FugueEngine(Galaxy("Testlandia"), "Zug", seed: Random().nextInt(999999));
-  final planets = fm.galaxy.systems.where((s) => s.planets.isNotEmpty).map((ps) => ps.planets.first).toList();
+  final planets = fm.galaxy.systems.where((s) => s.planets(fm.galaxy).isNotEmpty).map((ps) => ps.planets(fm.galaxy).first).toList();
   planets.shuffle(fm.mapRnd);
   final shops = planets.map((p) =>
       SystemShop(galaxy: fm.galaxy, p, SystemShopType.misc, Random().nextInt(maxTechLvl-1)+1, fm.itemRnd)

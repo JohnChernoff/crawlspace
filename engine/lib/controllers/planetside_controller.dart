@@ -143,7 +143,7 @@ class PlanetsideController extends FugueController {
   void scout() {
     int depth = (fm.player.techLevel(fm.galaxy) / 16).ceil();
     fm.msg("Scouting nearby systems (depth: $depth)...");
-    fm.player.system.explore(depth);
+    fm.player.system.explore(depth,fm.galaxy);
     fm.pilotController.action(fm.player,ActionType.planet);
   }
 
@@ -243,8 +243,8 @@ class PlanetsideController extends FugueController {
   }
 
   Planet? createTradePlanet(List<System> path,int steps) {
-    if (steps < 1 && path.last.planets.isNotEmpty) {
-      return path.last.planets.elementAt(fm.mapRnd.nextInt(path.last.planets.length));
+    if (steps < 1 && path.last.planets(fm.galaxy).isNotEmpty) {
+      return path.last.planets(fm.galaxy).elementAt(fm.mapRnd.nextInt(path.last.planets(fm.galaxy).length));
     } else {
       Set<System> links = path.last.links;
       List<System> unvisitedLinks = links.where((link) => !path.contains(link)).toList();
@@ -262,7 +262,7 @@ class PlanetsideController extends FugueController {
     final loc = fm.player.locale; if (loc is AtEnvironment) {
       loc.env.yard ??= ShipYard(loc.env, 1, fm.itemRnd,
           shiplist: List.generate(fm.itemRnd.nextInt(5) + 1, (i) =>
-              ShipGenerator.generateShip(fm.player.system, fm.galaxy, fm.itemRnd)));
+              ShipGenerator.generateHangarShip(fm.player.system, fm.galaxy, fm.itemRnd)));
       fm.menuController.showMenu(() =>
           fm.menuFactory.buildShopBuyMenu(loc.env.yard!, ship: fm.playerShip), headerTxt: "${loc.env.yard!.name}");
     }

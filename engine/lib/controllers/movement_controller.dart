@@ -6,6 +6,7 @@ import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/location.dart';
 import '../ship/nav.dart';
 import '../ship/ship.dart';
+import '../ship/systems/engines.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 

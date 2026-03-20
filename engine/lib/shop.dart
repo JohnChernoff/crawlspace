@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
+import 'package:crawlspace_engine/ship/hangar_ship.dart';
 import 'package:crawlspace_engine/stock_items/trade/commodities.dart';
 import 'item.dart';
 import 'actors/pilot.dart';
@@ -53,7 +54,7 @@ abstract class Shop {
     //print("Selling item: $item");
     if (!inventory.hasItem(item)) return TransactionResult.inventoryError;
     final pilot = ship?.pilot ?? shiplessPilot;
-    if (pilot == null || pilot == nobody) return TransactionResult.wtf;
+    if (pilot == null) return TransactionResult.wtf;
 
     final price = inventory.effectiveSellPrice(item);
     if (!pilot.transaction(TransactionType.shopBuy, -price)) {
@@ -71,7 +72,7 @@ abstract class Shop {
 
   TransactionResult buyItem(Item item, {Ship? ship, Pilot? shiplessPilot}) {
     final pilot = ship?.pilot ?? shiplessPilot;
-    if (pilot == null || pilot == nobody) return TransactionResult.wtf;
+    if (pilot == null) return TransactionResult.wtf;
     final price = inventory.effectiveBuyBackPrice(item);
     if (credits < price) return TransactionResult.insufficientFunds;
     if (!pilot.transaction(TransactionType.shopSell, price)) return TransactionResult.wtf;
@@ -180,12 +181,12 @@ class SystemShop extends Shop {
 class ShipYard extends Shop {
   final int techLvl;
 
-  ShipYard(super.location, this.techLvl, Random rnd, {List<Ship>? shiplist}) {
+  ShipYard(super.location, this.techLvl, Random rnd, {List<HangarShip>? shiplist}) {
     name = ShopNameGen.generateYard(techLvl, rnd);
     _generateItems(shiplist);
   }
 
-  void _generateItems(List<Ship>? shiplist) {
+  void _generateItems(List<HangarShip>? shiplist) {
     for (final ship in shiplist ?? <Ship>[]) {
       inventory.add(ship);
     }
@@ -301,7 +302,7 @@ class Market extends Shop {
   TransactionResult buyItem(Item item,
       {Ship? ship, Pilot? shiplessPilot}) {
     final pilot = ship?.pilot ?? shiplessPilot;
-    if (pilot == null || pilot == nobody) return TransactionResult.wtf;
+    if (pilot == null) return TransactionResult.wtf;
 
     final price = buyList[item.name];
     if (price == null) return TransactionResult.refusal;

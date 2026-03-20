@@ -5,6 +5,7 @@ void main() {
   int n = 12;
   debugLevel = DebugLevel.Lowest;
   final engine = FugueEngine(Galaxy("Testlandia"), "Zug", seed: 0); // Random().nextInt(999));
+  final g = engine.galaxy;
   for (int i=0; i<n; i++) {
     print("***");
     final rndSys = engine.galaxy.systems.elementAt(engine.mapRnd.nextInt(engine.galaxy.systems.length));
@@ -12,7 +13,7 @@ void main() {
     print("Fed Influence: ${engine.galaxy.fedKernel.val(rndSys)}");
     print("Comm Influence: ${engine.galaxy.commerceKernel.val(rndSys)}");
     print("Planets: ");
-    for (final planet in rndSys.planets) {
+    for (final planet in rndSys.planets(g)) {
         print(planet);
     }
   }

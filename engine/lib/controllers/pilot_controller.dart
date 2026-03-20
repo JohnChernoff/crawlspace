@@ -90,7 +90,6 @@ class PilotController extends FugueController {
 
   //returns false if location domain changes
   bool action(Pilot pilot, ActionType actionType, { mod = 1.0, int? actionAuts }) {
-    if (pilot == nobody) return true;
     if (pilot == fm.player && actionType.risk > 0 && fm.aiRnd.nextInt(255) < fm.player.fedLevel(fm.galaxy)) {
       //msgController.addMsg("You have a bad feeling about this...");
       if (fm.aiRnd.nextInt(128) < (max(actionType.risk - (actionType.dna ? fm.player.dnaScram : 0),1))) {
@@ -115,7 +114,6 @@ class PilotController extends FugueController {
     if (ship == fm.playerShip) return;
     ship.tick(fm: fm);
     Pilot pilot = ship.pilot; //print(pilot.name);
-    if (pilot == nobody) return;
     if (pilot.ready) { //print("${ship.name}'s turn...");
       final hostile = pilot.setHostilityToPlayer(fm); //TODO: unset/refresh this somewhere?
       final playLoc = fm.playerShip != null ? ship.detect(fm.playerShip!) : null;

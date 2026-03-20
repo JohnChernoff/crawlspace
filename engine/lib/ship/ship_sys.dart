@@ -10,6 +10,7 @@ import 'package:crawlspace_engine/ship/systems/shields.dart';
 import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
 import '../galaxy/geometry/grid.dart';
+import 'hangar_ship.dart';
 
 enum InstallResult {success,unsupported,duplicate,adaptable}
 
@@ -21,7 +22,7 @@ class InstallReport {
 }
 
 class ShipSystemControl {
-  Ship ship;
+  HangarShip ship;
   List<SlotAssignment> systemMap = [];
   Map<Ammo,int> ammoMap = {};
 

@@ -137,7 +137,7 @@ enum UniversalCommodity implements Normalizable {
     // compute all system prices
     final allPrices = <System, double>{};
     for (final system in g.systems) {
-      final sysPrices = system.planets.map((p) {
+      final sysPrices = system.planets(g).map((p) {
         final hasSupply = g.tradeMod.planetSupply[p]
             ?.contains(this) ?? false;
         final dist = g.tradeMod.nearestSourceDist(this, p);

@@ -126,7 +126,7 @@ class TradeModel extends GalaxySubMod {
 
       if (candidates.isEmpty) {
         // Fallback: any planet in homeworld system
-        final fallback = homeSystem.planets;
+        final fallback = homeSystem.planets(galaxy);
         for (final good in goods) {
           goodsSources[good] = fallback.isNotEmpty ? [fallback.first] : [];
         }
@@ -160,7 +160,7 @@ class TradeModel extends GalaxySubMod {
   // but weighted strongly toward the planet's own stats.
   void _seedHouseSpecials(Random rnd) {
     for (final system in systems) {
-      for (final planet in system.planets) {
+      for (final planet in system.planets(galaxy)) {
         final dominant = dominantStockSpeciesAt(planet);
         if (dominant == null) continue;
 
@@ -180,7 +180,7 @@ class TradeModel extends GalaxySubMod {
   // Derived purely from EnvType — no RNG needed.
   void _buildSupplyMap() {
     for (final system in systems) {
-      for (final planet in system.planets) {
+      for (final planet in system.planets(galaxy)) {
         final supply = <UniversalCommodity>{};
         for (final commodity in UniversalCommodity.values) {
           if (commodity.producedBy(planet.environment)) {
@@ -368,7 +368,7 @@ class TradeModel extends GalaxySubMod {
     final result = <Planet>[];
     for (final system in systems) {
       final d = galaxy.topo.distance(origin, system);
-      if (d <= maxDist) result.addAll(system.planets);
+      if (d <= maxDist) result.addAll(system.planets(galaxy));
     }
     return result;
   }
@@ -431,7 +431,7 @@ class TradeModel extends GalaxySubMod {
     glog('TRADE MODEL — universal supply (sample: first 5 systems)');
     glog('═' * 60);
     for (final system in systems.take(5)) {
-      for (final planet in system.planets) {
+      for (final planet in system.planets(galaxy)) {
         final supply = planetSupply[planet];
         if (supply != null && supply.isNotEmpty) {
           glog('  ${planet.name}: ${supply.map((c) => c.name).join(', ')}');
