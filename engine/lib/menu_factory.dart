@@ -87,28 +87,28 @@ class MenuFactory {
           },
           true))),
       if (planet.tier(planet.population).atOrAbove(DistrictLvl.light))
-        ActionEntry(letter:  "s",  label: "(s)cout the system", (m) => fm.planetsideController.scout(), exitAfter: false),
+        ActionEntry(letter: "s",  label: "(s)cout the system", (m) => fm.planetsideController.scout(), exitAfter: false),
       if (planet.tier(planet.population).atOrAbove(DistrictLvl.medium))
-        ActionEntry(letter:  "h", label: "(h)ack the network for clues about Star One", (m) => fm.planetsideController.hack(), exitAfter: false),
+        ActionEntry(letter: "h", label: "(h)ack the network for clues about Star One", (m) => fm.planetsideController.hack(), exitAfter: false),
       if (planet.tier(planet.population).atOrAbove(DistrictLvl.heavy))
-        ActionEntry(letter:  "a", label: "reveal (a)gent locations", (m) => fm.planetsideController.spy(), exitAfter: false),
+        ActionEntry(letter: "a", label: "reveal (a)gent locations", (m) => fm.planetsideController.spy(), exitAfter: false),
       if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.none))
-        ActionEntry(letter:  "v", label:  "(v)isit the tavern", (m) => mc.showMenu(() => buildTavernMenu(planet)), exitAfter: false),
+        ActionEntry(letter: "v", label:  "(v)isit the tavern", (m) => mc.showMenu(() => buildTavernMenu(planet)), exitAfter: false),
       if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.light))
-        ActionEntry(letter:  "t", label:  "(t)rade mission", (m) => fm.planetsideController.getTradeMission(), exitAfter: false),
+        ActionEntry(letter: "t", label:  "(t)rade mission", (m) => fm.planetsideController.getTradeMission(), exitAfter: false),
       if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.medium)) //&& planet.tier(planet.industry).atOrAbove(DistrictLvl.medium))
-        ActionEntry(letter:  "b", label: "(b)rowse shop", (m) => fm.planetsideController.systemShop(), exitAfter: false),
+        ActionEntry(letter: "b", label: "(b)rowse shop", (m) => fm.planetsideController.systemShop(), exitAfter: false),
       if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.medium)) //&& planet.tier(planet.industry).atOrAbove(DistrictLvl.medium))
-        ActionEntry(letter:  "m", label: "visit the (m)arket", (m) => fm.planetsideController.market(), exitAfter: false),
+        ActionEntry(letter: "m", label: "visit the (m)arket", (m) => fm.planetsideController.market(), exitAfter: false),
       if (planet.tier(planet.industry).atOrAbove(DistrictLvl.light))
-        ActionEntry(letter:  "r", label:  "(r)epair ship", (m) => fm.planetsideController.enterMainRepairShop(), exitAfter: false),
+        ActionEntry(letter: "r", label:  "(r)epair ship", (m) => fm.planetsideController.enterMainRepairShop(), exitAfter: false),
       if (planet.tier(planet.industry).atOrAbove(DistrictLvl.medium))
-        ActionEntry(letter:  "g", label:  "(g)enetic engineering", (m) => fm.planetsideController.bioHack(), exitAfter: false),
+        ActionEntry(letter: "g", label:  "(g)enetic engineering", (m) => fm.planetsideController.bioHack(), exitAfter: false),
       if (planet.tier(planet.industry).atOrAbove(DistrictLvl.heavy))
-        ActionEntry(letter:  "y", label:  "visit the ship(y)ard", (m) => fm.planetsideController.enterShipyard(), exitAfter: false),
+        ActionEntry(letter: "y", label:  "visit the ship(y)ard", (m) => fm.planetsideController.enterShipyard(), exitAfter: false),
       if (planet.tier(planet.commerce).atOrAbove(DistrictLvl.heavy) && planet.tier(planet.population).atOrAbove(DistrictLvl.heavy))
-        ActionEntry(letter:  "i", label: "broadcast (i)nformation about Star One", (m) => fm.planetsideController.broadcast(), exitAfter: false),
-        ActionEntry(letter:  "l", label: "(l)aunch", (m) => fm.planetsideController.launch(), exitAfter: true),
+        ActionEntry(letter: "i", label: "broadcast (i)nformation about Star One", (m) => fm.planetsideController.broadcast(), exitAfter: false),
+        ActionEntry(letter: "l", label: "(l)aunch", (m) => fm.planetsideController.launch(), exitAfter: true),
     ];
   }
 

@@ -28,6 +28,12 @@ sealed class SpaceLocation implements Locatable {
 
   SpaceLocation(this.system);
 
+  GridDim get dim => switch(domain) {
+    Domain.hyperspace => throw UnimplementedError(),
+    Domain.system => system.systemMapDim,
+    Domain.impulse => system.impulseMapDim,
+  };
+
   double distCell(GridCell cell) => dist(cell.loc);
   double dist(SpaceLocation l) {
     if (l.domain == domain) {

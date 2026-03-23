@@ -18,6 +18,22 @@ enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
 }
 
 class Planet extends SpaceEnvironment<ImpulseLocation> {
+  double get mass => switch(environment) {
+    EnvType.earthlike  => 1.0,
+    EnvType.alluvial   => 0.9,
+    EnvType.oceanic    => 0.8,
+    EnvType.paradisiacal => 0.7,
+    EnvType.arboreal   => 0.6,
+    EnvType.jungle     => 0.6,
+    EnvType.rocky      => 0.5,
+    EnvType.mountainous => 0.7,
+    EnvType.desert     => 0.4,
+    EnvType.arid       => 0.4,
+    EnvType.snowy      => 0.5,
+    EnvType.icy        => 0.3,
+    EnvType.volcanic   => 1.2,  // dense, geologically active
+    EnvType.toxic      => 0.9,
+  } * (homeworld ? 1.5 : 1.0);
   late PlanetAge age;
   late EnvType environment;
   late Goods export;

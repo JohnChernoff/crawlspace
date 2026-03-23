@@ -5,6 +5,8 @@ import 'package:crawlspace_engine/effects.dart';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/rng/sys_gen.dart';
+import 'package:crawlspace_engine/ship/rotation_preview.dart';
+import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/ship/systems/weapon_profiler.dart';
 import '../fugue_engine.dart';
 import '../color.dart';
@@ -87,8 +89,15 @@ class Ship extends HangarShip {
   double xenoMatter = 0;
   bool autoShutdown = false;
   EffectMap<ShipEffect> effectMap = EffectMap();
-  late ShipNav nav = ShipNav(this);
+  late ShipNav nav;
   double get moveProbability => .1; //TODO: tweak
+
+  // Rotation rate in degrees per AUT, scaled by handling
+  double get rotationRate => switch(shipClass.engineArch) {
+    EngineArch.rear         => shipClass.handling * 45,  // degrees per AUT
+    EngineArch.distributed  => shipClass.handling * 90,
+    EngineArch.center       => 360, // instant, no facing constraint
+  };
 
   Ship(super.name, {
     super.owner,
@@ -119,6 +128,13 @@ class Ship extends HangarShip {
     shipClass: s.shipClass,
     location: s.loc,
   );
+
+  void undock(HangarShip dockedShip) {
+    systemControl = dockedShip.systemControl;
+    systemControl.ship = this;
+    inventory = dockedShip.inventory;
+    nav = ShipNav(this);
+  }
 
   //shouldn't really do anything other than call the registry
   void move(SpaceLocation newLoc, ShipRegistry registry) { //TODO: remove (quasi-literally)?
@@ -341,15 +357,44 @@ class Ship extends HangarShip {
       }
     }
     final newCell;
-    if (!dryRun && loc.domain == Domain.impulse && (nav.moving || nav.activeHeading)) {
-      if (fm.auTick % 4 == 0) { //(fm.aiRnd.nextDouble() < 1) { //moveProbability) {
-        final prevLoc = loc.cell.coord;
-        fm.movementController.moveShip(this, nav.heading ?? loc);
-        newCell = (loc.cell.coord != prevLoc);
+    if (!dryRun && loc.domain == Domain.impulse) { // && (nav.moving || nav.activeHeading)) {
+      if (fm.auTick % 1 == 0) { //(fm.aiRnd.nextDouble() < 1) { //moveProbability) {
+        newCell = tickMove(fm);
       } else newCell = false;
     } else newCell = false;
     //if (newCell) print ("Moved: ${fm?.auTick}");
     return TickResult(totalRecharge - totalBurn, newCell);
+  }
+
+  bool tickMove(FugueEngine fm) {
+    final prevLoc = loc.cell.coord;
+    final prevPos = Position(nav.pos.x,nav.pos.y,nav.pos.z);
+    nav.applyGravity(fm);
+
+    if (nav.rotating) {
+      final preview = nav.rotationPreviewer.previewRotationStep(
+        state: RotationState.fromShip(this),
+      );
+      nav.facing = preview.newState.facing;
+      nav.targetFacing = preview.newState.targetFacing;
+      if (preview.complete && nav.pendingThrust != null) {
+        nav.applyForce(nav.pendingThrust!);
+        nav.pendingThrust = null;
+      }
+    }
+
+    if (nav.autopilotOn) {
+      fm.movementController.moveShip(this, nav.autoPilot.heading);
+    } else if (nav.moving || nav.rotating) {
+      fm.movementController.moveShip(this, loc,
+          throttleOverride: ThrottleMode.drift);
+    }
+    if (nav.vel.mag < .1) {
+      nav.resetMotionState();
+    }
+
+    //print("$prevPos => ${nav.pos}");
+    return (loc.cell.coord != prevLoc);
   }
 
   void scanSystem(System system, FugueEngine fm) {
@@ -420,8 +465,10 @@ class Ship extends HangarShip {
       blocks.addAll(combatText());
     }
     if (!tactical) {
+      blocks.add(TextBlock("Targ Facing: ${nav.targetFacing}", GameColors.gray, true));
+      blocks.add(TextBlock("Facing: ${nav.facing}", GameColors.gray, true));
       blocks.add(TextBlock("Position: ${nav.pos}", GameColors.gray, true));
-      blocks.add(TextBlock("Heading: ${nav.heading?.loc.cell.coord}", GameColors.gray, true));
+      blocks.add(TextBlock("Heading: ${nav.autoPilot.heading?.loc.cell.coord}", GameColors.gray, true));
       blocks.add(TextBlock("Velocity: ${nav.velocityString()}", GameColors.gray, true));
       blocks.add(TextBlock("Speed: ${nav.speed.toStringAsFixed(2)}", GameColors.gray, true));
       blocks.add(TextBlock("Throttle: ${nav.throttle}", GameColors.gray, true));

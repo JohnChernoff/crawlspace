@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import '../fugue_engine.dart';
 import '../galaxy/geometry/coord_3d.dart';
@@ -6,6 +7,7 @@ import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/location.dart';
 import '../ship/nav.dart';
 import '../ship/ship.dart';
+import '../ship/systems/engines.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 
@@ -88,17 +90,21 @@ class MovementController extends FugueController {
   void handleMove(Ship ship, Coord3D vec) {
     if (fm.inputMode == InputMode.main) {
       if (ship.loc.domain == Domain.impulse) {
-        fm.movementController.acquireTarget(vec).then((loc) {
-          if (loc != null) {
-            ship.nav.heading = loc;
-            print(ship.systemControl.engine?.name);
-            print("Current Loc: ${ship.loc.cell.coord} , New Heading: ${loc.cell.coord}");
-            print("Mass: ${ship.currentMass}, Vol: ${ship.volume}, Thrust: ${ship.systemControl.engine?.thrust}, Throttle: ${ship.nav.throttle}");
-            // Don't call moveShip directly — set the heading and hand off to
-            // the turn engine.  tick() will call cruise()/moveShip when it runs.
-            fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: 100);
-          }
-        });
+        if (ship.nav.autopilotOn) {
+          fm.movementController.acquireTarget(vec).then((loc) {
+            if (loc != null) {
+              ship.nav.autoPilot.heading = loc;
+              print(ship.systemControl.engine?.name);
+              print("Current Loc: ${ship.loc.cell.coord} , New Heading: ${loc.cell.coord}");
+              print("Mass: ${ship.currentMass}, Vol: ${ship.volume}, Thrust: ${ship.systemControl.engine?.thrust}, Throttle: ${ship.nav.throttle}");
+              // Don't call moveShip directly — set the heading and hand off to
+              // the turn engine.  tick() will call cruise()/moveShip when it runs.
+              loiter(ship);
+            }
+          });
+        } else {
+          manualThrust(ship, direction: vec);
+        }
       } else {
         fm.movementController.vectorShip(ship,vec);
       }
@@ -248,9 +254,9 @@ class MovementController extends FugueController {
     // not have failed, otherwise the ship couldn't execute its braking burn).
     final bool arrived = preview.actualCell == desiredLocation.cell;
     if (arrived && actualThrottle == ThrottleMode.stop && !preview.engineFail) {
-      if (ship.playship) fm.msg("Arrived...");
-      ship.nav.resetMotionState();
-      ship.nav.pos = Position.fromCoord(desiredLocation.cell.coord);
+      //if (ship.playship) fm.msg("Arrived...");
+      //ship.nav.resetMotionState();
+      //ship.nav.pos = Position.fromCoord(desiredLocation.cell.coord);
     }
 
     final newCell = preview.actualCell;
@@ -281,23 +287,41 @@ class MovementController extends FugueController {
     return MoveResult(preview, MoveResultType.heldPosition);
   }
 
-  void cruise(Ship? ship) {
-    if (ship == null) return;
-
-    if (ship.nav.heading == null || ship.loc.cell == ship.nav.heading?.cell) {
-      print("arrived");
-      ship.nav.resetMotionState();
-      loiter(ship);
-      return;
-    }
-    final result = moveShip(ship, ship.nav.heading!.cell.loc);
-    print("current     = ${ship.loc.cell.coord}");
-    print("heading     = ${ship.nav.heading?.cell.coord}");
-    print("desiredCell = ${result.preview?.desiredCell?.coord}");
-    print("actualCell  = ${result.preview?.actualCell?.coord}");
+  void loiter(Ship? ship, {int? auts}) {
+    if (ship != null) fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: auts ?? (ship.nav.moving ? 100 : 10));
   }
 
-  void loiter(Ship? ship, {int auts = 10}) {
-    if (ship != null) fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: ship.nav.moving ? 100 : auts);
+  void manualThrust(Ship ship, {Coord3D? direction, awaitNextCell = true}) {
+    final thrust = ship.systemControl.engine?.thrust ?? 0;
+    final accel = ship.nav.forwardAccel(thrust); // * ship.nav.throttle.speedFactor;
+    final dir = direction != null
+        ? ship.nav.effectiveThrustVector(direction)
+        : ship.nav.vel;
+
+    if (ship.shipClass.engineArch == EngineArch.center) {
+      print("center thrust");
+      // omnidirectional — thrust immediately
+      final thrustVec = dir * accel;
+      ship.nav.applyForce(thrustVec);
+      fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: 10);
+    } else { //print("Rear thrust");
+      // rear/distributed — rotate first, then thrust
+      final targetFacing = direction != null ? _dirToFacing(direction) : ship.nav.facing;
+      ship.nav.targetFacing = targetFacing;
+      ship.nav.pendingThrust = dir * accel;
+      // no action AUTs yet — rotation tick handles them
+    }
+    if (awaitNextCell) loiter(ship);
+  }
+
+  void fullStop(Ship ship, {awaitNextCell = true}) {
+    ship.nav.autoStop = true;
+    if (awaitNextCell) loiter(ship, auts: 10);
+  }
+
+  double _dirToFacing(Coord3D dir) {
+    // convert grid direction to degrees
+    // matches _facingToVec: 0 = up = positive y, 90 = right = positive x
+    return (atan2(dir.x.toDouble(), dir.y.toDouble()) * 180 / pi) % 360;
   }
 }

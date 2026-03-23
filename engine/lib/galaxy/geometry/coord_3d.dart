@@ -29,6 +29,14 @@ class Coord3D {
         z == 0 || z == zMax;
   }
 
+  bool inBounds(GridDim dim) {
+    return !(x < 0 || x >= dim.mx ||
+        y < 0 || y >= dim.my ||
+        z < 0 || z >= dim.mz);
+  }
+
+  bool get isZero => x == 0 && y == 0 && z == 0;
+
   int distanceFromEdge(int size, {bool euclidian = true}) {
     // distance to nearest edge along each axis
     final dx = min(x, size - 1 - x);
@@ -76,4 +84,8 @@ class Vec3 {
   }
 
   double dot(Vec3 o) => x * o.x + y * o.y + z * o.z;
+
+  @override
+  String toString() => "[$x,$y,$z]";
+
 }

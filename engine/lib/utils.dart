@@ -34,5 +34,8 @@ class Utils {
     if (current.isNotEmpty) lines.add(current.toString());
     return lines.map((l) => TextBlock(l, b.color, true)).toList();
   }
+
+  static double lerp(double a, double b, double t) => a + (b - a) * t;
+
 }
 

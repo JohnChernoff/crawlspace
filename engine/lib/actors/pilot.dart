@@ -63,6 +63,7 @@ class Pilot implements Locatable {
   Map<SkillType,double> skills = {};
   int hp;
   int auCooldown = 0;
+  int ticksSinceLastAction = 0;
   ActionType? lastAct;
   bool safeMovement = true;
   Set<Hazard> safeList = { Hazard.nebula, Hazard.wake };
@@ -77,7 +78,20 @@ class Pilot implements Locatable {
   final Map<String,XenomancySpell> knownSpells = {};
   SpaceLocation? targetLoc;
 
-  void tick(FugueEngine fm) => auCooldown = max(0,auCooldown - 1);
+  void tick(FugueEngine fm) {
+    auCooldown = max(0,auCooldown - 1);
+    ticksSinceLastAction++;
+  }
+
+  void wake() {
+    auCooldown = 0;
+  }
+
+  void newTurn() {
+    print("au: $ticksSinceLastAction");
+    ticksSinceLastAction = 0;
+  }
+
 
   Pilot(this.name,{Random? rnd, required PilotLocale loc, Galaxy? galaxy, Faction? f, this.hp = 32, isPirate = false}) {
     locale = loc;

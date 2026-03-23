@@ -326,11 +326,13 @@ class FugueEngine {
     update();
     glog("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}",
         level: DebugLevel.Fine);
+
+    player.newTurn();
     return playerShip?.loc.domain == domain;
   }
 
   void wakePilot(Pilot p) {
-    p.auCooldown = 0;
+    p.wake();
     update();
   }
 

@@ -36,7 +36,7 @@ enum EngineArch {
 
   double get lateralFactor  => switch (this) {
     EngineArch.rear => 0.45,
-    EngineArch.center => 0.75,
+    EngineArch.center => 0.75, // unused — center engines bypass _thrustMultiplier
     EngineArch.distributed => 1.00,
   };
 

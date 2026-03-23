@@ -162,7 +162,7 @@ class ShipRegistry {
     }
     _byLoc.putIfAbsent(newLoc, () => {}).add(ship);
     ship.loc = newLoc;
-    if (ship.nav.heading == null) ship.nav.pos = Position.fromCoord(ship.loc.cell.coord);
+    //if (ship.nav.heading == null) ship.nav.pos = Position.fromCoord(ship.loc.cell.coord);
   }
 
   void changePilot(Ship ship, Pilot newPilot) {
@@ -175,9 +175,7 @@ class ShipRegistry {
     remove(ship);
     final undockedShip = Ship.board(pilot, ship);
     add(undockedShip);
-    undockedShip.systemControl = ship.systemControl;
-    undockedShip.systemControl.ship = undockedShip; // fix back-reference
-    undockedShip.inventory = ship.inventory;
+    undockedShip.undock(ship);
     pilot.locale = AboardShip(undockedShip);
   }
 

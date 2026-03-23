@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import '../controllers/movement_controller.dart';
+import '../fugue_engine.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
 import 'nav.dart';
@@ -93,15 +94,14 @@ class MovePreviewer {
     double nextVelY = vy;
     double nextVelZ = vz;
 
-    if (throttle == ThrottleMode.stop) {
+    if (throttle == ThrottleMode.stop || ctx.ship.nav.autoStopping) {
       if (mag == 0) { //if (mag < epsilon)
-        bool nextIsBraking = state.isBraking;
         return MovementPreview(
           desiredCell: desiredCell,
           actualCell: ctx.currentCell,
           auts: 1,
           energyRequired: 0,
-          newState: state.copyWith(isBraking: false),
+          newState: state.copyWith(),
         );
       }
 
@@ -158,7 +158,7 @@ class MovePreviewer {
       vy = next.y;
       vz = next.z;
 
-      if (!selecting) print("GUIDE d:${mag.toStringAsFixed(2)}, $guidance");
+      if (!selecting) glog("GUIDE d:${mag.toStringAsFixed(2)}, $guidance", level: DebugLevel.Fine);
     } else if (!noEngine) {
       final guidance = nav.autoPilot.computeGuidanceVelocity(
         pos: state.pos,

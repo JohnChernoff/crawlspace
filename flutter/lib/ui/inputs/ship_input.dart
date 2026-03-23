@@ -48,6 +48,10 @@ class DirectionIntent extends Intent {
   const DirectionIntent(this.dx,this.dy,this.dz);
 }
 
+class StopIntent extends Intent {
+  const StopIntent();
+}
+
 class OpenInventoryIntent extends Intent {
   final InventoryType type;
   const OpenInventoryIntent(this.type);
@@ -199,14 +203,26 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         LogicalKeySet(LogicalKeyboardKey.comma):
         const ImpulseIntent(false),
 
+        LogicalKeySet(LogicalKeyboardKey.digit0):
+        const ThrottleIntent(ThrottleMode.drift),
+
         LogicalKeySet(LogicalKeyboardKey.digit1):
-        const ThrottleIntent(ThrottleMode.stop),
+        const ThrottleIntent(ThrottleMode.tenth),
 
         LogicalKeySet(LogicalKeyboardKey.digit2):
-        const ThrottleIntent(ThrottleMode.half),
+        const ThrottleIntent(ThrottleMode.quarter),
 
         LogicalKeySet(LogicalKeyboardKey.digit3):
+        const ThrottleIntent(ThrottleMode.half),
+
+        LogicalKeySet(LogicalKeyboardKey.digit4):
         const ThrottleIntent(ThrottleMode.full),
+
+        LogicalKeySet(LogicalKeyboardKey.digit5):
+        const ThrottleIntent(ThrottleMode.stop),
+
+        LogicalKeySet(LogicalKeyboardKey.keyS):
+        const StopIntent(),
 
         LogicalKeySet(LogicalKeyboardKey.keyL):
         const OpenPlanetMenuIntent(),
@@ -308,8 +324,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
           }
         ),
         CruiseIntent: CallbackAction<CruiseIntent>(
-            onInvoke: (_) {
-              //fm.movementController.cruise(fm.playerShip);
+            onInvoke: (_) { //fm.movementController.cruise(fm.playerShip);
               fm.movementController.loiter(fm.playerShip);
               return null;
             }
@@ -320,7 +335,12 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
               return null;
             }
         ),
-
+        StopIntent: CallbackAction<StopIntent>(
+            onInvoke: (_) {
+              if (fm.playerShip != null) fm.movementController.fullStop(fm.playerShip!);
+              return null;
+            }
+        ),
         ImpulseIntent: CallbackAction<ImpulseIntent>(
             onInvoke: (intent) {
               if (intent.enter) {

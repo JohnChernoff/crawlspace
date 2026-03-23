@@ -40,11 +40,14 @@ class AsciiGridPainter extends CustomPainter {
     final map = ship.loc.map;
     final dim = map.dim;
 
+    final is2D = map.dim.mz == 1;
+
     final cellW = size.width / dim.mx;
     final cellH = size.height / dim.my;
-    final layerSize = cellH / 2;
+    final layerSize = is2D ? cellH : cellH / 2;
 
     final paint = Paint();
+    final projectedPath = ship.nav.projectedPath(4).toSet();
 
     for (int y = 0; y < dim.my; y++) {
       for (int x = 0; x < dim.mx; x++) {
@@ -62,19 +65,19 @@ class AsciiGridPainter extends CustomPainter {
           //final t = pow(tRaw, 0.9); // tweak this
           final stackXInset = 4; //cellW * 0.04;
           final zLiftPerLayer = 1; //max(1.0, cellH * 0.015);
-          final dx = baseRect.left - stackXInset + (cellW - layerSize) * t;
+          final dx = is2D ?  baseRect.left + cellW/2 : baseRect.left - stackXInset + (cellW - layerSize) * t;
           final dy = baseRect.top - (cell.coord.z * zLiftPerLayer) + (cellH - layerSize) * t;
 
-          final state = _renderStateForCell(cell, fm, ship, targetPathCoords, targetLoc?.cell,scanSelection,playerZ);
+          final state = _renderStateForCell(cell, fm, ship, targetPathCoords, projectedPath, targetLoc?.cell,scanSelection,playerZ);
           final glyph = _glyphForCell(cell, ship);
-          final color = _colorForCell(cell, ship, state);
+          final color = _colorForCell(cell, ship, state, is2D: is2D);
           final fontSize = _fontSizeForCell(layerSize, z, dim);
           //final fontSize = _fontSizeForCell(effectiveLayerSize * 0.9, z, dim);
 
           final paragraph = _getParagraph(glyph, color, fontSize);
           canvas.drawParagraph(paragraph, Offset(dx, dy));
 
-          if (state.uiTarget) {
+          if (state.uiTarget || state.inShipPath) {
             _paintTargetMarker(canvas, Rect.fromLTWH(dx, dy, layerSize, layerSize), fontSize);
           }
 
@@ -97,7 +100,13 @@ class AsciiGridPainter extends CustomPainter {
             );
           }
 
+          if (state.inShipPath) {
+
+          }
+
           _paintGridBoundary(canvas, baseRect);
+
+          //if (cell.loc == ship.loc) _paintDirection(canvas, dx, dy + (cellH/2), cellW * 2, cellH * 2, ship.nav.vel);
           //final layerRect = Rect.fromLTWH(dx, dy, layerSize, layerSize);
           //_paintGridBoundary(canvas, layerRect, color: const Color(0x22FFFFFF), strokeWidth: 0.5);
         }
@@ -190,7 +199,7 @@ class AsciiGridPainter extends CustomPainter {
       GridCell cell,
       Ship player,
       _CellRenderState state,
-      ) {
+      { required bool is2D }) {
     final ships = fm.galaxy.ships.atCell(cell);
 
     if (state.selected) {
@@ -202,7 +211,7 @@ class AsciiGridPainter extends CustomPainter {
       if (!s.npc) return shipColor;
     }
 
-    if (state.sameDepthAndNotEmpty) {
+    if (!is2D && state.sameDepthAndNotEmpty) {
       return depthColor;
     }
 
@@ -278,6 +287,15 @@ class AsciiGridPainter extends CustomPainter {
     canvas.drawRect(rect, paint);
   }
 
+  void _paintDirection(Canvas canvas, double cx, double cy, double cw, double ch, Vec3 vel) {
+    final v = vel.normalized();
+    final paint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = .5;
+    canvas.drawLine(Offset(cx, cy), Offset(cx + (v.x * cw), cy + (v.y * ch)), paint);
+  }
+
   final _paragraphCache = <String, ui.Paragraph>{};
 
   ui.Paragraph _getParagraph(String glyph, Color color, double fontSize) {
@@ -334,6 +352,7 @@ class _CellRenderState {
   final bool scanned;
   final bool targeted;
   final bool inTargetPath;
+  final bool inShipPath;
   final bool uiTarget;
   final bool sameDepth;
   final bool sameDepthAndNotEmpty;
@@ -342,6 +361,7 @@ class _CellRenderState {
     this.scanned = false,
     this.targeted = false,
     this.inTargetPath = false,
+    this.inShipPath = false,
     this.uiTarget = false,
     this.sameDepth = false,
     this.sameDepthAndNotEmpty = false,
@@ -356,6 +376,7 @@ _CellRenderState _renderStateForCell(
     FugueEngine fm,
     Ship player,
     Set<Coord3D> targetPathCoords,
+    Set<Coord3D> shipPathCoords,
     GridCell? targetCell,      // precomputed targetLoc?.cell
     GridCell? scanSelection,   // precomputed currentScanSelection
     int playerZ,
@@ -363,6 +384,7 @@ _CellRenderState _renderStateForCell(
   final scanned = scanSelection?.loc == cell.loc;
   final targeted = targetCell == cell;
   final inTargetPath = targetPathCoords.contains(cell.coord);
+  final inShipPath = shipPathCoords.contains(cell.coord);
   final sameDepth = (cell.coord.z - playerZ).abs() == 0;
   final sameDepthAndNotEmpty = sameDepth && (
       cell.hazLevel > 0 ||
@@ -376,6 +398,7 @@ _CellRenderState _renderStateForCell(
     scanned: scanned,
     targeted: targeted,
     inTargetPath: inTargetPath,
+    inShipPath: inShipPath,
     uiTarget: uiTarget,
     sameDepth: sameDepth,
     sameDepthAndNotEmpty: sameDepthAndNotEmpty,

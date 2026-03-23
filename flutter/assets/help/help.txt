@@ -41,10 +41,9 @@ Summary:
     Scanning:
         q - select next upper object in list
         a - select next lower object in list
-        s - select next scan mode
-        S - select previous scan mode
-        t - target scanned non-ship object
-        T - target scanned ship
+        Q - select next scan mode
+        A - select previous scan mode
+        t - target a ship/object
     Combat:
         f - fire on scanned ship
         numpad plus - pursue scanned ship
@@ -60,6 +59,9 @@ Summary:
         ✱ asteroids + nebula
         % ion storm + asteroids
         ※ ion storm + asteroids + nebula
+    Other:
+        S - select a system
+        M - enter galactic map
 ***
 
 This game is extremely new and under active development and therefore subject to quite a bit of change.  Feel free to

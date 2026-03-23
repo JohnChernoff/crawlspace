@@ -1,7 +1,10 @@
 import 'dart:math';
 
+import 'package:crawlspace_engine/ship/ship.dart';
+
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
+import '../galaxy/geometry/location.dart';
 import 'nav.dart';
 
 class GuidanceResult {
@@ -31,6 +34,15 @@ class GuidanceResult {
 }
 
 class AutoPilot {
+
+  Ship ship;
+  SpaceLocation? _heading;
+  SpaceLocation get heading => _heading ?? ship.loc;
+  set heading(SpaceLocation? h) { //print("Heading: $h");
+    _heading = h;
+  }
+
+  AutoPilot(this.ship);
 
   GuidanceResult computeGuidanceVelocity({
     required Position pos,
