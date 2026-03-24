@@ -16,7 +16,7 @@ abstract interface class Locatable {
   SpaceLocation get loc;
 }
 
-class SpaceEnvironment<T extends SpaceLocation> extends SpaceObject implements Locatable {
+class SpaceEnvironment<T extends SpaceLocation> extends MassiveObject implements Locatable {
   T get loc => locale;
   T locale;
   String get fedStr  => "${(fedLvl  * 100).round()}";
@@ -33,7 +33,7 @@ class SpaceEnvironment<T extends SpaceLocation> extends SpaceObject implements L
   double rapport = 0; // -1–1
 
   SpaceEnvironment(super.name, this.fedLvl, this.techLvl,
-      {super.shortDesc, required T this.locale});
+      {super.shortDesc, required T this.locale, super.mass = 1});
 }
 
 class SpaceObject implements Nameable, Describable {
@@ -47,4 +47,9 @@ class SpaceObject implements Nameable, Describable {
 
   GameColor objColor;
   SpaceObject(this.name, {this.shortDesc, this.objColor = GameColors.white});
+}
+
+class MassiveObject extends SpaceObject {
+  double mass; //1 = earth
+  MassiveObject(super.name, {required this.mass, super.objColor, super.shortDesc});
 }

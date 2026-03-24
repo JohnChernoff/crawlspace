@@ -29,7 +29,7 @@ class LayerTransitController extends FugueController {
     final cell = ship.loc.cell; if (cell is! SectorCell) {
       fm.msg("Wrong layer!"); return;
     }
-    final star = cell.starClass; if (star == null) {
+    final stars = fm.galaxy.stars.inSector(cell.loc); if (stars.isEmpty) {
       fm.msg("No star!"); return;
     }
     fm.menuController.showMenu(() => fm.menuFactory.buildHyperspaceMenu(ship.loc.system), headerTxt: "Hyperspace");
@@ -49,11 +49,10 @@ class LayerTransitController extends FugueController {
     Ship? ship = fm.getShip(pilot); if (ship != null) {
       final sysLoc = ship.loc;
       if (sysLoc is SectorLocation) {
-        if (sysLoc.cell.starClass != null) { //sysLoc.level.removeShip(ship);
+        if (fm.galaxy.stars.findGate(sysLoc.system).sector == sysLoc) { //sysLoc.level.removeShip(ship);
           if (action) fm.pilotController.action(pilot,ActionType.sector);
           if (ship.loc.domain == Domain.system) { //didn't get pulled into impulse
-            final stars = system.map.values.where((c) => c.starClass != null);
-            ship.move(SectorLocation(system,stars.first.coord),fm.galaxy.ships);
+            ship.move(SectorLocation(system,fm.galaxy.stars.findGate(system).sectorCoord),fm.galaxy.ships);
             system.visit(fm);
             if (ship.itinerary != null) {
               if (ship.itinerary!.last == system) {

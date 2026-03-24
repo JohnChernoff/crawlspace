@@ -147,7 +147,7 @@ class AsciiGridPainter extends CustomPainter {
     // 5. Special cells
     if (cell is SectorCell) {
       if (cell.hasPlanets(fm.galaxy)) return "O";
-      if (cell.starClass != null) return "✦";
+      if (cell.hasStars(fm.galaxy)) return "✦";
       if (cell.blackHole) return "-";
     }
 
@@ -390,7 +390,7 @@ _CellRenderState _renderStateForCell(
       cell.hazLevel > 0 ||
           fm.galaxy.ships.atCell(cell).isNotEmpty ||
           (cell is ImpulseCell && (cell.hasPlanet(fm.galaxy) || fm.galaxy.items.anyAt(cell.loc))) ||
-          (cell is SectorCell && (cell.hasPlanets(fm.galaxy) || cell.starClass != null || cell.blackHole))
+          (cell is SectorCell && (cell.hasPlanets(fm.galaxy) || cell.hasStars(fm.galaxy) || cell.blackHole))
   );
   final uiTarget = targeted; // or separate this if you distinguish cursor vs final target
 

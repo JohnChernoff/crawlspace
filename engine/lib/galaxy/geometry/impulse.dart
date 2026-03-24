@@ -17,11 +17,13 @@ class ImpulseCell extends GridCell {
   bool hasPlanet(Galaxy g) => getPlanet(g) != null;
   ImpulseMap map;
   SectorCell sector;
+  bool outpost;
 
   ImpulseCell(
       this.sector, {
         super.coord,
         super.hazMap,
+        this.outpost = false,
       }) : map = EmptySubImpulse.instance;
 
   void hodgeTick(Hazard haz, Random rnd, {jitter = .1}) {

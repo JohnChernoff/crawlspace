@@ -172,16 +172,19 @@ class PilotController extends FugueController {
     }
   }
 
-  void headTowards(GridCell cell) {}
-
   energyScoop() {
     Ship? ship = fm.playerShip;
     if (ship == null) {
       fm.msg("You're not in a ship."); return;
     }
     double amount = 50; //((ship.energyConvertor.value/(Rng.biasedRndInt(rnd,mean: 50, min: 25, max: 80))) * player.system.starClass.power).floor();
-    fm.msg("Scooping class ${fm.player.system.starClass.name} star... gained ${ship.systemControl.recharge(amount)} energy");
-    fm.pilotController.action(fm.player,ActionType.energyScoop);
+    final loc = ship.loc; if (loc is ImpulseLocation) {
+      final star = fm.galaxy.stars.byImpulse(loc);
+      if (star != null) {
+        fm.msg("Scooping class ${star.stellarClass.name} star... gained ${ship.systemControl.recharge(amount)} energy");
+        fm.pilotController.action(fm.player,ActionType.energyScoop);
+      }
+    }
   }
 
   void scrap() { //print("Attempting to scrap");

@@ -4,8 +4,10 @@ import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
+import 'package:crawlspace_engine/galaxy/star.dart';
 import '../color.dart';
 import '../item.dart';
+import '../rng/star_sys_gen.dart';
 import 'geometry/coord_3d.dart';
 import 'galaxy.dart';
 import 'geometry/grid.dart';
@@ -16,20 +18,6 @@ import 'planet.dart';
 import '../rng/rng.dart';
 
 enum TrafficGenHint { normal, culDeSac, hub }
-
-enum StellarClass {
-  O(GameColor(0xFF3456EE),100,4),
-  B(GameColor(0xFFAABEFF),75,12),
-  A(GameColor(0xFFD5E0FE),60,20),
-  F(GameColor(0xFFF8F5FF),50,32),
-  G(GameColor(0xFFFFEDE2),36,48),
-  K(GameColor(0xFFFFD9B5),25,75),
-  M(GameColor(0xFFFFB56C),12,100);
-  final GameColor color;
-  final int power;
-  final int prob;
-  const StellarClass(this.color,this.power,this.prob);
-}
 
 typedef SystemMap = MappedGrid<SectorCell>;
 
@@ -45,12 +33,12 @@ class System extends GridCell implements Nameable {
   bool scouted = false;
   bool visited = false;
   bool connected;
-  StellarClass starClass;
   double anomaly;
   SystemMap map;
   final Map<Coord3D, SectorMap> impulseCache = {};
+  late SystemMetadata metadata;
 
-  System(this.name,this.starClass,Random rnd,
+  System(this.name,Random rnd,
       {super.coord, super.hazMap, required this.map,this.blackHole = false,this.starOne = false,
         this.trafficGenHint = TrafficGenHint.normal, this.connected = false})
       : anomaly = 0.7 + rnd.nextDouble() * 0.6;
@@ -124,7 +112,6 @@ class System extends GridCell implements Nameable {
     final List<SectorCell> starCells = map.values.where((c) => !c.hasPlanets(g) && c.blackHole == false).toList();
     final starCell = map.rndCell(g.rnd, cellList:  starCells);
     starCell.clearHazards();
-    starCell.starClass = starClass;
 
     return map;
   }
@@ -210,7 +197,7 @@ class System extends GridCell implements Nameable {
     final sectorNeb = sector.hazMap[Hazard.nebula] ?? 0;
 
     final cells = <Coord3D, ImpulseCell>{};
-
+    final centerCoord = Coord3D((dim.mx/2).round(), (dim.my/2).round(), 0) ;
     for (int x = 0; x < dim.mx; x++) {
       for (int y = 0; y < dim.my; y++) {
         for (int z = 0; z < dim.mz; z++) {
@@ -218,11 +205,12 @@ class System extends GridCell implements Nameable {
           cells[c] = ImpulseCell(
             sector,
             coord: c,
+            outpost: c == centerCoord,
             hazMap: {
               Hazard.nebula: rnd.nextDouble() < sectorNeb ? sectorNeb : 0,
               Hazard.ion: rnd.nextDouble() < sectorIon ? sectorIon : 0,
               Hazard.roid: sector.hazMap[Hazard.roid] ?? 0,
-              Hazard.wake: c.isEdge(dim) ? 1 : 0,
+              //Hazard.wake: c.isEdge(dim) ? 1 : 0, //TODO: perhaps for 3D only
             },
           );
         }

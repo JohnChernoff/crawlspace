@@ -1,5 +1,6 @@
 import 'dart:math';
-
+import 'galaxy/geometry/object.dart';
+import 'galaxy/star.dart';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/stock_items/activators.dart';
@@ -7,7 +8,6 @@ import 'package:crawlspace_engine/stock_items/species.dart';
 import 'actors/pilot.dart';
 import 'galaxy/galaxy.dart';
 import 'galaxy/system.dart';
-import 'galaxy/geometry/object.dart';
 
 abstract interface class Nameable {
   String get selectionName;
@@ -29,18 +29,17 @@ mixin Itemizable {
   bool eq(Itemizable i) => i.name == name;
 }
 
-class Item extends SpaceObject with Itemizable {
+class Item extends MassiveObject with Itemizable {
   int get baseCost => _baseCost;
   String get shopDesc => name;
   static int _idCounter = 0;
   final int _baseCost;
   final double rarity;
   final int id;
-  final double mass; //tonnes
   final double volume; //cubic meters
   final sellable;
 
-  Item(super.name, {super.shortDesc, int baseCost = 0, this.rarity = 0, this.mass = .01, this.volume = .01,
+  Item(super.name, {super.shortDesc, int baseCost = 0, this.rarity = 0, super.mass = .01, this.volume = .01,
     this.sellable = true, super.objColor}) : id = _idCounter++, _baseCost = baseCost;
 
 

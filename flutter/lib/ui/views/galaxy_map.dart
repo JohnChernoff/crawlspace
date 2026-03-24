@@ -305,7 +305,7 @@ class GalaxyMapState extends State<GalaxyMap> {
     return switch(legend) {
       GalaxyMapLegend.selection => graphColor(getVal(fm.menuController.selectedItem,system)),
       GalaxyMapLegend.corp => Color(g.corpMod.dominantCorp(system)?.color.argb ?? 0),
-      GalaxyMapLegend.star => Color(system.starClass.color.argb),
+      GalaxyMapLegend.star => Color(g.stars.mainStar(system).stellarClass.color.argb),
       GalaxyMapLegend.fed => graphColor(g.fedKernel.val(system), red: 128, green: 0), //blue
       GalaxyMapLegend.tech => graphColor(g.techKernel.val(system), red: 0, blue: 92), //green
       GalaxyMapLegend.trade => graphColor(g.techKernel.val(system)), //white

@@ -6,9 +6,16 @@ import 'package:crawlspace_engine/galaxy/models/flow_model.dart';
 import 'package:crawlspace_engine/galaxy/models/topology.dart';
 import 'package:crawlspace_engine/galaxy/models/trade_model.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/reg/item_reg.dart';
+import 'package:crawlspace_engine/galaxy/reg/pilot_reg.dart';
+import 'package:crawlspace_engine/galaxy/reg/plan_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/reg.dart';
+import 'package:crawlspace_engine/galaxy/reg/ship_reg.dart';
+import 'package:crawlspace_engine/galaxy/reg/star_reg.dart';
+import 'package:crawlspace_engine/galaxy/star.dart';
 import 'package:crawlspace_engine/rng/item_gen.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
+import '../rng/star_sys_gen.dart';
 import 'flow_field.dart';
 import '../fugue_engine.dart';
 import 'kernels/auth_kern.dart';
@@ -78,6 +85,7 @@ class Galaxy {
   late CommerceKernelField commerceKernel;
   late AuthorityKernelField fedKernel;
   late RegModel rm;
+  StarRegistry get stars => rm.stars;
   PlanetRegistry get planets => rm.planets;
   ShipRegistry get ships => rm.ships;
   ItemRegistry get items => rm.items;
@@ -88,17 +96,17 @@ class Galaxy {
   //late TradeKernelField supplyField;    // per-commodity supply gradient
   //late TradeKernelField demandField;    // per-commodity demand gradient
 
-// Dynamic (ticking forward)
-// flowFields["tradeFlow"] — actual goods moving along routes
-// flowFields["priceSignal"] — price information diffusing through gossip
+  // Dynamic (ticking forward)
+  // flowFields["tradeFlow"] — actual goods moving along routes
+  // flowFields["priceSignal"] — price information diffusing through gossip
 
   Galaxy(this.name, {int? seed}) :
         rnd = seed != null ?  Random(seed) : Random(),
         nameGenerator = NameGenerator(seed ?? 1) {
-    fedHomeSystem = System("Mentos", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub, map: EmptySector());
-    fed1 = System("Movelia", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.hub, map: EmptySector());
-    fed2 = System("Sargon", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.normal, map: EmptySector());
-    fed3 = System("Javalix", StellarClass.K, rnd, connected: true, trafficGenHint: TrafficGenHint.culDeSac, map: EmptySector());
+    fedHomeSystem = System("Mentos", rnd, connected: true, trafficGenHint: TrafficGenHint.hub, map: EmptySector());
+    fed1 = System("Movelia", rnd, connected: true, trafficGenHint: TrafficGenHint.hub, map: EmptySector());
+    fed2 = System("Sargon", rnd, connected: true, trafficGenHint: TrafficGenHint.normal, map: EmptySector());
+    fed3 = System("Javalix", rnd, connected: true, trafficGenHint: TrafficGenHint.culDeSac, map: EmptySector());
     systems.addAll([fedHomeSystem,fed1,fed2,fed3]);
 
     final t0 = DateTime.now(); _createMap(); final t1 = DateTime.now();
@@ -153,7 +161,7 @@ class Galaxy {
       String name;
       do { name = nameGenerator.generateSystemName(); }
       while (systems.where((sys) => sys.name == name).isNotEmpty);
-      System system = System(name,getRndStellarClass(),rnd, map: EmptySector());
+      System system = System(name,rnd, map: EmptySector());
       systems.add(system);
     }
     for (System system in systems) {
@@ -235,17 +243,6 @@ class Galaxy {
     if (a > 0.4) return LawLevel.regulated;
     if (a > 0.15) return LawLevel.frontier;
     return LawLevel.lawless;
-  }
-
-  StellarClass getRndStellarClass() {
-    final totalWeight = StellarClass.values.fold<int>(0, (sum, sc) => sum + sc.prob);
-    final target = rnd.nextInt(totalWeight);
-    int cumulative = 0;
-    for (final sc in StellarClass.values) {
-      cumulative += sc.prob;
-      if (target < cumulative) return sc;
-    }
-    return StellarClass.values.last; // Fallback (should never happen)
   }
 
   void spreadAssign<T>(List<T> list, Map<T,System> map, List<System> sysList) {
