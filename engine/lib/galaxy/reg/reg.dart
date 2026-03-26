@@ -8,7 +8,6 @@ import 'package:crawlspace_engine/galaxy/reg/star_reg.dart';
 import 'package:crawlspace_engine/ship/nav.dart';
 import '../../actors/pilot.dart';
 import '../../item.dart';
-import '../../ship/hangar_ship.dart';
 import '../../ship/ship.dart';
 import '../geometry/location.dart';
 import '../geometry/object.dart';
@@ -202,74 +201,78 @@ abstract class Containable<T extends SpaceLocation> extends Locatable<T> {
 
 //in this file because HangarShip extends Locatable
 class ShipRegistry {
-  Set<HangarShip> get hangarShips => _all.whereType<HangarShip>().toSet();
-  Set<Ship> get activeShips => _all.whereType<Ship>().toSet();
-  Set<HangarShip> get all => _all;
-  final Set<HangarShip> _all = {};
+  Set<Ship> get hangarShips => _all.where((s) => s.isDocked).toSet();
+  Set<Ship> get activeShips => _all.where((s) => s.isFlying).toSet();
+  Set<Ship> get all => _all;
+  final Set<Ship> _all = {};
   final Map<Pilot, Ship> _byPilot = {};
-  final Map<SpaceLocation, Set<HangarShip>> _byLoc = {};
+  final Map<SpaceLocation, Set<Ship>> _byLoc = {};
   Ship? byPilot(Pilot p) => _byPilot[p];
   Set<Ship> atLocation(SpaceLocation loc) => Set.of(_byLoc[loc] ?? {}).whereType<Ship>().toSet();
   Set<Ship> atCell(GridCell c) => atLocation(c.loc);
   Set<Ship> atDomain(SpaceLocation loc) => atLocation(loc).where((s) => s.loc.domain == loc.domain).toSet();
-  Set<HangarShip> atHangarLocation(SpaceLocation loc) => Set.of(_byLoc[loc] ?? {}).whereType<HangarShip>().toSet();
+  Set<Ship> atHangarLocation(SpaceEnvironment env) => _all.where((s) => s.hangarOrNull == env).toSet();
 
   PilotRegistry pilots;
   ShipRegistry(this.pilots);
 
-  void add(HangarShip ship, SpaceLocation loc, {init = false}) {
+  void _add(Ship ship, SpaceLocation loc) {
     _all.add(ship);
     _byLoc.putIfAbsent(loc, () => {}).add(ship);
     ship._loc = loc;
-    if (ship is Ship) {
-      _byPilot[ship.pilot] = ship;
-      pilots.add(ship.pilot);
-      if (init) ship.nav = ShipNav(ship); //nav requires a loc for initialization
-    }
   }
 
-  void remove(HangarShip ship, {moving = false}) {
+  void addFlying(Ship ship, SpaceLocation loc, Pilot pilot) {
+    _add(ship,loc);
+    ship.state = FlightState(pilot, ShipNav(ship));
+    _byPilot[ship.pilot] = ship;
+    pilots.add(ship.pilot);
+  }
+
+  void addDocked(Ship ship, SpaceEnvironment env) {
+    _add(ship,env.loc);
+    ship.state = DockedState(env);
+  }
+
+  void _remove(Ship ship) {
     _all.remove(ship);
-    if (ship is Ship && !moving) {
+    _byLoc[ship.maybeLoc]?.remove(ship);
+  }
+
+  void remove(Ship ship) {
+    _remove(ship);
+    if (ship.isFlying) {
       _byPilot.remove(ship.pilot);
     }
-    _byLoc[ship.maybeLoc]?.remove(ship);
-    //if (_byLoc[ship.maybeLoc]?.isEmpty ?? false) { _byLoc.remove(ship.loc); }
-    if (!moving) {
-      for (final shp in activeShips.where((s) => s.nav.targetShip == ship)) {
-        shp.nav.targetShip = null;
-      }
+    for (final shp in activeShips.where((s) => s.nav.targetShip == ship)) {
+      shp.nav.targetShip = null;
     }
   }
 
-  // call before moving
   void move(Ship ship, SpaceLocation newLoc) {
-    remove(ship, moving: true);
-    add(ship, newLoc);
+    _remove(ship);
+    _add(ship, newLoc);
   }
 
   void changePilot(Ship ship, Pilot newPilot) {
     _byPilot.remove(ship.pilot);
-    ship.pilot = newPilot;
+    final state = ship.state;
+    if (state is FlightState) state.pilot = newPilot;
     _byPilot[newPilot] = ship;
   }
 
-  void undock(HangarShip ship, Pilot pilot) {
-    remove(ship);
-    final undockedShip = Ship.board(pilot, ship);
-    add(undockedShip,ship.loc);
-    undockedShip.undock(ship);
-    pilot.locale = AboardShip(undockedShip);
+  void undock(Ship ship, Pilot pilot) {
+    if (ship.isDocked) {
+      ship.state = FlightState(pilot, ShipNav(ship));
+      pilot.locale = AboardShip(ship);
+    }
   }
 
   void dock(Ship ship, SpaceEnvironment env) {
-    ship.pilot.locale = AtEnvironment(env);
-    remove(ship);
-    final dockedShip = HangarShip.toHangar(ship);
-    add(dockedShip,dockedShip.loc);
-    dockedShip.systemControl = ship.systemControl;
-    dockedShip.systemControl.ship = dockedShip;
-    dockedShip.inventory = ship.inventory;
+    if (ship.isFlying) {
+      ship.pilot.locale = AtEnvironment(env);
+      ship.state = DockedState(env);
+    }
   }
 }
 

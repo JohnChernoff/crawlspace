@@ -25,7 +25,7 @@ class Player extends Pilot {
   Set<Ship> fleet = {};
   double inebriation = 0;
 
-  Player(super.name,{required super.sector, super.galaxy}) {
+  Player(super.name,super._locale,{super.galaxy}) {
     knownSpells["f"] = XenomancySpell.foldSpace;
     knownSpells["c"] = XenomancySpell.firecloud;
   }

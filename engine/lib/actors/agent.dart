@@ -21,7 +21,7 @@ class Agent extends Pilot {
   double speed = 1;
   int tracked = 0;
 
-  Agent(super.name, this.personality, {required super.sector, super.galaxy});
+  Agent(super.name, super._locale, this.personality, {super.galaxy});
 
   // Called each turn by the engine
   void tick(FugueEngine fm) {

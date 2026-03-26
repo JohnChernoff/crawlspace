@@ -1,7 +1,7 @@
 import 'package:crawlspace_engine/item.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
-import '../ship/hangar_ship.dart';
+import '../ship/ship.dart';
 import '../ship/systems/shields.dart';
 import '../ship/systems/ship_system.dart';
 import '../ship/systems/weapons.dart';
@@ -42,7 +42,7 @@ class Hull extends Item with Resisting {
   HullMaterial material;
   Set<Resistance> get resists => material.resists;
   Hull(this.material,super.name, {super.baseCost, super.rarity, super.volume});
-  factory Hull.fromMaterial(HullMaterial material, HangarShip ship) =>
+  factory Hull.fromMaterial(HullMaterial material, Ship ship) =>
       Hull(material,"${material.name} hull",
           baseCost: (material.unitCost * ship.volume).round(),
           rarity: material.rarity,

@@ -46,7 +46,7 @@ class Pilot {
   void set locale(PilotLocale l) { //print("Setting locale: ${l.name}");
     _locale = l;
   }
-  late PilotLocale _locale;
+  PilotLocale _locale;
   System get system => locale.loc.system;
   AtEnvironment? get _env => locale is AtEnvironment ? locale as AtEnvironment : null;
   double get tech => _env?.env.techLvl ?? .5;
@@ -88,8 +88,8 @@ class Pilot {
   }
 
 
-  Pilot(this.name,{Random? rnd, required SectorLocation sector, Galaxy? galaxy, Faction? f, this.hp = 32, isPirate = false}) {
-    locale = AtEnvironment.fromSystem(sector);
+  Pilot(this.name,this._locale,{Random? rnd, Galaxy? galaxy, Faction? f, this.hp = 32, isPirate = false}) {
+    //locale = AtEnvironment.fromSystem(sector);
     if (this is Player) { //FactionList.values.forEach((f) => print(f.factionName)); print(FactionList.values);
       faction = getFaction(FactionList.fedReb)!;
     } else if (this is Agent) {

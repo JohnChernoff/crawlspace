@@ -4,7 +4,6 @@ import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
 import 'package:crawlspace_engine/rng/ship_gen.dart';
-import 'package:crawlspace_engine/ship/hangar_ship.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
@@ -136,7 +135,9 @@ class FugueEngine {
     effectRnd = Random(seed ^ 0xBEAD);
     combatRnd = Random(seed ^ 0xABCDEF);
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
-    HangarShip pShip = HangarShip("HMS Sebastian",
+
+    player = Player(playerName,AtEnvironment.fromSystem(SectorLocation(farSys,farSys.map.rndCoord(mapRnd))));
+    Ship pShip = Ship("HMS Sebastian",
         shipClass: ShipClass.fromEnum(ShipClassType.hermes),
         generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
         sensor: Sensor.fromStock(StockSystem.senFed1),
@@ -146,15 +147,14 @@ class FugueEngine {
         shield: Shield.fromStock(StockSystem.shdBasicEnergon),
         weapons: [Weapon.fromStock(StockSystem.wepFedLaser3),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
         ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50}
-        );
-    player = Player(playerName,sector: SectorLocation(farSys,farSys.map.rndCoord(mapRnd))); //playShip.pilot = player;
+    );
+    galaxy.ships.addFlying(pShip,SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),player);
     player.system.visited = true;
-    galaxy.ships.add(pShip,SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),init: true);
-    galaxy.ships.undock(pShip, player); //TODO: fix/clarify?
 
     final agentLoc = SectorLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCoord(mapRnd));
     for (final persona in AgentPersonality.values) {
-        HangarShip agentShip = HangarShip("Agent ${persona.name}",
+      final agent = Agent(persona.name,AtEnvironment.fromSystem(agentLoc),persona,galaxy: galaxy);
+      Ship agentShip = Ship("Agent ${persona.name}",
             shipClass: ShipClass.fromEnum(ShipClassType.galaxy),
             generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
             impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
@@ -163,9 +163,7 @@ class FugueEngine {
             shield: Shield.fromStock(StockSystem.shdBasicEnergon),
             weapons: [Weapon.fromStock(StockSystem.wepPlasmaRay),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
             ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 250});
-        final agent = Agent(persona.name,persona,sector: agentLoc,galaxy: galaxy);
-        galaxy.ships.add(agentShip, agentLoc,init: true);
-        galaxy.ships.undock(agentShip, agent);
+        galaxy.ships.addFlying(agentShip, agentLoc, agent);
     }
     //print(_shipRegistry.all); //print(_pilotRegistry.all); //print (activePilots);
     msg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
@@ -174,20 +172,24 @@ class FugueEngine {
   }
 
   void populateSystem(System system, {int? numShips, int maxShips = 8}) {
-    final loc = SectorLocation(system, system.map.rndCoord(mapRnd));
+    final locale = AtEnvironment.fromSystem(SectorLocation(system, system.map.rndCoord(mapRnd)));
     numShips ??= (itemRnd.nextDouble() * (galaxy.civKernel.val(system) * maxShips)).floor();
     for (int i = 0; i < numShips; i++) { //print("Populating System: ${system.name}, ships: $numShips");
-      final ship = ShipGenerator.generateShip(system, galaxy, itemRnd);
-      galaxy.ships.add(ship,loc,init: true);
+      final pilot = Pilot(Rng.generateName(rnd: itemRnd), locale, rnd: itemRnd, galaxy: galaxy, isPirate: false);
+      final ship = ShipGenerator.generateShip(system, galaxy, itemRnd, owner: pilot);
+      galaxy.ships.addFlying(ship,locale.loc,pilot);
+      ShipGenerator.installRandomSystems(ship, itemRnd);
     }
     final numPirates = (itemRnd.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
     for (int i = 0; i < numPirates; i++) {
-      final pirateShip = ShipGenerator.generateShip(system, galaxy, itemRnd, isPirate: true);
-      galaxy.ships.add(pirateShip,loc,init: true);
+      final pilot = Pilot(Rng.generateName(rnd: itemRnd), locale, rnd: itemRnd, galaxy: galaxy, isPirate: true);
+      final pirateShip = ShipGenerator.generateShip(system, galaxy, itemRnd, owner: pilot);
+      galaxy.ships.addFlying(pirateShip,locale.loc, pilot);
+      ShipGenerator.installRandomSystems(pirateShip, itemRnd);
     } //print("Adding pirates: $numPirates");
   }
 
-  void newShip(Pilot pilot, HangarShip ship, SpaceEnvironment env) {
+  void newShip(Pilot pilot, Ship ship, SpaceEnvironment env) {
     final formerShip = galaxy.ships.byPilot(pilot);
     if (formerShip != null) galaxy.ships.dock(formerShip, env);
     galaxy.ships.undock(ship, pilot);

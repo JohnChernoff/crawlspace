@@ -12,6 +12,12 @@ sealed class SpaceLocation {
   System system;
   GridCell get cell; //TODO: error log
   CellMap get map;
+  
+  SectorLocation? get sectorOrNull => switch (this) {
+    SectorLocation s => s,
+    ImpulseLocation i => i.sector,
+    _ => null,
+  };
 
   @override
   bool operator ==(Object other) {
@@ -156,10 +162,10 @@ class AboardShip extends PilotLocale {
 }
 
 class AtEnvironment extends PilotLocale {
-  final tmpLoc;
+  final _tmpLoc;
   final SpaceEnvironment env;
-  AtEnvironment(this.env, {SpaceLocation? tmpLoc}) : this.tmpLoc = tmpLoc ?? env.loc;
+  AtEnvironment(this.env, {SpaceLocation? tmpLoc}) : this._tmpLoc = tmpLoc ?? env.loc;
   factory AtEnvironment.fromSystem(SectorLocation s) => AtEnvironment(SpaceEnvironment("",0,0),tmpLoc: s);
   @override
-  SpaceLocation get loc => env.maybeLoc ?? tmpLoc; // stable — fixed point
+  SpaceLocation get loc => env.maybeLoc ?? _tmpLoc; // stable — fixed point
 }

@@ -6,7 +6,9 @@ import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/rng/ship_sys_gen.dart';
 import 'package:crawlspace_engine/ship/rotation_preview.dart';
+import 'package:crawlspace_engine/ship/ship_sys.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
+import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import 'package:crawlspace_engine/ship/systems/weapon_profiler.dart';
 import '../fugue_engine.dart';
 import '../color.dart';
@@ -19,7 +21,7 @@ import '../item.dart';
 import '../galaxy/geometry/location.dart';
 import '../actors/pilot.dart';
 import '../actors/player.dart';
-import 'hangar_ship.dart';
+import '../stock_items/stock_ships.dart';
 import 'nav.dart';
 import 'systems/power.dart';
 import 'systems/shields.dart';
@@ -76,12 +78,45 @@ class Scrap extends Item {
   double get costEffectiveness => baseCost / mass;
 }
 
-class Ship extends HangarShip {
+sealed class DockingState {}
+
+class FlightState extends DockingState {
   Pilot pilot;
+  final ShipNav nav;
+  FlightState(this.pilot, this.nav);
+}
+
+class DockedState extends DockingState {
+  final SpaceEnvironment hangar;
+  DockedState(this.hangar);
+}
+
+class Ship extends Item {
+  @override
+  int get baseCost => inventory.all.map((i) => i.baseCost).sum + shipClass.volume.round();
+  @override
+  String get shopDesc => dump(shop: true);
+  ShipClass shipClass;
+  Pilot? owner;
+  Inventory<Item> inventory = Inventory();
+  InventoryView<Scrap> get scrapHeap => inventory.filterType<Scrap>();
+  InventoryView get cargo => inventory.filter((i) => i is! ShipSystem || !systemControl.isInstalled(i));
+
+  List<ShipSystemType> multiSystems = [
+    ShipSystemType.engine,
+    ShipSystemType.weapon,
+    ShipSystemType.launcher,
+    ShipSystemType.ammo,
+    ShipSystemType.quarters];
+
+  late ShipSystemControl systemControl;
+  late Hull hull;
+  double get volume => shipClass.volume;
+  double get maxSpeed =>  hull.material.speedMult * shipClass.maxSpeed; // sqrt(volume * mass));
   double hullDamage = 0;
   int minCool = 0;
   late RndSystemInstaller rndSystemInstaller;
-  bool get playship => pilot is Player;
+  bool get playship => pilotOrNull is Player;
   bool get npc => !playship;
   bool sameLevel(Ship? ship) => ship?.loc.domain == loc.domain;
   bool get inNebula => loc.cell.hasHaz(Hazard.nebula);
@@ -89,8 +124,36 @@ class Ship extends HangarShip {
   double xenoMatter = 0;
   bool autoShutdown = false;
   EffectMap<ShipEffect> effectMap = EffectMap();
-  late ShipNav nav;
   double get moveProbability => .1; //TODO: tweak
+  late DockingState _state;
+  DockingState get state => _state;
+  void set state(DockingState s) {
+    _state = s;
+    pilotOrNull?.locale = AboardShip(this);
+  }
+  bool get isFlying => state is FlightState;
+  bool get isDocked => state is DockedState;
+
+  Pilot? get pilotOrNull => switch (state) {
+    FlightState(:final pilot) => pilot,
+    _ => null,
+  };
+
+  ShipNav? get navOrNull => switch (state) {
+    FlightState(:final nav) => nav,
+    _ => null,
+  };
+
+  SpaceEnvironment? get hangarOrNull => switch (state) {
+    DockedState(:final hangar) => hangar,
+    _ => null,
+  };
+
+  Pilot? get pilotOrOwner => pilotOrNull ?? owner;
+  Pilot get pilot => pilotOrNull!; //livin' dangerously..
+  ShipNav get nav => navOrNull!;
+  SpaceEnvironment get hangar => hangarOrNull!;
+  int? techLvl;
 
   // Rotation rate in degrees per AUT, scaled by handling
   double get rotationRate => switch(shipClass.engineArch) {
@@ -100,38 +163,95 @@ class Ship extends HangarShip {
   };
 
   Ship(super.name, {
-    super.owner,
+    this.owner,
+    this.techLvl,
     super.baseCost = 0,
     super.rarity = 1,
-    required super.shipClass,
-    required this.pilot,
-    super.generator,
-    super.weapons,
-    super.ammo,
-    super.shield,
-    super.impEngine,
-    super.subEngine,
-    super.hyperEngine,
-    super.sensor,
-    super.hullMaterial,
-  }) {
-    pilot.locale = AboardShip(this);
+    required this.shipClass,
+    PowerGenerator? generator,
+    List<Weapon>? weapons,
+    Map<Ammo,int>? ammo,
+    Shield? shield,
+    Engine? impEngine,
+    Engine? subEngine,
+    Engine? hyperEngine,
+    Sensor? sensor,
+    HullMaterial hullMaterial = HullMaterial.basic})  {
+
+    hull = Hull.fromMaterial(hullMaterial,this);
+    systemControl = ShipSystemControl(this);
     rndSystemInstaller = RndSystemInstaller(this, systemControl);
+    install(generator);
+    install(hyperEngine, active: false);
+    install(subEngine);
+    install(impEngine,active: false);
+    install(shield);
+    for (final w in weapons ?? []) {
+      install(w);
+    }
+    for (final a in (ammo ?? {}).entries) {
+      systemControl.addAmmo(a.key, a.value, setWeapon: true);
+    }
+    install(sensor);
   }
 
-  factory Ship.board(Pilot pilot, HangarShip s) => Ship(s.name,
-    pilot: pilot,
-    owner: s.owner,
-    baseCost: s.baseCost,
-    rarity: s.rarity,
-    shipClass: s.shipClass,
-  );
+  double get currentMass {
+    double m = 0;
+    for (final a in systemControl.ammo) {
+      m += a.count * a.ammo.mass;
+    }
+    return inventory.all.fold<double>(0.0, (sum, s) => sum + s.mass) + m + shipClass.mass;
+  }
 
-  void undock(HangarShip dockedShip) {
-    systemControl = dockedShip.systemControl;
-    systemControl.ship = this;
-    inventory = dockedShip.inventory;
-    nav = ShipNav(this);
+  double get currentVolume {
+    double m = 0;
+    for (final a in systemControl.ammo) {
+      m += a.count * a.ammo.volume;
+    }
+    return inventory.all.fold<double>(0.0, (sum, s) => sum + s.volume) + m;
+  }
+
+  double get availableSpace => shipClass.volume - currentVolume;
+  bool okVolume(double m) => availableSpace > m;
+
+  void install(ShipSystem? system, {bool active = true}) {
+    if (system != null) {
+      addToInventory(system);
+      final report = systemControl.installSystem(system);
+      if (report.result == InstallResult.success) systemControl.toggleSystem(system, on: active);
+      else print("Error installing ${system.name}: ${report.result.name}");
+    }
+  }
+
+  bool addToInventory(Item i) {
+    if (availableSpace < i.mass) return false;
+    inventory.add(i);
+    return true;
+  }
+
+  String dump({shop = false}) {
+    StringBuffer sb = StringBuffer();
+    if (!shop) {
+      sb.writeln(name);
+      sb.writeln(shipClass.name);
+    }
+    else {
+      sb.writeln("${shipClass.name} Class Starship");
+    }
+    for (final system in systemControl.systemMap) {
+      ShipSystem? s = system.system; if (s != null) {
+        sb.write("${s.name} ");
+        if (!shop) sb.write(s.active ? '+' : '-');
+        if (s is Weapon && s.ammo != null) {
+          sb.write(", ${s.ammo!.name}: ${systemControl.ammoFor(s.ammo!)}");
+        }
+        if (shop) sb.writeln();
+      } else if (!shop) {
+        sb.write("Empty");
+      }
+      if (!shop) sb.writeln(", Slot: ${system.slot}");
+    }
+    return sb.toString();
   }
 
   //shouldn't really do anything other than call the registry

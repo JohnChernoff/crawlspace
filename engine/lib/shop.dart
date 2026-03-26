@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
-import 'package:crawlspace_engine/ship/hangar_ship.dart';
 import 'package:crawlspace_engine/stock_items/trade/commodities.dart';
 import 'item.dart';
 import 'actors/pilot.dart';
@@ -181,12 +180,13 @@ class SystemShop extends Shop {
 class ShipYard extends Shop {
   final int techLvl;
 
-  ShipYard(super.location, this.techLvl, Random rnd, {List<HangarShip>? shiplist}) {
+  ShipYard(super.location, this.techLvl, Random rnd, Galaxy g) {
+    List<Ship>? shiplist = g.ships.atHangarLocation(location).toList();
     name = ShopNameGen.generateYard(techLvl, rnd);
     _generateItems(shiplist);
   }
 
-  void _generateItems(List<HangarShip>? shiplist) {
+  void _generateItems(List<Ship>? shiplist) {
     for (final ship in shiplist ?? <Ship>[]) {
       inventory.add(ship);
     }

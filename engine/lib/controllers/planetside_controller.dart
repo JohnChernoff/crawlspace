@@ -13,6 +13,7 @@ import '../menu.dart';
 import '../actors/pilot.dart';
 import '../galaxy/planet.dart';
 import '../actors/player.dart';
+import '../rng/rng.dart';
 import '../ship/ship.dart';
 import '../shop.dart';
 import '../galaxy/system.dart';
@@ -259,12 +260,19 @@ class PlanetsideController extends FugueController {
   }
 
   void enterShipyard() {
-    final loc = fm.player.locale; if (loc is AtEnvironment) {
-      loc.env.yard ??= ShipYard(loc.env, 1, fm.itemRnd,
-          shiplist: List.generate(fm.itemRnd.nextInt(5) + 1, (i) =>
-              ShipGenerator.generateHangarShip(fm.player.system, fm.galaxy, fm.itemRnd)));
+    final locale = fm.player.locale; if (locale is AtEnvironment) {
+      if (locale.env.yard == null) {
+        final owner = Pilot(Rng.generateName(rnd: fm.itemRnd),locale, rnd: fm.itemRnd,  galaxy: fm.galaxy, isPirate: false);
+        final n = fm.itemRnd.nextInt(5) + 1;
+        for (int i=0;i<n;i++) {
+          final ship = ShipGenerator.generateShip(fm.player.system, fm.galaxy, fm.itemRnd, owner: owner);
+          fm.galaxy.ships.addDocked(ship,locale.env);
+          ShipGenerator.installRandomSystems(ship, fm.itemRnd);
+        }
+        locale.env.yard = ShipYard(locale.env, 1, fm.itemRnd,fm.galaxy);
+      }
       fm.menuController.showMenu(() =>
-          fm.menuFactory.buildShopBuyMenu(loc.env.yard!, ship: fm.playerShip), headerTxt: "${loc.env.yard!.name}");
+          fm.menuFactory.buildShopBuyMenu(locale.env.yard!, ship: fm.playerShip), headerTxt: "${locale.env.yard!.name}");
     }
   }
 
