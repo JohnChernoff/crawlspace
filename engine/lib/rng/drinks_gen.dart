@@ -156,7 +156,7 @@ class DrinkGen {
 
   // ── Main generator ───────────────────────────────────────────────────────────
   static AlienDrink generate(Galaxy g, Planet planet, Random rnd, {required double strength}) {
-    final species    = g.civMod.dominantSpecies(planet.locale.system) ?? StockSpecies.humanoid.species;
+    final species    = g.civMod.dominantSpecies(planet.loc.system) ?? StockSpecies.humanoid.species;
     final wealth     = planet.wealth.clamp(0.0, 1.0);
     final tech       = planet.techLvl.clamp(0.0, 1.0);
     final population = planet.population.clamp(0.0, 1.0);

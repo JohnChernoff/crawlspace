@@ -10,9 +10,8 @@ import 'package:crawlspace_engine/galaxy/reg/item_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/pilot_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/plan_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/reg.dart';
-import 'package:crawlspace_engine/galaxy/reg/ship_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/star_reg.dart';
-import 'package:crawlspace_engine/galaxy/star.dart';
+import 'package:crawlspace_engine/rng/descriptors.dart';
 import 'package:crawlspace_engine/rng/item_gen.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../rng/star_sys_gen.dart';
@@ -126,14 +125,17 @@ class Galaxy {
     getRandomLinkableSystem(fedHomeSystem)?.blackHole = true;
 
     for (final s in systems) {
+      s.metadata = SystemMetadataGenerator(rnd: rnd).generate();
       s.map = s.createSystemMap(.02,.01,.001,this);
       final species = getHomeworldSpecies(s);
       if (species != null) {
         final homeWorld = Planet(species.homeWorld, 1, 1, rnd, homeworld: true, species: species,
-            locale: planets.randomUnoccupiedLocation(s,rnd),
+            environment: EnvType.earthlike, //TODO: make species specific
+            weirdness: .5, //TODO: also make species specific
             population: 1, industry: 1, commerce: 1);
-        planets.register(homeWorld, homeWorld.loc);
+        planets.register(homeWorld, planets.randomUnoccupiedLocation(s,rnd));
       }
+      s.generateStars(this, rnd);
       s.generatePlanets(this, rnd);
     }
 

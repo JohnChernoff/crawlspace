@@ -5,6 +5,7 @@ import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import '../../controllers/scanner_controller.dart';
 import '../planet.dart';
+import '../star.dart';
 import 'grid.dart';
 import '../hazards.dart';
 import '../../item.dart';
@@ -12,19 +13,21 @@ import '../../item.dart';
 typedef ImpulseMap = MappedGrid<ImpulseCell>;
 
 class ImpulseCell extends GridCell {
-
+  final ImpulseLocation loc;
   Planet? getPlanet(Galaxy g) => g.planets.byImpulse(loc);
   bool hasPlanet(Galaxy g) => getPlanet(g) != null;
+  Star? getStar(Galaxy g) => g.stars.byImpulse(loc);
+  bool hasStar(Galaxy g) => getStar(g) != null;
   ImpulseMap map;
   SectorCell sector;
   bool outpost;
 
   ImpulseCell(
       this.sector, {
-        super.coord,
+        required super.coord,
         super.hazMap,
         this.outpost = false,
-      }) : map = EmptySubImpulse.instance;
+      }) : map = EmptySubImpulse.instance, loc = ImpulseLocation(sector.system, sector.coord, coord);
 
   void hodgeTick(Hazard haz, Random rnd, {jitter = .1}) {
     final parentMap = sector.map;
@@ -48,6 +51,7 @@ class ImpulseCell extends GridCell {
   bool scannable(ScannerMode mode, Galaxy g) {
     if (mode == ScannerMode.all) return true;
     if (mode.scaningShips && g.ships.atCell(this).isNotEmpty) return true;
+    if (mode.scaningStars && hasStar(g)) return true;
     if (mode.scaningPlanets && hasPlanet(g)) return true;
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
@@ -61,6 +65,7 @@ class ImpulseCell extends GridCell {
     final ships = g.ships.atCell(this);
     if (ships.isNotEmpty && (countPlayer || ships.any((s) => s.npc))) return false;
     if (hasPlanet(g)) return false;
+    if (hasStar(g)) return false;
     if (hazLevel > 0) return false;
     if (g.items.anyAt(loc)) return false;
     return true;
@@ -77,8 +82,6 @@ class ImpulseCell extends GridCell {
     return sb.toString();
   }
 
-  @override
-  ImpulseLocation get loc => ImpulseLocation(sector.system, sector.coord, coord);
 }
 
 class EmptySubImpulse extends ImpulseMap {

@@ -137,7 +137,7 @@ class TradeModel extends GalaxySubMod {
         // Distance-weighted pick — closer = more likely source
         final weights = <Planet, double>{};
         for (final p in candidates) {
-          final d = galaxy.topo.distance(p.locale.system, homeSystem);
+          final d = galaxy.topo.distance(p.loc.system, homeSystem);
           weights[p] = 1.0 / (1 + d); // inverse distance weight
         }
 
@@ -207,7 +207,7 @@ class TradeModel extends GalaxySubMod {
   }
 
   double _computeDemand(SpecialGood good, Planet planet) {
-    final system          = planet.locale.system;
+    final system          = planet.loc.system;
     final homeSystem      = galaxy.findHomeworld(good.species.species);
     final distFromHome    = galaxy.topo.distance(system, homeSystem);
     final dominantSpecies = galaxy.civMod.dominantSpecies(system);
@@ -307,8 +307,8 @@ class TradeModel extends GalaxySubMod {
       population: planet.population,
       industry:   planet.industry,
       commerce:   planet.commerce,
-      militancy:  galaxy.civMod.dominantSpecies(planet.locale.system)?.militancy ?? 0.5,
-      xenomancy:  galaxy.civMod.dominantSpecies(planet.locale.system)?.xenomancy ?? 0.5,
+      militancy:  galaxy.civMod.dominantSpecies(planet.loc.system)?.militancy ?? 0.5,
+      xenomancy:  galaxy.civMod.dominantSpecies(planet.loc.system)?.xenomancy ?? 0.5,
       wealth:     planet.wealth,
       fedLevel:   planet.fedLvl,
     );
@@ -333,7 +333,7 @@ class TradeModel extends GalaxySubMod {
         final sources = goodsSources[good] ?? [];
         final isSource = sources.contains(planet);
         final nearbySource = sources.any((src) =>
-        galaxy.topo.distance(src.locale.system, planet.locale.system) <= 3);
+        galaxy.topo.distance(src.loc.system, planet.loc.system) <= 3);
         if (isSource || nearbySource) {
           result.add(good);
         }
@@ -374,7 +374,7 @@ class TradeModel extends GalaxySubMod {
   }
 
   Species? dominantSpeciesAt(Planet p) =>
-      galaxy.civMod.dominantSpecies(p.locale.system);
+      galaxy.civMod.dominantSpecies(p.loc.system);
 
   StockSpecies? dominantStockSpeciesAt(Planet p) {
     final sp = dominantSpeciesAt(p);
@@ -391,7 +391,7 @@ class TradeModel extends GalaxySubMod {
     for (final entry in planetSupply.entries) {
       if (entry.value.contains(commodity)) {
         final d = galaxy.topo.distance(
-            entry.key.locale.system, planet.locale.system);
+            entry.key.loc.system, planet.loc.system);
         if (d < nearest) nearest = d;
       }
     }

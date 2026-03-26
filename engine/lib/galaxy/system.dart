@@ -1,12 +1,11 @@
 import 'dart:collection';
 import 'dart:math';
-import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/star.dart';
-import '../color.dart';
 import '../item.dart';
+import '../rng/plan_blueprint_gen.dart';
 import '../rng/star_sys_gen.dart';
 import 'geometry/coord_3d.dart';
 import 'galaxy.dart';
@@ -21,8 +20,8 @@ enum TrafficGenHint { normal, culDeSac, hub }
 
 typedef SystemMap = MappedGrid<SectorCell>;
 
-class System extends GridCell implements Nameable {
-  final systemMapDim = GridDim(8, 8, 8);
+class System extends Grid implements Nameable {
+  final systemMapDim = GridDim(20, 20, 1);
   final impulseMapDim = GridDim(20, 20, 1); //minimums?
   String name;
   String get selectionName => name;
@@ -39,7 +38,7 @@ class System extends GridCell implements Nameable {
   late SystemMetadata metadata;
 
   System(this.name,Random rnd,
-      {super.coord, super.hazMap, required this.map,this.blackHole = false,this.starOne = false,
+      { super.hazMap, required this.map,this.blackHole = false,this.starOne = false,
         this.trafficGenHint = TrafficGenHint.normal, this.connected = false})
       : anomaly = 0.7 + rnd.nextDouble() * 0.6;
 
@@ -109,6 +108,7 @@ class System extends GridCell implements Nameable {
     }
 
     if (blackFactor > g.rnd.nextDouble()) map.rndCell(g.rnd).blackHole = true;
+
     final List<SectorCell> starCells = map.values.where((c) => !c.hasPlanets(g) && c.blackHole == false).toList();
     final starCell = map.rndCell(g.rnd, cellList:  starCells);
     starCell.clearHazards();
@@ -116,11 +116,25 @@ class System extends GridCell implements Nameable {
     return map;
   }
 
+  List<Star> generateStars(Galaxy g, Random rnd) {
+    List<Star> starList = [];
+    for (int i=0;i < min(metadata.stellarClasses.length,3);i++) {
+      final star = Star(metadata.stellarClasses.elementAt(i), i == 0);
+      starList.add(star);
+      final sectorCoord = metadata.starConfig.starPositions(systemMapDim).elementAt(i);
+      final loc = ImpulseLocation(this,
+          sectorCoord,
+          g.stars.randomEmptyCoord(this,sectorCoord,systemMapDim, rnd));
+      g.stars.register(star, loc); //print("Registered: ${name}, $loc");
+    }
+    return starList;
+  }
+
   //which to use - g.fedLevel.val(this) or g.fedMod.fedPressure[this]
   List<Planet> generatePlanets(Galaxy g, Random rnd) {
     List<Planet> planetList = [];
-    final n = Rng.biasedRndInt(rnd, mean: Galaxy.avgPlanets, min: 0, max: Galaxy.maxPlanets);
-    for (int i = 0; i < n; i++) {//print("Adding planet to $name");
+    for (final pData in metadata.planetBlueprints) { //print("Adding planet to $name");
+
       final fed = g.fedKernel.val(this);
       final tech = g.techKernel.val(this);
       final comm = g.commerceKernel.val(this);
@@ -128,7 +142,10 @@ class System extends GridCell implements Nameable {
       final dust = min(1.0, comm * 0.7 + tech * 0.3);
       //print("res: $res, comm: $comm, dust: $dust");
 
-      final loc = g.planets.randomUnoccupiedLocation(this, rnd);
+      final centerLoc = ImpulseLocation(this, pData.position, systemMapDim.center);
+      final loc = g.planets.byImpulse(centerLoc) != null
+      ? g.planets.randomUnoccupiedLocation(this, rnd)
+      : centerLoc;
 
       final planet = Planet(
         g.nameGenerator.generatePlanetName(),
@@ -136,10 +153,11 @@ class System extends GridCell implements Nameable {
         Rng.betaRnd(rnd, tech, 12),
         rnd,
         species: Rng.weightedRandom(g.civMod.civIntensity[this]!, rnd),
-        locale: loc,
         population: Rng.betaRnd(rnd, res, 20),
         commerce: Rng.betaRnd(rnd, comm, 10),
         industry: Rng.betaRnd(rnd, dust, 6),
+        environment: PlanetBlueprint.candidatesFor(OrbitalZone.inner, pData.type).first, //TODO: determine OrbitalZone
+        weirdness: rnd.nextDouble()
       );
 
       g.planets.register(planet, loc);
@@ -182,15 +200,6 @@ class System extends GridCell implements Nameable {
 
   @override
   int get hashCode => name.hashCode;
-
-  @override
-  bool isEmpty(Galaxy g, {countPlayer = true}) => false;
-
-  @override
-  bool scannable(ScannerMode mode, Galaxy g) => true;
-
-  @override
-  SpaceLocation get loc => throw UnimplementedError();
 
   SectorMap generateImpulseMap(SectorCell sector, GridDim dim, Random rnd) {
     final sectorIon = sector.hazMap[Hazard.ion] ?? 0;

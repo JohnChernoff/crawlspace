@@ -1,12 +1,10 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/actors/player.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
-import '../rng/star_sys_gen.dart';
 import 'agent.dart';
 import '../color.dart';
 import '../controllers/pilot_controller.dart';
@@ -15,7 +13,6 @@ import '../galaxy/galaxy.dart';
 import '../galaxy/hazards.dart';
 import '../galaxy/geometry/location.dart';
 import '../menu.dart';
-import '../galaxy/geometry/object.dart';
 import '../galaxy/system.dart';
 
 enum AttribType {
@@ -42,7 +39,7 @@ class TransactionRecord {
   const TransactionRecord(this.type,this.credits);
 }
 
-class Pilot implements Locatable {
+class Pilot {
   String name;
   SpaceLocation get loc => locale.loc;
   PilotLocale get locale => _locale;
@@ -91,8 +88,8 @@ class Pilot implements Locatable {
   }
 
 
-  Pilot(this.name,{Random? rnd, required PilotLocale loc, Galaxy? galaxy, Faction? f, this.hp = 32, isPirate = false}) {
-    locale = loc;
+  Pilot(this.name,{Random? rnd, required SectorLocation sector, Galaxy? galaxy, Faction? f, this.hp = 32, isPirate = false}) {
+    locale = AtEnvironment.fromSystem(sector);
     if (this is Player) { //FactionList.values.forEach((f) => print(f.factionName)); print(FactionList.values);
       faction = getFaction(FactionList.fedReb)!;
     } else if (this is Agent) {
@@ -100,7 +97,7 @@ class Pilot implements Locatable {
     } else {
       final pilotRnd = rnd ?? Random();
       final species = galaxy != null
-          ? Rng.weightedRandom(galaxy.civMod.civIntensity[locale.loc.system]!,pilotRnd, fallback: StockSpecies.humanoid.species)
+          ? Rng.weightedRandom(galaxy.civMod.civIntensity[system]!,pilotRnd, fallback: StockSpecies.humanoid.species)
           : StockSpecies.humanoid.species;  //print("Species: ${species.name}");
       if (isPirate) {
         faction = factions.firstWhereOrNull((f) => f.species == species && f.isPirate) ?? factions.firstWhere((t) => t.isPirate);

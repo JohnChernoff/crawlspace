@@ -4,9 +4,7 @@ import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
 import '../../controllers/scanner_controller.dart';
-import '../../rng/star_sys_gen.dart';
 import '../../stock_items/species.dart';
-import '../star.dart';
 import 'grid.dart';
 import '../hazards.dart';
 import 'impulse.dart';
@@ -14,6 +12,7 @@ import 'impulse.dart';
 typedef SectorMap = MappedGrid<ImpulseCell>;
 
 class SectorCell extends GridCell {
+  final SectorLocation loc;
   final System system;
   int numPlanets(Galaxy g) => g.planets.inSector(loc).length;
   bool hasPlanets(Galaxy g) => numPlanets(g) > 0;
@@ -33,12 +32,13 @@ class SectorCell extends GridCell {
   SectorCell(
       this.system,
       this.impulseSeed, {
-        super.coord,
+        required super.coord,
         super.hazMap,
         this.starOne = false,
         this.blackHole = false,
         Faction? propriator,
       }) :
+        loc = SectorLocation(system, coord),
         outpostPropriator = propriator ?? getFaction(FactionList.fed)!,
         outpostLoc = Coord3D((system.impulseMapDim.mx/2).round(),(system.impulseMapDim.my/2).round(),0);
 
@@ -78,8 +78,6 @@ class SectorCell extends GridCell {
     return false;
   }
 
-  @override
-  SectorLocation get loc => SectorLocation(system, coord);
 }
 
 class EmptyImpulse extends SectorMap {

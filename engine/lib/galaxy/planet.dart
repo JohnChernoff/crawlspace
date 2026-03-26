@@ -11,6 +11,14 @@ import '../rng/drinks_gen.dart';
 import '../rng/plan_gen.dart';
 import 'galaxy.dart';
 
+enum CivAge {
+  none,        // no civilization ever took hold
+  ancient,     // collapsed long ago, ruins possible
+  established, // mature functioning society
+  emergent,    // young civilization, still developing
+  remnant,     // once great, now diminished
+}
+
 enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   const DistrictLvl(this.shortString);
   bool atOrAbove(DistrictLvl lvl) => index >= lvl.index;
@@ -33,16 +41,17 @@ class Planet extends SpaceEnvironment<ImpulseLocation> {
     EnvType.icy        => 0.3,
     EnvType.volcanic   => 1.2,  // dense, geologically active
     EnvType.toxic      => 0.9,
+    EnvType.terminator => 0.8,
   } * (homeworld ? 1.5 : 1.0);
-  late PlanetAge age;
-  late EnvType environment;
+  CivAge age = CivAge.established; //TODO: randomize
+  EnvType environment;
   late Goods export;
   double industry;    // 0–1
   double commerce;    // 0–1
   double population;  // 0–1
   late double wealth; // 0–1
   double hazard   = 0;
-  double weirdness = 0;
+  final double weirdness;
   final bool homeworld;
   Species species;
   AlienDrink? drink;
@@ -104,14 +113,13 @@ class Planet extends SpaceEnvironment<ImpulseLocation> {
   Planet(super.name, super.fedLvl, super.techLvl, Random rnd, {
     required this.species,
     this.homeworld = false,
-    required super.locale,
     required this.industry,
     required this.commerce,
     required this.population,
+    required this.environment,
+    required this.weirdness
   }) {
-    weirdness   = rnd.nextDouble();
-    age         = PlanetAge.values.elementAt(rnd.nextInt(PlanetAge.values.length));
-    environment = EnvType.values.elementAt(rnd.nextInt(EnvType.values.length));
+    age         = CivAge.values.elementAt(rnd.nextInt(CivAge.values.length));
 
     // Use getRndExport() so export respects env/tech/industry constraints.
     // Falls back to a random pick if no filtered goods match (shouldn't happen

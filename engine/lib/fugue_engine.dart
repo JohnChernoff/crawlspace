@@ -58,6 +58,7 @@ enum InputMode {
   const InputMode(this.showMenu);
 }
 
+//should registered items register in their constructors?
 //cargo systems?  passengers, smuggling? cloaking systems?
 //hyperspace landing spot?   Graph not detecting player location?
 //TODO: add music, themed tavern games/activities
@@ -127,7 +128,6 @@ class FugueEngine {
   }
 
   FugueEngine(this.galaxy,String playerName,{seed = 0}) { //rnd = Random(seed);
-    final xaxle = galaxy.fedHomeSystem.planets(galaxy).first;
     audioRnd = Random(seed ^0xAAAAAA);
     mapRnd = Random(seed ^0xBBBBBBB);
     speciesRnd = Random(seed ^ 0xC0FFEE);
@@ -138,7 +138,6 @@ class FugueEngine {
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
     HangarShip pShip = HangarShip("HMS Sebastian",
         shipClass: ShipClass.fromEnum(ShipClassType.hermes),
-        location: SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),
         generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
         sensor: Sensor.fromStock(StockSystem.senFed1),
         impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
@@ -148,13 +147,15 @@ class FugueEngine {
         weapons: [Weapon.fromStock(StockSystem.wepFedLaser3),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
         ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50}
         );
-    player = Player(playerName,loc: AtEnvironment(xaxle)); //playShip.pilot = player;
+    player = Player(playerName,sector: SectorLocation(farSys,farSys.map.rndCoord(mapRnd))); //playShip.pilot = player;
     player.system.visited = true;
-    galaxy.ships.undock(pShip, player);
+    galaxy.ships.add(pShip,SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),init: true);
+    galaxy.ships.undock(pShip, player); //TODO: fix/clarify?
+
+    final agentLoc = SectorLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCoord(mapRnd));
     for (final persona in AgentPersonality.values) {
         HangarShip agentShip = HangarShip("Agent ${persona.name}",
             shipClass: ShipClass.fromEnum(ShipClassType.galaxy),
-            location: SectorLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCoord(mapRnd)),
             generator: PowerGenerator.fromStock(StockSystem.genBasicNuclear),
             impEngine: Engine.fromStock(StockSystem.engBasicFedImp),
             subEngine: Engine.fromStock(StockSystem.engBasicFedSub),
@@ -162,7 +163,8 @@ class FugueEngine {
             shield: Shield.fromStock(StockSystem.shdBasicEnergon),
             weapons: [Weapon.fromStock(StockSystem.wepPlasmaRay),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
             ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 250});
-        final agent = Agent(persona.name,persona,loc: AtEnvironment(xaxle),galaxy: galaxy);
+        final agent = Agent(persona.name,persona,sector: agentLoc,galaxy: galaxy);
+        galaxy.ships.add(agentShip, agentLoc,init: true);
         galaxy.ships.undock(agentShip, agent);
     }
     //print(_shipRegistry.all); //print(_pilotRegistry.all); //print (activePilots);
@@ -171,19 +173,17 @@ class FugueEngine {
     update();
   }
 
-  void addShip(Ship ship) {
-    galaxy.ships.add(ship);
-  }
-
   void populateSystem(System system, {int? numShips, int maxShips = 8}) {
+    final loc = SectorLocation(system, system.map.rndCoord(mapRnd));
     numShips ??= (itemRnd.nextDouble() * (galaxy.civKernel.val(system) * maxShips)).floor();
     for (int i = 0; i < numShips; i++) { //print("Populating System: ${system.name}, ships: $numShips");
       final ship = ShipGenerator.generateShip(system, galaxy, itemRnd);
-      addShip(ship); //sanityCheck(ship);
+      galaxy.ships.add(ship,loc,init: true);
     }
     final numPirates = (itemRnd.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
     for (int i = 0; i < numPirates; i++) {
-      addShip(ShipGenerator.generateShip(system, galaxy, itemRnd, isPirate: true));
+      final pirateShip = ShipGenerator.generateShip(system, galaxy, itemRnd, isPirate: true);
+      galaxy.ships.add(pirateShip,loc,init: true);
     } //print("Adding pirates: $numPirates");
   }
 

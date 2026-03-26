@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
-import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import '../../controllers/scanner_controller.dart';
 import 'coord_3d.dart';
 import '../../effects.dart';
@@ -11,13 +10,18 @@ import '../../ship/ship.dart';
 
 enum Domain {hyperspace,system,impulse}
 
-abstract class GridCell implements Locatable {
-  final Coord3D coord;
+abstract class Grid {
+  CellMap get map;
   final Map<Hazard,double> hazMap;
   final EffectMap<CellEffect> effects = EffectMap();
-  CellMap get map;
+  Grid({this.hazMap = const {}});
+}
 
-  GridCell({this.coord = noCoord,this.hazMap = const {}});
+abstract class GridCell extends Grid {
+  SpaceLocation get loc;
+  Coord3D coord;
+
+  GridCell({required this.coord,super.hazMap = const {}});
 
   double distCell(GridCell cell) => loc.dist(cell.loc);
   double dist(SpaceLocation loc) => this.loc.dist(loc);
@@ -118,11 +122,11 @@ abstract class CellMap<T extends GridCell> {
     final cz = cell.coord.z;
 
     final minX = max(cx - distance, 0);
-    final maxX = min(cx + distance, dim.mx - 1);
+    final maxX = min(cx + distance, dim.mx - 1).clamp(0, dim.mx);
     final minY = max(cy - distance, 0);
-    final maxY = min(cy + distance, dim.my - 1);
+    final maxY = min(cy + distance, dim.my - 1).clamp(0, dim.my);
     final minZ = max(cz - distance, 0);
-    final maxZ = min(cz + distance, dim.mz - 1);
+    final maxZ = min(cz + distance, dim.mz - 1).clamp(0, dim.mz);
 
     for (int x = minX; x <= maxX; x++) {
       for (int y = minY; y <= maxY; y++) {
@@ -210,6 +214,7 @@ class GridDim {
   final int mx;
   final int my;
   final int mz;
+  Coord3D get center => Coord3D((mx/2).floor(), (my/2).floor(), (mz/2).floor());
   double get maxDist => sqrt(
     pow(mx - 1, 2) +
         pow(my - 1, 2) +
@@ -221,6 +226,10 @@ class GridDim {
 
   const GridDim(this.mx,this.my,this.mz);
 
+  Coord3D rndCoord(Random rnd) => Coord3D(
+      rnd.nextInt(mx),
+      rnd.nextInt(my),
+      rnd.nextInt(mz));
 }
 
 class LazyMappedGrid<T extends GridCell> extends LazyCellMap<T> {

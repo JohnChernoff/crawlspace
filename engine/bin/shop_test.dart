@@ -32,14 +32,14 @@ void sampleShops2(FugueEngine fm, Iterable<Shop> shops) {
   //for (final shop in stockedShops1) { printCorpWeights(fm, shop); print(shop); }
   print("Shops: ${shops.length}, inStock: ${stockedShops1.length}");
 
-  final coreShops = shops.where((s) => fm.galaxy.corpMod.dominantCorp(s.location.locale.system) == Corporation.laventar).toList();;
+  final coreShops = shops.where((s) => fm.galaxy.corpMod.dominantCorp(s.location.loc.system) == Corporation.laventar).toList();;
   final stockedShops = coreShops.where((shop) => shop.inventory.all.any((s) => s is ShipSystem && s.manufacturer == Corporation.laventar)).toList();
   //for (final shop in stockedShops) print(shop);
   print("Shops: ${coreShops.length}, inStock: ${stockedShops.length}");
 }
 
 void printCorpWeights(FugueEngine fm, Shop shop) {
-  final system = shop.location.locale.system; //print(fm.galaxy.corpMod.corpWeights(system)); return;
+  final system = shop.location.loc.system; //print(fm.galaxy.corpMod.corpWeights(system)); return;
   final corps = fm.galaxy.corpMod.activeCorporations(system);
   print("System: ${system.name}");
   for (final c in corps) {

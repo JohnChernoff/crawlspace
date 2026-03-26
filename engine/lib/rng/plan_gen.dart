@@ -155,6 +155,7 @@ class PlanetDescGen {
       "ancient", "primordial", "one of the oldest known settlements in the sector",
       "so old that what it was before the colony is still being debated",
     ],
+
   };
 
   // ── Political line pools ─────────────────────────────────────────────────
@@ -358,7 +359,7 @@ class PlanetDescGen {
   // ── Generator ────────────────────────────────────────────────────────────
 
   static List<String> generate(Planet p, Galaxy g, Random rnd) {
-    final dominant = g.civMod.dominantSpecies(p.locale.system)
+    final dominant = g.civMod.dominantSpecies(p.loc.system)
         ?? StockSpecies.humanoid.species;
 
     // Homeworld gets special treatment
@@ -383,8 +384,8 @@ class PlanetDescGen {
 
   // ── Line builders ────────────────────────────────────────────────────────
 
-  static String _physicalLine(Planet p, Random rnd) {
-    final ageMod = _pick(rnd, _ageModifier[p.age]!);
+  static String _physicalLine(Planet p, Random rnd) { //print("Planet age: ${p.age}");
+    final ageMod = _pick(rnd, _ageModifier[PlanetAge.established]!);
     final envCore = _pick(rnd, _envCore[p.environment]!);
     final envDetail = _pick(rnd, _envDetail[p.environment]!);
     return "${article(ageMod)} $envCore. $envDetail";

@@ -153,6 +153,7 @@ class AsciiGridPainter extends CustomPainter {
 
     if (cell is ImpulseCell) {
       if (cell.hasPlanet(fm.galaxy)) return "O";
+      if (cell.hasStar(fm.galaxy)) return "✦";
       if (fm.galaxy.items.anyAt(cell.loc)) return "\$";
     }
 

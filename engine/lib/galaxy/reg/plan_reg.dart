@@ -5,10 +5,12 @@ import '../geometry/location.dart';
 import '../planet.dart';
 import '../system.dart';
 
-class PlanetRegistry extends SpaceRegistry<Planet> {
+class PlanetRegistry extends ImpulseRegistry<Planet> {
   @override
   void onRegister(Planet p, ImpulseLocation loc) {
-    loc.cell.clearHazards();
+    super.onRegister(p, loc);
+    //print("Registered: ${p.name}, ${loc.system.name}, $loc");
+    //loc.cell.clearHazards();
   }
 
   ImpulseLocation randomUnoccupiedLocationBySector(

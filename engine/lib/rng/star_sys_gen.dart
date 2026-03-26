@@ -1,5 +1,7 @@
 import 'dart:math';
-import '../color.dart';
+import 'package:crawlspace_engine/rng/plan_blueprint_gen.dart';
+import '../galaxy/geometry/coord_3d.dart';
+import '../galaxy/geometry/grid.dart';
 import '../galaxy/star.dart';
 
 enum SolidComposition {
@@ -18,10 +20,12 @@ enum GiantOutcome {
 
 class SystemMetadata {
   final List<StellarClass> stellarClasses;
+  final MultiStarConfig starConfig;      // new
   final double richness;
   final SolidComposition composition;
   final double formationEfficiency;
   final GiantOutcome giantOutcome;
+  final List<PlanetBlueprint> planetBlueprints; // new
 
   String get richnessBand {
     if (richness < 0.33) return 'low';
@@ -31,11 +35,25 @@ class SystemMetadata {
 
   const SystemMetadata({
     required this.stellarClasses,
+    required this.starConfig,
     required this.richness,
     required this.composition,
     required this.formationEfficiency,
     required this.giantOutcome,
+    required this.planetBlueprints
   });
+
+  SystemMetadata withBlueprints(List<PlanetBlueprint> blueprints) {
+    return SystemMetadata(
+      stellarClasses: stellarClasses,
+      starConfig: starConfig,
+      richness: richness,
+      composition: composition,
+      formationEfficiency: formationEfficiency,
+      giantOutcome: giantOutcome,
+      planetBlueprints: blueprints,
+    );
+  }
 
   @override
   String toString() {
@@ -46,6 +64,7 @@ class SystemMetadata {
         'composition: $composition, '
         'eff: ${formationEfficiency.toStringAsFixed(2)}, '
         'giants: $giantOutcome'
+        'planets: $planetBlueprints'
         ')';
   }
 }
@@ -56,12 +75,11 @@ class SystemMetadataGenerator {
   SystemMetadataGenerator({Random? rnd}) : rnd = rnd ?? Random();
 
   SystemMetadata generate() {
-
     final List<StellarClass> stars = [StellarClass.getRndStellarClass(rnd)];
     double extraStarProb = .33; final falloff = .1;
     while (rnd.nextDouble() < extraStarProb) {
-      int i =  stars.last == StellarClass.M || rnd.nextDouble() < .77 ? 0 : -1;
-      stars.add(stars.elementAt(stars.last.index  - i));
+      int i = stars.last == StellarClass.M || rnd.nextDouble() < .77 ? 0 : 1;
+      stars.add(StellarClass.values.elementAt(stars.last.index - i));
       extraStarProb *= falloff;
     }
     final composition = _rollComposition();
@@ -70,14 +88,24 @@ class SystemMetadataGenerator {
     _calcFormationEfficiency(stars.first, richness, composition);
     final giantOutcome =
     _rollGiantOutcome(stars.first, richness, composition, formationEfficiency);
+    final starConfig = MultiStarConfig.deriveStarConfig(stars, rnd);
 
-    return SystemMetadata(
+    // Build metadata without blueprints first
+    final meta = SystemMetadata(
       stellarClasses: stars,
+      starConfig: starConfig,
       richness: richness,
       composition: composition,
       formationEfficiency: formationEfficiency,
       giantOutcome: giantOutcome,
+      planetBlueprints: const [],  // empty placeholder
     );
+
+    // Now generate blueprints using the complete metadata
+    final starPos = starConfig.starPositions(GridDim(21, 21, 1));
+    final blueprints = PlanetBlueprintGenerator(rnd: rnd).generate(meta, starPos);
+
+    return meta.withBlueprints(blueprints);
   }
 
   SolidComposition _rollComposition() {
@@ -142,3 +170,39 @@ class SystemMetadataGenerator {
     return GiantOutcome.chaotic;
   }
 }
+
+enum MultiStarConfig {
+  single,          // normal, one star, clean zones
+  tightBinary,     // two stars so close they're effectively one —
+  // circumbinary planets only, habitable zone pushed out
+  wideBinary,      // two stars far apart, each with own planet family,
+  // but gravitational interference limits outer planets
+  hierarchical;    // tight pair + distant third, messy outer zone
+
+  static MultiStarConfig deriveStarConfig(List<StellarClass> stars, Random rnd) {
+    if (stars.length == 1) return MultiStarConfig.single;
+    if (stars.length >= 3) return MultiStarConfig.hierarchical;
+
+    // Two stars — tight or wide depends on mass difference
+    // Similar mass stars tend toward wider separation
+    // Very different mass stars tend toward tight/hierarchical
+    final massDiff = stars[0].lumIndex - stars[1].lumIndex;
+    return massDiff <= 8
+        ? MultiStarConfig.wideBinary
+        : MultiStarConfig.tightBinary;
+  }
+
+  List<Coord3D> starPositions(GridDim dim) {
+    final cx = dim.mx ~/ 2, cy = dim.my ~/ 2;
+    return switch (this) {
+      MultiStarConfig.single       => [Coord3D(cx, cy, 0)],
+      MultiStarConfig.tightBinary  => [Coord3D(cx, cy,0), Coord3D(cx, cy, 0)],
+      MultiStarConfig.wideBinary   => [Coord3D(cx-4, cy,0), Coord3D(cx+4, cy, 0)],
+      MultiStarConfig.hierarchical => [Coord3D(cx, cy,0), Coord3D(cx, cy, 0), Coord3D(cx+7, cy, 0)],
+    };
+  }
+
+}
+
+
+

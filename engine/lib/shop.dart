@@ -109,7 +109,7 @@ abstract class Shop {
   @override
   String toString() {
     StringBuffer sb = StringBuffer();
-    sb.writeln("$name, tech level: ${location.techLvl.toStringAsFixed(2)}, system: ${location.locale.system.name}");
+    sb.writeln("$name, tech level: ${location.techLvl.toStringAsFixed(2)}, system: ${location.loc.system.name}");
     sb.writeln(inventory);
     return sb.toString();
   }
@@ -253,7 +253,7 @@ class Market extends Shop {
           ? galaxy.maxJumps
           : sources
           .map((p) => galaxy.topo
-          .distance(p.locale.system, planet.locale.system))
+          .distance(p.loc.system, planet.loc.system))
           .reduce((a, b) => a < b ? a : b);
 
       final marketPrice = (good.baseCost * (1.0 + srcDist * 0.05))
@@ -328,7 +328,7 @@ class Market extends Shop {
     for (final entry in galaxy.tradeMod.planetSupply.entries) {
       if (entry.value.contains(commodity)) {
         final d = galaxy.topo
-            .distance(entry.key.locale.system, planet.locale.system);
+            .distance(entry.key.loc.system, planet.loc.system);
         if (d < nearest) nearest = d;
       }
     }

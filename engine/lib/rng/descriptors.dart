@@ -33,7 +33,9 @@ enum EnvType {
   earthlike(DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy),
   paradisiacal(DistrictLvl.medium,DistrictLvl.heavy,DistrictLvl.light),
   alluvial(DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy),
-  arid(DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy);
+  arid(DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy),
+  terminator(DistrictLvl.medium, DistrictLvl.medium, DistrictLvl.light),
+  ;
   final DistrictLvl maxResLvl,maxCommLvl,maxDustLvl;
   const EnvType(this.maxResLvl,this.maxCommLvl,this.maxDustLvl);
   @override

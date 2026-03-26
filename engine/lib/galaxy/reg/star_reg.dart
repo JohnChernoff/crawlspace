@@ -3,7 +3,7 @@ import 'package:crawlspace_engine/galaxy/reg/reg.dart';
 import '../star.dart';
 import '../system.dart';
 
-class StarRegistry extends SpaceRegistry<Star> {
+class StarRegistry extends ImpulseRegistry<Star> {
   ImpulseLocation findGate(System system) {
     final arrivalGate = inSystem(system).where((s) => s.jumpgate).first;
     return locationOf(arrivalGate)!;

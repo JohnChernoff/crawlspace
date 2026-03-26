@@ -12,7 +12,6 @@ import '../fugue_engine.dart';
 import '../color.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/reg/reg.dart';
-import '../galaxy/reg/ship_reg.dart';
 import '../galaxy/system.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/impulse.dart';
@@ -105,7 +104,6 @@ class Ship extends HangarShip {
     super.baseCost = 0,
     super.rarity = 1,
     required super.shipClass,
-    required super.location,
     required this.pilot,
     super.generator,
     super.weapons,
@@ -127,7 +125,6 @@ class Ship extends HangarShip {
     baseCost: s.baseCost,
     rarity: s.rarity,
     shipClass: s.shipClass,
-    location: s.loc,
   );
 
   void undock(HangarShip dockedShip) {
@@ -469,7 +466,7 @@ class Ship extends HangarShip {
       blocks.add(TextBlock("Targ Facing: ${nav.targetFacing}", GameColors.gray, true));
       blocks.add(TextBlock("Facing: ${nav.facing}", GameColors.gray, true));
       blocks.add(TextBlock("Position: ${nav.pos}", GameColors.gray, true));
-      blocks.add(TextBlock("Heading: ${nav.autoPilot.heading.loc.cell.coord}", GameColors.gray, true));
+      blocks.add(TextBlock("Heading: ${nav.autoPilot.heading.cell.coord}", GameColors.gray, true));
       blocks.add(TextBlock("Velocity: ${nav.velocityString()}", GameColors.gray, true));
       blocks.add(TextBlock("Speed: ${nav.speed.toStringAsFixed(2)}", GameColors.gray, true));
       blocks.add(TextBlock("Throttle: ${nav.throttle}", GameColors.gray, true));
@@ -515,8 +512,8 @@ class Ship extends HangarShip {
         "TARGET: ${target.name} "
             "dist:${dist.toStringAsFixed(1)}$trend"
             "->${projDist?.toStringAsFixed(1) ?? '?'} ",
-        rangeColor, false));
-    blocks.add(TextBlock(profile.asciiBars(), GameColors.cyan, true));
+        rangeColor, true));
+    //blocks.add(TextBlock(profile.asciiBars(), GameColors.cyan, true));
 
     // Per-weapon lines
     for (final w in systemControl.availableWeapons) {

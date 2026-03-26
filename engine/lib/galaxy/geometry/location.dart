@@ -7,8 +7,7 @@ import 'grid.dart';
 import 'impulse.dart';
 import '../system.dart';
 
-sealed class SpaceLocation implements Locatable {
-  SpaceLocation get loc => this;
+sealed class SpaceLocation {
   Domain get domain;
   System system;
   GridCell get cell; //TODO: error log
@@ -53,14 +52,43 @@ sealed class SpaceLocation implements Locatable {
   }
 }
 
-class SectorLocation extends SpaceLocation {
+abstract class SectorLocatable extends SpaceLocation {
+  SectorLocatable(super.system);
+  Coord3D get sectorCoord;
+}
+
+class SystemLocation extends SpaceLocation {
+  SystemLocation(super.system);
+
+  @override
+  Domain get domain => Domain.hyperspace;
+
+  @override
+  GridCell get cell => throw UnimplementedError();
+
+  @override
+  CellMap<GridCell> get map => throw UnimplementedError();
+
+  @override
+  SpaceLocation withCell(GridCell newCell) => throw UnimplementedError();
+}
+
+class SectorLocation extends SectorLocatable {
   @override
   Domain get domain => Domain.system;
 
   Coord3D sectorCoord;
 
   @override
-  SectorCell get cell => system.map[sectorCoord] as SectorCell;
+  SectorCell get cell {
+    final c = system.map[sectorCoord];
+    if (c != null) return c;
+    else {
+      print("System map: ${system.map.values}");
+      throw StateError("Bad c: $sectorCoord");
+    }
+  }
+
 
   @override
   SystemMap get map => system.map;
@@ -84,7 +112,7 @@ class SectorLocation extends SpaceLocation {
 
 }
 
-class ImpulseLocation extends SpaceLocation {
+class ImpulseLocation extends SectorLocatable {
   @override
   Domain get domain => Domain.impulse;
   Coord3D sectorCoord,impulseCoord;
@@ -116,7 +144,7 @@ class ImpulseLocation extends SpaceLocation {
       && other is ImpulseLocation && other.sectorCoord == sectorCoord && other.impulseCoord == impulseCoord;
 }
 
-sealed class PilotLocale implements Locatable {
+sealed class PilotLocale {
   SpaceLocation get loc;
 }
 
@@ -128,9 +156,10 @@ class AboardShip extends PilotLocale {
 }
 
 class AtEnvironment extends PilotLocale {
+  final tmpLoc;
   final SpaceEnvironment env;
-  AtEnvironment(this.env);
-  factory AtEnvironment.fromSystem(SectorLocation s) => AtEnvironment(SpaceEnvironment("",0,0,locale: s)); //TODO: copy galactic kernels
+  AtEnvironment(this.env, {SpaceLocation? tmpLoc}) : this.tmpLoc = tmpLoc ?? env.loc;
+  factory AtEnvironment.fromSystem(SectorLocation s) => AtEnvironment(SpaceEnvironment("",0,0),tmpLoc: s);
   @override
-  SpaceLocation get loc => env.loc; // stable — fixed point
+  SpaceLocation get loc => env.maybeLoc ?? tmpLoc; // stable — fixed point
 }

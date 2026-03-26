@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'galaxy/geometry/object.dart';
-import 'galaxy/star.dart';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/stock_items/activators.dart';

@@ -1,5 +1,4 @@
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/ship_sys.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';
@@ -13,15 +12,11 @@ import 'systems/shields.dart';
 import 'systems/ship_system.dart';
 import 'systems/weapons.dart';
 
-class HangarShip extends Item implements Locatable {
-  @override
-  SpaceLocation get loc => _loc;
-  void set loc(SpaceLocation l) { _loc = l; }
+class HangarShip extends Item {
   @override
   int get baseCost => inventory.all.map((i) => i.baseCost).sum + shipClass.volume.round();
   @override
   String get shopDesc => dump(shop: true);
-  SpaceLocation _loc;
   ShipClass shipClass;
   Pilot? owner;
   Inventory<Item> inventory = Inventory();
@@ -44,7 +39,6 @@ class HangarShip extends Item implements Locatable {
     super.baseCost = 0,
     super.rarity = 1,
     required this.shipClass,
-    required SpaceLocation location,
     PowerGenerator? generator,
     List<Weapon>? weapons,
     Map<Ammo,int>? ammo,
@@ -53,7 +47,7 @@ class HangarShip extends Item implements Locatable {
     Engine? subEngine,
     Engine? hyperEngine,
     Sensor? sensor,
-    HullMaterial hullMaterial = HullMaterial.basic}) : _loc = location {
+    HullMaterial hullMaterial = HullMaterial.basic}) {
     hull = Hull.fromMaterial(hullMaterial,this);
     systemControl = ShipSystemControl(this);
     install(generator);
@@ -70,7 +64,7 @@ class HangarShip extends Item implements Locatable {
     install(sensor);
   }
 
-  factory HangarShip.toHangar(Ship s) => HangarShip(s.name, shipClass: s.shipClass, location: s.loc);
+  factory HangarShip.toHangar(Ship s) => HangarShip(s.name, shipClass: s.shipClass);
 
   double get currentMass {
     double m = 0;

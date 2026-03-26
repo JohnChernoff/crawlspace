@@ -3,6 +3,7 @@ import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import '../../color.dart';
 import '../../item.dart';
+import '../reg/reg.dart';
 
 class ScanReport {
   bool get unknownLocation => !(system || sector);
@@ -12,13 +13,7 @@ class ScanReport {
       : this.system = system || sector;
 }
 
-abstract interface class Locatable {
-  SpaceLocation get loc;
-}
-
-class SpaceEnvironment<T extends SpaceLocation> extends MassiveObject implements Locatable {
-  T get loc => locale;
-  T locale;
+class SpaceEnvironment<L extends SpaceLocation> extends MassiveObject<L> {
   String get fedStr  => "${(fedLvl  * 100).round()}";
   String get techStr => "${(techLvl * 100).round()}";
   double fedLvl;
@@ -33,10 +28,11 @@ class SpaceEnvironment<T extends SpaceLocation> extends MassiveObject implements
   double rapport = 0; // -1–1
 
   SpaceEnvironment(super.name, this.fedLvl, this.techLvl,
-      {super.shortDesc, required T this.locale, super.mass = 1});
+      {super.shortDesc, super.mass = 1});
 }
 
-class SpaceObject implements Nameable, Describable {
+class SpaceObject<L extends SpaceLocation> extends Locatable<L>
+    implements Nameable, Describable {
   final String name;
   String get selectionName => name;
   String get description => shortDesc ?? name;
@@ -49,7 +45,7 @@ class SpaceObject implements Nameable, Describable {
   SpaceObject(this.name, {this.shortDesc, this.objColor = GameColors.white});
 }
 
-class MassiveObject extends SpaceObject {
+class MassiveObject<L extends SpaceLocation> extends SpaceObject<L> {
   double mass; //1 = earth
   MassiveObject(super.name, {required this.mass, super.objColor, super.shortDesc});
 }
