@@ -74,7 +74,7 @@ class AutoPilot {
       );
     }
 
-    final dir = r.normalized();
+    final dir = r.normalized;
 
     final closing = vel.dot(dir);
     final lateral = vel - (dir * closing);
@@ -152,13 +152,13 @@ class AutoPilot {
     Vec3 applied = const Vec3(0, 0, 0);
 
     if (forwardPart.mag > 1e-9) {
-      applied = applied + forwardPart.normalized() * min(fAccel, forwardPart.mag);
+      applied = applied + forwardPart.normalized * min(fAccel, forwardPart.mag);
     }
     if (reversePart.mag > 1e-9) {
-      applied = applied + reversePart.normalized() * min(rAccel, reversePart.mag);
+      applied = applied + reversePart.normalized * min(rAccel, reversePart.mag);
     }
     if (lateralPart.mag > 1e-9) {
-      applied = applied + lateralPart.normalized() * min(lAccel, lateralPart.mag);
+      applied = applied + lateralPart.normalized * min(lAccel, lateralPart.mag);
     }
 
     var next = (current + applied) * stabilization;

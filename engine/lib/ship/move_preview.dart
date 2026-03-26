@@ -183,7 +183,7 @@ class MovePreviewer {
       // ship is nearly on-axis to the target.
       final velMag = current.mag;
       final blendedForward = velMag > 0.01
-          ? (targetDir + current.normalized() * 0.4).normalized()
+          ? (targetDir + current.normalized * 0.4).normalized
           : targetDir;
 
       final next = nav.autoPilot.steerVelocityTowardDirectional(

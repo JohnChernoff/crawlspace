@@ -137,6 +137,7 @@ class Galaxy {
       }
       s.generateStars(this, rnd);
       s.generatePlanets(this, rnd);
+      s.map.updateGravMap(this);
     }
 
     tradeMod = TradeModel(this);

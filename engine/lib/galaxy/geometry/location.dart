@@ -19,6 +19,12 @@ sealed class SpaceLocation {
     _ => null,
   };
 
+  Coord3D? relativeDomainCoord(SpaceLocation loc) {
+    if (loc is SectorLocation) return sectorOrNull?.cell.coord;
+    if (loc is ImpulseLocation && this is ImpulseLocation) return cell.coord;
+    return null;
+  }
+
   @override
   bool operator ==(Object other) {
     return other is SpaceLocation

@@ -77,7 +77,7 @@ class Vec3 {
 
   double get mag => sqrt(x * x + y * y + z * z);
 
-  Vec3 normalized() {
+  Vec3 get normalized {
     final m = mag;
     if (m <= 1e-9) return const Vec3(0, 0, 0);
     return Vec3(x / m, y / m, z / m);
@@ -85,7 +85,16 @@ class Vec3 {
 
   double dot(Vec3 o) => x * o.x + y * o.y + z * o.z;
 
+  double angleFromVec2(Vec3 v) {
+    return atan2(v.y, v.x); // radians, range: -π → π
+  }
+
+  static int octantFromAngle(double angle) {
+    final normalized = angle < 0 ? angle + 2 * pi : angle;
+    return ((normalized / (pi / 4)).round()) % 8;
+  }
+
   @override
-  String toString() => "[$x,$y,$z]";
+  String toString() => "[${x.toStringAsFixed(2)},${y.toStringAsFixed(2)},${z.toStringAsFixed(2)}]";
 
 }

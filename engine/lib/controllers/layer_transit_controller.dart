@@ -1,6 +1,7 @@
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import '../audio_service.dart';
+import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/impulse.dart';
 import '../galaxy/geometry/location.dart';
@@ -126,9 +127,14 @@ class LayerTransitController extends FugueController {
           }
         }
       }
-      ship.move(ImpulseLocation(ship.loc.system,sysLoc.cell.coord,targetCell.coord),fm.galaxy.ships);
+      final loc = ImpulseLocation(ship.loc.system,sysLoc.cell.coord,targetCell.coord);
+      loc.map.updateGravMap(fm.galaxy);
+      print("Grav Map Center: ");
+      print(loc.map.gravMap[Coord3D(10,10,0)]);
+      ship.move(loc,fm.galaxy.ships);
       ship.nav.resetMotionState();
       fm.audioController.newTrack(newMood: MusicalMood.danger);
+
     } //fm.pilotController.action(ship.pilot, ActionType.movement);
   }
 

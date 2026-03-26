@@ -573,7 +573,6 @@ class Ship extends Item {
       }
     }
     if (!tactical && nav.targetShip != null) {
-
       final sustained = sustainedRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
       blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
       final dist = distanceFrom(nav.targetShip!).round();
@@ -669,8 +668,6 @@ class Ship extends Item {
         return TextBlock(effect.statusString, effect.color, true);
       });
   }
-
-
 
   @override
   String toString() {

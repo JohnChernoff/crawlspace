@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/star.dart';
 import '../item.dart';
@@ -22,11 +23,16 @@ typedef SystemMap = MappedGrid<SectorCell>;
 
 class System extends Grid implements Nameable {
   final systemMapDim = GridDim(20, 20, 1);
-  final impulseMapDim = GridDim(20, 20, 1); //minimums?
+  final impulseMapDim = GridDim(20, 20, 1);
   String name;
   String get selectionName => name;
   Set<System> links = HashSet();
+  List<Star> stars(Galaxy g) => g.stars.inSystem(this).toList();
   List<Planet> planets(Galaxy g) => g.planets.inSystem(this).toList();
+  List<MassiveObject> massiveObjects(Galaxy g) => [
+    ...planets(g),
+    ...stars(g),
+  ];
   bool starOne, blackHole;
   TrafficGenHint trafficGenHint;
   bool scouted = false;

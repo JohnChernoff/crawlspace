@@ -281,6 +281,8 @@ class ShipNav {
     ship.nav.applyForce(gravity);
   }
 
+  Vec3? get gForce => ship.loc.map.gravMap[ship.loc.cell.coord];
+
   void rotate(double degrees) {
     _facing = (_facing + degrees) % 360;
   }
@@ -299,7 +301,7 @@ class ShipNav {
       // lateral/reverse at penalty
         final facingVec = facingToVec(_facing);
         final requested = Vec3(requestedDir.x.toDouble(),
-            requestedDir.y.toDouble(), 0).normalized();
+            requestedDir.y.toDouble(), 0).normalized;
         final alignment = facingVec.dot(requested);
         // alignment 1.0 = full thrust, 0 = lateral penalty, -1 = reverse penalty
         return requested * _thrustMultiplier(alignment, arch);
@@ -307,7 +309,7 @@ class ShipNav {
       // partial penalty for non-forward thrust
         final facingVec = facingToVec(_facing);
         final requested = Vec3(requestedDir.x.toDouble(),
-            requestedDir.y.toDouble(), 0).normalized();
+            requestedDir.y.toDouble(), 0).normalized;
         final alignment = facingVec.dot(requested).clamp(-1.0, 1.0);
         return requested * _thrustMultiplier(alignment, arch) * 0.7;
     }
@@ -325,7 +327,7 @@ class ShipNav {
   List<Coord3D> projectedPath(int length, {iterations = 25}) {
     if (ship.loc.domain != Domain.impulse) return [];
     final List<Coord3D> path = [ship.loc.cell.coord];
-    Vec3 v = vel.normalized();
+    Vec3 v = vel.normalized;
     Position p = Position(_pos.x,_pos.y,_pos.z);
     bool outOfBounds = false;
     int i = 0;

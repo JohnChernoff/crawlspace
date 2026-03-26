@@ -36,16 +36,12 @@ class AsciiGridPainter extends CustomPainter {
     final targetLoc = fm.player.targetLoc;
     final scanSelection = fm.scannerController.currentScanSelection;
     final playerZ = ship.loc.cell.coord.z;
-
     final map = ship.loc.map;
     final dim = map.dim;
-
     final is2D = map.dim.mz == 1;
-
     final cellW = size.width / dim.mx;
     final cellH = size.height / dim.my;
     final layerSize = is2D ? cellH : cellH / 2;
-
     final paint = Paint();
     final projectedPath = ship.nav.projectedPath(4).toSet();
 
@@ -61,27 +57,30 @@ class AsciiGridPainter extends CustomPainter {
           final cell = entry.cell;
           final z = cell.coord.z;
           final t = dim.mz <= 1 ? 0.0 : z / (dim.mz - 1);
-          //final tRaw = dim.mz <= 1 ? 0.0 : z / (dim.mz - 1);
-          //final t = pow(tRaw, 0.9); // tweak this
           final stackXInset = 4; //cellW * 0.04;
           final zLiftPerLayer = 1; //max(1.0, cellH * 0.015);
           final dx = is2D ?  baseRect.left + cellW/2 : baseRect.left - stackXInset + (cellW - layerSize) * t;
           final dy = baseRect.top - (cell.coord.z * zLiftPerLayer) + (cellH - layerSize) * t;
-
           final state = _renderStateForCell(cell, fm, ship, targetPathCoords, projectedPath, targetLoc?.cell,scanSelection,playerZ);
           final glyph = _glyphForCell(cell, ship);
           final color = _colorForCell(cell, ship, state, is2D: is2D);
           final fontSize = _fontSizeForCell(layerSize, z, dim);
-          //final fontSize = _fontSizeForCell(effectiveLayerSize * 0.9, z, dim);
+
+          final layerRect = is2D
+              ? baseRect
+              : Rect.fromLTWH(dx, dy, layerSize, layerSize);
+
+          final map = ship.loc.map;
+          _paintCellBackground(canvas,layerRect,color: _bkgColorForCell(map,cell));
+          _drawVector(canvas, layerRect, map.gravDirectionAt(cell.coord));
 
           final paragraph = _getParagraph(glyph, color, fontSize);
           canvas.drawParagraph(paragraph, Offset(dx, dy));
 
           if (state.uiTarget || state.inShipPath) {
-            _paintTargetMarker(canvas, Rect.fromLTWH(dx, dy, layerSize, layerSize), fontSize);
+            _paintTargetMarker(canvas, layerRect, fontSize);
           }
 
-          final layerRect = Rect.fromLTWH(dx, dy, layerSize, layerSize);
           if (state.inTargetPath) {
             _paintCellOutline(
               canvas,
@@ -98,10 +97,6 @@ class AsciiGridPainter extends CustomPainter {
               color: Colors.redAccent,
               strokeWidth: 2.0,
             );
-          }
-
-          if (state.inShipPath) {
-
           }
 
           _paintGridBoundary(canvas, baseRect);
@@ -196,6 +191,33 @@ class AsciiGridPainter extends CustomPainter {
     return hazards.first.glyph;
   }
 
+  Color _bkgColorForCell(CellMap map, GridCell cell) { //final h = sqrt(normalized); // instead of just normalized
+    final h = map.gravHeatMap[cell.coord] ?? 0; //print(h);
+    return Color.lerp(Colors.black,Colors.lightGreenAccent, h)!;
+  }
+
+  void _drawVector(Canvas canvas, Rect rect, Vec3 v) {
+    if (v.mag < 0.01) return;
+
+    final center = rect.center;
+    final length = rect.width * 0.35;
+
+    final angle = atan2(v.y, v.x);
+
+    final dx = cos(angle) * length;
+    final dy = sin(angle) * length;
+
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(0.7)
+      ..strokeWidth = 1.5;
+
+    canvas.drawLine(
+      center,
+      Offset(center.dx + dx, center.dy + dy),
+      paint,
+    );
+  }
+
   Color _colorForCell(
       GridCell cell,
       Ship player,
@@ -254,10 +276,16 @@ class AsciiGridPainter extends CustomPainter {
     return max(baseSize * depthFactor, baseSize * 0.45);
   }
 
-  double _opacityForZ(int z, GridDim dim) { //apply to Paint.alpha
-    final maxZ = max(1, dim.mz - 1);
-    final t = sqrt(z / maxZ);
-    return 0.55 + 0.45 * t;
+  void _paintCellBackground(
+      Canvas canvas,
+      Rect rect, {
+        required Color color,
+        double strokeWidth = 1.0,
+      }) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.fill;
+    canvas.drawRect(rect.deflate(strokeWidth / 2), paint);
   }
 
   void _paintCellOutline(
@@ -286,15 +314,6 @@ class AsciiGridPainter extends CustomPainter {
       ..strokeWidth = strokeWidth;
 
     canvas.drawRect(rect, paint);
-  }
-
-  void _paintDirection(Canvas canvas, double cx, double cy, double cw, double ch, Vec3 vel) {
-    final v = vel.normalized();
-    final paint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = .5;
-    canvas.drawLine(Offset(cx, cy), Offset(cx + (v.x * cw), cy + (v.y * ch)), paint);
   }
 
   final _paragraphCache = <String, ui.Paragraph>{};
@@ -405,3 +424,11 @@ _CellRenderState _renderStateForCell(
     sameDepthAndNotEmpty: sameDepthAndNotEmpty,
   );
 }
+
+/*
+  double _opacityForZ(int z, GridDim dim) { //apply to Paint.alpha
+    final maxZ = max(1, dim.mz - 1);
+    final t = sqrt(z / maxZ);
+    return 0.55 + 0.45 * t;
+  }
+ */
