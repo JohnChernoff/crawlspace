@@ -146,7 +146,8 @@ class FugueEngine {
         hyperEngine: Engine.fromStock(StockSystem.engBasicFedHyper),
         shield: Shield.fromStock(StockSystem.shdBasicEnergon),
         weapons: [Weapon.fromStock(StockSystem.wepFedLaser3),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
-        ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50}
+        ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50},
+        owner: player
     );
     galaxy.ships.addFlying(pShip,SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),player);
     player.system.visited = true;
@@ -162,7 +163,9 @@ class FugueEngine {
             hyperEngine: Engine.fromStock(StockSystem.engBasicFedHyper),
             shield: Shield.fromStock(StockSystem.shdBasicEnergon),
             weapons: [Weapon.fromStock(StockSystem.wepPlasmaRay),Weapon.fromStock(StockSystem.lchPlasmaCannon)],
-            ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 250});
+            ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 250},
+            owner: agent
+      );
         galaxy.ships.addFlying(agentShip, agentLoc, agent);
     }
     //print(_shipRegistry.all); //print(_pilotRegistry.all); //print (activePilots);

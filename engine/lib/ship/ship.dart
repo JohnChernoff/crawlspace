@@ -97,7 +97,7 @@ class Ship extends Item {
   @override
   String get shopDesc => dump(shop: true);
   ShipClass shipClass;
-  Pilot? owner;
+  Pilot owner;
   Inventory<Item> inventory = Inventory();
   InventoryView<Scrap> get scrapHeap => inventory.filterType<Scrap>();
   InventoryView get cargo => inventory.filter((i) => i is! ShipSystem || !systemControl.isInstalled(i));
@@ -149,7 +149,7 @@ class Ship extends Item {
     _ => null,
   };
 
-  Pilot? get pilotOrOwner => pilotOrNull ?? owner;
+  Pilot get pilotOrOwner => pilotOrNull ?? owner;
   Pilot get pilot => pilotOrNull!; //livin' dangerously..
   ShipNav get nav => navOrNull!;
   SpaceEnvironment get hangar => hangarOrNull!;
@@ -163,7 +163,7 @@ class Ship extends Item {
   };
 
   Ship(super.name, {
-    this.owner,
+    required this.owner,
     this.techLvl,
     super.baseCost = 0,
     super.rarity = 1,

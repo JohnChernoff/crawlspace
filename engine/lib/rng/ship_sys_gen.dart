@@ -24,7 +24,7 @@ class RndSystemInstaller {
   //TODO: sort by techLvl
   bool installRndEngine(Domain domain, int techLvl, Random rnd, {maxAttempts = 100}) { //print("Attempting to install $domain engine <= techlvl $techLvl...");
     int attempts = 0;
-    final faction = ship.pilotOrOwner!.faction;
+    final faction = ship.pilotOrOwner.faction;
     while (sysCtl.getEngine(domain) == null && attempts++ < maxAttempts) { //print("Engine weights: ${pilot.faction.engineWeights.normalized}");
       final engineType = Rng.weightedRandom(faction.engineWeights.normalized,rnd); //print("Engine Type: $engineType");
       final engineList = stockEngines.entries.where((v) => v.value.engineType == engineType &&
@@ -39,7 +39,7 @@ class RndSystemInstaller {
 
   bool installRndPower(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install power generator <= techlvl $techLvl...");
     int attempts = 0;
-    final faction = ship.pilotOrOwner!.faction;
+    final faction = ship.pilotOrOwner.faction;
     while (sysCtl.getInstalledSystems(types: [ShipSystemType.power]).isEmpty && attempts++ < 100) {
       final powerType = Rng.weightedRandom(faction.powerWeights.normalized,rnd);
       final powerList = stockPPs.entries.where((v) => v.value.powerType == powerType &&
@@ -51,7 +51,7 @@ class RndSystemInstaller {
 
   bool installRndShield(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install shield <= techlvl $techLvl...");
     int attempts = 0;
-    final faction = ship.pilotOrOwner!.faction;
+    final faction = ship.pilotOrOwner.faction;
     while (sysCtl.getInstalledSystems(types: [ShipSystemType.shield]).isEmpty && attempts++ < 100) {
       final shieldType = Rng.weightedRandom(faction.shieldWeights.normalized,rnd);
       final shieldList = stockShields.entries.where((v) => v.value.shieldType == shieldType &&
@@ -63,7 +63,7 @@ class RndSystemInstaller {
 
   bool installRndWeapon(int techLvl, Random rnd, {maxAttempts = 10}) { //print("Attempting to install weapon <= techlvl $techLvl...");
     int attempts = 0;
-    final faction = ship.pilotOrOwner!.faction;
+    final faction = ship.pilotOrOwner.faction;
     while (sysCtl.getInstalledSystems(types: [ShipSystemType.weapon]).isEmpty && attempts++ < 100) {
       final dmgType = Rng.weightedRandom(faction.damageWeights.normalized,rnd);
       final weaponList = stockWeapons.entries.where((v) => v.value.dmgType == dmgType &&
@@ -75,7 +75,7 @@ class RndSystemInstaller {
 
   bool installRndLauncher(int techLvl, Random rnd, {maxAttempts = 10}) {
     int attempts = 0;
-    final faction = ship.pilotOrOwner!.faction;
+    final faction = ship.pilotOrOwner.faction;
     while (sysCtl.getInstalledSystems(types: [ShipSystemType.launcher]).isEmpty && attempts++ < 100) {
       final dmgType = Rng.weightedRandom(faction.damageWeights.normalized,rnd);
       final launchList = stockLaunchers.entries.where((v) => v.value.dmgType == dmgType &&
