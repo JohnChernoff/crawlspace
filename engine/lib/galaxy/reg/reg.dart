@@ -44,7 +44,14 @@ abstract class SpaceRegistry<T extends Locatable<L>, L extends SpaceLocation> {
     return bucket.first;
   }
 
-  OccupancyPolicy get occupancyPolicy => OccupancyPolicy.multiple;
+  void _checkBucketOccupancy(Set<T> bucket, SpaceLocation key, {required Domain domain}) {
+    if (occupancyPolicies[domain] == OccupancyPolicy.single && bucket.isNotEmpty) {
+      throw StateError('$T ${bucket.first} already at $key');
+    }
+  }
+
+  //empty = multiple
+  Map<Domain, OccupancyPolicy> get occupancyPolicies => const {};
 
   void register(T obj, L loc) {
     assert(
@@ -89,17 +96,11 @@ abstract class _SectorIndexedRegistry<T extends Locatable<L>, L extends SystemLo
   Set<T> inSector(SectorLocation s) => _bySector[s] ?? <T>{};
   T? singleAtSector(SectorLocation loc) => _singleOrNull(inSector(loc), loc);
 
-  void _checkBucketOccupancy(Set<T> bucket, Object key) {
-    if (occupancyPolicy == OccupancyPolicy.single && bucket.isNotEmpty) {
-      throw StateError('$T ${bucket.first} already at $key');
-    }
-  }
-
   @override
   void register(T obj, L loc) {
     final key = SectorLocation(loc.system, loc.sectorCoord);
     final bucket = _bySector.putIfAbsent(key, () => <T>{});
-    _checkBucketOccupancy(bucket, key);
+    _checkBucketOccupancy(bucket, key, domain: Domain.system);
     super.register(obj, loc);
     bucket.add(obj);
   }
@@ -130,7 +131,7 @@ abstract class _ImpulseIndexedRegistry<T extends Locatable<L>, L extends Impulse
   void register(T obj, L loc) {
     final key = ImpulseLocation(loc.system, loc.sectorCoord, loc.impulseCoord);
     final bucket = _byImpulse.putIfAbsent(key, () => <T>{});
-    _checkBucketOccupancy(bucket, key);
+    _checkBucketOccupancy(bucket, key, domain: Domain.impulse );
     super.register(obj, loc);
     bucket.add(obj);
   }
@@ -150,8 +151,6 @@ abstract class _ImpulseIndexedRegistry<T extends Locatable<L>, L extends Impulse
 
 abstract class ImpulseRegistry<T extends Locatable<ImpulseLocation>>
     extends _ImpulseIndexedRegistry<T, ImpulseLocation> {
-  @override
-  OccupancyPolicy get occupancyPolicy => OccupancyPolicy.single;
 
   Coord3D randomEmptyCoord(
       System system,
@@ -182,7 +181,7 @@ abstract class _OrbitalIndexedRegistry<T extends Locatable<L>, L extends Orbital
       loc.orbitalCoord,
     );
     final bucket = _byOrbital.putIfAbsent(key, () => <T>{});
-    _checkBucketOccupancy(bucket, key);
+    _checkBucketOccupancy(bucket, key, domain: Domain.orbital);
     super.register(obj, loc);
     bucket.add(obj);
   }
@@ -207,8 +206,6 @@ abstract class _OrbitalIndexedRegistry<T extends Locatable<L>, L extends Orbital
 
 abstract class OrbitalRegistry<T extends Locatable<OrbitalLocation>>
     extends _OrbitalIndexedRegistry<T, OrbitalLocation> {
-  @override
-  OccupancyPolicy get occupancyPolicy => OccupancyPolicy.single;
 
   Coord3D randomEmptyCoord(
       System system,

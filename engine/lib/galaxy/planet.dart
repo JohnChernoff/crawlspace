@@ -25,7 +25,7 @@ enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   final String shortString;
 }
 
-class Planet extends SpaceEnvironment<ImpulseLocation> {
+class Planet extends SpaceEnvironment<OrbitalLocation> {
   double get massFactor => switch(environment) {
     EnvType.earthlike  => 1.0,
     EnvType.alluvial   => 0.9,

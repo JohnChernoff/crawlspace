@@ -178,7 +178,7 @@ class PilotController extends FugueController {
     }
     double amount = 50; //((ship.energyConvertor.value/(Rng.biasedRndInt(rnd,mean: 50, min: 25, max: 80))) * player.system.starClass.power).floor();
     final loc = ship.loc; if (loc is ImpulseLocation) {
-      final star = fm.galaxy.stars.byImpulse(loc);
+      final star = fm.galaxy.stars.singleAtImpulse(loc);
       if (star != null) {
         fm.msg("Scooping class ${star.stellarClass.name} star... gained ${ship.systemControl.recharge(amount)} energy");
         fm.pilotController.action(fm.player,ActionType.energyScoop);

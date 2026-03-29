@@ -129,7 +129,7 @@ class System extends Grid implements Nameable {
       starList.add(star);
       final sectorCoord = metadata.starConfig.starPositions(systemMapDim).elementAt(i);
       final centerLoc = ImpulseLocation(this, sectorCoord, impulseMapDim.center);
-      final loc =  g.stars.byImpulse(centerLoc) != null
+      final loc =  g.stars.singleAtImpulse(centerLoc) != null
           ? ImpulseLocation(this, sectorCoord, g.stars.randomEmptyCoord(this,sectorCoord,systemMapDim, rnd))
           : centerLoc;
       g.stars.register(star, loc); //print("Registered: ${name}, $loc");
@@ -150,7 +150,7 @@ class System extends Grid implements Nameable {
       //print("res: $res, comm: $comm, dust: $dust");
 
       final centerLoc = ImpulseLocation(this, pData.position, impulseMapDim.center);
-      final loc = g.planets.byImpulse(centerLoc) != null
+      final loc = g.planets.singleAtImpulse(centerLoc) != null
       ? g.planets.randomUnoccupiedLocation(this, rnd)
       : centerLoc;
 
@@ -168,7 +168,7 @@ class System extends Grid implements Nameable {
         earthMasses: pData.relativeMass,
       );
 
-      g.planets.register(planet, loc);
+      g.planets.register(planet, OrbitalLocation(this, loc.sectorCoord, loc.impulseCoord, orbitalMapDim.center));
       planetList.add(planet);
     }
     return planetList;

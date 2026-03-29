@@ -17,14 +17,14 @@ class ImpulseCell extends GridCell {
 
   @override
   List<Planet> planets(Galaxy g) =>
-      [g.planets.byImpulse(loc)].whereType<Planet>().toList();
+      [g.planets.inImpulse(loc)].whereType<Planet>().toList();
   @override
   List<Star> stars(Galaxy g) =>
-      [g.stars.byImpulse(loc)].whereType<Star>().toList();
+      [g.stars.inImpulse(loc)].whereType<Star>().toList();
 
-  Planet? getPlanet(Galaxy g) => g.planets.byImpulse(loc);
+  Planet? getPlanet(Galaxy g) => g.planets.singleAtImpulse(loc);
   bool hasPlanet(Galaxy g) => getPlanet(g) != null;
-  Star? getStar(Galaxy g) => g.stars.byImpulse(loc);
+  Star? getStar(Galaxy g) => g.stars.singleAtImpulse(loc);
   bool hasStar(Galaxy g) => getStar(g) != null;
   ImpulseMap map;
   SectorCell sector;
