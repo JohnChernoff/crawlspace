@@ -43,27 +43,6 @@ enum ThrottleMode {
   const ThrottleMode(this.speedFactor);
 }
 
-
-class MoveContext {
-  final Ship ship;
-  final Engine? engine;
-  final GridCell currentCell;
-  final CellMap map;
-
-  const MoveContext({
-    required this.ship,
-    required this.engine,
-    required this.currentCell,
-    required this.map,
-  });
-
-  factory MoveContext.fromShip(Ship ship) => MoveContext(
-      ship: ship,
-      engine: ship.systemControl.engine,
-      currentCell: ship.loc.cell,
-      map: ship.loc.map);
-}
-
 class Position {
   final double x;
   final double y;
@@ -90,7 +69,7 @@ class ShipNav {
   Ship ship;
   Vec3 _vel = Vec3(0, 0, 0);
   Vec3 get vel => _vel;
-  bool get moving => _vel.mag > 0;
+  bool get moving => _vel.mag > 0.025;
   bool get hasDestination => autoPilot.heading != ship.loc;
 
   void applyForce(Vec3 force) {
@@ -208,7 +187,8 @@ class ShipNav {
   late MovePreviewer movePreviewer;
   late RotationPreviewer rotationPreviewer;
 
-  bool get autopilotOn => _autopilotOn || _autoStopping;
+  bool get autopilotOn => _autopilotOn;
+  bool get effectiveAutopilot => _autopilotOn || _autoStopping;
   void toggleAutoPilot() { _autopilotOn = !_autopilotOn; }
   bool _autopilotOn = false;
   void set autoStop(bool b) {
@@ -252,35 +232,37 @@ class ShipNav {
 
   void applyGravity(FugueEngine fm) {
     final loc = ship.loc;
-    if (loc is! ImpulseLocation) return;
+    if (loc is! SystemLocation || loc.domain.isAbove(Domain.impulse)) return;
 
-    final planets = fm.galaxy.planets.inSector(loc.sector);
-    if (planets.isEmpty) return;
+    final objects = loc.sector.cell.massiveObjects(fm.galaxy);
+    if (objects.isEmpty) return;
 
     Vec3 gravity = Vec3(0, 0, 0);
-    for (final planet in planets) {
-      final pLoc = fm.galaxy.planets.locationOf(planet);
-      if (pLoc == null) continue;
+    for (final obj in objects) {
+      final objLoc = obj.loc;
+      if (objLoc is ImpulseLocation) {
+        final objPos = Position.fromCoord(objLoc.impulseCoord);
+        final dx = objPos.x - pos.x;
+        final dy = objPos.y - pos.y;
+        final dz = objPos.z - pos.z;
 
-      final dx = pLoc.impulseCoord.x - loc.impulseCoord.x;
-      final dy = pLoc.impulseCoord.y - loc.impulseCoord.y;
-      final dz = pLoc.impulseCoord.z - loc.impulseCoord.z;
+        final distSq = max(0.25,
+            dx*dx.toDouble() + dy*dy.toDouble() + dz*dz.toDouble());
+        final dist = sqrt(distSq);
+        final strength = (obj.gravMass * gravConstant) / distSq;
+        //print("Strength: $strength");
 
-      final distSq = max(0.25,
-          dx*dx.toDouble() + dy*dy.toDouble() + dz*dz.toDouble());
-      final dist = sqrt(distSq);
-      final strength = (planet.mass * gravConstant) / distSq;
-      //print("Strength: $strength");
-
-      gravity = gravity + Vec3(
-        (dx / dist) * strength,
-        (dy / dist) * strength,
-        (dz / dist) * strength,
-      );
+        gravity = gravity + Vec3(
+          (dx / dist) * strength,
+          (dy / dist) * strength,
+          (dz / dist) * strength,
+        );
+      }
     }
     ship.nav.applyForce(gravity);
   }
 
+  //gravMap for discrete gridcells
   Vec3? get gForce => ship.loc.map.gravMap[ship.loc.cell.coord];
 
   void rotate(double degrees) {

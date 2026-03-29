@@ -2,7 +2,6 @@ import 'dart:collection';
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
-import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/star.dart';
 import '../item.dart';
@@ -23,16 +22,17 @@ typedef SystemMap = MappedGrid<SectorCell>;
 
 class System extends Grid implements Nameable {
   final systemMapDim = GridDim(20, 20, 1);
-  final impulseMapDim = GridDim(20, 20, 1);
+  final impulseMapDim = GridDim(40, 40, 1);
+  final orbitalMapDim = GridDim(40, 40, 1);
   String name;
   String get selectionName => name;
   Set<System> links = HashSet();
-  List<Star> stars(Galaxy g) => g.stars.inSystem(this).toList();
+
+  @override
   List<Planet> planets(Galaxy g) => g.planets.inSystem(this).toList();
-  List<MassiveObject> massiveObjects(Galaxy g) => [
-    ...planets(g),
-    ...stars(g),
-  ];
+  @override
+  List<Star> stars(Galaxy g) => g.stars.inSystem(this).toList();
+
   bool starOne, blackHole;
   TrafficGenHint trafficGenHint;
   bool scouted = false;
@@ -128,9 +128,10 @@ class System extends Grid implements Nameable {
       final star = Star(metadata.stellarClasses.elementAt(i), i == 0);
       starList.add(star);
       final sectorCoord = metadata.starConfig.starPositions(systemMapDim).elementAt(i);
-      final loc = ImpulseLocation(this,
-          sectorCoord,
-          g.stars.randomEmptyCoord(this,sectorCoord,systemMapDim, rnd));
+      final centerLoc = ImpulseLocation(this, sectorCoord, impulseMapDim.center);
+      final loc =  g.stars.byImpulse(centerLoc) != null
+          ? ImpulseLocation(this, sectorCoord, g.stars.randomEmptyCoord(this,sectorCoord,systemMapDim, rnd))
+          : centerLoc;
       g.stars.register(star, loc); //print("Registered: ${name}, $loc");
     }
     return starList;
@@ -148,7 +149,7 @@ class System extends Grid implements Nameable {
       final dust = min(1.0, comm * 0.7 + tech * 0.3);
       //print("res: $res, comm: $comm, dust: $dust");
 
-      final centerLoc = ImpulseLocation(this, pData.position, systemMapDim.center);
+      final centerLoc = ImpulseLocation(this, pData.position, impulseMapDim.center);
       final loc = g.planets.byImpulse(centerLoc) != null
       ? g.planets.randomUnoccupiedLocation(this, rnd)
       : centerLoc;
@@ -163,7 +164,8 @@ class System extends Grid implements Nameable {
         commerce: Rng.betaRnd(rnd, comm, 10),
         industry: Rng.betaRnd(rnd, dust, 6),
         environment: PlanetBlueprint.candidatesFor(OrbitalZone.inner, pData.type).first, //TODO: determine OrbitalZone
-        weirdness: rnd.nextDouble()
+        weirdness: rnd.nextDouble(),
+        earthMasses: pData.relativeMass,
       );
 
       g.planets.register(planet, loc);

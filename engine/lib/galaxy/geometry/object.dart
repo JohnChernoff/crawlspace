@@ -3,7 +3,7 @@ import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/shop.dart';
 import '../../color.dart';
 import '../../item.dart';
-import '../reg/reg.dart';
+import '../reg/locatables.dart';
 
 class ScanReport {
   bool get unknownLocation => !(system || sector);
@@ -28,7 +28,7 @@ class SpaceEnvironment<L extends SpaceLocation> extends MassiveObject<L> {
   double rapport = 0; // -1–1
 
   SpaceEnvironment(super.name, this.fedLvl, this.techLvl,
-      {super.shortDesc, super.mass = 1});
+      {super.shortDesc, super.mass = 1, super.earthMasses, super.tuningFactor});
 }
 
 class SpaceObject<L extends SpaceLocation> extends Locatable<L>
@@ -45,7 +45,16 @@ class SpaceObject<L extends SpaceLocation> extends Locatable<L>
   SpaceObject(this.name, {this.shortDesc, this.objColor = GameColors.white});
 }
 
+const double earthMassKg = 5.972e24;
+const double earthSunRatio = 333000;
+const double solarMassKg = earthMassKg * earthSunRatio;
+
 class MassiveObject<L extends SpaceLocation> extends SpaceObject<L> {
-  double mass; //1 = earth
-  MassiveObject(super.name, {required this.mass, super.objColor, super.shortDesc});
+  double mass; //in kg
+  double? earthMasses;
+  double get inertialMass => mass;
+  double get gravMass =>  (earthMasses ?? (mass / earthMassKg)) * tuningFactor;
+  double tuningFactor;
+  MassiveObject(super.name, {mass = .1, this.tuningFactor = 1, this.earthMasses, super.objColor, super.shortDesc})
+      : this.mass = earthMasses != null ? (earthMassKg * earthMasses) : mass;
 }

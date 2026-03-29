@@ -70,9 +70,11 @@ class SystemMetadata {
 }
 
 class SystemMetadataGenerator {
+  final GridDim systemDim;
+  final GridDim impulseDim;
   final Random rnd;
 
-  SystemMetadataGenerator({Random? rnd}) : rnd = rnd ?? Random();
+  SystemMetadataGenerator(this.systemDim,this.impulseDim,{Random? rnd}) : rnd = rnd ?? Random();
 
   SystemMetadata generate() {
     final List<StellarClass> stars = [StellarClass.getRndStellarClass(rnd)];
@@ -102,8 +104,8 @@ class SystemMetadataGenerator {
     );
 
     // Now generate blueprints using the complete metadata
-    final starPos = starConfig.starPositions(GridDim(21, 21, 1));
-    final blueprints = PlanetBlueprintGenerator(rnd: rnd).generate(meta, starPos);
+    final starPos = starConfig.starPositions(systemDim);
+    final blueprints = PlanetBlueprintGenerator(systemDim,impulseDim,rnd: rnd).generate(meta, starPos);
 
     return meta.withBlueprints(blueprints);
   }
@@ -179,6 +181,7 @@ enum MultiStarConfig {
   // but gravitational interference limits outer planets
   hierarchical;    // tight pair + distant third, messy outer zone
 
+
   static MultiStarConfig deriveStarConfig(List<StellarClass> stars, Random rnd) {
     if (stars.length == 1) return MultiStarConfig.single;
     if (stars.length >= 3) return MultiStarConfig.hierarchical;
@@ -186,19 +189,24 @@ enum MultiStarConfig {
     // Two stars — tight or wide depends on mass difference
     // Similar mass stars tend toward wider separation
     // Very different mass stars tend toward tight/hierarchical
-    final massDiff = stars[0].lumIndex - stars[1].lumIndex;
-    return massDiff <= 8
+    final m1 = stars[0].solarMasses;
+    final m2 = stars[1].solarMasses;
+    final ratio = max(m1, m2) / min(m1, m2);
+
+    return ratio <= 1.5
         ? MultiStarConfig.wideBinary
         : MultiStarConfig.tightBinary;
   }
 
   List<Coord3D> starPositions(GridDim dim) {
     final cx = dim.mx ~/ 2, cy = dim.my ~/ 2;
+    final sepSmall = (dim.maxXY * 0.20).round().clamp(2, 8);
+    final sepLarge = (dim.maxXY * 0.35).round().clamp(3, 12);
     return switch (this) {
       MultiStarConfig.single       => [Coord3D(cx, cy, 0)],
       MultiStarConfig.tightBinary  => [Coord3D(cx, cy,0), Coord3D(cx, cy, 0)],
-      MultiStarConfig.wideBinary   => [Coord3D(cx-4, cy,0), Coord3D(cx+4, cy, 0)],
-      MultiStarConfig.hierarchical => [Coord3D(cx, cy,0), Coord3D(cx, cy, 0), Coord3D(cx+7, cy, 0)],
+      MultiStarConfig.wideBinary   => [Coord3D(cx-sepSmall, cy,0), Coord3D(cx+sepSmall, cy, 0)],
+      MultiStarConfig.hierarchical => [Coord3D(cx, cy,0), Coord3D(cx, cy, 0), Coord3D(cx+sepLarge, cy, 0)],
     };
   }
 

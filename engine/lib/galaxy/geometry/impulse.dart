@@ -14,6 +14,14 @@ typedef ImpulseMap = MappedGrid<ImpulseCell>;
 
 class ImpulseCell extends GridCell {
   final ImpulseLocation loc;
+
+  @override
+  List<Planet> planets(Galaxy g) =>
+      [g.planets.byImpulse(loc)].whereType<Planet>().toList();
+  @override
+  List<Star> stars(Galaxy g) =>
+      [g.stars.byImpulse(loc)].whereType<Star>().toList();
+
   Planet? getPlanet(Galaxy g) => g.planets.byImpulse(loc);
   bool hasPlanet(Galaxy g) => getPlanet(g) != null;
   Star? getStar(Galaxy g) => g.stars.byImpulse(loc);

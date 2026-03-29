@@ -5,15 +5,14 @@ import 'package:crawlspace_engine/effects.dart';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/rng/ship_sys_gen.dart';
-import 'package:crawlspace_engine/ship/rotation_preview.dart';
+import 'package:crawlspace_engine/ship/ship_stat.dart';
 import 'package:crawlspace_engine/ship/ship_sys.dart';
+import 'package:crawlspace_engine/ship/ship_tick.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';
-import 'package:crawlspace_engine/ship/systems/weapon_profiler.dart';
 import '../fugue_engine.dart';
-import '../color.dart';
 import '../galaxy/geometry/coord_3d.dart';
-import '../galaxy/reg/reg.dart';
+import '../galaxy/reg/ship_reg.dart';
 import '../galaxy/system.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/impulse.dart';
@@ -109,8 +108,10 @@ class Ship extends Item {
     ShipSystemType.ammo,
     ShipSystemType.quarters];
 
-  late ShipSystemControl systemControl;
   late Hull hull;
+  late ShipSystemControl systemControl;
+  late ShipTick ticker;
+  late ShipStatus status;
   double get volume => shipClass.volume;
   double get maxSpeed =>  hull.material.speedMult * shipClass.maxSpeed; // sqrt(volume * mass));
   double hullDamage = 0;
@@ -180,6 +181,8 @@ class Ship extends Item {
 
     hull = Hull.fromMaterial(hullMaterial,this);
     systemControl = ShipSystemControl(this);
+    status = ShipStatus(this);
+    ticker = ShipTick(this);
     rndSystemInstaller = RndSystemInstaller(this, systemControl);
     install(generator);
     install(hyperEngine, active: false);
@@ -435,86 +438,6 @@ class Ship extends Item {
     return t == 999 ? 0 : t;
   }
 
-
-
-  TickResult tick({FugueEngine? fm}) {
-    final dryRun = fm == null; //if (!dryRun) print("Tick... $dryRun");
-    double totalRecharge = 0, totalBurn = 0;
-    for (final rss in systemControl.rechargables) {
-      if (rss.currentEnergy < rss.currentMaxEnergy) { //print(rss.name); print(rss.rechargeRate);
-        double recharge = rss.currentMaxEnergy * rss.rechargeRate * (1-rss.damage);
-        if (!dryRun) {
-          if (rss.currentEnergy < 1) {
-            recharge = (fm.aiRnd.nextInt(rss.avgRecoveryTime) == 0) ? recharge : 0;
-          }
-          if (recharge > 0) rss.recharge(recharge);
-        }
-        totalRecharge += recharge;
-      }
-    }
-    //if (dryRun) print("Total recharge: ${totalRecharge}");
-    for (final system in systemControl.activeSystems) { //TODO: handle npc power outages
-      double e = system.powerDraw; //print("Burning: $e");
-      if (!dryRun) {
-        final burnout = !systemControl.burnEnergy(e);
-        if (burnout && system is! RechargableShipSystem && autoShutdown) {
-          system.active = false;
-          fm.msg("Out of power, shutting down ${system.type.name}");
-        }
-      }
-      totalBurn += e;
-    } //print("$name: Net energy per tick: ${recharge - totalBurn}");
-    //if (dryRun) print("Total burn: ${totalBurn}");
-    if (!dryRun) {
-      for (final w in systemControl.getWeapons()) if (w.cooldown > 0) w.cooldown--;
-      xenoMatter = min(shipClass.maxXeno,
-          xenoMatter + (systemControl.engine?.xenoGen ?? 0.0));
-      effectMap.tickAll();
-      for (final effect in loc.cell.effects.allActive) {
-        effect.apply(this,fm);
-      }
-    }
-    final newCell;
-    if (!dryRun && loc.domain == Domain.impulse) { // && (nav.moving || nav.activeHeading)) {
-      if (fm.auTick % 1 == 0) { //(fm.aiRnd.nextDouble() < 1) { //moveProbability) {
-        newCell = tickMove(fm);
-      } else newCell = false;
-    } else newCell = false;
-    //if (newCell) print ("Moved: ${fm?.auTick}");
-    return TickResult(totalRecharge - totalBurn, newCell);
-  }
-
-  bool tickMove(FugueEngine fm) {
-    final prevLoc = loc.cell.coord;
-    final prevPos = Position(nav.pos.x,nav.pos.y,nav.pos.z);
-    nav.applyGravity(fm);
-
-    if (nav.rotating) {
-      final preview = nav.rotationPreviewer.previewRotationStep(
-        state: RotationState.fromShip(this),
-      );
-      nav.facing = preview.newState.facing;
-      nav.targetFacing = preview.newState.targetFacing;
-      if (preview.complete && nav.pendingThrust != null) {
-        nav.applyForce(nav.pendingThrust!);
-        nav.pendingThrust = null;
-      }
-    }
-
-    if (nav.autopilotOn) {
-      fm.movementController.moveShip(this, nav.autoPilot.heading);
-    } else if (nav.moving || nav.rotating) {
-      fm.movementController.moveShip(this, loc,
-          throttleOverride: ThrottleMode.drift);
-    }
-    if (nav.vel.mag < .1) {
-      nav.resetMotionState();
-    }
-
-    //print("$prevPos => ${nav.pos}");
-    return (loc.cell.coord != prevLoc);
-  }
-
   void scanSystem(System system, FugueEngine fm) {
     final sensor = systemControl.getSensor();
     if (sensor == null || sensor.scannedSystems.contains(system)) return;
@@ -535,139 +458,6 @@ class Ship extends Item {
   }
 
   bool activeEffect(ShipEffect effect) => effectMap.isActive(effect);
-
-  List<TextBlock> status({bool tactical = false, bool showScannedShip = true, nebula = false}) {
-    final abbrev = !tactical && nav.targetShip != null;
-    final hostile = pilot.hostile;
-    if (nebula || (tactical && loc.cell.hasHaz(Hazard.nebula))) return [TextBlock("In Nebula", GameColors.red, true)];
-    List<TextBlock> blocks = [];
-    blocks.addAll(dumpEffects());
-    if (!abbrev) {
-      blocks.add(TextBlock(name,pilot.faction.color,true));
-      blocks.add(TextBlock("${pilot.faction.name} ${shipClass.type.name}",pilot.faction.color,true));
-    }
-    if (pilot.faction.isPirate) blocks.add(TextBlock("*** Pirate ***",GameColors.red,true)); else {
-      if (tactical) blocks.add(TextBlock("${(hostile ? 'hostile' : 'peaceful')} ",GameColors.gray,true));
-    }
-
-    blocks.add(TextBlock("Hull: ${hullRemaining.toStringAsFixed(2)} ",GameColors.green,false));
-    //blocks.add(TextBlock("Volume: ${volume} ",GameColors.green,false));
-
-    blocks.add(TextBlock("%: ${currentHullPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
-    blocks.add(TextBlock("Shields: ${systemControl.currentShieldStrength.toStringAsFixed(2)}, ",GameColors.green,false));
-    blocks.add(TextBlock("%: ${systemControl.currentShieldPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
-    if (!tactical) {
-      blocks.add(TextBlock("Energy: ${systemControl.getCurrentEnergy().toStringAsFixed(2)}, ",GameColors.green,false));
-      blocks.add(TextBlock("%: ${systemControl.currentEnergyPercentage.round().toStringAsFixed(2)}",GameColors.lightBlue,true));
-      blocks.add(TextBlock("Energy Rate: ${tick().energy.toStringAsFixed(2)}",GameColors.green,true));
-    }
-    blocks.add(TextBlock("Xeno Matter: ${xenoMatter.toStringAsFixed(2)}",GameColors.orange,true));
-    for (final s in systemControl.getInstalledSystems()) {
-      bool cooldown = s is Weapon && s.cooldown > 0;
-      final color = cooldown ? GameColors.red : GameColors.white;
-      blocks.add(TextBlock("${s.name} ",color,false));
-      if (s.damage > 0) blocks.add(TextBlock("${s.dmgTxt}% ", GameColors.gray, false));
-      blocks.add(TextBlock("${s.active ? '+' : '-'}",color,true));
-      if (s is Weapon && s.ammo != null) {
-        blocks.add(TextBlock("${s.ammo!.name}: ${systemControl.ammoFor(s.ammo!)}",GameColors.coral,true));
-      }
-    }
-    if (!tactical && nav.targetShip != null) {
-      final sustained = sustainedRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
-      blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
-      final dist = distanceFrom(nav.targetShip!).round();
-      final volley = volleyRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
-      final fit = (volley.efficiencyAt(dist) * 100).round();
-      blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
-      blocks.addAll(combatText());
-    }
-    if (!tactical) {
-      blocks.add(TextBlock("Targ Facing: ${nav.targetFacing}", GameColors.gray, true));
-      blocks.add(TextBlock("Facing: ${nav.facing}", GameColors.gray, true));
-      blocks.add(TextBlock("Position: ${nav.pos}", GameColors.gray, true));
-      blocks.add(TextBlock("Heading: ${nav.autoPilot.heading.cell.coord}", GameColors.gray, true));
-      blocks.add(TextBlock("Velocity: ${nav.velocityString()}", GameColors.gray, true));
-      blocks.add(TextBlock("Speed: ${nav.speed.toStringAsFixed(2)}", GameColors.gray, true));
-      blocks.add(TextBlock("Throttle: ${nav.throttle}", GameColors.gray, true));
-      if (!abbrev) {
-        blocks.add(TextBlock("Total mass: ${currentMass.toStringAsFixed(2)}", GameColors.gray, true));
-        blocks.add(TextBlock("Remaining capacity: ${availableSpace.toStringAsFixed(2)}", GameColors.gray, true));
-        blocks.add(TextBlock("Total scrap value: ${scrapVal.toStringAsFixed(2)}", GameColors.gray, true));
-      }
-    }
-    blocks.add(const TextBlock("",GameColors.black,true));
-    if (nav.targetCoord != null) blocks.add(TextBlock("Scanning Coord: $nav.targetCoord", GameColors.orange, true));
-    if (showScannedShip && !tactical && (nav.targetShip != null && nav.targetShip!.npc)) {
-      blocks.add(const TextBlock("Scanning Ship: ", GameColors.orange, true));
-      blocks.addAll(nav.targetShip!.status(tactical: true));
-    }
-    return blocks;
-  }
-
-  List<TextBlock> combatText() {
-    final target = nav.targetShip;
-    if (target == null) return [];
-
-    final dist = distance(l: target.loc);
-    final projDist = nav.projectedTargetDist;
-    final trend = nav.trendGlyph;
-    final profile = volleyRangeProfile();
-
-    final inRange = profile.usableBand != null &&
-        dist >= profile.usableBand!.start &&
-        dist <= profile.usableBand!.end;
-    final projInRange = projDist != null && profile.usableBand != null &&
-        projDist >= profile.usableBand!.start &&
-        projDist <= profile.usableBand!.end;
-
-    final rangeColor = inRange
-        ? (projInRange ? GameColors.green : GameColors.orange)
-        : (projInRange ? GameColors.lightBlue : GameColors.red);
-
-    final blocks = <TextBlock>[];
-
-    // Header line
-    blocks.add(TextBlock(
-        "TARGET: ${target.name} "
-            "dist:${dist.toStringAsFixed(1)}$trend"
-            "->${projDist?.toStringAsFixed(1) ?? '?'} ",
-        rangeColor, true));
-    //blocks.add(TextBlock(profile.asciiBars(), GameColors.cyan, true));
-
-    // Per-weapon lines
-    for (final w in systemControl.availableWeapons) {
-      final maxCooldown = w.fireRate;
-      final filled = maxCooldown > 0
-          ? ((1 - w.cooldown / maxCooldown) * 10).round().clamp(0, 10)
-          : 10;
-      final empty = 10 - filled;
-
-      final wInRange = w.accuracyRangeConfig.rangeMultiplier(dist) > 0;
-      final wProjInRange = projDist != null &&
-          w.accuracyRangeConfig.rangeMultiplier(projDist) > 0;
-
-      final col = w.cooldown == 0
-          ? (wInRange ? GameColors.green : GameColors.orange)
-          : (wProjInRange ? GameColors.lightBlue : GameColors.gray);
-
-      final readyStr = w.cooldown == 0 ? "READY" : "${w.cooldown}t";
-
-      blocks.add(TextBlock(
-          "${w.name.substring(0, min(10, w.name.length)).padRight(10)} "
-              "${'█' * filled}${'░' * empty} "
-              "$readyStr ",
-          col, true));
-    }
-    return blocks;
-  }
-
-  List<TextBlock> dumpEffects() {
-      final map = effectMap.map.entries.where((e) => e.value > 0).map(((m) => m.key));
-      return List.generate(map.length, (i) {
-        final effect = map.elementAt(i);
-        return TextBlock(effect.statusString, effect.color, true);
-      });
-  }
 
   @override
   String toString() {

@@ -5,6 +5,7 @@ import '../fugue_engine.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/location.dart';
+import '../ship/move_ctx.dart';
 import '../ship/nav.dart';
 import '../ship/ship.dart';
 import '../ship/systems/engines.dart';
@@ -119,75 +120,47 @@ class MovementController extends FugueController {
     return (loc != null) ? moveShip(ship, loc) : null;
   }
 
-  MoveResult moveShip(Ship ship,
-      SpaceLocation desiredLocation, {
-        double baseEnergy = 20,
-        ThrottleMode? throttleOverride,
-        aiNewtonian = false
-      }) { //print(StackTrace.current);
-
-    bool newtonian = ship.loc.domain == Domain.impulse && (ship.playship || aiNewtonian);
-    final result = reportMove(ship, desiredLocation, throttleOverride: throttleOverride, newtonian: newtonian);
-    //fm.msg(result.resultType.name);
-
-    if (result.preview?.engineFail ?? false) {
-      if (ship.playship) fm.msg("Warning: engine failure");
+  MoveResult moveShip(Ship ship, SpaceLocation desiredLocation, {
+    ThrottleMode? throttleOverride,
+    Vec3? preGravVel,
+    bool drift = false,
+  }) {
+    final ctx = MoveContext.fromShip(ship,
+      throttleOverride: throttleOverride,
+      preGravVel: preGravVel,
+      drift: drift,
+    );
+    final report = reportMove(ship, desiredLocation, ctx: ctx);
+    final newLoc = report.preview?.actualCell?.loc;
+    print("NewLoc: $newLoc");
+    if (newLoc != null && ship.loc != newLoc) {
+      ship.move(newLoc, fm.galaxy.ships);
+      fm.update();
+    } else { //TODO: make sensible
+      print("Vel: ${ship.nav.vel}, ${ship.nav.vel.mag}");
+      if (!ship.nav.moving) {
+        ship.nav.autoStop = false;
+        print("Handbrake off");
+      }
     }
-
-    if (result.resultType == MoveResultType.rejected) {
-      fm.msg("${ship.name} is rejected from your folded space!");
-    } else if ((result.preview?.emergencyDecel ?? 0) > 0) {
-      String barrier = ship.loc.domain == Domain.system ? "The Oort Cloud" : "Impulse Wake Turbulence";
-      fm.msg("${ship.name} crashes into $barrier, emergency deacceration: ${result.preview?.emergencyDecel}");
-      final bounceCell = result.preview?.actualCell;
-      if (bounceCell != null && bounceCell != ship.loc.cell) {
-        ship.move(ship.loc.withCell(bounceCell), fm.galaxy.ships);
-      }
-      ship.nav.resetMotionState();
-    } else {
-      final nextCell = result.preview?.actualCell;
-      if (nextCell != null) {
-        if (result.resultType == MoveResultType.impEnter) {
-          ship.move(ship.loc.withCell(nextCell), fm.galaxy.ships); //even if its the same cell
-          fm.layerTransitController.createAndEnterImpulse();
-        } else if (nextCell != ship.loc.cell) {
-          ship.move(ship.loc.withCell(nextCell), fm.galaxy.ships);
-        }
-      }
-    } //print("Action AUTs: ${result.preview?.auts}");
-    //ship.tick now handles momentum based movement
-    if (!newtonian) fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: result.preview?.auts ?? 1);
-    assert(ship.loc == ship.loc.cell.loc);
-    fm.update();
-    return result;
+    return report;
   }
 
-  MoveResult reportMove(
-      Ship ship,
-      SpaceLocation? desiredLocation, {
-        bool newtonian = true,
-        ThrottleMode? throttleOverride,
-        bool ignoreEngineFail = false
-      }) {
+  MoveResult reportMove(Ship ship, SpaceLocation? desiredLocation, {
+    required MoveContext ctx,
+    bool ignoreEngineFail = false,
+  }) {
+    if (desiredLocation == null)
+      return MoveResult(null, MoveResultType.badDestination);
 
-    if (desiredLocation == null) return MoveResult(null, MoveResultType.badDestination);
-
-    // For NPCs with free movement, or non-Newtonian moves, use full preview
-    // first and handle energy separately below.
-    var preview = newtonian
+    var preview = ctx.newtonian
         ? ship.nav.movePreviewer.previewFixedStep(
-      state: NavState.fromShip(ship),
-      ctx: MoveContext.fromShip(ship),
-      desiredCell: desiredLocation.cell,
-      throttleOverride: throttleOverride,
-      newtonian: true)
+        state: NavState.fromShip(ship),
+        ctx: ctx,
+        desiredCell: desiredLocation.cell)
         : ship.nav.movePreviewer.moveUntilNextCell(
-      desiredLocation.cell,
-      throttleOverride: throttleOverride,
-      newtonian: false,
-    );
-
-    final actualThrottle = throttleOverride ?? ship.nav.throttle;
+        desiredLocation.cell,
+        ctx: ctx);
 
     //print("Tick: ${fm.auTick}, Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}");
     // IMPORTANT: energy is burned here in reportMove, and moveUntilNextCell
@@ -197,19 +170,16 @@ class MovementController extends FugueController {
     // verify the partial-energy re-preview path doesn't burn twice (the
     // previewFixedStep call below is read-only; only the explicit burnEnergy
     // calls below this comment actually spend energy).
-    if (newtonian && (!ship.npc || !npcFreeMovement)) {
+    if (ctx.newtonian && (!ship.npc || !npcFreeMovement)) {
       final double available = ship.systemControl.getCurrentEnergy();
       if (available <= 0 && !ignoreEngineFail) {
         // Completely out of energy — coast as pure drift, engine flagged as failed.
         // In stop mode this means the ship can no longer brake; it will overshoot.
         preview = ship.nav.movePreviewer.previewFixedStep(
             state: NavState.fromShip(ship),
-            ctx: MoveContext.fromShip(ship),
-            desiredCell: desiredLocation.cell,
-            throttleOverride: throttleOverride,
-            newtonian: newtonian,
-            drift: true);
-        if (actualThrottle == ThrottleMode.stop) {
+            ctx: ctx.withoutEngine(),
+            desiredCell: desiredLocation.cell);
+        if (ctx.throttle == ThrottleMode.stop) {
           fm.msg("Warning: out of energy, cannot complete braking burn!");
         }
       } else if (available < preview.energyRequired && preview.energyRequired > 0 && !ignoreEngineFail) {
@@ -217,12 +187,8 @@ class MovementController extends FugueController {
         final double thrustFraction = available / preview.energyRequired;
         preview = ship.nav.movePreviewer.previewFixedStep(
             state: NavState.fromShip(ship),
-            ctx: MoveContext.fromShip(ship),
-            desiredCell: desiredLocation.cell,
-            throttleOverride: throttleOverride,
-            newtonian: newtonian,
-            thrustFraction: thrustFraction,
-            energyOverride: available);
+            ctx: ctx.copyWith(thrustFraction: thrustFraction),
+            desiredCell: desiredLocation.cell);
         ship.systemControl.burnEnergy(available);
       } else {
         ship.systemControl.burnEnergy(preview.energyRequired);
@@ -253,7 +219,7 @@ class MovementController extends FugueController {
     // Clear heading and zero velocity on arrival for stop mode (engine must
     // not have failed, otherwise the ship couldn't execute its braking burn).
     final bool arrived = preview.actualCell == desiredLocation.cell;
-    if (arrived && actualThrottle == ThrottleMode.stop && !preview.engineFail) {
+    if (arrived && ctx.throttle == ThrottleMode.stop && !preview.engineFail) {
       //if (ship.playship) fm.msg("Arrived...");
       //ship.nav.resetMotionState();
       //ship.nav.pos = Position.fromCoord(desiredLocation.cell.coord);

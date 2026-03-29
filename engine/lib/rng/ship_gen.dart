@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
-import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 import '../actors/pilot.dart';

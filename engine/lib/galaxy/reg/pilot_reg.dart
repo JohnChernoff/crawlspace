@@ -1,4 +1,4 @@
-import 'package:crawlspace_engine/galaxy/reg/reg.dart';
+import 'package:crawlspace_engine/galaxy/reg/ship_reg.dart';
 import '../../actors/pilot.dart';
 import '../../actors/player.dart';
 

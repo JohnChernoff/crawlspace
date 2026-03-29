@@ -1,7 +1,6 @@
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import '../audio_service.dart';
-import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/impulse.dart';
 import '../galaxy/geometry/location.dart';
@@ -130,7 +129,7 @@ class LayerTransitController extends FugueController {
       final loc = ImpulseLocation(ship.loc.system,sysLoc.cell.coord,targetCell.coord);
       loc.map.updateGravMap(fm.galaxy);
       print("Grav Map Center: ");
-      print(loc.map.gravMap[Coord3D(10,10,0)]);
+      print(loc.map.gravMap[loc.system.impulseMapDim.center]);
       ship.move(loc,fm.galaxy.ships);
       ship.nav.resetMotionState();
       fm.audioController.newTrack(newMood: MusicalMood.danger);
@@ -166,6 +165,31 @@ class LayerTransitController extends FugueController {
     fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.impulse, activeOnly: false), ship, on: false, silent: true);
     ship.move(impLoc.sector, fm.galaxy.ships);
     ship.nav.resetMotionState();
+  }
+
+  void changeDomain(Ship ship, bool up) {
+    int domIndex = (ship.loc.domain.index + (up ? -1 : 1)).clamp(Domain.hyperspace.index, Domain.orbital.index);
+    Domain newDomain = Domain.values.elementAt(domIndex);
+    if (newDomain == Domain.hyperspace) selectHyperSpaceLink();
+    else if (up) {
+      if (hostileCheck(ship) && !ship.activeEffect(ShipEffect.folding)) {
+        fm.msg("You cannot accelerate to $newDomain travel with hostile vessels in the area");
+      }
+      else {
+        fm.msg("Exiting ${ship.loc.domain}, resuming $newDomain travel");
+        fm.pilotController.toggleSystem(ship.systemControl.getEngine(newDomain, activeOnly: false), ship, on: false, silent: true);
+        fm.pilotController.toggleSystem(ship.systemControl.getEngine(ship.loc.domain, activeOnly: false), ship, on: true, silent: true);
+        ship.move(ship.loc.upper, fm.galaxy.ships);
+        ship.nav.resetMotionState();
+      }
+    } else {
+
+    }
+  }
+
+  bool hostileCheck(Ship ship) {
+    final ships = fm.galaxy.ships.atDomain(ship.loc);
+    return (ship == fm.playerShip && ships.length > 1 && ships.any((s) => s.pilot.hostile));
   }
 
 }

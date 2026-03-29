@@ -311,7 +311,7 @@ class FugueEngine {
       auTick++;
       player.tick(this);
       if (playShip != null) {
-        final tickResult = playShip.tick(fm: this);
+        final tickResult = playShip.ticker.tick(fm: this);
         if (tickResult.newCell) wakePilot(player);
       }
       //if (playShip != null && playShip.loc is ImpulseLocation) {

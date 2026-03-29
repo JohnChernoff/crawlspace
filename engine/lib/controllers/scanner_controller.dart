@@ -82,7 +82,7 @@ class ScannerController extends FugueController {
       blocks.add(TextBlock("GForce: ${ship.nav.gForce}", GameColors.green, true));
       if (!abbrev) blocks.add(TextBlock(ship.loc.toString(),GameColors.cyan,true));
       if (ship.itinerary != null) blocks.add(TextBlock("To: ${ship.itinerary!.last.name}", GameColors.green, true));
-      blocks.addAll(ship.status());
+      blocks.addAll(ship.status.display());
     }
     return blocks;
   }

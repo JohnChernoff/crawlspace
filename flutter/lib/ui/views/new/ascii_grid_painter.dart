@@ -10,6 +10,7 @@ import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:flutter/material.dart';
 import '../../../options.dart';
+import 'lerp_field.dart';
 
 //TODO: remove target when not targeting
 
@@ -18,12 +19,18 @@ class AsciiGridPainter extends CustomPainter {
   final MovementPreview? preview;
   final bool showAllCellsOnZPlane;
   final Coord3D? ghostCoord;
+  final GravityFieldTexture? gravityTexture;
+  final bool smoothG;
+  final bool hands;
 
   AsciiGridPainter({
     required this.fm,
     required this.preview,
     required this.showAllCellsOnZPlane,
-    this.ghostCoord
+    required this.gravityTexture,
+    this.ghostCoord,
+    this.smoothG = true,
+    this.hands = false,
   });
 
   @override
@@ -45,12 +52,25 @@ class AsciiGridPainter extends CustomPainter {
     final paint = Paint();
     final projectedPath = ship.nav.projectedPath(4).toSet();
 
+
+    if (is2D && gravityTexture != null && smoothG) {
+      paintImage(
+        canvas: canvas,
+        rect: Offset.zero & size,
+        image: gravityTexture!.image,
+        fit: BoxFit.fill,
+        filterQuality: FilterQuality.medium,
+      );
+    }
+
     for (int y = 0; y < dim.my; y++) {
       for (int x = 0; x < dim.mx; x++) {
         final baseRect = Rect.fromLTWH(x * cellW, y * cellH, cellW, cellH);
 
-        paint.color = Colors.black;
-        canvas.drawRect(baseRect, paint);
+        if (!smoothG) {
+          paint.color = Colors.black;
+          canvas.drawRect(baseRect, paint);
+        }
 
         final visibleCells = _visibleCellsAtXY(map, x, y, ship);
         for (final entry in visibleCells) {
@@ -70,9 +90,17 @@ class AsciiGridPainter extends CustomPainter {
               ? baseRect
               : Rect.fromLTWH(dx, dy, layerSize, layerSize);
 
-          final map = ship.loc.map;
-          _paintCellBackground(canvas,layerRect,color: _bkgColorForCell(map,cell));
-          _drawVector(canvas, layerRect, map.gravDirectionAt(cell.coord));
+          if (!smoothG) {
+            final map = ship.loc.map;
+            _paintCellBackground(canvas,layerRect,color: _bkgColorForCell(map,cell));
+            (canvas, layerRect, map.gravDirectionAt(cell.coord));
+          } else if (hands) {
+            final sx = x + 0.5;
+            final sy = y + 0.5;
+            final v = GravityFieldTexture.sampleVector(map, sx, sy);
+            final heat = GravityFieldTexture.sampleHeat(map, sx, sy);
+            _drawGravityHand(canvas, baseRect, v, heat);
+          }
 
           final paragraph = _getParagraph(glyph, color, fontSize);
           canvas.drawParagraph(paragraph, Offset(dx, dy));
@@ -196,26 +224,26 @@ class AsciiGridPainter extends CustomPainter {
     return Color.lerp(Colors.black,Colors.lightGreenAccent, h)!;
   }
 
-  void _drawVector(Canvas canvas, Rect rect, Vec3 v) {
-    if (v.mag < 0.01) return;
+  void _drawGravityHand(Canvas canvas, Rect rect, Vec3 v, double heat) {
+    final mag = v.mag;
+    if (mag < 0.0001) return;
 
+    final dir = v.normalized;
     final center = rect.center;
-    final length = rect.width * 0.35;
 
-    final angle = atan2(v.y, v.x);
+    final length = rect.width * (0.12 + 0.22 * heat.clamp(0.0, 1.0));
 
-    final dx = cos(angle) * length;
-    final dy = sin(angle) * length;
+    final end = Offset(
+      center.dx + dir.x * length,
+      center.dy + dir.y * length,
+    );
 
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.7)
-      ..strokeWidth = 1.5;
+      ..color = Colors.white.withOpacity(0.75)
+      ..strokeWidth = 1.2
+      ..strokeCap = StrokeCap.round;
 
-    canvas.drawLine(
-      center,
-      Offset(center.dx + dx, center.dy + dy),
-      paint,
-    );
+    canvas.drawLine(center, end, paint);
   }
 
   Color _colorForCell(
@@ -234,8 +262,8 @@ class AsciiGridPainter extends CustomPainter {
       if (!s.npc) return shipColor;
     }
 
-    if (!is2D && state.sameDepthAndNotEmpty) {
-      return depthColor;
+    if (state.sameDepthAndNotEmpty) {
+      return Colors.white; //depthColor;
     }
 
     // NPC ships

@@ -3,23 +3,41 @@ import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import '../../controllers/scanner_controller.dart';
+import '../../fugue_engine.dart';
+import '../planet.dart';
+import '../star.dart';
 import 'coord_3d.dart';
 import '../../effects.dart';
 import '../hazards.dart';
 import '../../ship/ship.dart';
+import 'object.dart';
 
 enum Domain {
   hyperspace,
   system,
-  impulse;
-  bool isAbove(Domain domain) => index < domain.index;
-  bool isBelow(Domain domain) => index > domain.index;
+  impulse,
+  orbital;
+
+  Domain get engineDomain => switch (this) {
+    Domain.orbital => Domain.impulse,
+    _ => this,
+  };
+
+  bool isAbove(Domain other) => index < other.index;
+  bool isBelow(Domain other) => index > other.index;
 }
 
 abstract class Grid {
   CellMap get map;
   final Map<Hazard,double> hazMap;
   final EffectMap<CellEffect> effects = EffectMap();
+  List<Planet> planets(Galaxy g);
+  List<Star> stars(Galaxy g);
+  List<MassiveObject> massiveObjects(Galaxy g) => [
+    ...planets(g),
+    ...stars(g),
+  ];
+
   Grid({this.hazMap = const {}});
 }
 
@@ -113,6 +131,8 @@ abstract class CellMap<T extends GridCell> {
 
   Coord3D rndCoord(Random rnd) => Coord3D.random(dim, rnd);
 
+  T? get centerCell => this[(dim.center)];
+
   void updateGravMap(Galaxy g) {
     gravMap.clear();
     for (final cell in values) {
@@ -121,7 +141,10 @@ abstract class CellMap<T extends GridCell> {
       ? cell.loc.system.massiveObjects(g)
       : cell.loc.system.massiveObjects(g).where((o) => o.loc.sectorOrNull == cell.loc.sectorOrNull);
       for (final obj in objects) {
-        final coord = obj.loc.relativeDomainCoord(cell.loc) ?? Coord3D(0, 0, 0);
+        final coord = obj.loc.relativeDomainCoord(cell.loc);
+        if (coord == null) {
+          print ("Warning: null gravity coordinate"); return;
+        }
         final dx = coord.x - cell.coord.x;
         final dy = coord.y - cell.coord.y;
         final dz = coord.z - cell.coord.z;
@@ -129,12 +152,14 @@ abstract class CellMap<T extends GridCell> {
         final offset = Vec3(dx.toDouble(), dy.toDouble(), dz.toDouble());
         final dist = offset.mag;
 
-        if (cell.loc is ImpulseLocation) print("obj: ${obj.name}, obj coord: $coord, cell coord: ${cell.coord}, dist: $dist");
-
+        if (cell.loc is ImpulseLocation) {
+          glog("obj: ${obj.name}, obj coord: $coord, cell coord: ${cell.coord}, dist: $dist", level: DebugLevel.Fine);
+        }
         if (dist == 0) continue; //TODO: invent something
 
         final direction = offset.normalized;
-        final strength = obj.mass / (dist * dist);
+        final strength = obj.gravMass / (dist * dist);
+            //obj.mass / (dist * dist);
 
         net = net + (direction * strength);
       }
@@ -318,14 +343,3 @@ class LazyMappedGrid<T extends GridCell> extends LazyCellMap<T> {
   @override
   Iterable<T> get values => _cells.values;
 }
-
-
-/*
-@override
-ImpulseCell? atXYZ(int x, int y, int z) {
-  if (x < 0 || y < 0 || z < 0 || x >= size || y >= size || z >= size) {
-    return null;
-  }
-  return _cells[x + y * size + z * size * size];
-}
- */

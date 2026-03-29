@@ -26,7 +26,7 @@ enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
 }
 
 class Planet extends SpaceEnvironment<ImpulseLocation> {
-  double get mass => switch(environment) {
+  double get massFactor => switch(environment) {
     EnvType.earthlike  => 1.0,
     EnvType.alluvial   => 0.9,
     EnvType.oceanic    => 0.8,
@@ -117,7 +117,9 @@ class Planet extends SpaceEnvironment<ImpulseLocation> {
     required this.commerce,
     required this.population,
     required this.environment,
-    required this.weirdness
+    required this.weirdness,
+    required super.earthMasses,
+    super.tuningFactor = 100,
   }) {
     age         = CivAge.values.elementAt(rnd.nextInt(CivAge.values.length));
 

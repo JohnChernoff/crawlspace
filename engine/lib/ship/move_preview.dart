@@ -5,6 +5,7 @@ import '../controllers/movement_controller.dart';
 import '../fugue_engine.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
+import 'move_ctx.dart';
 import 'nav.dart';
 
 class MovePreviewer {
@@ -17,27 +18,22 @@ class MovePreviewer {
     required NavState state,
     required MoveContext ctx,
     required GridCell? desiredCell,
-    ThrottleMode? throttleOverride,
-    bool drift = false,
-    bool newtonian = true,
-    double thrustFraction = 1.0,
-    double? energyOverride,
     bool selecting = false,
   }) {
-    final throttle = throttleOverride ?? ship.nav.throttle;
+
     counter++;
     const int auts = 1;
     if (desiredCell == null) return MovementPreview(desiredCell: null, newState: state);
     final desiredCoord = desiredCell.coord;
 
-    Engine? engine = (throttle == ThrottleMode.drift || drift)
+    Engine? engine = (ctx.throttle == ThrottleMode.drift || ctx.drift)
         ? null
         : ctx.engine;
     final noEngine = engine == null;
-    final bool engineFail = noEngine && throttle != ThrottleMode.drift;
+    final bool engineFail = noEngine && ctx.throttle != ThrottleMode.drift;
 
     // ── Non-Newtonian (hyperspace / system-map) path ──────────────────────
-    if (!newtonian) {
+    if (!ctx.newtonian) {
       if (engine != null) {
         final double distance = ctx.currentCell.distCell(desiredCell);
         final int travelAuts = (engine.baseAutPerUnitTraversal * distance).round();
@@ -71,7 +67,7 @@ class MovePreviewer {
     final dirZ = mag == 0 ? 0.0 : dz / mag;
 
     final double thrust = engine?.thrust ?? 0;
-    final double thrustScale = thrustFraction.clamp(0.0, 1.0);
+    final double thrustScale = ctx.thrustFraction.clamp(0.0, 1.0);
     //final double accel = (thrust / max(ship.currentMass, 0.001)) * thrustFraction.clamp(0.0, 1.0);
     final double fAccel = noEngine ? 0.0 : nav.forwardAccel(thrust) * thrustScale;
     final double lAccel = noEngine ? 0.0 : nav.lateralAccel(thrust) * thrustScale;
@@ -94,7 +90,7 @@ class MovePreviewer {
     double nextVelY = vy;
     double nextVelZ = vz;
 
-    if (throttle == ThrottleMode.stop || ctx.ship.nav.autoStopping) {
+    if (ctx.throttle == ThrottleMode.stop || ctx.ship.nav.autoStopping) {
       if (mag == 0) { //if (mag < epsilon)
         return MovementPreview(
           desiredCell: desiredCell,
@@ -194,7 +190,7 @@ class MovePreviewer {
           lAccel: lAccel,
           rAccel: rAccel,
           stabilization: nav.stabilization,
-          maxSpeed: maxSpeed * throttle.speedFactor,
+          maxSpeed: maxSpeed * ctx.throttle.speedFactor,
           lockX: false,
           lockY: false,
           lockZ: false
@@ -219,9 +215,10 @@ class MovePreviewer {
     final Coord3D actualCoord = newPos.coord;
     final GridCell? actualCell = ctx.map[actualCoord];
 
-    final dvx = nextVelX - state.vel.x;
-    final dvy = nextVelY - state.vel.y;
-    final dvz = nextVelZ - state.vel.z;
+    final baseline = ctx.preGravVel ?? state.vel;
+    final dvx = nextVelX - baseline.x;
+    final dvy = nextVelY - baseline.y;
+    final dvz = nextVelZ - baseline.z;
     final deltaV = sqrt((dvx * dvx) + (dvy * dvy) + (dvz * dvz));
 
     final energyScale = 1.0;
@@ -258,19 +255,16 @@ class MovePreviewer {
     );
   }
 
-  MovementPreview previewMoves(
-      GridCell? desiredCell, {
-        ThrottleMode? throttleOverride,
-        bool drift = false,
-        bool newtonian = true,
-        double thrustFraction = 1.0,
-        double? energyOverride,
-        int auts = 1,
+  MovementPreview previewMoves({
+        required NavState state,
+        required MoveContext ctx,
+        required GridCell? desiredCell,
+        bool selecting = false,
+        auts = 1,
       }) {
-    final throttle = throttleOverride ?? ship.nav.throttle;
-    var state = NavState.fromShip(ship);
     MovementPreview? last;
 
+    /*
     var ctx = MoveContext(
       ship: ship,
       engine: (throttle == ThrottleMode.drift || drift)
@@ -278,28 +272,20 @@ class MovePreviewer {
           : ship.systemControl.getEngine(ship.loc.domain),
       currentCell: ship.loc.cell,
       map: ship.loc.map,
-    );
+    ); */
 
     for (int i = 0; i < auts; i++) {
       last = previewFixedStep(
         state: state,
         ctx: ctx,
         desiredCell: desiredCell,
-        throttleOverride: throttle,
-        drift: drift,
-        newtonian: newtonian,
-        thrustFraction: thrustFraction,
-        energyOverride: energyOverride,
+        selecting: selecting
       );
 
       state = last.newState;
 
-      ctx = MoveContext(
-        ship: ship,
-        engine: ctx.engine,
-        currentCell: last.actualCell ?? ctx.currentCell,
-        map: ctx.map,
-      );
+      ctx = ctx.advance(last.actualCell ?? ctx.currentCell);
+
 
       if (last.engineFail || last.emergencyDecel != null) break;
     }
@@ -309,17 +295,13 @@ class MovePreviewer {
 
   MovementPreview moveUntilNextCell(
       GridCell? desiredCell, {
-        ThrottleMode? throttleOverride,
-        bool drift = false,
-        bool newtonian = true,
-        double thrustFraction = 1.0,
-        double? energyOverride,
+        required MoveContext ctx,
         int maxSteps = 50,
       }) {
-    final throttle = throttleOverride ?? ship.nav.throttle;
     var state = NavState.fromShip(ship);
     final startCell = state.pos.coord;
 
+    /*
     var ctx = MoveContext(
       ship: ship,
       engine: (throttle == ThrottleMode.drift || drift)
@@ -327,7 +309,7 @@ class MovePreviewer {
           : ship.systemControl.getEngine(ship.loc.domain),
       currentCell: ship.loc.cell,
       map: ship.loc.map,
-    );
+    ); */
 
     MovementPreview? last;
     int totalAuts = 0;
@@ -338,23 +320,14 @@ class MovePreviewer {
         state: state,
         ctx: ctx,
         desiredCell: desiredCell,
-        throttleOverride: throttle,
-        drift: drift,
-        newtonian: newtonian,
-        thrustFraction: thrustFraction,
-        energyOverride: energyOverride,
       );
 
       totalAuts += last.auts;
       totalEnergy += last.energyRequired; //?? 0.0;
       state = last.newState;
 
-      ctx = MoveContext(
-        ship: ship,
-        engine: ctx.engine,
-        currentCell: last.actualCell ?? ctx.currentCell,
-        map: ctx.map,
-      );
+      ctx = ctx.advance(last.actualCell ?? ctx.currentCell);
+
 
       if (last.engineFail || last.emergencyDecel != null) {
         return MovementPreview(

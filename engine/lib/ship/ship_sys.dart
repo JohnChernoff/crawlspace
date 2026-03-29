@@ -39,7 +39,7 @@ class ShipSystemControl {
 
   Engine? get engine => getEngine(ship.loc.domain);
   Engine? getEngine(Domain domain, {activeOnly = true}) {
-    return getInstalledSystems().whereType<Engine>().where((s) => s.domain == domain && (!activeOnly || s.active)).firstOrNull;
+    return getInstalledSystems().whereType<Engine>().where((s) => s.domain == domain.engineDomain && (!activeOnly || s.active)).firstOrNull;
   }
 
   Shield? getShield({activeOnly = true}) => getShields(activeOnly: activeOnly).firstOrNull;

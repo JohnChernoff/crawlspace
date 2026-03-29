@@ -9,20 +9,23 @@ import '../system.dart';
 
 sealed class SpaceLocation {
   Domain get domain;
-  System system;
+  System system; //highest level
+  SpaceLocation get upper;
   GridCell get cell; //TODO: error log
   CellMap get map;
   
-  SectorLocation? get sectorOrNull => switch (this) {
-    SectorLocation s => s,
-    ImpulseLocation i => i.sector,
-    _ => null,
-  };
+  SectorLocation? get sectorOrNull {
+    final l = this;
+    if (l is SystemLocation) return l.sector; else return null;
+  }
 
   Coord3D? relativeDomainCoord(SpaceLocation loc) {
-    if (loc is SectorLocation) return sectorOrNull?.cell.coord;
-    if (loc is ImpulseLocation && this is ImpulseLocation) return cell.coord;
-    return null;
+    SpaceLocation thisLoc = this;
+    while (thisLoc.domain.isBelow(loc.domain) &&
+        thisLoc.domain != Domain.hyperspace) {
+      thisLoc = thisLoc.upper;
+    }
+    return thisLoc.domain == loc.domain ? thisLoc.cell.coord : null;
   }
 
   @override
@@ -43,69 +46,38 @@ sealed class SpaceLocation {
     Domain.hyperspace => throw UnimplementedError(),
     Domain.system => system.systemMapDim,
     Domain.impulse => system.impulseMapDim,
+    Domain.orbital => system.orbitalMapDim
   };
 
   double distCell(GridCell cell) => dist(cell.loc);
   double dist(SpaceLocation l) {
-    if (l.domain == domain) {
-      if (this is SectorLocation && l is SectorLocation) {
-        return (this as SectorLocation)
-            .sectorCoord
-            .distance(l.sectorCoord);
-      }
-      if (this is ImpulseLocation && l is ImpulseLocation) {
-        return (this as ImpulseLocation)
-            .impulseCoord
-            .distance(l.impulseCoord);
-      }
-    }
+    if (l.domain == domain) return l.cell.coord.distance(cell.coord);
     glog("Warning: invalid ship location comparison", level: DebugLevel.Warning);
     return double.infinity;
   }
 }
 
-abstract class SectorLocatable extends SpaceLocation {
-  SectorLocatable(super.system);
-  Coord3D get sectorCoord;
+abstract class SystemLocation extends SpaceLocation {
+  Coord3D sectorCoord;
+  SectorLocation get sector => SectorLocation(system, sectorCoord);
+  SectorCell get sectorCell => system.map[sectorCoord] as SectorCell;
+  SystemLocation(super.system, this.sectorCoord);
 }
 
-class SystemLocation extends SpaceLocation {
-  SystemLocation(super.system);
-
+class SectorLocation extends SystemLocation {
   @override
-  Domain get domain => Domain.hyperspace;
+  SpaceLocation get upper => this; //no higher level
 
-  @override
-  GridCell get cell => throw UnimplementedError();
-
-  @override
-  CellMap<GridCell> get map => throw UnimplementedError();
-
-  @override
-  SpaceLocation withCell(GridCell newCell) => throw UnimplementedError();
-}
-
-class SectorLocation extends SectorLocatable {
   @override
   Domain get domain => Domain.system;
 
-  Coord3D sectorCoord;
-
   @override
-  SectorCell get cell {
-    final c = system.map[sectorCoord];
-    if (c != null) return c;
-    else {
-      print("System map: ${system.map.values}");
-      throw StateError("Bad c: $sectorCoord");
-    }
-  }
-
+  SectorCell get cell => sectorCell;
 
   @override
   SystemMap get map => system.map;
 
-  SectorLocation(super.system, this.sectorCoord);
+  SectorLocation(super.system, super.sectorCoord);
 
   @override
   SectorLocation withCell(GridCell newCell) => SectorLocation(system, newCell.coord);
@@ -124,21 +96,25 @@ class SectorLocation extends SectorLocatable {
 
 }
 
-class ImpulseLocation extends SectorLocatable {
+abstract class ImpulseScope extends SystemLocation {
+  Coord3D get impulseCoord;
+  ImpulseScope(super.system, super.sectorCoord);
+}
+
+class ImpulseLocation extends ImpulseScope {
+  @override
+  SpaceLocation get upper => sector;
+
   @override
   Domain get domain => Domain.impulse;
-  Coord3D sectorCoord,impulseCoord;
-
-  SectorLocation get sector => SectorLocation(system, sectorCoord);
+  Coord3D impulseCoord;
 
   @override
   SectorMap get map => sectorCell.map;
 
-  SectorCell get sectorCell => system.map[sectorCoord] as SectorCell;
-
   ImpulseCell get cell => sectorCell.map.at(impulseCoord);
 
-  ImpulseLocation(super.system, this.sectorCoord, this.impulseCoord);
+  ImpulseLocation(super.system, super.sectorCoord, this.impulseCoord);
 
   @override
   ImpulseLocation withCell(GridCell newCell) => ImpulseLocation(system, sectorCoord, newCell.coord);
@@ -154,6 +130,44 @@ class ImpulseLocation extends SectorLocatable {
   @override
   bool operator ==(Object other) => (super == other)
       && other is ImpulseLocation && other.sectorCoord == sectorCoord && other.impulseCoord == impulseCoord;
+}
+
+class OrbitalLocation extends ImpulseScope {
+  @override
+  SpaceLocation get upper => impulse;
+  ImpulseLocation get impulse => ImpulseLocation(system, sectorCoord, impulseCoord);
+
+  @override
+  Domain get domain => Domain.orbital;
+  Coord3D impulseCoord,orbitalCoord;
+
+  ImpulseCell get impulseCell => sector.map[impulseCoord] as ImpulseCell;
+
+  @override
+  ImpulseCell get cell => impulseCell.map.at(orbitalCoord);
+
+  @override
+  ImpulseMap get map => impulseCell.map;
+
+  @override
+  OrbitalLocation withCell(GridCell newCell) => OrbitalLocation(system, sectorCoord, impulseCoord, newCell.coord);
+
+  OrbitalLocation(super.system, super.sectorCoord, this.impulseCoord, this.orbitalCoord);
+
+  @override
+  int get hashCode => Object.hash(system, domain, sectorCoord, impulseCoord, orbitalCoord);
+
+  @override
+  bool operator ==(Object other) => (super == other)
+      && other is OrbitalLocation
+      && other.sectorCoord == sectorCoord
+      && other.impulseCoord == impulseCoord
+      && other.orbitalCoord == orbitalCoord;
+
+  @override
+  String toString() {
+    return "Sector: $sectorCoord\nImpulse: $impulseCoord\nOrbital: $orbitalCoord";
+  }
 }
 
 sealed class PilotLocale {

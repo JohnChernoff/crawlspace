@@ -2,6 +2,8 @@ import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/planet.dart';
+import 'package:crawlspace_engine/galaxy/star.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
 import '../../controllers/scanner_controller.dart';
 import '../../stock_items/species.dart';
@@ -14,11 +16,17 @@ typedef SectorMap = MappedGrid<ImpulseCell>;
 class SectorCell extends GridCell {
   final SectorLocation loc;
   final System system;
-  int numPlanets(Galaxy g) => g.planets.inSector(loc).length;
+
+  @override
+  List<Planet> planets(Galaxy g) => g.planets.inSector(loc).toList();
+  @override
+  List<Star> stars(Galaxy g) => g.stars.inSector(loc).toList();
+
+  int numPlanets(Galaxy g) => planets(g).length;
   bool hasPlanets(Galaxy g) => numPlanets(g) > 0;
-  int numStars(Galaxy g) => g.stars.inSector(loc).length;
+  int numStars(Galaxy g) => stars(g).length;
   bool hasStars(Galaxy g) => numStars(g) > 0;
-  bool hasGate(Galaxy g) => g.stars.inSector(loc).any((s) => s.jumpgate);
+  bool hasGate(Galaxy g) => stars(g).any((s) => s.jumpgate);
 
   bool starOne, blackHole;
   int impulseSeed;

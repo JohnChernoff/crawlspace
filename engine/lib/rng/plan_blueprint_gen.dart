@@ -5,6 +5,7 @@ import 'package:crawlspace_engine/rng/star_sys_gen.dart';
 
 import '../galaxy/galaxy.dart';
 import '../galaxy/geometry/coord_3d.dart';
+import '../galaxy/geometry/grid.dart';
 import '../galaxy/star.dart';
 import 'descriptors.dart';
 
@@ -80,10 +81,14 @@ class PlanetBlueprint {
 
 
 class PlanetBlueprintGenerator {
+  final GridDim systemDim;
+  final GridDim impulseDim;
+  double get maxStarRad => (systemDim.maxXY / 2).clamp(2, 50);
+  double get minOrbitalSpacing => systemDim.maxXY * .075; // cells, prevents crowding
+  double get migrationInc =>  systemDim.maxXY * .025;
   final Random rnd;
-  static const double minOrbitalSpacing = 1.5; // cells, prevents crowding
 
-  PlanetBlueprintGenerator({Random? rnd}) : rnd = rnd ?? Random();
+  PlanetBlueprintGenerator(this.systemDim,this.impulseDim,{Random? rnd}) : rnd = rnd ?? Random();
 
   List<PlanetBlueprint> generate(SystemMetadata meta, List<Coord3D> starPositions) {
     final blueprints = <PlanetBlueprint>[];
@@ -94,23 +99,23 @@ class PlanetBlueprintGenerator {
       case MultiStarConfig.tightBinary:
       // All planets orbit the center as one system
         blueprints.addAll(_planetsForStar(
-            primary, starPositions[0], meta, maxRadius: 9.0));
+            primary, starPositions[0], meta, maxRadius: maxStarRad - 1));
 
       case MultiStarConfig.wideBinary:
       // Each star gets its own inner family, limited radius
         blueprints.addAll(_planetsForStar(
-            meta.stellarClasses[0], starPositions[0], meta, maxRadius: 4.0));
+            meta.stellarClasses[0], starPositions[0], meta, maxRadius: maxStarRad/2));
         blueprints.addAll(_planetsForStar(
-            meta.stellarClasses[1], starPositions[1], meta, maxRadius: 4.0));
+            meta.stellarClasses[1], starPositions[1], meta, maxRadius: maxStarRad/2));
     // No outer planets — mutual gravity prevents them
 
       case MultiStarConfig.hierarchical:
       // Primary pair gets full system
         blueprints.addAll(_planetsForStar(
-            primary, starPositions[0], meta, maxRadius: 9.0));
+            primary, starPositions[0], meta, maxRadius: maxStarRad - 1));
         // Distant third gets only close-in planets
         blueprints.addAll(_planetsForStar(
-            meta.stellarClasses.last, starPositions.last, meta, maxRadius: 2.5));
+            meta.stellarClasses.last, starPositions.last, meta, maxRadius: maxStarRad/4));
     }
 
     _applyGiantOutcome(blueprints, meta);
@@ -125,7 +130,7 @@ class PlanetBlueprintGenerator {
       ) {
     final planets = <PlanetBlueprint>[];
     final budget = _planetBudget(meta);
-    double currentRadius = 1.2; // start just outside star cell
+    double currentRadius = max(1,systemDim.maxXY * .066); // start just outside star cell
 
     for (int i = 0; i < budget && currentRadius <= maxRadius; i++) {
       final isInner = currentRadius < star.habitableRadius;
@@ -149,7 +154,7 @@ class PlanetBlueprintGenerator {
       ));
 
       // Spacing — gas giants need more clearance
-      final spacing = type == PlanetType.gasGiant ? 2.5 : minOrbitalSpacing;
+      final spacing = type == PlanetType.gasGiant ? minOrbitalSpacing * 1.75 : minOrbitalSpacing;
       currentRadius += spacing + rnd.nextDouble() * 0.8;
     }
 
@@ -184,7 +189,7 @@ class PlanetBlueprintGenerator {
     final angle = (index / total) * 2 * pi + rnd.nextDouble() * 0.4;
     final x = (starPos.x + radius * cos(angle)).round();
     final y = (starPos.y + radius * sin(angle)).round();
-    return Coord3D(x.clamp(0, 20), y.clamp(0, 20), 0);
+    return Coord3D(x.clamp(0, systemDim.maxXY-1), y.clamp(0, systemDim.maxXY-1), 0);
   }
 
   int _planetBudget(SystemMetadata meta) {
@@ -214,9 +219,9 @@ class PlanetBlueprintGenerator {
           final idx = blueprints.indexOf(giant);
           blueprints[idx] = PlanetBlueprint(
             type: giant.type,
-            orbitalRadius: giant.parentStar.habitableRadius - 0.5,
+            orbitalRadius: giant.parentStar.habitableRadius - migrationInc,
             position: _positionOnRing(
-                giant.starPosition, giant.parentStar.habitableRadius - 0.5, 0, 1),
+                giant.starPosition, giant.parentStar.habitableRadius - migrationInc, 0, 1),
             habitable: false,
             tidallyLocked: false, // gas giants can be locked but irrelevant without moon modeling
             relativeMass: giant.relativeMass,
