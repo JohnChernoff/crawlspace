@@ -2,6 +2,7 @@ import 'dart:collection';
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/geometry/orbital.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/star.dart';
 import '../item.dart';
@@ -40,7 +41,8 @@ class System extends Grid implements Nameable {
   bool connected;
   double anomaly;
   SystemMap map;
-  final Map<Coord3D, SectorMap> impulseCache = {};
+  final Map<Coord3D, ImpulseMap> impulseCache = {};
+  final Map<Coord3D, OrbitalMap> orbitalCache = {};
   late SystemMetadata metadata;
 
   System(this.name,Random rnd,
@@ -209,12 +211,12 @@ class System extends Grid implements Nameable {
   @override
   int get hashCode => name.hashCode;
 
-  SectorMap generateImpulseMap(SectorCell sector, GridDim dim, Random rnd) {
+  ImpulseMap generateImpulseMap(SectorCell sector, Random rnd) {
+    final dim = impulseMapDim;
     final sectorIon = sector.hazMap[Hazard.ion] ?? 0;
     final sectorNeb = sector.hazMap[Hazard.nebula] ?? 0;
 
     final cells = <Coord3D, ImpulseCell>{};
-    final centerCoord = Coord3D((dim.mx/2).round(), (dim.my/2).round(), 0) ;
     for (int x = 0; x < dim.mx; x++) {
       for (int y = 0; y < dim.my; y++) {
         for (int z = 0; z < dim.mz; z++) {
@@ -222,7 +224,7 @@ class System extends Grid implements Nameable {
           cells[c] = ImpulseCell(
             sector,
             coord: c,
-            outpost: c == centerCoord,
+            outpost: c == dim.center,
             hazMap: {
               Hazard.nebula: rnd.nextDouble() < sectorNeb ? sectorNeb : 0,
               Hazard.ion: rnd.nextDouble() < sectorIon ? sectorIon : 0,
@@ -233,11 +235,25 @@ class System extends Grid implements Nameable {
         }
       }
     }
-    final impMap = SectorMap(dim, cells);
+    final impMap = ImpulseMap(dim, cells);
     if (sector.hasHaz(Hazard.roid)) {
       PathGenerator.generate(impMap, 4, 0, rnd, haz: Hazard.roid);
     }
     return impMap;
+  }
+
+  OrbitalMap generateOrbitalMap(ImpulseCell impCell, Random rnd) {
+    final dim = orbitalMapDim;
+    final cells = <Coord3D, OrbitalCell>{};
+    for (int x = 0; x < dim.mx; x++) {
+      for (int y = 0; y < dim.my; y++) {
+        for (int z = 0; z < dim.mz; z++) {
+          final c = Coord3D(x, y, z);
+          cells[c] = OrbitalCell(impCell,coord: c); //no hazards (yet)
+        }
+      }
+    }
+    return OrbitalMap(dim,cells);
   }
 }
 

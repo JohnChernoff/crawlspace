@@ -257,9 +257,17 @@ class Ship extends Item {
     return sb.toString();
   }
 
-  //shouldn't really do anything other than call the registry
-  void move(SpaceLocation newLoc, ShipRegistry registry) { //TODO: remove (quasi-literally)?
+  void move(SpaceLocation newLoc, ShipRegistry registry) {
+    if (newLoc.domain != loc.domain && newLoc.domain != Domain.orbital) {
+      nav.resetMotionState();
+      toggleEngines(newLoc.domain);
+    }
     registry.move(this, newLoc);
+  }
+
+  void toggleEngines(Domain newDom) {
+    systemControl.toggleSystem(systemControl.getEngine(loc.domain, activeOnly: false),on: false);
+    systemControl.toggleSystem(systemControl.getEngine(newDom, activeOnly: false),on: true);
   }
 
   SpaceLocation? detect(Ship ship) {

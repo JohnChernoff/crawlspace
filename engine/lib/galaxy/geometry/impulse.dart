@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/geometry/orbital.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import '../../controllers/scanner_controller.dart';
 import '../planet.dart';
@@ -10,11 +11,11 @@ import 'grid.dart';
 import '../hazards.dart';
 import '../../item.dart';
 
-typedef ImpulseMap = MappedGrid<ImpulseCell>;
+typedef OrbitalMap = MappedGrid<OrbitalCell>;
 
 class ImpulseCell extends GridCell {
   final ImpulseLocation loc;
-
+  SectorCell sector;
   @override
   List<Planet> planets(Galaxy g) =>
       [g.planets.inImpulse(loc)].whereType<Planet>().toList();
@@ -26,8 +27,9 @@ class ImpulseCell extends GridCell {
   bool hasPlanet(Galaxy g) => getPlanet(g) != null;
   Star? getStar(Galaxy g) => g.stars.singleAtImpulse(loc);
   bool hasStar(Galaxy g) => getStar(g) != null;
-  ImpulseMap map;
-  SectorCell sector;
+  @override
+  OrbitalMap get map => loc.system.orbitalCache.putIfAbsent(coord,
+          () => loc.system.generateOrbitalMap(this,Random(sector.impulseSeed))); //orbitalSeed?
   bool outpost;
 
   ImpulseCell(
@@ -35,7 +37,7 @@ class ImpulseCell extends GridCell {
         required super.coord,
         super.hazMap,
         this.outpost = false,
-      }) : map = EmptySubImpulse.instance, loc = ImpulseLocation(sector.system, sector.coord, coord);
+      }) : loc = ImpulseLocation(sector.system, sector.coord, coord);
 
   void hodgeTick(Hazard haz, Random rnd, {jitter = .1}) {
     final parentMap = sector.map;
@@ -92,7 +94,7 @@ class ImpulseCell extends GridCell {
 
 }
 
-class EmptySubImpulse extends ImpulseMap {
-  static final instance = EmptySubImpulse._();
-  EmptySubImpulse._() : super(GridDim(0, 0, 0), const {});
+class EmptyOrbital extends OrbitalMap {
+  static final instance = EmptyOrbital._();
+  EmptyOrbital._() : super(GridDim(0, 0, 0), const {});
 }

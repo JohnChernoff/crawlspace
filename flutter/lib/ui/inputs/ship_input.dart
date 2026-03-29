@@ -1,3 +1,4 @@
+import 'package:crawlspace_engine/controllers/layer_transit_controller.dart';
 import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
@@ -66,9 +67,9 @@ class OpenPlanetMenuIntent extends Intent {
   const OpenPlanetMenuIntent();
 }
 
-class ImpulseIntent extends Intent {
-  final bool enter;
-  const ImpulseIntent(this.enter);
+class DomainIntent extends Intent {
+  final DomainDir dir;
+  const DomainIntent(this.dir);
 }
 
 class HyperSpaceIntent extends Intent {
@@ -198,10 +199,10 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         const CruiseIntent(),
 
         LogicalKeySet(LogicalKeyboardKey.period):
-        const ImpulseIntent(true),
+        const DomainIntent(DomainDir.down),
 
         LogicalKeySet(LogicalKeyboardKey.comma):
-        const ImpulseIntent(false),
+        const DomainIntent(DomainDir.up),
 
         LogicalKeySet(LogicalKeyboardKey.digit0):
         const ThrottleIntent(ThrottleMode.drift),
@@ -341,14 +342,9 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
               return null;
             }
         ),
-        ImpulseIntent: CallbackAction<ImpulseIntent>(
+        DomainIntent: CallbackAction<DomainIntent>(
             onInvoke: (intent) {
-              if (intent.enter) {
-                fm.layerTransitController.createAndEnterImpulse();
-                fm.update();
-              } else {
-                fm.layerTransitController.enterSublight(fm.playerShip);
-              }
+              if (fm.playerShip != null) fm.layerTransitController.changeDomain(fm.playerShip!, intent.dir);
               return null;
             }
         ),

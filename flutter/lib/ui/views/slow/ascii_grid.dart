@@ -105,7 +105,7 @@ class _AsciiGridState extends State<AsciiGrid> {
     GridCell closestCell = map[Coord3D(x, y, 0)]!;
     final shipCoord = playship.loc.cell.coord;
     final cellWidgets = <GridCellWidget>[];
-    final invert = map is SectorMap && map.values.any((e) => e.hazLevel > 0);
+    final invert = map is ImpulseMap && map.values.any((e) => e.hazLevel > 0);
     final targetPath = widget.fugueModel.scannerController.targetPath;
     for (int z = 0; z < map.dim.mz; z++) {
       final cell = map[Coord3D(x,y,z)]!;

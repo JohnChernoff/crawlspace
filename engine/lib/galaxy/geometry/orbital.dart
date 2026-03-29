@@ -6,13 +6,13 @@ import 'package:crawlspace_engine/galaxy/planet.dart';
 import 'package:crawlspace_engine/galaxy/star.dart';
 import 'grid.dart';
 
-typedef OrbitalMap = MappedGrid<OrbitalCell>;
+typedef SubOrbitalMap = MappedGrid<OrbitalCell>;
 
 class OrbitalCell extends GridCell {
   final OrbitalLocation loc;
-  OrbitalMap map;
+  SubOrbitalMap map;
   //planet is always at center
-  Planet? planet(Galaxy g) => (this == map.centerCell) ? impulseCell.getPlanet(g) : null;
+  Planet? planet(Galaxy g) => (this == loc.map.centerCell) ? impulseCell.getPlanet(g) : null;
   ImpulseCell impulseCell;
 
   OrbitalCell(
@@ -27,7 +27,7 @@ class OrbitalCell extends GridCell {
 
   @override
   bool isEmpty(Galaxy g, {countPlayer = true}) {
-    return planet(g) != null;
+    return planet(g) == null;
   }
 
   @override
@@ -41,7 +41,7 @@ class OrbitalCell extends GridCell {
 
 }
 
-class EmptySubOrbital extends OrbitalMap {
+class EmptySubOrbital extends SubOrbitalMap {
   static final instance = EmptySubOrbital._();
   EmptySubOrbital._() : super(GridDim(0, 0, 0), const {});
 }

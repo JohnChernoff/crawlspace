@@ -11,7 +11,7 @@ import 'grid.dart';
 import '../hazards.dart';
 import 'impulse.dart';
 
-typedef SectorMap = MappedGrid<ImpulseCell>;
+typedef ImpulseMap = MappedGrid<ImpulseCell>;
 
 class SectorCell extends GridCell {
   final SectorLocation loc;
@@ -33,8 +33,8 @@ class SectorCell extends GridCell {
   Faction outpostPropriator;
   Coord3D outpostLoc;
   @override
-  SectorMap get map => system.impulseCache.putIfAbsent(coord,
-        () => system.generateImpulseMap(this, system.impulseMapDim, Random(impulseSeed)),
+  ImpulseMap get map => system.impulseCache.putIfAbsent(coord,
+        () => system.generateImpulseMap(this,Random(impulseSeed)),
   );
 
   SectorCell(
@@ -88,6 +88,6 @@ class SectorCell extends GridCell {
 
 }
 
-class EmptyImpulse extends SectorMap {
+class EmptyImpulse extends ImpulseMap {
   EmptyImpulse() : super(GridDim(0, 0, 0), {});
 }

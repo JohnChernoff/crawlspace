@@ -1,6 +1,7 @@
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
+import 'package:crawlspace_engine/galaxy/geometry/orbital.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import '../../ship/ship.dart';
 import 'grid.dart';
@@ -97,8 +98,8 @@ class SectorLocation extends SystemLocation {
 }
 
 abstract class ImpulseScope extends SystemLocation {
-  Coord3D get impulseCoord;
-  ImpulseScope(super.system, super.sectorCoord);
+  final Coord3D impulseCoord;
+  ImpulseScope(super.system, super.sectorCoord, this.impulseCoord);
 }
 
 class ImpulseLocation extends ImpulseScope {
@@ -107,14 +108,13 @@ class ImpulseLocation extends ImpulseScope {
 
   @override
   Domain get domain => Domain.impulse;
-  Coord3D impulseCoord;
 
   @override
-  SectorMap get map => sectorCell.map;
+  ImpulseMap get map => sectorCell.map;
 
   ImpulseCell get cell => sectorCell.map.at(impulseCoord);
 
-  ImpulseLocation(super.system, super.sectorCoord, this.impulseCoord);
+  ImpulseLocation(super.system, super.sectorCoord, super.impulseCoord);
 
   @override
   ImpulseLocation withCell(GridCell newCell) => ImpulseLocation(system, sectorCoord, newCell.coord);
@@ -139,20 +139,20 @@ class OrbitalLocation extends ImpulseScope {
 
   @override
   Domain get domain => Domain.orbital;
-  Coord3D impulseCoord,orbitalCoord;
+  Coord3D orbitalCoord;
 
-  ImpulseCell get impulseCell => sector.map[impulseCoord] as ImpulseCell;
-
-  @override
-  ImpulseCell get cell => impulseCell.map.at(orbitalCoord);
+  ImpulseCell get impulseCell => impulse.map[impulseCoord] as ImpulseCell;
 
   @override
-  ImpulseMap get map => impulseCell.map;
+  OrbitalCell get cell => impulseCell.map.at(orbitalCoord);
+
+  @override
+  OrbitalMap get map => impulseCell.map;
 
   @override
   OrbitalLocation withCell(GridCell newCell) => OrbitalLocation(system, sectorCoord, impulseCoord, newCell.coord);
 
-  OrbitalLocation(super.system, super.sectorCoord, this.impulseCoord, this.orbitalCoord);
+  OrbitalLocation(super.system, super.sectorCoord, super.impulseCoord, this.orbitalCoord);
 
   @override
   int get hashCode => Object.hash(system, domain, sectorCoord, impulseCoord, orbitalCoord);

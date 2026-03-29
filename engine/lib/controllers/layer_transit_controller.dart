@@ -11,6 +11,8 @@ import '../galaxy/system.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 
+enum DomainDir { up, down }
+
 class LayerTransitController extends FugueController {
   Map<String,System> currentLinkMap = {};
 
@@ -75,116 +77,75 @@ class LayerTransitController extends FugueController {
     return false;
   }
 
-  void createAndEnterImpulse({int gridSize = 8, int minDist = 4}) {
-    Ship? playShip = fm.playerShip;
-    if (playShip == null) {
-      fm.msg("You're not in a ship."); return;
-    }
-    if (playShip.loc is! SectorLocation) {
-      fm.msg("Error: ship not at system level"); return;
-    }
-    glog("Creating impulse map...",level: DebugLevel.Fine); //Entering")
-    SpaceLocation sysLoc = playShip.loc;
-    if (sysLoc is SectorLocation) { //final rnd = Random(l.cell.impulseSeed);
-      final impMap = sysLoc.cell.map;
-      _enterImpulse(impMap,playShip,cell: impMap.values.firstWhere((c) => c.hazLevel == 0));
-      fm.update();
-      final ships = List.of(fm.galaxy.ships.atCell(sysLoc.cell)); //avoids ConcurrentModificationError (hopefully)
-      try {
-        fm.msg("Entering impulse...");
-        for (final ship in ships) {
-          final h = ship.pilot.hostilityToward(fm.player.faction.species, fm.galaxy.civMod);
-          fm.msg("${ship.name}${ship.pilot.hostile ? "(hostile)" : "(friendly)"} (${h.toStringAsFixed(2)}) is here");
-          if (ship != playShip) _enterImpulse(impMap,ship);
-        }
-      } on ConcurrentModificationError {
-        glog("fark",error: true);
-      }
-    }
-  }
-
-  void _enterImpulse(SectorMap sectorMap, Ship? ship, {ImpulseCell? cell, safeDist = 4}) {
-    if (ship == null) return;
-    fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.impulse, activeOnly: false), ship, on: true, silent: true);
-    fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: false, silent: true);
-    final sysLoc = ship.loc;
-    if (sysLoc is SectorLocation) {
-      ImpulseCell targetCell = cell ?? sectorMap.rndCell(fm.mapRnd);
-      final pic = playerImpulseLoc;
-      if (pic != null) {
-        //bool okCell(GridCell cell) => targetCell.dist(pic) >= safeDist && cell.hazLevel == 0;
-        bool okCell(ImpulseCell c) => c.loc.dist(pic) >= safeDist && c.hazLevel == 0;
-        if (ship.npc && pic.sectorCoord == sysLoc.cell.coord && !okCell(targetCell)) {
-          List<ImpulseCell> safeDistCells = [];
-          while (safeDistCells.isEmpty && safeDist > 0) {
-            safeDistCells = sectorMap.values.where((c) => okCell(c)).toList();
-            safeDist--;
-          };
-          if (safeDistCells.isNotEmpty) {
-            safeDistCells.shuffle(fm.mapRnd);
-            targetCell = safeDistCells.first;
-          }
-        }
-      }
-      final loc = ImpulseLocation(ship.loc.system,sysLoc.cell.coord,targetCell.coord);
-      loc.map.updateGravMap(fm.galaxy);
-      print("Grav Map Center: ");
-      print(loc.map.gravMap[loc.system.impulseMapDim.center]);
-      ship.move(loc,fm.galaxy.ships);
-      ship.nav.resetMotionState();
-      fm.audioController.newTrack(newMood: MusicalMood.danger);
-
-    } //fm.pilotController.action(ship.pilot, ActionType.movement);
-  }
-
-  void enterSublight(Ship? ship) {
-    if (ship == null) return;
-    final impLoc = ship.loc;
-    if (impLoc is ImpulseLocation) {
-      final ships = fm.galaxy.ships.atDomain(impLoc);
-      if (ship == fm.playerShip && ships.length > 1 && ships.any((s) => s.pilot.hostile)) {
-        if (ship.activeEffect(ShipEffect.folding)) {
-          ships.forEach((s) => _exitImpulse(s, impLoc));
-        } else {
-          fm.msg("You cannot accelerate to system travel with hostile vessels in the area");
-          return;
-        }
-      } else {
-        _exitImpulse(ship, impLoc);
-      }
-      fm.audioController.newTrack(newMood: MusicalMood.space);
-      fm.pilotController.action(ship.pilot, ActionType.movement);
-    } else {
-      fm.msg("Error: ship not at impulse level");
-    }
-  }
-
-  void _exitImpulse(Ship ship, ImpulseLocation impLoc) {
-    fm.msg("Exiting impulse, resuming system travel");
-    fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.system, activeOnly: false), ship, on: true, silent: true);
-    fm.pilotController.toggleSystem(ship.systemControl.getEngine(Domain.impulse, activeOnly: false), ship, on: false, silent: true);
-    ship.move(impLoc.sector, fm.galaxy.ships);
-    ship.nav.resetMotionState();
-  }
-
-  void changeDomain(Ship ship, bool up) {
-    int domIndex = (ship.loc.domain.index + (up ? -1 : 1)).clamp(Domain.hyperspace.index, Domain.orbital.index);
+  void changeDomain(Ship ship, DomainDir dir) {
+    final shipLoc = ship.loc;
+    final indexDir = dir == DomainDir.up ? -1 : 1;
+    int domIndex = (shipLoc.domain.index + indexDir).clamp(Domain.hyperspace.index, Domain.orbital.index);
     Domain newDomain = Domain.values.elementAt(domIndex);
     if (newDomain == Domain.hyperspace) selectHyperSpaceLink();
-    else if (up) {
+    else if (shipLoc.domain == Domain.orbital && dir == DomainDir.down) {
+      if (ship.playship) fm.msg("You cannot do that!");
+    }
+    else if (newDomain == Domain.orbital
+        && shipLoc is ImpulseLocation
+        && fm.galaxy.planets.singleAtImpulse(shipLoc) == null) {
+      if (ship.playship) fm.msg("No planet to orbit!");
+    }
+    else if (dir == DomainDir.up) {
       if (hostileCheck(ship) && !ship.activeEffect(ShipEffect.folding)) {
-        fm.msg("You cannot accelerate to $newDomain travel with hostile vessels in the area");
+        if (ship.playship) fm.msg("You cannot accelerate to $newDomain travel with hostile vessels in the area");
       }
       else {
-        fm.msg("Exiting ${ship.loc.domain}, resuming $newDomain travel");
-        fm.pilotController.toggleSystem(ship.systemControl.getEngine(newDomain, activeOnly: false), ship, on: false, silent: true);
-        fm.pilotController.toggleSystem(ship.systemControl.getEngine(ship.loc.domain, activeOnly: false), ship, on: true, silent: true);
-        ship.move(ship.loc.upper, fm.galaxy.ships);
-        ship.nav.resetMotionState();
+        if (ship.playship) fm.msg("Exiting ${shipLoc.domain}, resuming $newDomain travel");
+        ship.move(shipLoc.upper, fm.galaxy.ships);
       }
-    } else {
+    } else { //down
+      final map = shipLoc.cell.map;
+      final destCell = (ship.npc)
+          ? selectNpcCell(ship)
+          : map.values.firstWhere((c) => c.hazLevel == 0);
+      final newLoc = destCell.loc;
 
+      newLoc.map.updateGravMap(fm.galaxy);
+      ship.move(newLoc,fm.galaxy.ships);
+
+      if (ship.playship) {
+        final proxShips = List.of(fm.galaxy.ships.atLocation(shipLoc)); //avoids ConcurrentModificationError (hopefully)
+        try {
+          fm.msg("Entering $newDomain...");
+          for (final ps in proxShips) {
+            final h = ps.pilot.hostilityToward(fm.player.faction.species, fm.galaxy.civMod);
+            fm.msg("${ps.name}${ps.pilot.hostile ? "(hostile)" : "(friendly)"} (${h.toStringAsFixed(2)}) is here");
+            if (ps.npc) changeDomain(ps, DomainDir.down);
+          }
+        } on ConcurrentModificationError {
+          glog("fark",error: true);
+        }
+      }
     }
+    fm.update();
+  }
+
+  GridCell selectNpcCell(Ship ship, {safeDist = 4}) {
+    final map = ship.loc.cell.map;
+    var targetCell = map.rndCell(fm.mapRnd);
+    final pLoc = fm.playerShip?.loc;
+    if (pLoc != null) {
+      bool okCell(GridCell c) =>
+          c.loc.dist(pLoc) >= safeDist && c.hazLevel == 0;
+      if (!okCell(targetCell)) {
+        List<GridCell> safeDistCells = [];
+        while (safeDistCells.isEmpty && safeDist > 0) {
+          safeDistCells = map.values.where((c) => okCell(c)).toList();
+          safeDist--;
+        };
+        if (safeDistCells.isNotEmpty) {
+          safeDistCells.shuffle(fm.mapRnd);
+          targetCell = safeDistCells.first;
+        }
+      }
+    }
+    return targetCell;
   }
 
   bool hostileCheck(Ship ship) {
