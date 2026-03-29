@@ -23,7 +23,9 @@ class AlphaCompleter<T extends Nameable> {
       .toList();
   T? get selection => getCurrentList.elementAtOrNull(selectedIndex);
   List<T> list;
-  AlphaCompleter(this.list);
+  final VoidCallback onDone;
+
+  AlphaCompleter(this.list, this.onDone);
 
   Future<T?> request(FugueEngine fm) {
     final prevMode = fm.inputMode;
@@ -35,6 +37,7 @@ class AlphaCompleter<T extends Nameable> {
     }
     return _completer!.future.whenComplete(() {
       fm.setInputMode(prevMode);
+      onDone();
     });
   }
 }
@@ -53,7 +56,8 @@ class MenuController extends FugueController {
   MenuController(super.fm);
 
   Future<T?> getAlphaList<T extends Nameable>(List<T> list) {
-    final completer = AlphaCompleter<T>(list);
+    late AlphaCompleter<T> completer;
+    completer = AlphaCompleter<T>(list, () => _compStack.remove(completer));
     _compStack.add(completer);
     return completer.request(fm);
   }
@@ -69,9 +73,8 @@ class MenuController extends FugueController {
     if (menuStack.length > 1) menuStack.removeLast();
     if (menuStack.length > 1) {
       _rebuildMenu();
-    } else {
-      fm.setInputMode(InputMode.main); //TODO: what about if/when main isn't the root?
-      //print("Back to main");
+    } else { //fm.setInputMode(InputMode.main); //TODO: what about if/when main isn't the root?
+      fm.exitInputMode(); //print("Back to main");
     }
     fm.update(noWait: true);
   }
