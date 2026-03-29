@@ -13,10 +13,13 @@ import '../../ship/ship.dart';
 import 'object.dart';
 
 enum Domain {
-  hyperspace,
-  system,
-  impulse,
-  orbital;
+  hyperspace(false),
+  system(false),
+  impulse(true),
+  orbital(true);
+  final bool newt;
+
+  const Domain(this.newt);
 
   Domain get engineDomain => switch (this) {
     Domain.orbital => Domain.impulse,

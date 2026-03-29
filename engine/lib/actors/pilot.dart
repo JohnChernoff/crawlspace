@@ -82,8 +82,7 @@ class Pilot {
     auCooldown = 0;
   }
 
-  void newTurn() {
-    print("au: $ticksSinceLastAction");
+  void newTurn() { //print("au: $ticksSinceLastAction");
     ticksSinceLastAction = 0;
   }
 

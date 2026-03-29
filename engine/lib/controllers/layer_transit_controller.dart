@@ -1,8 +1,6 @@
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
-import '../audio_service.dart';
 import '../galaxy/geometry/grid.dart';
-import '../galaxy/geometry/impulse.dart';
 import '../galaxy/geometry/location.dart';
 import '../actors/pilot.dart';
 import '../galaxy/geometry/sector.dart';

@@ -14,7 +14,8 @@ class GravityFieldTexture {
   static Future<GravityFieldTexture> build(
       CellMap map, {
         int pxPerCell = 16,
-        Color Function(double heat)? colorForHeat,
+        bkgCol = Colors.black, fgCol = Colors.red,
+        Color Function(double heat, Color bkgCol, Color fgCol)? colorForHeat,
       }) async {
     final width = map.dim.mx * pxPerCell;
     final height = map.dim.my * pxPerCell;
@@ -28,7 +29,7 @@ class GravityFieldTexture {
         final sy = py / pxPerCell;
 
         final heat = sampleHeat(map, sx, sy);
-        final color = colorFn(heat.clamp(0.0, 1.0));
+        final color = colorFn(heat.clamp(0.0, 1.0),bkgCol,fgCol);
 
         final off = (py * width + px) * 4;
         rgba[off] = (color.r * 255).round() & 0xff;
@@ -50,8 +51,8 @@ class GravityFieldTexture {
     return GravityFieldTexture(image, pxPerCell: pxPerCell);
   }
 
-  static Color _defaultColorForHeat(double h) {
-    return Color.lerp(Colors.black, Colors.yellowAccent, h.clamp(0.0, 1.0))!;
+  static Color _defaultColorForHeat(double h, Color bkgCol, Color fgCol) {
+    return Color.lerp(bkgCol, fgCol, h.clamp(0.0, 1.0))!;
   }
 
   static double sampleHeat(CellMap map, double sx, double sy) {

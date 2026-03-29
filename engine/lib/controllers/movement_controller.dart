@@ -90,7 +90,7 @@ class MovementController extends FugueController {
 
   void handleMove(Ship ship, Coord3D vec) {
     if (fm.inputMode == InputMode.main) {
-      if (ship.loc.domain == Domain.impulse) {
+      if (ship.loc.domain.newt) {
         if (ship.nav.autopilotOn) {
           fm.movementController.acquireTarget(vec).then((loc) {
             if (loc != null) {
@@ -131,16 +131,13 @@ class MovementController extends FugueController {
       drift: drift,
     );
     final report = reportMove(ship, desiredLocation, ctx: ctx);
-    final newLoc = report.preview?.actualCell?.loc;
-    print("NewLoc: $newLoc");
+    final newLoc = report.preview?.actualCell?.loc; //print("NewLoc: $newLoc");
     if (newLoc != null && ship.loc != newLoc) {
       ship.move(newLoc, fm.galaxy.ships);
       fm.update();
     } else { //TODO: make sensible
-      print("Vel: ${ship.nav.vel}, ${ship.nav.vel.mag}");
-      if (!ship.nav.moving) {
-        ship.nav.autoStop = false;
-        print("Handbrake off");
+      if (!ship.nav.moving) { //print("Same Cell Vel: ${ship.nav.vel}, ${ship.nav.vel.mag}");
+        ship.nav.autoStop = false; //print("Handbrake off");
       }
     }
     return report;
@@ -263,7 +260,7 @@ class MovementController extends FugueController {
     final dir = direction != null
         ? ship.nav.effectiveThrustVector(direction)
         : ship.nav.vel;
-
+    //print("Thrust: $dir, $accel, $thrust");
     if (ship.shipClass.engineArch == EngineArch.center) {
       print("center thrust");
       // omnidirectional — thrust immediately

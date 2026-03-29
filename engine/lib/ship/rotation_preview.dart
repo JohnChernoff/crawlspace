@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:crawlspace_engine/ship/ship.dart';
 import '../galaxy/geometry/coord_3d.dart';
 

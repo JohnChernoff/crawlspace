@@ -307,7 +307,7 @@ class ShipNav {
   };
 
   List<Coord3D> projectedPath(int length, {iterations = 25}) {
-    if (ship.loc.domain != Domain.impulse) return [];
+    if (!ship.loc.domain.newt) return [];
     final List<Coord3D> path = [ship.loc.cell.coord];
     Vec3 v = vel.normalized;
     Position p = Position(_pos.x,_pos.y,_pos.z);

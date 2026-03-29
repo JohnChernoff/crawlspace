@@ -129,9 +129,6 @@ class AsciiGridPainter extends CustomPainter {
 
           _paintGridBoundary(canvas, baseRect);
 
-          //if (cell.loc == ship.loc) _paintDirection(canvas, dx, dy + (cellH/2), cellW * 2, cellH * 2, ship.nav.vel);
-          //final layerRect = Rect.fromLTWH(dx, dy, layerSize, layerSize);
-          //_paintGridBoundary(canvas, layerRect, color: const Color(0x22FFFFFF), strokeWidth: 0.5);
         }
       }
     }
@@ -239,7 +236,7 @@ class AsciiGridPainter extends CustomPainter {
     );
 
     final paint = Paint()
-      ..color = Colors.white.withOpacity(0.75)
+      ..color = Colors.white.withValues(alpha: 0.75)
       ..strokeWidth = 1.2
       ..strokeCap = StrokeCap.round;
 
@@ -347,7 +344,7 @@ class AsciiGridPainter extends CustomPainter {
   final _paragraphCache = <String, ui.Paragraph>{};
 
   ui.Paragraph _getParagraph(String glyph, Color color, double fontSize) {
-    final key = "$glyph-${color.value}-$fontSize";
+    final key = "$glyph-${color.toARGB32()}-$fontSize";
     return _paragraphCache.putIfAbsent(key, () {
       final builder = ui.ParagraphBuilder(
         ui.ParagraphStyle(

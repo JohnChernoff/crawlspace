@@ -34,7 +34,7 @@ class MoveContext {
     bool drift = false,
   }) {
     final throttle = throttleOverride ?? ship.nav.throttle;
-    final newtonian = ship.loc.domain == Domain.impulse;
+    final newtonian = ship.loc.domain.newt;
     return MoveContext(
       ship: ship,
       engine: (throttle == ThrottleMode.drift || drift)

@@ -258,11 +258,12 @@ class Ship extends Item {
   }
 
   void move(SpaceLocation newLoc, ShipRegistry registry) {
-    if (newLoc.domain != loc.domain && newLoc.domain != Domain.orbital) {
-      nav.resetMotionState();
+    bool newDom = newLoc.domain != loc.domain;
+    registry.move(this, newLoc);
+    if (newDom) { //print("Resetting loc:");
+      if (loc.domain != Domain.orbital) nav.resetMotionState();
       toggleEngines(newLoc.domain);
     }
-    registry.move(this, newLoc);
   }
 
   void toggleEngines(Domain newDom) {
