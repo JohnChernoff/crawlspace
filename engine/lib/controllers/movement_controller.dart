@@ -61,6 +61,9 @@ class MovementPreview {
     this.doinked = BoundaryResult.none,
     required this.newState,
   });
+
+  String dump(Ship ship) =>
+    "${ship.name}, aut: ${auts}, loc: ${ship.loc.cell.coord}, energy: $energyRequired}";
 }
 
 class MovementController extends FugueController {
@@ -146,16 +149,17 @@ class MovementController extends FugueController {
 
   //does not call pilotController.action because newtonian movement relies on ship.tick
   MoveResult moveShip(Ship ship, SpaceLocation desiredLocation, {
-    ThrottleMode? throttleOverride, Vec3? preGravVel, bool drift = false}) { //print("Moving ship: ${ship.name}");
+    ThrottleMode? throttleOverride, Vec3? preGravVel, bool drift = false}) {
     final ctx = MoveContext.fromShip(ship,
       throttleOverride: throttleOverride,
       preGravVel: preGravVel,
       drift: drift,
     );
     final report = reportMove(ship, desiredLocation, ctx: ctx);
-    final newLoc = report.preview?.actualCell?.loc; //print("NewLoc: $newLoc");
+    final newLoc = report.preview?.actualCell?.loc;
     if (newLoc != null && ship.loc != newLoc) {
-      ship.move(newLoc, fm.galaxy.ships); //print("${ship.name} moved, aut: ${report.preview?.auts}, loc: ${ship.loc}, tick: ${fm.auTick}");
+      glog("Moving ship: ${report.preview?.dump(ship)}, tick: ${fm.auTick}",level: DebugLevel.Fine);
+      ship.move(newLoc, fm.galaxy.ships);
       if (!(ship.systemControl.engine?.domain.newt ?? false)) {
         if (ship.npc && ship.loc == fm.playerShip?.loc) {
           fm.msg("Interdiction!?");
@@ -165,7 +169,7 @@ class MovementController extends FugueController {
         }
       }
     } else {
-      if (!ship.nav.moving) { //print("Same Cell Vel: ${ship.nav.vel}, ${ship.nav.vel.mag}");
+      if (!ship.nav.moving) {
         ship.nav.autoStop = false; //print("Handbrake off");
       }
       if (report.resultType == MoveResultType.mapDoink) {
@@ -191,7 +195,7 @@ class MovementController extends FugueController {
         desiredLocation.cell,
         ctx: ctx);
 
-    //print("Tick: ${fm.auTick}, Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}");
+    glog("Tick: ${fm.auTick}, Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}",level: DebugLevel.Fine);
     // IMPORTANT: energy is burned here in reportMove, and moveUntilNextCell
     // already accumulates energyRequired across sub-steps for display.
     // The two MUST NOT both call burnEnergy — reportMove is the single point
@@ -234,10 +238,9 @@ class MovementController extends FugueController {
             auts: 1
         );
       }
-    } else {
-      // NPC free movement — burn what we can, don't penalise.
+    } else { // NPC free movement — burn what we can, don't penalise.
       ship.systemControl.burnEnergy(preview.energyRequired);
-    } //print("AUTs: ${preview.auts}");
+    }
 
     ship.nav.setVelocity(
         preview.newState.vel.x,
@@ -249,9 +252,7 @@ class MovementController extends FugueController {
     // not have failed, otherwise the ship couldn't execute its braking burn).
     final bool arrived = preview.actualCell == desiredLocation.cell;
     if (arrived && ctx.throttle == ThrottleMode.stop && !preview.engineFail) {
-      //if (ship.playship) fm.msg("Arrived...");
-      //ship.nav.resetMotionState();
-      //ship.nav.pos = Position.fromCoord(desiredLocation.cell.coord);
+      if (ship.playship) fm.msg("Arrived..."); //ship.nav.resetMotionState();
     }
 
     if (preview.doinked == BoundaryResult.clamped) {
@@ -292,25 +293,31 @@ class MovementController extends FugueController {
   }
 
   void manualThrust(Ship ship, {Coord3D? direction, awaitNextCell = true}) {
-    final thrust = ship.systemControl.engine?.thrust ?? 0;
-    final accel = ship.nav.forwardAccel(thrust); // * ship.nav.throttle.speedFactor;
+    final engine = ship.systemControl.engine;
+    final thrust = engine?.thrust ?? 0;
+    final accel = ship.nav.forwardAccel(thrust);
     final dir = direction != null
         ? ship.nav.effectiveThrustVector(direction)
         : ship.nav.vel;
-    //print("Thrust: $dir, $accel, $thrust");
+
     if (ship.shipClass.engineArch == EngineArch.center) {
-      print("center thrust");
-      // omnidirectional — thrust immediately
       final thrustVec = dir * accel;
+      final energyCost = ship.nav.thrustEnergyCost(engine, thrustVec.mag);
+
+      if (!ship.systemControl.burnEnergy(energyCost)) {
+        fm.msg("Insufficient energy for thrust");
+        return;
+      }
+
       ship.nav.applyForce(thrustVec);
-      fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: 10);
-    } else { //print("Rear thrust");
-      // rear/distributed — rotate first, then thrust
+      //fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: 10);
+    } else {
       final targetFacing = direction != null ? _dirToFacing(direction) : ship.nav.facing;
+      final thrustVec = dir * accel;
       ship.nav.targetFacing = targetFacing;
-      ship.nav.pendingThrust = dir * accel;
-      // no action AUTs yet — rotation tick handles them
+      ship.nav.pendingThrust = thrustVec;
     }
+
     if (awaitNextCell) loiter(ship);
   }
 

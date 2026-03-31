@@ -66,6 +66,8 @@ class Position {
 }
 
 class ShipNav {
+  static const double thrustScale = 0.25; // tune this alone to slow everything down
+  static const double gravConstant = .05; // tune by feel
   Ship ship;
   Vec3 _vel = Vec3(0, 0, 0);
   Vec3 get vel => _vel;
@@ -145,17 +147,20 @@ class ShipNav {
   double forwardAccel(double thrust) =>
       baseForwardAccel(thrust) *
           ship.shipClass.engineArch.forwardFactor *
-          ship.shipClass.handling;
+          ship.shipClass.handling *
+          thrustScale;
 
   double lateralAccel(double thrust) =>
       baseLateralAccel(thrust) *
           ship.shipClass.engineArch.lateralFactor *
-          ship.shipClass.handling;
+          ship.shipClass.handling *
+          thrustScale;
 
   double reverseAccel(double thrust) =>
       baseReverseAccel(thrust) *
           ship.shipClass.engineArch.reverseFactor *
-          ship.shipClass.handling;
+          ship.shipClass.handling *
+          thrustScale;
 
 
   /// Passive drag applied to powered ships each tick to prevent infinite drift.
@@ -228,8 +233,6 @@ class ShipNav {
         v.z.round().clamp(-1, 1));
   }
 
-  static const double gravConstant = .2; // tune by feel
-
   void applyGravity(FugueEngine fm) {
     final loc = ship.loc;
     if (loc is! SystemLocation || loc.domain.isAbove(Domain.impulse)) return;
@@ -250,7 +253,6 @@ class ShipNav {
             dx*dx.toDouble() + dy*dy.toDouble() + dz*dz.toDouble());
         final dist = sqrt(distSq);
         final strength = (obj.gravMass * gravConstant) / distSq;
-        //print("Strength: $strength");
 
         gravity = gravity + Vec3(
           (dx / dist) * strength,
@@ -305,6 +307,11 @@ class ShipNav {
     EngineArch.distributed => Utils.lerp(0.5, 1.0, (alignment + 1) / 2),
     EngineArch.center => 1.0,
   };
+
+  double thrustEnergyCost(Engine? engine, double thrustMag) {
+    if (engine == null || thrustMag <= 0) return 0.0;
+    return (ship.currentMass * thrustMag) / engine.efficiency;
+  }
 
   List<Coord3D> projectedPath(int length, {iterations = 25}) {
     if (!ship.loc.domain.newt) return [];

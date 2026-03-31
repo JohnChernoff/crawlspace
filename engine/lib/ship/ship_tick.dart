@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/ship/nav/rotation_preview.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/ship_sub.dart';
+import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/ship/systems/power.dart';
 import '../fugue_engine.dart';
 import 'nav/nav.dart';
@@ -68,7 +69,14 @@ class ShipTick extends ShipSubSystem {
       nav.facing = preview.newState.facing;
       nav.targetFacing = preview.newState.targetFacing;
       if (preview.complete && nav.pendingThrust != null) {
-        nav.applyForce(nav.pendingThrust!);
+        final engine = ship.systemControl.engine;
+        final cost = ship.nav.thrustEnergyCost(engine, nav.pendingThrust!.mag);
+
+        if (cost <= 0 || ship.systemControl.burnEnergy(cost)) {
+          nav.applyForce(nav.pendingThrust!);
+        } else {
+          fm.msg("Insufficient energy for thrust");
+        }
         nav.pendingThrust = null;
       }
     }
@@ -89,5 +97,7 @@ class ShipTick extends ShipSubSystem {
 
     return (loc.cell.coord != prevLoc);
   }
+
+
 
 }
