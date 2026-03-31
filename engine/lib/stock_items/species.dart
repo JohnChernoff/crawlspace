@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/color.dart';
-import 'package:crawlspace_engine/stock_items/stock_ships.dart';
+import 'package:crawlspace_engine/stock_items/ship/stock_ships.dart';
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/ship/systems/power.dart';

@@ -1,7 +1,7 @@
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import '../../galaxy/geometry/grid.dart';
-import '../../stock_items/ship_systems/stock_engines.dart';
-import '../../stock_items/ship_systems/stock_pile.dart';
+import '../../stock_items/ship/stock_engines.dart';
+import '../../stock_items/ship/stock_pile.dart';
 import 'ship_system.dart';
 
 enum EngineEgo {

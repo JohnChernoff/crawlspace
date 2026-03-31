@@ -1,6 +1,6 @@
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
-import '../../stock_items/ship_systems/stock_pile.dart';
-import '../../stock_items/ship_systems/stock_shields.dart';
+import '../../stock_items/ship/stock_pile.dart';
+import '../../stock_items/ship/stock_shields.dart';
 import 'power.dart';
 import 'ship_system.dart';
 

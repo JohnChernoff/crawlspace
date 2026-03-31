@@ -20,7 +20,7 @@ import '../item.dart';
 import '../galaxy/geometry/location.dart';
 import '../actors/pilot.dart';
 import '../actors/player.dart';
-import '../stock_items/stock_ships.dart';
+import '../stock_items/ship/stock_ships.dart';
 import 'nav/nav.dart';
 import 'systems/power.dart';
 import 'systems/shields.dart';

@@ -4,7 +4,7 @@ import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 import 'package:crawlspace_engine/shop.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
-import 'package:crawlspace_engine/stock_items/ship_systems/stock_pile.dart';
+import 'package:crawlspace_engine/stock_items/ship/stock_pile.dart';
 
 void main() {
   final fm = FugueEngine(Galaxy("Testlandia"), "Zug", seed: Random().nextInt(999999));

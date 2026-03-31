@@ -1,6 +1,6 @@
 import 'package:crawlspace_engine/stock_items/corps.dart';
-import 'package:crawlspace_engine/stock_items/ship_systems/stock_adapters.dart';
-import '../../stock_items/ship_systems/stock_pile.dart';
+import 'package:crawlspace_engine/stock_items/ship/stock_adapters.dart';
+import '../../stock_items/ship/stock_pile.dart';
 import 'ship_system.dart';
 
 class Adapter extends ShipSystem {

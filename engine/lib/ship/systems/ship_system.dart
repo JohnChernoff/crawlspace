@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 import '../../item.dart';
-import '../../stock_items/ship_systems/stock_pile.dart';
+import '../../stock_items/ship/stock_pile.dart';
 
 enum ShipSystemType {
   weapon(3),

@@ -5,7 +5,7 @@ import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/geometry/impulse.dart';
 import 'package:crawlspace_engine/rng/ship_gen.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
-import 'package:crawlspace_engine/stock_items/ship_systems/stock_pile.dart';
+import 'package:crawlspace_engine/stock_items/ship/stock_pile.dart';
 import '../actors/agent.dart';
 import '../audio_service.dart';
 import '../rng/descriptors.dart';

@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import '../../controllers/movement_controller.dart';
-import '../../fugue_engine.dart';
 import '../../galaxy/geometry/coord_3d.dart';
 import '../../galaxy/geometry/grid.dart';
 import 'move_ctx.dart';

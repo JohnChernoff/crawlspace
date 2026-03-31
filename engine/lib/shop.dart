@@ -7,7 +7,7 @@ import 'actors/pilot.dart';
 import 'galaxy/planet.dart';
 import 'rng/rng.dart';
 import 'ship/ship.dart';
-import 'stock_items/ship_systems/stock_pile.dart';
+import 'stock_items/ship/stock_pile.dart';
 import 'ship/systems/ship_system.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────

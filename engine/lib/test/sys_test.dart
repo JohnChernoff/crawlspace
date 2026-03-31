@@ -1,4 +1,4 @@
-import '../stock_items/ship_systems/stock_pile.dart';
+import '../stock_items/ship/stock_pile.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -1,10 +1,10 @@
 import 'package:crawlspace_engine/item.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
-import '../ship/ship.dart';
-import '../ship/systems/shields.dart';
-import '../ship/systems/ship_system.dart';
-import '../ship/systems/weapons.dart';
+import '../../ship/ship.dart';
+import '../../ship/systems/shields.dart';
+import '../../ship/systems/ship_system.dart';
+import '../../ship/systems/weapons.dart';
 
 enum HullMaterial with Resisting {
   basic(1.2,1.5, {},

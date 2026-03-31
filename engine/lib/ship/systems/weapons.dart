@@ -3,10 +3,10 @@ import '../../galaxy/geometry/grid.dart';
 import '../../item.dart';
 import '../../rng/rng.dart';
 import '../ship.dart';
-import '../../stock_items/ship_systems/stock_ammo.dart';
-import '../../stock_items/ship_systems/stock_lauchers.dart';
-import '../../stock_items/ship_systems/stock_pile.dart';
-import '../../stock_items/ship_systems/stock_weapons.dart';
+import '../../stock_items/ship/stock_ammo.dart';
+import '../../stock_items/ship/stock_lauchers.dart';
+import '../../stock_items/ship/stock_pile.dart';
+import '../../stock_items/ship/stock_weapons.dart';
 import 'ship_system.dart';
 
 enum DamageType {

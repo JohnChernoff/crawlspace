@@ -29,8 +29,8 @@ import 'actors/player.dart';
 import 'rng/rng.dart';
 import 'ship/ship.dart';
 import 'shop.dart';
-import 'stock_items/ship_systems/stock_pile.dart';
-import 'stock_items/stock_ships.dart';
+import 'stock_items/ship/stock_pile.dart';
+import 'stock_items/ship/stock_ships.dart';
 import 'galaxy/system.dart';
 import 'ship/systems/weapons.dart';
 

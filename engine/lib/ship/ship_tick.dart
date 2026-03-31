@@ -3,7 +3,6 @@ import 'package:crawlspace_engine/ship/nav/rotation_preview.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/ship_sub.dart';
 import 'package:crawlspace_engine/ship/systems/power.dart';
-import '../controllers/pilot_controller.dart';
 import '../fugue_engine.dart';
 import 'nav/nav.dart';
 

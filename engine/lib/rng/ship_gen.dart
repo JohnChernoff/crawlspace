@@ -8,7 +8,7 @@ import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/location.dart';
 import '../galaxy/system.dart';
 import '../ship/ship.dart';
-import '../stock_items/stock_ships.dart';
+import '../stock_items/ship/stock_ships.dart';
 
 class ShipGenerator {
   static Ship generateShip(System system, Galaxy galaxy, Random rnd, {required Pilot owner}) {

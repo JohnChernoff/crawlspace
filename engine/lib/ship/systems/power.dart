@@ -1,6 +1,6 @@
 import 'dart:math';
-import '../../stock_items/ship_systems/stock_pile.dart';
-import '../../stock_items/ship_systems/stock_power.dart';
+import '../../stock_items/ship/stock_pile.dart';
+import '../../stock_items/ship/stock_power.dart';
 import 'ship_system.dart';
 
 enum PowerType {

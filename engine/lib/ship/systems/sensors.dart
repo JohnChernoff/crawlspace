@@ -1,7 +1,7 @@
 import '../../galaxy/geometry/grid.dart';
 import '../../galaxy/system.dart';
-import '../../stock_items/ship_systems/stock_pile.dart';
-import '../../stock_items/ship_systems/stock_sensors.dart';
+import '../../stock_items/ship/stock_pile.dart';
+import '../../stock_items/ship/stock_sensors.dart';
 import 'ship_system.dart';
 
 enum SensorEgo {
