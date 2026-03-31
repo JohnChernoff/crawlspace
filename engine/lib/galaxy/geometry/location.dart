@@ -11,22 +11,24 @@ import '../system.dart';
 sealed class SpaceLocation {
   Domain get domain;
   System system; //highest level
-  SpaceLocation get upper;
+  SpaceLocation? get upper;
   GridCell get cell; //TODO: error log
   CellMap get map;
-  
+
+  bool interactable(SpaceLocation loc) => loc.upper == upper;
+
   SectorLocation? get sectorOrNull {
     final l = this;
     if (l is SystemLocation) return l.sector; else return null;
   }
 
   Coord3D? relativeDomainCoord(SpaceLocation loc) {
-    SpaceLocation thisLoc = this;
-    while (thisLoc.domain.isBelow(loc.domain) &&
+    SpaceLocation? thisLoc = this;
+    while (thisLoc != null && thisLoc.domain.isBelow(loc.domain) &&
         thisLoc.domain != Domain.hyperspace) {
       thisLoc = thisLoc.upper;
     }
-    return thisLoc.domain == loc.domain ? thisLoc.cell.coord : null;
+    return thisLoc?.domain == loc.domain ? thisLoc!.cell.coord : null;
   }
 
   @override
@@ -53,7 +55,8 @@ sealed class SpaceLocation {
   double distCell(GridCell cell) => dist(cell.loc);
   double dist(SpaceLocation l) {
     if (l.domain == domain) return l.cell.coord.distance(cell.coord);
-    glog("Warning: invalid ship location comparison", level: DebugLevel.Warning);
+    //throw StateError("invalid location comparison: $this, $l");
+    glog("Warning: invalid location comparison", level: DebugLevel.Warning);
     return double.infinity;
   }
 }
@@ -67,7 +70,10 @@ abstract class SystemLocation extends SpaceLocation {
 
 class SectorLocation extends SystemLocation {
   @override
-  SpaceLocation get upper => this; //no higher level
+  bool interactable(SpaceLocation loc) => loc.system == system;
+
+  @override
+  SpaceLocation? get upper => null;
 
   @override
   Domain get domain => Domain.system;

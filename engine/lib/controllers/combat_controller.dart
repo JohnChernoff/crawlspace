@@ -20,7 +20,7 @@ class CombatController extends FugueController {
       Ship? target = ship.nav.targetShip; if (target != null) {
         final path = ship.loc.map.greedyPath(ship.loc.cell, target.loc.cell, 1, fm.combatRnd);
         final dest = path.firstOrNull?.coord;
-        if (dest != null) fm.movementController.moveShip(ship, path.first.loc);
+        if (dest != null) fm.movementController.moveShip(ship, path.first.loc); //TODO: fix?
       }
     }
   }

@@ -3,8 +3,8 @@ import 'package:crawlspace_engine/ship/rotation_preview.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/ship_sub.dart';
 import 'package:crawlspace_engine/ship/systems/power.dart';
+import '../controllers/pilot_controller.dart';
 import '../fugue_engine.dart';
-import '../galaxy/geometry/grid.dart';
 import 'nav.dart';
 
 class ShipTick extends ShipSubSystem {
@@ -48,7 +48,7 @@ class ShipTick extends ShipSubSystem {
       }
     }
     final newCell;
-    if (!dryRun && loc.domain.newt) { // && (nav.moving || nav.activeHeading)) {
+    if (!dryRun && ship.playship && loc.domain.newt) { // && (nav.moving || nav.activeHeading)) {
       if (fm.auTick % 1 == 0) { //(fm.aiRnd.nextDouble() < 1) { //moveProbability) {
         newCell = tickMove(fm);
       } else newCell = false;

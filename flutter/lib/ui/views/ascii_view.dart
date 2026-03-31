@@ -107,7 +107,7 @@ class TextBlockWidget extends StatelessWidget {
       if (block.newline) {
         lines.add(wrap
             ? Wrap(children: List.of(currentLine))
-            : Row(children: List.of(currentLine)));
+            : SingleChildScrollView(scrollDirection: Axis.horizontal,child: Row(children: List.of(currentLine))));
         currentLine = [];
       }
     }

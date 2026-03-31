@@ -44,7 +44,7 @@ final Map<StockSystem, EngineData> stockEngines = {
     engineType: EngineType.nuclear,
     efficiency: .5,
     baseAutPerUnitTraversal: 10,
-    thrust: 950,   // accel ≈ 1000/900 ≈ 1.11 → stop from 2.6 in ~3 cells
+    thrust: 350,   // accel ≈ 1000/900 ≈ 1.11 → stop from 2.6 in ~3 cells
     arch: EngineArch.center
   ),
 

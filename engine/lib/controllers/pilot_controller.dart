@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/controllers/layer_transit_controller.dart';
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/ship/ship_sys.dart';
@@ -116,7 +117,7 @@ class PilotController extends FugueController {
     if (pilot.ready) { //print("${ship.name}'s turn...");
       final hostile = pilot.setHostilityToPlayer(fm); //TODO: unset/refresh this somewhere?
       final playLoc = fm.playerShip != null ? ship.detect(fm.playerShip!) : null;
-      if (playLoc != null && hostile && fm.galaxy.ships.atDomain(ship.loc).contains(fm.playerShip)) {
+      if (playLoc != null && hostile) { //print("Moving hostile: $pilot");
         final loc = ship.loc;
         final target = ship.nav.targetShip = fm.playerShip;
         if (target == null) {
@@ -150,16 +151,10 @@ class PilotController extends FugueController {
             }
         } else if (loc is SectorLocation) {
           ship.nav.currentPath = ship.loc.map.greedyPath(ship.loc.cell,target.loc.cell,3,fm.aiRnd, forceHaz: true); //print(ship.currentPath);
+          print("Moving towards player: ${ship.name}, ${ship.loc} -> ${target.loc},${ship.nav.currentPath}");
         }
       }
-      if (ship.nav.currentPath.isNotEmpty) {
-        final result = fm.movementController.moveShip(ship, ship.nav.currentPath.removeAt(0).loc); //print(result);
-        if (result == MoveResultType.impCollision) { //fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.rnd));
-          action(pilot, ActionType.movement, actionAuts: 10);
-        }
-      } else { //TODO: avoid hazards (if possible)
-        fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.aiRnd));
-      }
+      fm.movementController.moveNPC(ship);
     }
   }
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
@@ -9,11 +10,12 @@ class GravityFieldTexture {
   final ui.Image image;
   final int pxPerCell;
 
-  GravityFieldTexture(this.image, {this.pxPerCell = 16});
+  GravityFieldTexture(this.image, {this.pxPerCell = 8});
 
   static Future<GravityFieldTexture> build(
       CellMap map, {
-        int pxPerCell = 16,
+        int pxPerCell = 8,
+        bool showDir = false,
         bkgCol = Colors.black, fgCol = Colors.red,
         Color Function(double heat, Color bkgCol, Color fgCol)? colorForHeat,
       }) async {
@@ -25,11 +27,32 @@ class GravityFieldTexture {
 
     for (int py = 0; py < height; py++) {
       for (int px = 0; px < width; px++) {
-        final sx = px / pxPerCell;
-        final sy = py / pxPerCell;
+        final Color color;
+        if (showDir) {
+          final sx = px / pxPerCell;
+          final sy = py / pxPerCell;
 
-        final heat = sampleHeat(map, sx, sy);
-        final color = colorFn(heat.clamp(0.0, 1.0),bkgCol,fgCol);
+          // fractional position within cell (-0.5 to 0.5)
+          final fx = (px % pxPerCell) / pxPerCell - 0.5;
+          final fy = (py % pxPerCell) / pxPerCell - 0.5;
+
+          final v = sampleVector(map, sx, sy);
+          final dir = v.mag > 0.001 ? v.normalized : Vec3(0, 0, 0);
+
+          // how far along the gravity direction is this pixel within its cell?
+          final directional = (fx * dir.x + fy * dir.y).clamp(-0.5, 0.5);
+
+          final heat = sampleHeat(map, sx, sy);
+          final adjustedHeat = (heat + (directional * sqrt(heat))).clamp(0.0, 1.0);
+
+          color = colorFn(adjustedHeat, bkgCol, fgCol);
+        } else {
+          final sx = px / pxPerCell;
+          final sy = py / pxPerCell;
+
+          final heat = sampleHeat(map, sx, sy); //final v = sampleVector(map, sx, sy);
+          color = colorFn(heat.clamp(0.0, 1.0),bkgCol,fgCol);
+        }
 
         final off = (py * width + px) * 4;
         rgba[off] = (color.r * 255).round() & 0xff;
@@ -53,6 +76,15 @@ class GravityFieldTexture {
 
   static Color _defaultColorForHeat(double h, Color bkgCol, Color fgCol) {
     return Color.lerp(bkgCol, fgCol, h.clamp(0.0, 1.0))!;
+  }
+
+  static Color _defaultDirectionalColorForHeat(double h, Vec3 v) {
+    final angle = atan2(v.y, v.x);
+    final hue = (angle / (2 * pi) * 360 + 360) % 360;
+    //final hue = (angle / (2 * pi) * 120 + 60 + 360) % 360; // red→yellow→green
+    final saturation = (h * 3).clamp(0, 1).toDouble();
+    final value = (h * 3).clamp(0.0, 1.0);
+    return HSVColor.fromAHSV(1.0, hue, saturation,value).toColor();
   }
 
   static double sampleHeat(CellMap map, double sx, double sy) {

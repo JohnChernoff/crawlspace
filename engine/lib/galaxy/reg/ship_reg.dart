@@ -17,6 +17,7 @@ class ShipRegistry {
   Ship? byPilot(Pilot p) => _byPilot[p];
   Set<Ship> atLocation(SpaceLocation loc) => Set.of(_byLoc[loc] ?? {}).whereType<Ship>().toSet();
   Set<Ship> atCell(GridCell c) => atLocation(c.loc);
+  Set<Ship> interactable(SpaceLocation loc) => _all.where((s) => loc.interactable(s.loc)).toSet();
   Set<Ship> atDomain(SpaceLocation loc) => atLocation(loc).where((s) => s.loc.domain == loc.domain).toSet();
   Set<Ship> atHangarLocation(SpaceEnvironment env) => _all.where((s) => s.hangarOrNull == env).toSet();
 

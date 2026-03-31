@@ -120,8 +120,8 @@ class Rng {
     return total;
   }
 
-  static Coord3D rndUnitVector(Random rnd) {
-    return Coord3D(rndUnit(rnd),rndUnit(rnd),rndUnit(rnd));
+  static Coord3D rndUnitVector(Random rnd, {depth = false}) {
+    return Coord3D(rndUnit(rnd),rndUnit(rnd),depth ? 0 : rndUnit(rnd));
   }
 
   static int rndUnit(Random rnd) {

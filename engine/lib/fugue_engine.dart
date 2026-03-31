@@ -298,10 +298,13 @@ class FugueEngine {
           Ship? ship = galaxy.ships.byPilot(p);
           if (ship != null) {
             final loc = ship.loc;
-            if (loc.system == playerShip?.loc.system && player.locale is AboardShip) {
+            final interactables = galaxy.ships.interactable(loc); //print("Interactables for ${ship.name}: $interactables");
+            final interactive = interactables.contains(playerShip);
+            if (loc.system == playerShip?.loc.system && player.locale is AboardShip && interactive) {
               pilotController.npcShipAct(ship);
-            } else if (loc is ImpulseLocation) { //escape impulse
-              ship.move(loc, galaxy.ships);
+            } else if (loc is ImpulseLocation) { //print("Escaping impulse...");
+              layerTransitController.changeDomain(ship, DomainDir.up);
+              pilotController.action(p, ActionType.movement);
             }
           }
         } on ConcurrentModificationError {

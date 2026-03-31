@@ -69,6 +69,10 @@ class SectorCell extends GridCell {
       final comma = i++ > 1 ? "," : "";
       sb.write("$comma${planet.name}");
     }
+    for (final star in g.stars.inSector(loc)) {
+      final comma = i++ > 1 ? "," : "";
+      sb.write("$comma${star.name}");
+    }
     return sb.toString();
   }
 

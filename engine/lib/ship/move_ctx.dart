@@ -5,6 +5,12 @@ import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
 import 'nav.dart';
 
+enum NewtonianMode {
+  throttle,
+  drift,
+  stop,
+}
+
 class MoveContext {
   final Ship ship;
   final Engine? engine;
@@ -34,7 +40,7 @@ class MoveContext {
     bool drift = false,
   }) {
     final throttle = throttleOverride ?? ship.nav.throttle;
-    final newtonian = ship.loc.domain.newt;
+    final newtonian = ship.npc ? false : ship.loc.domain.newt;
     return MoveContext(
       ship: ship,
       engine: (throttle == ThrottleMode.drift || drift)
@@ -90,4 +96,15 @@ class MoveContext {
     preGravVel: preGravVel,
     thrustFraction: thrustFraction,
   );
+
+  NewtonianMode get newtonianMode {
+    if (throttle == ThrottleMode.stop || ship.nav.autoStopping) {
+      return NewtonianMode.stop;
+    }
+    if (throttle == ThrottleMode.drift || drift || engine == null) {
+      return NewtonianMode.drift;
+    }
+    return NewtonianMode.throttle;
+  }
 }
+

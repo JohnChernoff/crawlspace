@@ -93,9 +93,9 @@ class LayerTransitController extends FugueController {
       if (hostileCheck(ship) && !ship.activeEffect(ShipEffect.folding)) {
         if (ship.playship) fm.msg("You cannot accelerate to $newDomain travel with hostile vessels in the area");
       }
-      else {
+      else if (shipLoc.upper != null) { //null shouldn't occur here, but hey
         if (ship.playship) fm.msg("Exiting ${shipLoc.domain}, resuming $newDomain travel");
-        ship.move(shipLoc.upper, fm.galaxy.ships);
+        ship.move(shipLoc.upper!, fm.galaxy.ships);
       }
     } else { //down
       final map = shipLoc.cell.map;
@@ -103,11 +103,9 @@ class LayerTransitController extends FugueController {
           ? selectNpcCell(ship)
           : map.values.firstWhere((c) => c.hazLevel == 0);
       final newLoc = destCell.loc;
-
-      newLoc.map.updateGravMap(fm.galaxy);
-      ship.move(newLoc,fm.galaxy.ships);
-
       if (ship.playship) {
+        newLoc.map.updateGravMap(fm.galaxy);
+        ship.move(newLoc,fm.galaxy.ships);
         final proxShips = List.of(fm.galaxy.ships.atLocation(shipLoc)); //avoids ConcurrentModificationError (hopefully)
         try {
           fm.msg("Entering $newDomain...");
@@ -119,6 +117,12 @@ class LayerTransitController extends FugueController {
         } on ConcurrentModificationError {
           glog("fark",error: true);
         }
+      } else if (fm.playerShip?.loc == ship.loc) {
+        fm.msg("Interdiction!");
+        changeDomain(fm.playerShip!,DomainDir.down);
+        return;
+      } else {
+        ship.move(newLoc,fm.galaxy.ships);
       }
     }
     fm.update();

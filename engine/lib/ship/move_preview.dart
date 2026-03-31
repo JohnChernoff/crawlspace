@@ -8,240 +8,236 @@ import '../galaxy/geometry/grid.dart';
 import 'move_ctx.dart';
 import 'nav.dart';
 
+class NewtonianStepInput {
+  final Engine? engine;
+  final bool engineFail;
+  final Position oldPos;
+  final Vec3 toTarget;
+  final double distanceToTarget;
+  final Vec3 targetDir;
+  final double fAccel;
+  final double lAccel;
+  final double rAccel;
+  final double maxSpeed;
+
+  const NewtonianStepInput({
+    required this.engine,
+    required this.engineFail,
+    required this.oldPos,
+    required this.toTarget,
+    required this.distanceToTarget,
+    required this.targetDir,
+    required this.fAccel,
+    required this.lAccel,
+    required this.rAccel,
+    required this.maxSpeed,
+  });
+
+  factory NewtonianStepInput.build({
+    required NavState state,
+    required MoveContext ctx,
+    required GridCell desiredCell,
+    required Engine? engine,
+    required bool engineFail,
+  }) {
+    final dpos = Position.fromCoord(desiredCell.coord);
+    final toTarget = Vec3(
+      dpos.x - state.pos.x,
+      dpos.y - state.pos.y,
+      dpos.z - state.pos.z,
+    );
+
+    final dist = toTarget.mag;
+    final targetDir = toTarget.fromMag(dist);
+
+    final thrust = engine?.thrust ?? 0.0;
+    final thrustScale = ctx.thrustFraction.clamp(0.0, 1.0);
+
+    final noEngine = engine == null;
+    final fAccel = noEngine ? 0.0 : ctx.ship.nav.forwardAccel(thrust) * thrustScale;
+    final lAccel = noEngine ? 0.0 : ctx.ship.nav.lateralAccel(thrust) * thrustScale;
+    final rAccel = noEngine ? 0.0 : ctx.ship.nav.reverseAccel(thrust) * thrustScale;
+    final maxSpeed = noEngine ? 0.0 : ctx.ship.maxSpeed;
+
+    return NewtonianStepInput(
+      engine: engine,
+      engineFail: engineFail,
+      oldPos: state.pos,
+      toTarget: toTarget,
+      distanceToTarget: dist,
+      targetDir: targetDir,
+      fAccel: fAccel,
+      lAccel: lAccel,
+      rAccel: rAccel,
+      maxSpeed: maxSpeed,
+    );
+  }
+}
+
+class VelocityStepResult {
+  final Vec3 moveVelocity;
+  final Vec3 storedVelocity;
+
+  const VelocityStepResult({
+    required this.moveVelocity,
+    required this.storedVelocity,
+  });
+
+  factory VelocityStepResult.previewDriftVelocity({
+    required NavState state,
+  }) {
+    return VelocityStepResult(
+      moveVelocity: state.vel,
+      storedVelocity: state.vel,
+    );
+  }
+
+  factory VelocityStepResult.previewStoppingVelocity({
+    required NavState state,
+    required MoveContext ctx,
+    required GridCell desiredCell,
+    required NewtonianStepInput input,
+    required bool selecting,
+  }) {
+
+    final guidance = ctx.ship.nav.autoPilot.computeGuidanceVelocity(
+      pos: state.pos,
+      vel: state.vel,
+      targetCell: desiredCell,
+      fAccel: input.fAccel,
+      lAccel: input.lAccel,
+      rAccel: input.rAccel,
+      maxSpeed: input.maxSpeed,
+      desiredArrivalSpeed: 0,
+    );
+
+    final currCoord = ctx.currentCell.coord;
+    final targCoord = desiredCell.coord;
+
+    final next = ctx.ship.nav.autoPilot.steerVelocityTowardDirectional(
+      current: state.vel,
+      desired: guidance.desiredVelocity,
+      forwardDir: input.targetDir,
+      fAccel: input.fAccel,
+      lAccel: input.lAccel,
+      rAccel: input.rAccel,
+      stabilization: 1.0,
+      maxSpeed: input.maxSpeed,
+      lockX: currCoord.x == targCoord.x,
+      lockY: currCoord.y == targCoord.y,
+      lockZ: currCoord.z == targCoord.z,
+    );
+
+    if (!selecting) {
+      glog("GUIDE d:${input.distanceToTarget.toStringAsFixed(2)}, $guidance",
+          level: DebugLevel.Fine);
+    }
+
+    return VelocityStepResult(
+      moveVelocity: next,
+      storedVelocity: next,
+    );
+  }
+
+  factory VelocityStepResult.previewThrottleVelocity({
+    required NavState state,
+    required MoveContext ctx,
+    required GridCell desiredCell,
+    required NewtonianStepInput input,
+  }) {
+    final guidance = ctx.ship.nav.autoPilot.computeGuidanceVelocity(
+      pos: state.pos,
+      vel: state.vel,
+      targetCell: desiredCell,
+      fAccel: input.fAccel,
+      lAccel: input.lAccel,
+      rAccel: input.rAccel,
+      maxSpeed: input.maxSpeed,
+      desiredArrivalSpeed: input.maxSpeed,
+      lateralWeight: 0.2,
+    );
+
+    final current = state.vel;
+    final targetDir = input.targetDir;
+
+    final blendedForward = current.mag > 0.01
+        ? (targetDir + current.normalized * 0.4).normalized
+        : targetDir;
+
+    final next = ctx.ship.nav.autoPilot.steerVelocityTowardDirectional(
+      current: current,
+      desired: guidance.desiredVelocity,
+      forwardDir: blendedForward,
+      fAccel: input.fAccel,
+      lAccel: input.lAccel,
+      rAccel: input.rAccel,
+      stabilization: ctx.ship.nav.stabilization,
+      maxSpeed: input.maxSpeed * ctx.throttle.speedFactor,
+      lockX: false,
+      lockY: false,
+      lockZ: false,
+    );
+
+    return VelocityStepResult(
+      moveVelocity: next,
+      storedVelocity: next,
+    );
+  }
+}
+
 class MovePreviewer {
   Ship ship;
   ShipNav get nav => ship.nav;
   MovePreviewer(this.ship);
   int counter = 0;
 
-  MovementPreview previewFixedStep({
+  MovementPreview finalizeNewtonianStep({
     required NavState state,
     required MoveContext ctx,
-    required GridCell? desiredCell,
-    bool selecting = false,
+    required GridCell desiredCell,
+    required NewtonianStepInput input,
+    required VelocityStepResult velocity,
+    int auts = 1,
   }) {
-
-    counter++;
-    const int auts = 1;
-    if (desiredCell == null) return MovementPreview(desiredCell: null, newState: state);
-    final desiredCoord = desiredCell.coord;
-
-    Engine? engine = (ctx.throttle == ThrottleMode.drift || ctx.drift)
-        ? null
-        : ctx.engine;
-    final noEngine = engine == null;
-    final bool engineFail = noEngine && ctx.throttle != ThrottleMode.drift;
-
-    // ── Non-Newtonian (hyperspace / system-map) path ──────────────────────
-    if (!ctx.newtonian) {
-      if (engine != null) {
-        final double distance = ctx.currentCell.distCell(desiredCell);
-        final int travelAuts = (engine.baseAutPerUnitTraversal * distance).round();
-        return MovementPreview(
-          desiredCell: desiredCell,
-          actualCell: desiredCell,
-          auts: travelAuts,
-          energyRequired: engine.efficiency * 20, //TODO: fix?
-          newState: state.copyWith(pos: Position.fromCoord(desiredCell.coord)),
-        );
-      } else {
-        return MovementPreview(
-          desiredCell: desiredCell,
-          actualCell: ctx.currentCell,
-          engineFail: true,
-          newState: state,
-        );
-      }
-    }
-
-    // ── Newtonian (impulse) path ───────────────────────────────────────────
-
-    final dpos = Position.fromCoord(desiredCoord);
-    final dx = dpos.x - state.pos.x;
-    final dy = dpos.y - state.pos.y;
-    final dz = dpos.z - state.pos.z;
-
-    final mag = sqrt((dx * dx) + (dy * dy) + (dz * dz));
-    final dirX = mag == 0 ? 0.0 : dx / mag;
-    final dirY = mag == 0 ? 0.0 : dy / mag;
-    final dirZ = mag == 0 ? 0.0 : dz / mag;
-
-    final double thrust = engine?.thrust ?? 0;
-    final double thrustScale = ctx.thrustFraction.clamp(0.0, 1.0);
-    //final double accel = (thrust / max(ship.currentMass, 0.001)) * thrustFraction.clamp(0.0, 1.0);
-    final double fAccel = noEngine ? 0.0 : nav.forwardAccel(thrust) * thrustScale;
-    final double lAccel = noEngine ? 0.0 : nav.lateralAccel(thrust) * thrustScale;
-    final double rAccel = noEngine ? 0.0 : nav.reverseAccel(thrust) * thrustScale;
-
-    final double maxSpeed = noEngine ? 0.0 : ctx.ship.maxSpeed;
-    final double efficiency = engine?.efficiency ?? 0.1; //TODO: use this in energy calculations
-
-    // Start from current velocity — no damping yet.
-    double vx = state.vel.x;
-    double vy = state.vel.y;
-    double vz = state.vel.z;
-
-    // nextVel is what gets written into newVelX/Y/Z (saved for next tick).
-    // For most modes it equals vx/vy/vz, but for stop mode we separate
-    // "where does momentum carry us this tick" from "how much speed do we
-    // shed for next tick", so the ship coasts to the destination rather
-    // than freezing on the very next cell.
-    double nextVelX = vx;
-    double nextVelY = vy;
-    double nextVelZ = vz;
-
-    if (ctx.throttle == ThrottleMode.stop || ctx.ship.nav.autoStopping) {
-      if (mag == 0) { //if (mag < epsilon)
-        return MovementPreview(
-          desiredCell: desiredCell,
-          actualCell: ctx.currentCell,
-          auts: 1,
-          energyRequired: 0,
-          newState: state.copyWith(),
-        );
-      }
-
-      final guidance = nav.autoPilot.computeGuidanceVelocity(
-        pos: state.pos,
-        vel: state.vel,
-        targetCell: desiredCell,
-        fAccel: fAccel,
-        lAccel: lAccel,
-        rAccel: rAccel,
-        maxSpeed: maxSpeed,
-        desiredArrivalSpeed: 0,
-      );
-
-      final current = Vec3(vx, vy, vz);
-      final targetDir = Vec3(dirX, dirY, dirZ); //or possibly ship facing
-
-      final cx = ctx.currentCell.coord.x;
-      final cy = ctx.currentCell.coord.y;
-      final cz = ctx.currentCell.coord.z;
-
-      final tx = desiredCell.coord.x;
-      final ty = desiredCell.coord.y;
-      final tz = desiredCell.coord.z;
-
-      final lockX = cx == tx;
-      final lockY = cy == ty;
-      final lockZ = cz == tz;
-
-      // Use whichever budget feels best.
-      // For now, use forward accel as the main steering budget.
-      final next = nav.autoPilot.steerVelocityTowardDirectional(
-          current: current,
-          desired: guidance.desiredVelocity,
-          forwardDir: targetDir,
-          fAccel: fAccel,
-          lAccel: lAccel,
-          rAccel: rAccel,
-          // Don't pre-damp in stop mode — let the braking burn do all the work.
-          // Using nav.stabilization here wastes thrust budget and can cause overshoot.
-          stabilization: 1.0,
-          maxSpeed: maxSpeed,
-          lockX: lockX,
-          lockY: lockY,
-          lockZ: lockZ
-      );
-
-      nextVelX = next.x;
-      nextVelY = next.y;
-      nextVelZ = next.z;
-
-      // In stop mode, use new velocity immediately for step choice.
-      vx = next.x;
-      vy = next.y;
-      vz = next.z;
-
-      if (!selecting) glog("GUIDE d:${mag.toStringAsFixed(2)}, $guidance", level: DebugLevel.Fine);
-    } else if (!noEngine) {
-      final guidance = nav.autoPilot.computeGuidanceVelocity(
-        pos: state.pos,
-        vel: state.vel,
-        targetCell: desiredCell,
-        fAccel: fAccel,
-        lAccel: lAccel,
-        rAccel: rAccel,
-        maxSpeed: maxSpeed,
-        desiredArrivalSpeed: maxSpeed, // full wants speed, not stop
-        // Low lateral correction in full throttle — ships should arc toward
-        // targets, not cancel all side-slip the way stop mode does.
-        lateralWeight: 0.2,
-      );
-
-      final current = Vec3(vx, vy, vz);
-      final targetDir = Vec3(dirX, dirY, dirZ);
-
-      // Blend the target direction with the ship's current velocity direction.
-      // This anchors the forward/lateral budget to where the ship is actually
-      // going, not just where it wants to be — prevents oscillation when the
-      // ship is nearly on-axis to the target.
-      final velMag = current.mag;
-      final blendedForward = velMag > 0.01
-          ? (targetDir + current.normalized * 0.4).normalized
-          : targetDir;
-
-      final next = nav.autoPilot.steerVelocityTowardDirectional(
-          current: current,
-          desired: guidance.desiredVelocity,
-          forwardDir: blendedForward,
-          fAccel: fAccel,
-          lAccel: lAccel,
-          rAccel: rAccel,
-          stabilization: nav.stabilization,
-          maxSpeed: maxSpeed * ctx.throttle.speedFactor,
-          lockX: false,
-          lockY: false,
-          lockZ: false
-      );
-
-      vx = next.x;
-      vy = next.y;
-      vz = next.z;
-      nextVelX = vx;
-      nextVelY = vy;
-      nextVelZ = vz;
-    }
-    // else: pure drift — velocity unchanged, no drag, nextVel already set.
-
-    final oldPos = state.pos;
     final newPos = Position(
-      oldPos.x + vx * auts,
-      oldPos.y + vy * auts,
-      oldPos.z + vz * auts,
+      input.oldPos.x + velocity.moveVelocity.x * auts,
+      input.oldPos.y + velocity.moveVelocity.y * auts,
+      input.oldPos.z + velocity.moveVelocity.z * auts,
     );
 
-    final Coord3D actualCoord = newPos.coord;
-    final GridCell? actualCell = ctx.map[actualCoord];
+    final actualCoord = newPos.coord;
+    final actualCell = ctx.map[actualCoord];
 
     final baseline = ctx.preGravVel ?? state.vel;
-    final dvx = nextVelX - baseline.x;
-    final dvy = nextVelY - baseline.y;
-    final dvz = nextVelZ - baseline.z;
+    final dvx = velocity.storedVelocity.x - baseline.x;
+    final dvy = velocity.storedVelocity.y - baseline.y;
+    final dvz = velocity.storedVelocity.z - baseline.z;
     final deltaV = sqrt((dvx * dvx) + (dvy * dvy) + (dvz * dvz));
 
-    final energyScale = 1.0;
-    final energy = engine != null
-        ? (ship.currentMass * deltaV * energyScale) / engine.efficiency
+    final energy = input.engine != null
+        ? (ship.currentMass * deltaV) / input.engine!.efficiency
         : 0.0;
 
     if (actualCell == null) {
-      final attemptedSpeed = sqrt((vx * vx) + (vy * vy) + (vz * vz));
-      final bounceCell = ctx.map.values.isEmpty ? ctx.currentCell
-          : ctx.map.values
-          .where((c) => c.coord.isEdge(ctx.map.dim))
-          .fold<GridCell>(ctx.map.values.first, (best, c) =>
-      oldPos.coord.distance(c.coord) < oldPos.coord.distance(best.coord) ? c : best);
-      //print("CTX: ${ctx.map.runtimeType}"); print("Bounce Cell: ${bounceCell.coord}");
+      final bounceCell = boundaryCellFromTrajectory(
+        oldPos: input.oldPos,
+        newPos: newPos,
+        map: ctx.map,
+        fallback: ctx.currentCell,
+      );
+
       return MovementPreview(
         desiredCell: desiredCell,
         actualCell: bounceCell,
-        auts: 1,
+        auts: auts,
         energyRequired: energy,
-        emergencyDecel: attemptedSpeed,
-        engineFail: engineFail,
-        newState: state.copyWith(pos: Position.fromCoord(bounceCell.coord)),
+        emergencyDecel: velocity.moveVelocity.mag,
+        engineFail: input.engineFail,
+        newState: state.copyWith(
+          pos: Position.fromCoord(bounceCell.coord),
+          vel: const Vec3(0, 0, 0),
+        ),
+        doinked: BoundaryResult.clamped,
       );
     }
 
@@ -250,8 +246,103 @@ class MovePreviewer {
       actualCell: actualCell,
       auts: auts,
       energyRequired: energy,
-      newState: state.copyWith(pos: newPos, vel: Vec3(nextVelX,nextVelY,nextVelZ)),
+      newState: state.copyWith(
+        pos: newPos,
+        vel: velocity.storedVelocity,
+      ),
+      engineFail: input.engineFail,
+    );
+  }
+
+  MovementPreview previewNewtonianStep({
+    required NavState state,
+    required MoveContext ctx,
+    required GridCell desiredCell,
+    required Engine? engine,
+    required bool engineFail,
+    required bool selecting,
+  }) {
+    final input = NewtonianStepInput.build(
+      state: state,
+      ctx: ctx,
+      desiredCell: desiredCell,
+      engine: engine,
       engineFail: engineFail,
+    );
+
+    if (ctx.newtonianMode == NewtonianMode.stop &&
+        input.distanceToTarget == 0) {
+      return MovementPreview(
+        desiredCell: desiredCell,
+        actualCell: ctx.currentCell,
+        auts: 1,
+        energyRequired: 0,
+        newState: state.copyWith(),
+      );
+    }
+
+    final velocity = switch (ctx.newtonianMode) {
+      NewtonianMode.stop => VelocityStepResult.previewStoppingVelocity(
+        state: state,
+        ctx: ctx,
+        desiredCell: desiredCell,
+        input: input,
+        selecting: selecting,
+      ),
+      NewtonianMode.drift => VelocityStepResult.previewDriftVelocity(
+        state: state,
+      ),
+      NewtonianMode.throttle => VelocityStepResult.previewThrottleVelocity(
+        state: state,
+        ctx: ctx,
+        desiredCell: desiredCell,
+        input: input,
+      ),
+    };
+
+    return finalizeNewtonianStep(
+      state: state,
+      ctx: ctx,
+      desiredCell: desiredCell,
+      input: input,
+      velocity: velocity,
+    );
+  }
+
+  MovementPreview previewFixedStep({
+    required NavState state,
+    required MoveContext ctx,
+    required GridCell? desiredCell,
+    bool selecting = false,
+  }) {
+    counter++;
+
+    if (desiredCell == null) {
+      return MovementPreview(desiredCell: null, newState: state);
+    }
+
+    final engine = (ctx.throttle == ThrottleMode.drift || ctx.drift)
+        ? null
+        : ctx.engine;
+    final noEngine = engine == null;
+    final engineFail = noEngine && ctx.throttle != ThrottleMode.drift;
+
+    if (!ctx.newtonian) {
+      return previewNonNewtonianStep(
+        state: state,
+        ctx: ctx,
+        desiredCell: desiredCell,
+        engine: engine,
+      );
+    }
+
+    return previewNewtonianStep(
+      state: state,
+      ctx: ctx,
+      desiredCell: desiredCell,
+      engine: engine,
+      engineFail: engineFail,
+      selecting: selecting,
     );
   }
 
@@ -263,16 +354,6 @@ class MovePreviewer {
         auts = 1,
       }) {
     MovementPreview? last;
-
-    /*
-    var ctx = MoveContext(
-      ship: ship,
-      engine: (throttle == ThrottleMode.drift || drift)
-          ? null
-          : ship.systemControl.getEngine(ship.loc.domain),
-      currentCell: ship.loc.cell,
-      map: ship.loc.map,
-    ); */
 
     for (int i = 0; i < auts; i++) {
       last = previewFixedStep(
@@ -300,16 +381,6 @@ class MovePreviewer {
       }) {
     var state = NavState.fromShip(ship);
     final startCell = state.pos.coord;
-
-    /*
-    var ctx = MoveContext(
-      ship: ship,
-      engine: (throttle == ThrottleMode.drift || drift)
-          ? null
-          : ship.systemControl.getEngine(ship.loc.domain),
-      currentCell: ship.loc.cell,
-      map: ship.loc.map,
-    ); */
 
     MovementPreview? last;
     int totalAuts = 0;
@@ -362,4 +433,79 @@ class MovePreviewer {
       newState: state,
     );
   }
+
+  GridCell boundaryCellFromTrajectory({
+    required Position oldPos,
+    required Position newPos,
+    required CellMap map,
+    required GridCell fallback,
+  }) {
+    final dim = map.dim;
+
+    double? firstT;
+
+    void consider(double t) {
+      if (t.isNaN || t.isInfinite) return;
+      if (t < 0 || t > 1) return;
+      if (firstT == null || t < firstT!) firstT = t;
+    }
+
+    final dx = newPos.x - oldPos.x;
+    final dy = newPos.y - oldPos.y;
+    final dz = newPos.z - oldPos.z;
+
+    if (dx < 0) consider((0.0 - oldPos.x) / dx);
+    if (dx > 0) consider(((dim.mx - 1).toDouble() - oldPos.x) / dx);
+
+    if (dy < 0) consider((0.0 - oldPos.y) / dy);
+    if (dy > 0) consider(((dim.my - 1).toDouble() - oldPos.y) / dy);
+
+    if (dim.mz > 1) {
+      if (dz < 0) consider((0.0 - oldPos.z) / dz);
+      if (dz > 0) consider(((dim.mz - 1).toDouble() - oldPos.z) / dz);
+    }
+
+    if (firstT == null) return fallback;
+
+    final hitX = oldPos.x + dx * firstT!;
+    final hitY = oldPos.y + dy * firstT!;
+    final hitZ = oldPos.z + dz * firstT!;
+
+    final hitCoord = Coord3D(
+      hitX.round().clamp(0, dim.mx - 1),
+      hitY.round().clamp(0, dim.my - 1),
+      dim.mz <= 1
+          ? 0
+          : hitZ.round().clamp(0, dim.mz - 1),
+    );
+
+    return map[hitCoord] ?? fallback;
+  }
+
+  MovementPreview previewNonNewtonianStep({
+    required NavState state,
+    required MoveContext ctx,
+    required GridCell desiredCell,
+    required Engine? engine,
+  }) {
+    if (engine != null) {
+      final double distance = ctx.currentCell.distCell(desiredCell);
+      final int travelAuts = (engine.baseAutPerUnitTraversal * distance).round();
+      return MovementPreview(
+        desiredCell: desiredCell,
+        actualCell: desiredCell,
+        auts: travelAuts,
+        energyRequired: engine.efficiency * 20,
+        newState: state.copyWith(pos: Position.fromCoord(desiredCell.coord)),
+      );
+    }
+
+    return MovementPreview(
+      desiredCell: desiredCell,
+      actualCell: ctx.currentCell,
+      engineFail: true,
+      newState: state,
+    );
+  }
+
 }

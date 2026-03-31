@@ -5,11 +5,13 @@ import '../fugue_engine.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/location.dart';
+import '../rng/rng.dart';
 import '../ship/move_ctx.dart';
 import '../ship/nav.dart';
 import '../ship/ship.dart';
 import '../ship/systems/engines.dart';
 import 'fugue_controller.dart';
+import 'layer_transit_controller.dart';
 import 'pilot_controller.dart';
 
 class MoveResult {
@@ -34,6 +36,11 @@ enum MoveResultType {
   bool get moving => this == moved || this == unsafeDestination;
 }
 
+enum BoundaryResult {
+  none,
+  clamped,
+}
+
 class MovementPreview {
   final GridCell? desiredCell;
   final GridCell? actualCell;
@@ -42,6 +49,7 @@ class MovementPreview {
   final bool engineFail;
   final double? emergencyDecel;
   final NavState newState;
+  final BoundaryResult doinked;
 
   const MovementPreview({
     this.desiredCell,
@@ -50,6 +58,7 @@ class MovementPreview {
     this.energyRequired = 0,
     this.engineFail = false,
     this.emergencyDecel,
+    this.doinked = BoundaryResult.none,
     required this.newState,
   });
 }
@@ -115,16 +124,28 @@ class MovementController extends FugueController {
     }
   }
 
+  void moveNPC(Ship ship) {
+    if (ship.npc) {
+      final MoveResult? result;
+      if (ship.nav.currentPath.isNotEmpty) {
+        result = moveShip(ship, ship.nav.currentPath.removeAt(0).loc);
+        print("${ship.name} moved, auts: ${result.preview?.auts}, loc: ${ship.loc}, tick: ${fm.auTick}");
+      } else {
+        result = fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.aiRnd));
+        glog("Moving: ${ship.name}, Tick: ${fm.auTick}, Result: ${result?.resultType.moving}",level: DebugLevel.Fine);
+      }
+      fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: result?.preview?.auts ?? 1);
+    }
+  }
+
   MoveResult? vectorShip(Ship ship, Coord3D v) { //TODO: normalize v?
     final loc = ship.loc.map[ship.loc.cell.coord.add(v)]?.loc;
     return (loc != null) ? moveShip(ship, loc) : null;
   }
 
+  //does not call pilotController.action because newtonian movement relies on ship.tick
   MoveResult moveShip(Ship ship, SpaceLocation desiredLocation, {
-    ThrottleMode? throttleOverride,
-    Vec3? preGravVel,
-    bool drift = false,
-  }) {
+    ThrottleMode? throttleOverride, Vec3? preGravVel, bool drift = false}) { //print("Moving ship: ${ship.name}");
     final ctx = MoveContext.fromShip(ship,
       throttleOverride: throttleOverride,
       preGravVel: preGravVel,
@@ -134,10 +155,23 @@ class MovementController extends FugueController {
     final newLoc = report.preview?.actualCell?.loc; //print("NewLoc: $newLoc");
     if (newLoc != null && ship.loc != newLoc) {
       ship.move(newLoc, fm.galaxy.ships);
-      fm.update();
+      //print("${ship.name} moved, aut cost: ${report.preview?.auts}, loc: ${ship.loc}, tick: ${fm.auTick}");
+      if (!(ship.systemControl.engine?.domain.newt ?? false)) {
+        if (ship.npc && ship.loc == fm.playerShip?.loc) {
+          fm.msg("Interdiction!?");
+          fm.layerTransitController.changeDomain(fm.playerShip!,DomainDir.down);
+        } else {
+          fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: report.preview?.auts ?? 1);
+        }
+      }
     } else { //TODO: make sensible
       if (!ship.nav.moving) { //print("Same Cell Vel: ${ship.nav.vel}, ${ship.nav.vel.mag}");
         ship.nav.autoStop = false; //print("Handbrake off");
+      }
+      if (report.resultType == MoveResultType.mapDoink) {
+        fm.msg("Doink!");
+        print(report.preview?.actualCell);
+        print(ship.nav.projectedPath(4));
       }
     }
     return report;
@@ -222,8 +256,13 @@ class MovementController extends FugueController {
       //ship.nav.pos = Position.fromCoord(desiredLocation.cell.coord);
     }
 
+    if (preview.doinked == BoundaryResult.clamped) {
+      return MoveResult(preview, MoveResultType.mapDoink);
+    }
+
     final newCell = preview.actualCell;
     if (newCell == null) return MoveResult(preview,MoveResultType.error);
+
     if (ship.loc.domain == Domain.impulse) {
       if (fm.galaxy.ships.atCell(newCell).isNotEmpty) {
         return MoveResult(preview,MoveResultType.impCollision); //TODO: fix

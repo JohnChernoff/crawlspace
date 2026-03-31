@@ -6,6 +6,7 @@ const noCoord = const Coord3D(999999, 999999, 999999);
 class Coord3D {
   final int x,y,z;
   const Coord3D(this.x,this.y,this.z);
+  factory Coord3D.copy(Coord3D c) => Coord3D(c.x, c.y, c.z);
 
   double distance(Coord3D? c) {
     if (c == null) return 0;
@@ -70,6 +71,11 @@ class Coord3D {
 class Vec3 {
   final double x, y, z;
   const Vec3(this.x, this.y, this.z);
+  factory Vec3.copy(Vec3 v) => Vec3(v.x,v.y,v.z);
+  Vec3 fromMag(double mag) => Vec3(
+  mag == 0 ? 0.0 : x / mag,
+  mag == 0 ? 0.0 : y / mag,
+  mag == 0 ? 0.0 : z / mag);
 
   Vec3 operator +(Vec3 o) => Vec3(x + o.x, y + o.y, z + o.z);
   Vec3 operator -(Vec3 o) => Vec3(x - o.x, y - o.y, z - o.z);
