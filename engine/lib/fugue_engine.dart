@@ -1,6 +1,6 @@
 import 'dart:math';
+import 'package:crawlspace_engine/controllers/tick_controller.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
-import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
 import 'package:crawlspace_engine/rng/ship_gen.dart';
@@ -82,7 +82,6 @@ class FugueEngine {
   int numAgents = 3;
   Iterable<Agent> get agents => galaxy.pilots.npcs.whereType<Agent>();
   late Random combatRnd,mapRnd,speciesRnd,aiRnd,effectRnd,itemRnd,audioRnd,eventRnd;
-  int auTick = 0;
   String get result => blownUp ? "blown up" : isVictorious ? "victorious" : "vanquished";
   bool get blownUp => (getShip(player)?.hullRemaining ?? 1) <= 0;
   bool? victory;
@@ -106,7 +105,8 @@ class FugueEngine {
   late final ScannerController scannerController = ScannerController(this);
   late final AudioController audioController = AudioController(NullAudioService(),audioRnd);
   late final XenoController xenoControl = XenoController(this);
-
+  late final TickController tickController = TickController(this);
+  int get auTick => tickController.auTick;
   final ShopOptions shopOptions = ShopOptions();
 
   List<InputMode> _inputStack = [InputMode.main];
@@ -275,6 +275,13 @@ class FugueEngine {
     return AgentSystemReport.none;
   }
 
+  void dumpAgents() {
+    glog("Agents: ${agents.map((a) =>
+    '${a.personality.name}@${a.system.name}'
+        '(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}",
+        level: DebugLevel.Fine);
+  }
+
   Future<void> update({bool noWait = false, bool dummyMsg = false}) async {
     if (dummyMsg) msgController.addDummyMsg();
     if (noWait || !msgController.msgWorker.isProcessing || msgController.msgWorker.processNotifier.isCompleted) { //print("Updating...");
@@ -284,64 +291,6 @@ class FugueEngine {
         _notify();
       });
     }
-  }
-
-  //returns false if player location domain changes
-  bool runUntilNextPlayerTurn() { //fm.glog("Running until next turn...");
-    final playShip = playerShip;
-    final domain = playShip?.loc.domain;
-    final pilots = List.of(activePilots); // ← Copy the list
-    do {
-      for (Pilot p in pilots) { //print("${p.name}'s turn");
-        try {
-          p.tick(this);
-          Ship? ship = galaxy.ships.byPilot(p);
-          if (ship != null) {
-            final loc = ship.loc;
-            final interactables = galaxy.ships.interactable(loc); //print("Interactables for ${ship.name}: $interactables");
-            final interactive = interactables.contains(playerShip);
-            if (loc.system == playerShip?.loc.system && player.locale is AboardShip && interactive) {
-              pilotController.npcShipAct(ship);
-            } else if (loc is ImpulseLocation) { //print("Escaping impulse...");
-              layerTransitController.changeDomain(ship, DomainDir.up);
-              pilotController.action(p, ActionType.movement);
-            }
-          }
-        } on ConcurrentModificationError {
-          glog("Skipping: ${p.name}",error: true);
-        }
-      }
-      auTick++;
-      player.tick(this);
-      if (playShip != null) {
-        final tickResult = playShip.ticker.tick(fm: this);
-        if (tickResult.newCell) wakePilot(player);
-      }
-      //if (playShip != null && playShip.loc is ImpulseLocation) {
-      for (final cell in player.loc.map.values) {
-        cell.effects.tickAll();
-      }//}
-    } while (!player.ready);
-
-    if (playShip != null) { //print("Counter..."); //print(playShip.nav.movePreviewer.counter);
-      final loc = playShip.loc; if (loc is ImpulseLocation) {
-        if (loc.sectorCell.hasHaz(Hazard.ion)) {
-          loc.cell.hodgeTick(Hazard.ion, mapRnd);
-        }
-      }
-      for (final s in galaxy.ships.atDomain(playShip.loc).where((s) => s.npc)) playShip.detect(s);
-    }
-    update();
-    glog("Agents: ${agents.map((a) => '${a.personality.name}@${a.system.name}(${galaxy.topo.distance(a.system, player.system)}j)').join(', ')}",
-        level: DebugLevel.Fine);
-
-    player.newTurn();
-    return playerShip?.loc.domain == domain;
-  }
-
-  void wakePilot(Pilot p) {
-    p.wake();
-    update();
   }
 
   void sanityCheck(Ship? ship) {

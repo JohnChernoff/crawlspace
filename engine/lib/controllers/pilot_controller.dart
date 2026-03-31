@@ -36,6 +36,11 @@ enum ActionType {
 class PilotController extends FugueController {
   PilotController(super.fm);
 
+  void wakePilot(Pilot p) {
+    p.wake();
+    fm.update();
+  }
+
   void castEffect(Pilot pilot) {
     final ship = fm.galaxy.ships.byPilot(pilot);
     if (ship != null) {
@@ -106,7 +111,10 @@ class PilotController extends FugueController {
       }
     }
     fm.update();
-    if (pilot == fm.player) return fm.runUntilNextPlayerTurn();
+    if (pilot == fm.player) {
+
+      return fm.tickController.runUntilNextPlayerTurn();
+    }
     return true;
   }
 

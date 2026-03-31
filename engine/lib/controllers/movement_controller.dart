@@ -106,7 +106,8 @@ class MovementController extends FugueController {
               ship.nav.autoPilot.heading = loc;
               print(ship.systemControl.engine?.name);
               print("Current Loc: ${ship.loc.cell.coord} , New Heading: ${loc.cell.coord}");
-              print("Mass: ${ship.currentMass}, Vol: ${ship.volume}, Thrust: ${ship.systemControl.engine?.thrust}, Throttle: ${ship.nav.throttle}");
+              print("Mass: ${ship.currentMass}, ""Vol: ${ship.volume}, "
+                  "Thrust: ${ship.systemControl.engine?.thrust}, Throttle: ${ship.nav.throttle}");
               // Don't call moveShip directly — set the heading and hand off to
               // the turn engine.  tick() will call cruise()/moveShip when it runs.
               loiter(ship);
@@ -154,8 +155,7 @@ class MovementController extends FugueController {
     final report = reportMove(ship, desiredLocation, ctx: ctx);
     final newLoc = report.preview?.actualCell?.loc; //print("NewLoc: $newLoc");
     if (newLoc != null && ship.loc != newLoc) {
-      ship.move(newLoc, fm.galaxy.ships);
-      //print("${ship.name} moved, aut cost: ${report.preview?.auts}, loc: ${ship.loc}, tick: ${fm.auTick}");
+      ship.move(newLoc, fm.galaxy.ships); //print("${ship.name} moved, aut: ${report.preview?.auts}, loc: ${ship.loc}, tick: ${fm.auTick}");
       if (!(ship.systemControl.engine?.domain.newt ?? false)) {
         if (ship.npc && ship.loc == fm.playerShip?.loc) {
           fm.msg("Interdiction!?");
@@ -164,14 +164,12 @@ class MovementController extends FugueController {
           fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: report.preview?.auts ?? 1);
         }
       }
-    } else { //TODO: make sensible
+    } else {
       if (!ship.nav.moving) { //print("Same Cell Vel: ${ship.nav.vel}, ${ship.nav.vel.mag}");
         ship.nav.autoStop = false; //print("Handbrake off");
       }
       if (report.resultType == MoveResultType.mapDoink) {
         fm.msg("Doink!");
-        print(report.preview?.actualCell);
-        print(ship.nav.projectedPath(4));
       }
     }
     return report;

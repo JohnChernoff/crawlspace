@@ -411,8 +411,7 @@ class Ship extends Item {
 
   List<FireResult> fireWeapons(ImpulseCell target, Random rnd, {Ship? ship}) {
     List<FireResult> results = [];
-    final l = loc;
-    if (l is ImpulseLocation && (ship == null || ship.loc.domain == loc.domain)) {
+    if (loc is ImpulseLocation && (ship == null || ship.loc.domain == loc.domain)) {
       int? minCool;
       for (final weapon in systemControl.readyWeapons) {
         double dmg = 0;
@@ -427,7 +426,7 @@ class Ship extends Item {
           }
         }
         if (ammoOK) {
-          dmg += weapon.fire(l.distCell(target), rnd, targetShip: ship, clips: clips);
+          dmg += weapon.fire(loc.distCell(target), rnd, targetShip: ship, clips: clips);
           if (minCool == null || minCool > weapon.cooldown) minCool = weapon.cooldown;
         }
         results.add(FireResult(dmg.floor(),weapon,ammoWarn));

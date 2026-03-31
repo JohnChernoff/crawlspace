@@ -239,9 +239,9 @@ class ShipNav {
 
     Vec3 gravity = Vec3(0, 0, 0);
     for (final obj in objects) {
-      final objLoc = obj.loc; //obj.loc.relativeDomainCoord(loc);
-      if (objLoc is OrbitalLocation) { //TODO: generalize
-        final objPos = Position.fromCoord(objLoc.impulseCoord);
+      final objCoord = obj.loc.relativeDomainCoord(loc);
+      if (objCoord != null) {
+        final objPos = Position.fromCoord(objCoord);
         final dx = objPos.x - pos.x;
         final dy = objPos.y - pos.y;
         final dz = objPos.z - pos.z;
