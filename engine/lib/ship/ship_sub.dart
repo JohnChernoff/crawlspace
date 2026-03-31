@@ -1,7 +1,7 @@
 import 'package:crawlspace_engine/ship/ship.dart';
-import 'package:crawlspace_engine/ship/ship_sys.dart';
+import 'package:crawlspace_engine/ship/systems/ship_sys.dart';
 import '../galaxy/geometry/location.dart';
-import 'nav.dart';
+import 'nav/nav.dart';
 
 class ShipSubSystem {
   ShipNav get nav => ship.nav;

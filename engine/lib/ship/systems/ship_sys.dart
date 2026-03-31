@@ -9,7 +9,7 @@ import 'package:crawlspace_engine/ship/systems/power.dart';
 import 'package:crawlspace_engine/ship/systems/shields.dart';
 import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
-import '../galaxy/geometry/grid.dart';
+import '../../galaxy/geometry/grid.dart';
 
 enum InstallResult {success,unsupported,duplicate,adaptable}
 

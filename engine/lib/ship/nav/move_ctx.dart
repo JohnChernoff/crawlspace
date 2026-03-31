@@ -1,8 +1,8 @@
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 
-import '../galaxy/geometry/coord_3d.dart';
-import '../galaxy/geometry/grid.dart';
+import '../../galaxy/geometry/coord_3d.dart';
+import '../../galaxy/geometry/grid.dart';
 import 'nav.dart';
 
 enum NewtonianMode {

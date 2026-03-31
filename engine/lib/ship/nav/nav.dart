@@ -1,14 +1,14 @@
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/ship/autopilot.dart';
-import 'package:crawlspace_engine/ship/move_preview.dart';
-import 'package:crawlspace_engine/ship/rotation_preview.dart';
+import 'package:crawlspace_engine/ship/nav/autopilot.dart';
+import 'package:crawlspace_engine/ship/nav/move_preview.dart';
+import 'package:crawlspace_engine/ship/nav/rotation_preview.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
-import '../galaxy/geometry/coord_3d.dart';
-import '../galaxy/geometry/grid.dart';
-import '../galaxy/geometry/location.dart';
-import '../utils.dart';
+import '../../galaxy/geometry/coord_3d.dart';
+import '../../galaxy/geometry/grid.dart';
+import '../../galaxy/geometry/location.dart';
+import '../../utils.dart';
 
 class NavState {
   final Position pos;

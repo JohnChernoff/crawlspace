@@ -3,7 +3,7 @@ import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/item.dart';
-import 'package:crawlspace_engine/ship/nav.dart';
+import 'package:crawlspace_engine/ship/nav/nav.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 import 'package:crawlspace_engine/stock_items/trade/commodities.dart';
 import 'package:crawlspace_flutter/main.dart';

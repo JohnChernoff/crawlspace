@@ -1,7 +1,7 @@
 import 'package:crawlspace_engine/galaxy/reg/pilot_reg.dart';
 
 import '../../actors/pilot.dart';
-import '../../ship/nav.dart';
+import '../../ship/nav/nav.dart';
 import '../../ship/ship.dart';
 import '../geometry/grid.dart';
 import '../geometry/location.dart';

@@ -2,9 +2,9 @@ import 'dart:math';
 
 import 'package:crawlspace_engine/ship/ship.dart';
 
-import '../galaxy/geometry/coord_3d.dart';
-import '../galaxy/geometry/grid.dart';
-import '../galaxy/geometry/location.dart';
+import '../../galaxy/geometry/coord_3d.dart';
+import '../../galaxy/geometry/grid.dart';
+import '../../galaxy/geometry/location.dart';
 import 'nav.dart';
 
 class GuidanceResult {

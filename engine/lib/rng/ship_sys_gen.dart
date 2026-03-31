@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
-import 'package:crawlspace_engine/ship/ship_sys.dart';
+import 'package:crawlspace_engine/ship/systems/ship_sys.dart';
 import 'package:crawlspace_engine/stock_items/ship_systems/stock_ammo.dart';
 import 'package:crawlspace_engine/stock_items/ship_systems/stock_engines.dart';
 import 'package:crawlspace_engine/stock_items/ship_systems/stock_lauchers.dart';

@@ -3,7 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/controllers/layer_transit_controller.dart';
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/ship/ship_sys.dart';
+import 'package:crawlspace_engine/ship/systems/ship_sys.dart';
 import '../galaxy/system.dart';
 import '../galaxy/geometry/impulse.dart';
 import '../galaxy/geometry/location.dart';

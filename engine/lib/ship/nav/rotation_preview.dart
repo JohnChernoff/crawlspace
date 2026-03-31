@@ -1,5 +1,5 @@
 import 'package:crawlspace_engine/ship/ship.dart';
-import '../galaxy/geometry/coord_3d.dart';
+import '../../galaxy/geometry/coord_3d.dart';
 
 class RotationState {
   final double facing;
