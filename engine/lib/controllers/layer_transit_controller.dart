@@ -104,7 +104,7 @@ class LayerTransitController extends FugueController {
           : map.values.firstWhere((c) => c.hazLevel == 0);
       final newLoc = destCell.loc;
       if (ship.playship) {
-        newLoc.map.updateGravMap(fm.galaxy);
+        newLoc.grid.updateGravMap(fm.galaxy);
         ship.move(newLoc,fm.galaxy.ships);
         final proxShips = List.of(fm.galaxy.ships.atLocation(shipLoc)); //avoids ConcurrentModificationError (hopefully)
         try {

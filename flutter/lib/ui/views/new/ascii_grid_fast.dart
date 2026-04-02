@@ -17,7 +17,7 @@ class AsciiGridFast extends StatefulWidget {
 }
 
 class _AsciiGridFastState extends State<AsciiGridFast> {
-  CellMap? _cachedMap;
+  Grid? _cachedGrid;
   GravityFieldTexture? _gravityTexture;
   Future<void>? _pendingLoad;
 
@@ -37,27 +37,27 @@ class _AsciiGridFastState extends State<AsciiGridFast> {
 
   Future<void> _syncGravityTexture() async {
     final ship = fm.playerShip;
-    final map = ship?.loc.map;
+    final grid = ship?.loc.grid;
 
-    if (map == null) {
-      if (_cachedMap != null || _gravityTexture != null) {
+    if (grid == null) {
+      if (_cachedGrid != null || _gravityTexture != null) {
         setState(() {
-          _cachedMap = null;
+          _cachedGrid = null;
           _gravityTexture = null;
         });
       }
       return;
     }
 
-    if (identical(map, _cachedMap)) return;
+    if (identical(grid, _cachedGrid)) return;
 
-    _cachedMap = map;
+    _cachedGrid = grid;
     _gravityTexture = null;
 
-    final load = GravityTextureCache.instance.get(map, pxPerCell: 20);
+    final load = GravityTextureCache.instance.get(grid, pxPerCell: 20);
     _pendingLoad = load.then((texture) {
       if (!mounted) return;
-      if (!identical(_cachedMap, map)) return;
+      if (!identical(_cachedGrid, grid)) return;
 
       setState(() {
         _gravityTexture = texture;

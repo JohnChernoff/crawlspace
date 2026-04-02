@@ -24,7 +24,8 @@ class TickController extends FugueController {
           Ship? ship = fm.galaxy.ships.byPilot(p);
           if (ship != null) {
             final loc = ship.loc;
-            final interactables = fm.galaxy.ships.interactable(loc); //print("Interactables for ${ship.name}: $interactables");
+            final interactables = fm.galaxy.ships.interactable(loc);
+            //print("Interactables for ${ship.name}, ${ship.loc.upper}: $interactables");
             final interactive = interactables.contains(fm.playerShip);
             if (loc.system == fm.playerShip?.loc.system && fm.player.locale is AboardShip && interactive) {
               fm.pilotController.npcShipAct(ship);

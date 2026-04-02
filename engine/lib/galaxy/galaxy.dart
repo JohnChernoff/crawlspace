@@ -87,6 +87,7 @@ class Galaxy {
   late RegModel rm;
   StarRegistry get stars => rm.stars;
   PlanetRegistry get planets => rm.planets;
+  BuoyRegistry get buoys => rm.buoys;
   ShipRegistry get ships => rm.ships;
   ItemRegistry get items => rm.items;
   PilotRegistry get pilots => rm.pilots;
@@ -138,7 +139,6 @@ class Galaxy {
       }
       s.generateStars(this, rnd);
       s.generatePlanets(this, rnd);
-      s.map.updateGravMap(this);
     }
 
     tradeMod = TradeModel(this);

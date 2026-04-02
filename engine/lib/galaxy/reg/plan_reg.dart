@@ -6,6 +6,9 @@ import '../geometry/location.dart';
 import '../planet.dart';
 import '../system.dart';
 
+class BuoyRegistry extends ImpulseRegistry<GravBuoy> {
+}
+
 class PlanetRegistry extends OrbitalRegistry<Planet> {
 
   @override

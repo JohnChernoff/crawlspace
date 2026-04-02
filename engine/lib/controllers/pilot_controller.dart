@@ -119,7 +119,7 @@ class PilotController extends FugueController {
     if (ship == fm.playerShip) return;
     ship.ticker.tick(fm: fm);
     Pilot pilot = ship.pilot; //print(pilot.name);
-    if (pilot.ready) { //print("${ship.name}'s turn...");
+    if (pilot.ready) { print("${ship.name}'s turn...");
       final hostile = pilot.setHostilityToPlayer(fm); //TODO: unset/refresh this somewhere?
       final playLoc = fm.playerShip != null ? ship.detect(fm.playerShip!) : null;
       if (playLoc != null && hostile) { //print("Moving hostile: $pilot");

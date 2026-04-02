@@ -21,6 +21,8 @@ class SectorCell extends GridCell {
   List<Planet> planets(Galaxy g) => g.planets.inSector(loc).toList();
   @override
   List<Star> stars(Galaxy g) => g.stars.inSector(loc).toList();
+  @override
+  List<GravBuoy> buoys(Galaxy g) => g.buoys.inSector(loc).toList();
 
   int numPlanets(Galaxy g) => planets(g).length;
   bool hasPlanets(Galaxy g) => numPlanets(g) > 0;

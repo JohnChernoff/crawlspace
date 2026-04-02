@@ -265,7 +265,7 @@ class ShipNav {
   }
 
   //gravMap for discrete gridcells
-  Vec3? get gForce => ship.loc.map.gravMap[ship.loc.cell.coord];
+  Vec3? get gForce => ship.loc.grid.gravMap[ship.loc.cell.coord];
 
   void rotate(double degrees) {
     _facing = (_facing + degrees) % 360;

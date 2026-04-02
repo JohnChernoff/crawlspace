@@ -1,5 +1,6 @@
 import 'dart:collection';
 import 'dart:math';
+import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/orbital.dart';
@@ -23,7 +24,7 @@ typedef SystemMap = MappedGrid<SectorCell>;
 
 class System extends Grid implements Nameable {
   final systemMapDim = GridDim(20, 20, 1);
-  final impulseMapDim = GridDim(40, 40, 1);
+  final impulseMapDim = GridDim(32, 32, 1);
   final orbitalMapDim = GridDim(40, 40, 1);
   String name;
   String get selectionName => name;
@@ -33,6 +34,8 @@ class System extends Grid implements Nameable {
   List<Planet> planets(Galaxy g) => g.planets.inSystem(this).toList();
   @override
   List<Star> stars(Galaxy g) => g.stars.inSystem(this).toList();
+  @override
+  List<GravBuoy> buoys(Galaxy g) => g.buoys.inSystem(this).toList();
 
   bool starOne, blackHole;
   TrafficGenHint trafficGenHint;
@@ -72,6 +75,8 @@ class System extends Grid implements Nameable {
   void visit(FugueEngine fm) {
     if (!visited) {
       visited = true;
+      generateBuoys(fm.galaxy);
+      updateGravMap(fm.galaxy);
       fm.populateSystem(this);
     }
   }
@@ -80,6 +85,16 @@ class System extends Grid implements Nameable {
     scouted = true;
     for (Planet planet in planets(g)) {
       planet.known = true;
+    }
+  }
+
+  void generateBuoys(Galaxy g) {
+    final bigStuff = massiveObjects(g).map((b) => b.loc).whereType<SystemLocation>().map((l) => l.sectorCoord);
+    for (final cell in map.values.where((c) => bigStuff.none((l) => c.loc.sectorCoord == l))) {
+      if (g.rnd.nextDouble() < .25) g.buoys.register(GravBuoy(
+          "${g.civMod.dominantSpecies(this)?.name ?? 'Fed'} Buoy", earthMasses: g.rnd.nextDouble()),
+          ImpulseLocation(this, cell.coord, impulseMapDim.center)
+      );
     }
   }
 

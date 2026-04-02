@@ -13,14 +13,14 @@ class GravityFieldTexture {
   GravityFieldTexture(this.image, {this.pxPerCell = 8});
 
   static Future<GravityFieldTexture> build(
-      CellMap map, {
+      Grid grid, {
         int pxPerCell = 8,
         bool showDir = false,
         bkgCol = Colors.black, fgCol = Colors.red,
         Color Function(double heat, Color bkgCol, Color fgCol)? colorForHeat,
       }) async {
-    final width = map.dim.mx * pxPerCell;
-    final height = map.dim.my * pxPerCell;
+    final width = grid.map.dim.mx * pxPerCell;
+    final height = grid.map.dim.my * pxPerCell;
     final rgba = Uint8List(width * height * 4);
 
     final colorFn = colorForHeat ?? _defaultColorForHeat;
@@ -36,13 +36,13 @@ class GravityFieldTexture {
           final fx = (px % pxPerCell) / pxPerCell - 0.5;
           final fy = (py % pxPerCell) / pxPerCell - 0.5;
 
-          final v = sampleVector(map, sx, sy);
+          final v = sampleVector(grid, sx, sy);
           final dir = v.mag > 0.001 ? v.normalized : Vec3(0, 0, 0);
 
           // how far along the gravity direction is this pixel within its cell?
           final directional = (fx * dir.x + fy * dir.y).clamp(-0.5, 0.5);
 
-          final heat = sampleHeat(map, sx, sy);
+          final heat = sampleHeat(grid, sx, sy);
           final adjustedHeat = (heat + (directional * sqrt(heat))).clamp(0.0, 1.0);
 
           color = colorFn(adjustedHeat, bkgCol, fgCol);
@@ -50,7 +50,7 @@ class GravityFieldTexture {
           final sx = px / pxPerCell;
           final sy = py / pxPerCell;
 
-          final heat = sampleHeat(map, sx, sy); //final v = sampleVector(map, sx, sy);
+          final heat = sampleHeat(grid, sx, sy); //final v = sampleVector(map, sx, sy);
           color = colorFn(heat.clamp(0.0, 1.0),bkgCol,fgCol);
         }
 
@@ -87,7 +87,7 @@ class GravityFieldTexture {
     return HSVColor.fromAHSV(1.0, hue, saturation,value).toColor();
   }
 
-  static double sampleHeat(CellMap map, double sx, double sy) {
+  static double sampleHeat(Grid grid, double sx, double sy) {
     final fx = sx - 0.5;
     final fy = sy - 0.5;
 
@@ -99,17 +99,17 @@ class GravityFieldTexture {
     final tx = fx - x0;
     final ty = fy - y0;
 
-    final h00 = _heatAt(map, x0, y0);
-    final h10 = _heatAt(map, x1, y0);
-    final h01 = _heatAt(map, x0, y1);
-    final h11 = _heatAt(map, x1, y1);
+    final h00 = _heatAt(grid, x0, y0);
+    final h10 = _heatAt(grid, x1, y0);
+    final h01 = _heatAt(grid, x0, y1);
+    final h11 = _heatAt(grid, x1, y1);
 
     final top = _lerp(h00, h10, tx);
     final bottom = _lerp(h01, h11, tx);
     return _lerp(top, bottom, ty);
   }
 
-  static Vec3 sampleVector(CellMap map, double sx, double sy) {
+  static Vec3 sampleVector(Grid grid, double sx, double sy) {
     final fx = sx - 0.5;
     final fy = sy - 0.5;
 
@@ -121,10 +121,10 @@ class GravityFieldTexture {
     final tx = fx - x0;
     final ty = fy - y0;
 
-    final v00 = _vecAt(map, x0, y0);
-    final v10 = _vecAt(map, x1, y0);
-    final v01 = _vecAt(map, x0, y1);
-    final v11 = _vecAt(map, x1, y1);
+    final v00 = _vecAt(grid, x0, y0);
+    final v10 = _vecAt(grid, x1, y0);
+    final v01 = _vecAt(grid, x0, y1);
+    final v11 = _vecAt(grid, x1, y1);
 
     final top = Vec3(
       _lerp(v00.x, v10.x, tx),
@@ -145,16 +145,16 @@ class GravityFieldTexture {
     );
   }
 
-  static double _heatAt(CellMap map, int x, int y) {
-    final cx = x.clamp(0, map.dim.mx - 1);
-    final cy = y.clamp(0, map.dim.my - 1);
-    return map.gravHeatMap[Coord3D(cx, cy, 0)] ?? 0.0;
+  static double _heatAt(Grid grid, int x, int y) {
+    final cx = x.clamp(0, grid.map.dim.mx - 1);
+    final cy = y.clamp(0, grid.map.dim.my - 1);
+    return grid.gravHeatMap[Coord3D(cx, cy, 0)] ?? 0.0;
   }
 
-  static Vec3 _vecAt(CellMap map, int x, int y) {
-    final cx = x.clamp(0, map.dim.mx - 1);
-    final cy = y.clamp(0, map.dim.my - 1);
-    return map.gravAt(Coord3D(cx, cy, 0));
+  static Vec3 _vecAt(Grid grid, int x, int y) {
+    final cx = x.clamp(0, grid.map.dim.mx - 1);
+    final cy = y.clamp(0, grid.map.dim.my - 1);
+    return grid.gravAt(Coord3D(cx, cy, 0));
   }
 
   static double _lerp(double a, double b, double t) => a * (1 - t) + b * t;
@@ -166,10 +166,10 @@ class GravityTextureCache {
 
   final Map<CellMap, Future<GravityFieldTexture>> _cache = {};
 
-  Future<GravityFieldTexture> get(CellMap map, {int pxPerCell = 16}) {
+  Future<GravityFieldTexture> get(Grid grid, {int pxPerCell = 16}) {
     return _cache.putIfAbsent(
-      map,
-          () => GravityFieldTexture.build(map, pxPerCell: pxPerCell),
+      grid.map,
+          () => GravityFieldTexture.build(grid, pxPerCell: pxPerCell),
     );
   }
 

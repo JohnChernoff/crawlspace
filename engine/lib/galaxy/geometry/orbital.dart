@@ -38,6 +38,8 @@ class OrbitalCell extends GridCell {
 
   @override
   List<Star> stars(Galaxy g) => [];
+  @override
+  List<GravBuoy> buoys(Galaxy g) => [];
 
 }
 

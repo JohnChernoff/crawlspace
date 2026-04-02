@@ -30,18 +30,76 @@ enum Domain {
   bool isBelow(Domain other) => index > other.index;
 }
 
+class GravBuoy extends MassiveObject<ImpulseLocation> {
+  GravBuoy(super.name, {super.earthMasses = 1});
+}
+
 abstract class Grid {
   CellMap get map;
+  Map<Coord3D,Vec3> gravMap = {};
+  Map<Coord3D,double> gravHeatMap = {};
   final Map<Hazard,double> hazMap;
   final EffectMap<CellEffect> effects = EffectMap();
   List<Planet> planets(Galaxy g);
   List<Star> stars(Galaxy g);
+  List<GravBuoy> buoys(Galaxy g);
   List<MassiveObject> massiveObjects(Galaxy g) => [
     ...planets(g),
     ...stars(g),
+    ...buoys(g)
   ];
 
   Grid({this.hazMap = const {}});
+
+  void updateGravMap(Galaxy g) {
+    gravMap.clear();
+    final mob = massiveObjects(g);
+    print("Massive Objects in $this: ${mob.length}");
+    for (final cell in map.values) {
+      Vec3 net = const Vec3(0, 0, 0);
+      final objects = cell.loc is SectorLocation //TODO: make less kludgy?
+          ? mob
+          : mob.where((o) => o.loc.sectorOrNull == cell.loc.sectorOrNull); //TODO: interactable
+      //print("Grav Obj for ${cell.loc}: ${objects.length}");
+      for (final obj in objects) {
+        final coord = obj.loc.relativeDomainCoord(cell.loc);
+        if (coord == null) {
+          print ("Warning: null gravity coordinate"); return;
+        }
+        final dx = coord.x - cell.coord.x;
+        final dy = coord.y - cell.coord.y;
+        final dz = coord.z - cell.coord.z;
+
+        final offset = Vec3(dx.toDouble(), dy.toDouble(), dz.toDouble());
+        final dist = offset.mag;
+
+        if (cell.loc is ImpulseLocation) {
+          glog("obj: ${obj.name}, obj coord: $coord, cell coord: ${cell.coord}, dist: $dist", level: DebugLevel.Fine);
+        }
+        if (dist == 0) continue; //TODO: invent something
+
+        final direction = offset.normalized;
+        final strength = obj.gravMass / (dist * dist);
+        //obj.mass / (dist * dist);
+
+        net = net + (direction * strength);
+      }
+      gravMap[cell.coord] = net;
+    }
+
+    final mags = gravMap.map((k, v) => MapEntry(k, v.mag));
+    final maxMag = mags.values.isEmpty ? 0.0 : mags.values.reduce(max);
+
+    gravHeatMap.clear();
+    for (final entry in mags.entries) {
+      final raw = maxMag == 0 ? 0.0 : entry.value / maxMag;
+      gravHeatMap[entry.key] = sqrt(raw); // nicer spread
+    }
+  }
+
+  Vec3 gravAt(Coord3D c) => gravMap[c] ?? const Vec3(0, 0, 0);
+  double gravStrengthAt(Coord3D c) => gravAt(c).mag;
+  Vec3 gravDirectionAt(Coord3D c) => gravAt(c).normalized;
 }
 
 abstract class GridCell extends Grid {
@@ -108,10 +166,7 @@ class MappedGrid<T extends GridCell> extends DenseCellMap<T> {
 }
 
 abstract class CellMap<T extends GridCell> {
-  //int get size;
   GridDim get dim;
-  Map<Coord3D,Vec3> gravMap = {};
-  Map<Coord3D,double> gravHeatMap = {};
 
   T? operator [](Coord3D coord);
   void operator []=(Coord3D coord, T value);
@@ -135,53 +190,6 @@ abstract class CellMap<T extends GridCell> {
   Coord3D rndCoord(Random rnd) => Coord3D.random(dim, rnd);
 
   T? get centerCell => this[(dim.center)];
-
-  void updateGravMap(Galaxy g) {
-    gravMap.clear();
-    for (final cell in values) {
-      Vec3 net = const Vec3(0, 0, 0);
-      final objects = cell.loc is SectorLocation //make less kludgy?
-      ? cell.loc.system.massiveObjects(g)
-      : cell.loc.system.massiveObjects(g).where((o) => o.loc.sectorOrNull == cell.loc.sectorOrNull);
-      for (final obj in objects) {
-        final coord = obj.loc.relativeDomainCoord(cell.loc);
-        if (coord == null) {
-          print ("Warning: null gravity coordinate"); return;
-        }
-        final dx = coord.x - cell.coord.x;
-        final dy = coord.y - cell.coord.y;
-        final dz = coord.z - cell.coord.z;
-
-        final offset = Vec3(dx.toDouble(), dy.toDouble(), dz.toDouble());
-        final dist = offset.mag;
-
-        if (cell.loc is ImpulseLocation) {
-          glog("obj: ${obj.name}, obj coord: $coord, cell coord: ${cell.coord}, dist: $dist", level: DebugLevel.Fine);
-        }
-        if (dist == 0) continue; //TODO: invent something
-
-        final direction = offset.normalized;
-        final strength = obj.gravMass / (dist * dist);
-            //obj.mass / (dist * dist);
-
-        net = net + (direction * strength);
-      }
-      gravMap[cell.coord] = net;
-    }
-
-    final mags = gravMap.map((k, v) => MapEntry(k, v.mag));
-    final maxMag = mags.values.isEmpty ? 0.0 : mags.values.reduce(max);
-
-    gravHeatMap.clear();
-    for (final entry in mags.entries) {
-      final raw = maxMag == 0 ? 0.0 : entry.value / maxMag;
-      gravHeatMap[entry.key] = sqrt(raw); // nicer spread
-    }
-  }
-
-  Vec3 gravAt(Coord3D c) => gravMap[c] ?? const Vec3(0, 0, 0);
-  double gravStrengthAt(Coord3D c) => gravAt(c).mag;
-  Vec3 gravDirectionAt(Coord3D c) => gravAt(c).normalized;
 
   void growHazard(T cell, Hazard hazard, double strength, Random rnd, {spreadFactor = .25}) {
     cell.hazMap[hazard] = strength;

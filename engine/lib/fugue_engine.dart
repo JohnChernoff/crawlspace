@@ -150,7 +150,7 @@ class FugueEngine {
         owner: player
     );
     galaxy.ships.addFlying(pShip,SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),player);
-    player.system.visited = true;
+    player.system.visit(this);
 
     final agentLoc = SectorLocation(galaxy.fedHomeSystem, galaxy.fedHomeSystem.map.rndCoord(mapRnd));
     for (final persona in AgentPersonality.values) {

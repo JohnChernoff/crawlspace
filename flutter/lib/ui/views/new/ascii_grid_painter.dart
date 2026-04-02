@@ -89,16 +89,17 @@ class AsciiGridPainter extends CustomPainter {
           final layerRect = is2D
               ? baseRect
               : Rect.fromLTWH(dx, dy, layerSize, layerSize);
-
+          final grid = ship.loc.grid;
           if (!smoothG) {
+
             final map = ship.loc.map;
-            _paintCellBackground(canvas,layerRect,color: _bkgColorForCell(map,cell));
-            (canvas, layerRect, map.gravDirectionAt(cell.coord));
+            _paintCellBackground(canvas,layerRect,color: _bkgColorForCell(grid,cell));
+            (canvas, layerRect, ship.loc.grid.gravDirectionAt(cell.coord));
           } else if (hands) {
             final sx = x + 0.5;
             final sy = y + 0.5;
-            final v = GravityFieldTexture.sampleVector(map, sx, sy);
-            final heat = GravityFieldTexture.sampleHeat(map, sx, sy);
+            final v = GravityFieldTexture.sampleVector(grid, sx, sy);
+            final heat = GravityFieldTexture.sampleHeat(grid, sx, sy);
             _drawGravityHand(canvas, baseRect, v, heat);
           }
 
@@ -216,8 +217,8 @@ class AsciiGridPainter extends CustomPainter {
     return hazards.first.glyph;
   }
 
-  Color _bkgColorForCell(CellMap map, GridCell cell) { //final h = sqrt(normalized); // instead of just normalized
-    final h = map.gravHeatMap[cell.coord] ?? 0; //print(h);
+  Color _bkgColorForCell(Grid grid, GridCell cell) { //final h = sqrt(normalized); // instead of just normalized
+    final h = grid.gravHeatMap[cell.coord] ?? 0; //print(h);
     return Color.lerp(Colors.black,Colors.lightGreenAccent, h)!;
   }
 

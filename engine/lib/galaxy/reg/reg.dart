@@ -18,6 +18,7 @@ class RegModel extends GalaxySubMod {
   PilotRegistry pilots = PilotRegistry();
   late ShipRegistry ships = ShipRegistry(pilots);
   StarRegistry stars = StarRegistry();
+  BuoyRegistry buoys = BuoyRegistry();
   RegModel(super.galaxy);
 }
 
