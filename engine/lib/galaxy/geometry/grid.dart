@@ -31,7 +31,7 @@ enum Domain {
 }
 
 class GravBuoy extends MassiveObject<ImpulseLocation> {
-  GravBuoy(super.name, {super.earthMasses = 1});
+  GravBuoy(super.name, {super.earthMasses = 250});
 }
 
 abstract class Grid {
@@ -52,9 +52,10 @@ abstract class Grid {
   Grid({this.hazMap = const {}});
 
   void updateGravMap(Galaxy g) {
+    final t = DateTime.now().millisecondsSinceEpoch;
     gravMap.clear();
     final mob = massiveObjects(g);
-    print("Massive Objects in $this: ${mob.length}");
+    //print("Massive Objects in $this: ${mob.length}");
     for (final cell in map.values) {
       Vec3 net = const Vec3(0, 0, 0);
       final objects = cell.loc is SectorLocation //TODO: make less kludgy?
@@ -95,6 +96,8 @@ abstract class Grid {
       final raw = maxMag == 0 ? 0.0 : entry.value / maxMag;
       gravHeatMap[entry.key] = sqrt(raw); // nicer spread
     }
+
+    print("Map updated: ${DateTime.now().millisecondsSinceEpoch - t} millis");
   }
 
   Vec3 gravAt(Coord3D c) => gravMap[c] ?? const Vec3(0, 0, 0);

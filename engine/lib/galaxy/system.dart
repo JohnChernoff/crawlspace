@@ -91,8 +91,8 @@ class System extends Grid implements Nameable {
   void generateBuoys(Galaxy g) {
     final bigStuff = massiveObjects(g).map((b) => b.loc).whereType<SystemLocation>().map((l) => l.sectorCoord);
     for (final cell in map.values.where((c) => bigStuff.none((l) => c.loc.sectorCoord == l))) {
-      if (g.rnd.nextDouble() < .25) g.buoys.register(GravBuoy(
-          "${g.civMod.dominantSpecies(this)?.name ?? 'Fed'} Buoy", earthMasses: g.rnd.nextDouble()),
+      if (g.rnd.nextDouble() < .025) g.buoys.register(GravBuoy(
+          "${g.civMod.dominantSpecies(this)?.name ?? 'Fed'} Buoy", earthMasses: g.rnd.nextDouble() * 250),
           ImpulseLocation(this, cell.coord, impulseMapDim.center)
       );
     }

@@ -59,7 +59,7 @@ class AsciiGridPainter extends CustomPainter {
         rect: Offset.zero & size,
         image: gravityTexture!.image,
         fit: BoxFit.fill,
-        filterQuality: FilterQuality.medium,
+        filterQuality: FilterQuality.high,
       );
     }
 
@@ -91,16 +91,16 @@ class AsciiGridPainter extends CustomPainter {
               : Rect.fromLTWH(dx, dy, layerSize, layerSize);
           final grid = ship.loc.grid;
           if (!smoothG) {
-
-            final map = ship.loc.map;
             _paintCellBackground(canvas,layerRect,color: _bkgColorForCell(grid,cell));
             (canvas, layerRect, ship.loc.grid.gravDirectionAt(cell.coord));
           } else if (hands) {
             final sx = x + 0.5;
             final sy = y + 0.5;
-            final v = GravityFieldTexture.sampleVector(grid, sx, sy);
-            final heat = GravityFieldTexture.sampleHeat(grid, sx, sy);
-            _drawGravityHand(canvas, baseRect, v, heat);
+            final texture = gravityTexture; if (texture != null) {
+              final v = GravityFieldTexture.sampleVector(sx, sy, texture.mw, texture.mh, texture.vxGrid, texture.vyGrid);
+              final heat = GravityFieldTexture.sampleHeat(sx, sy, texture.mw, texture.mh, texture.heatGrid);
+              _drawGravityHand(canvas, baseRect, v, heat);
+            }
           }
 
           final paragraph = _getParagraph(glyph, color, fontSize);
@@ -169,6 +169,7 @@ class AsciiGridPainter extends CustomPainter {
     if (cell is SectorCell) {
       if (cell.hasPlanets(fm.galaxy)) return "O";
       if (cell.hasStars(fm.galaxy)) return "✦";
+      if (cell.hasBuoy(fm.galaxy)) return ".";
       if (cell.blackHole) return "-";
     }
 

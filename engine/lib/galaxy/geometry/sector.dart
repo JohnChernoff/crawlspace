@@ -28,6 +28,7 @@ class SectorCell extends GridCell {
   bool hasPlanets(Galaxy g) => numPlanets(g) > 0;
   int numStars(Galaxy g) => stars(g).length;
   bool hasStars(Galaxy g) => numStars(g) > 0;
+  bool hasBuoy(Galaxy g) => buoys(g).isNotEmpty;
   bool hasGate(Galaxy g) => stars(g).any((s) => s.jumpgate);
 
   bool starOne, blackHole;
@@ -58,6 +59,7 @@ class SectorCell extends GridCell {
     if (ships.isNotEmpty && (countPlayer || ships.any((s) => s.npc))) return false;
     if (hasPlanets(g)) return false;
     if (hasStars(g)) return false;
+    if (hasBuoy(g)) return false;
     if (starOne || blackHole) return false;
     if (hazLevel > 0) return false;
     return true;
@@ -75,6 +77,10 @@ class SectorCell extends GridCell {
       final comma = i++ > 1 ? "," : "";
       sb.write("$comma${star.name}");
     }
+    for (final buoy in g.buoys.inSector(loc)) {
+      final comma = i++ > 1 ? "," : "";
+      sb.write("$comma${buoy.name}");
+    }
     return sb.toString();
   }
 
@@ -82,7 +88,7 @@ class SectorCell extends GridCell {
   bool scannable(ScannerMode mode,Galaxy g) {
     if (mode == ScannerMode.all) return true;
     if (mode.scaningShips && g.ships.atCell(this).isNotEmpty) return true;
-    if (mode.scaningPlanets && hasPlanets(g)) return true;
+    if (mode.scaningPlanets && (hasPlanets(g) || hasBuoy(g))) return true;
     if (mode.scaningStars && hasStars(g)) return true;
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;

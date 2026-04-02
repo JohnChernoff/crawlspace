@@ -36,6 +36,8 @@ class _AsciiGridFastState extends State<AsciiGridFast> {
   }
 
   Future<void> _syncGravityTexture() async {
+
+
     final ship = fm.playerShip;
     final grid = ship?.loc.grid;
 
@@ -54,7 +56,7 @@ class _AsciiGridFastState extends State<AsciiGridFast> {
     _cachedGrid = grid;
     _gravityTexture = null;
 
-    final load = GravityTextureCache.instance.get(grid, pxPerCell: 20);
+    final load = GravityTextureCache.instance.get(grid);
     _pendingLoad = load.then((texture) {
       if (!mounted) return;
       if (!identical(_cachedGrid, grid)) return;
