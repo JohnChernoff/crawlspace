@@ -36,7 +36,7 @@ class _AsciiGridFastState extends State<AsciiGridFast> {
   }
 
   Future<void> _syncGravityTexture() async {
-
+    if (_pendingLoad != null) return; // already loading
 
     final ship = fm.playerShip;
     final grid = ship?.loc.grid;
@@ -63,6 +63,7 @@ class _AsciiGridFastState extends State<AsciiGridFast> {
 
       setState(() {
         _gravityTexture = texture;
+        _pendingLoad = null; // clear so future grid changes can trigger reload
       });
     });
     await _pendingLoad;

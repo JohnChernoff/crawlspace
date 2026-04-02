@@ -7,6 +7,7 @@ import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_flutter/ui/views/ascii_view.dart';
 import 'package:crawlspace_flutter/ui/views/galaxy_map.dart';
+import 'package:crawlspace_flutter/ui/views/new/lerp_field.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -74,6 +75,12 @@ class _FugueHomeState extends State<FugueHome> {
   void initState() {
     super.initState();
     _loadOptions();
+  }
+
+  @override
+  void reassemble() {
+    super.reassemble();
+    GravityTextureCache.instance.clear();
   }
   
   @override
