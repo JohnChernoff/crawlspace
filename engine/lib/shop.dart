@@ -16,7 +16,7 @@ import 'ship/systems/ship_system.dart';
 
 enum TransactionResult { ok, insufficientFunds, inventoryError, refusal, wtf }
 
-class ShopOptions {
+class ShopSettings {
   int costRepair    = 1;
   int costRecharge  = 1;
   int costBioHack   = 50;

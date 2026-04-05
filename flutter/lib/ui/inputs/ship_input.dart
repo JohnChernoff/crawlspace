@@ -6,6 +6,7 @@ import 'package:crawlspace_engine/item.dart';
 import 'package:crawlspace_engine/ship/nav/nav.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 import 'package:crawlspace_engine/stock_items/trade/commodities.dart';
+import 'package:crawlspace_engine/ui_options.dart';
 import 'package:crawlspace_flutter/main.dart';
 import 'package:crawlspace_flutter/ui/views/galaxy_map.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,11 @@ enum InventoryType {
 }
 
 enum DepthViewOption {showAll,showClosest,toggle}
+
+class OptionToggleIntent extends Intent {
+  final OptBool option;
+  const OptionToggleIntent(this.option);
+}
 
 class XenoIntent extends Intent {
   const XenoIntent();
@@ -293,6 +299,12 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
 
         LogicalKeySet(LogicalKeyboardKey.keyZ, LogicalKeyboardKey.shift):
         const XenoIntent(),
+
+        LogicalKeySet(LogicalKeyboardKey.keyH, LogicalKeyboardKey.shift):
+        const OptionToggleIntent(OptBool.vectorHands),
+
+        LogicalKeySet(LogicalKeyboardKey.keyC, LogicalKeyboardKey.shift):
+        const OptionToggleIntent(OptBool.vectorColors),
       },
       actions: {
         ...generalActions,
@@ -462,6 +474,13 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         XenoIntent: CallbackAction<XenoIntent>(
             onInvoke: (_) {
               fm.pilotController.castEffect(fm.player);
+              return null;
+            }
+        ),
+        OptionToggleIntent: CallbackAction<OptionToggleIntent>(
+            onInvoke: (intent) {
+              fm.uiOptions.toggleBool(intent.option);
+              fm.update();
               return null;
             }
         ),

@@ -13,7 +13,7 @@ import 'geometry/coord_3d.dart';
 import 'galaxy.dart';
 import 'geometry/grid.dart';
 import 'geometry/impulse.dart';
-import 'geometry/path_gen.dart';
+import 'geometry/object.dart';
 import 'hazards.dart';
 import 'planet.dart';
 import '../rng/rng.dart';
@@ -91,10 +91,15 @@ class System extends Grid implements Nameable {
   void generateBuoys(Galaxy g) {
     final bigStuff = massiveObjects(g).map((b) => b.loc).whereType<SystemLocation>().map((l) => l.sectorCoord);
     for (final cell in map.values.where((c) => bigStuff.none((l) => c.loc.sectorCoord == l))) {
-      if (g.rnd.nextDouble() < .025) g.buoys.register(GravBuoy(
-          "${g.civMod.dominantSpecies(this)?.name ?? 'Fed'} Buoy", earthMasses: g.rnd.nextDouble() * 250),
-          ImpulseLocation(this, cell.coord, impulseMapDim.center)
-      );
+      if (g.rnd.nextDouble() < .025) {
+        g.buoys.register(GravBuoy(
+            "${g.civMod.dominantSpecies(this)?.name ?? 'Fed'} Buoy",
+            earthMasses: g.rnd.nextDouble() * 2,
+            sublightFactor: g.rnd.nextDouble() * 255),
+            ImpulseLocation(this, cell.coord, impulseMapDim.center)
+        );
+        cell.hasBuoy = true;
+      }
     }
   }
 
@@ -183,6 +188,7 @@ class System extends Grid implements Nameable {
         environment: PlanetBlueprint.candidatesFor(OrbitalZone.inner, pData.type).first, //TODO: determine OrbitalZone
         weirdness: rnd.nextDouble(),
         earthMasses: pData.relativeMass,
+        sublightFactor: 255,
       );
 
       g.planets.register(planet, OrbitalLocation(this, loc.sectorCoord, loc.impulseCoord, orbitalMapDim.center));
@@ -226,36 +232,6 @@ class System extends Grid implements Nameable {
   @override
   int get hashCode => name.hashCode;
 
-  ImpulseMap generateImpulseMap(SectorCell sector, Random rnd) {
-    final dim = impulseMapDim;
-    final sectorIon = sector.hazMap[Hazard.ion] ?? 0;
-    final sectorNeb = sector.hazMap[Hazard.nebula] ?? 0;
-
-    final cells = <Coord3D, ImpulseCell>{};
-    for (int x = 0; x < dim.mx; x++) {
-      for (int y = 0; y < dim.my; y++) {
-        for (int z = 0; z < dim.mz; z++) {
-          final c = Coord3D(x, y, z);
-          cells[c] = ImpulseCell(
-            sector,
-            coord: c,
-            outpost: c == dim.center,
-            hazMap: {
-              Hazard.nebula: rnd.nextDouble() < sectorNeb ? sectorNeb : 0,
-              Hazard.ion: rnd.nextDouble() < sectorIon ? sectorIon : 0,
-              Hazard.roid: sector.hazMap[Hazard.roid] ?? 0,
-              //Hazard.wake: c.isEdge(dim) ? 1 : 0, //TODO: perhaps for 3D only
-            },
-          );
-        }
-      }
-    }
-    final impMap = ImpulseMap(dim, cells);
-    if (sector.hasHaz(Hazard.roid)) {
-      PathGenerator.generate(impMap, 4, 0, rnd, haz: Hazard.roid);
-    }
-    return impMap;
-  }
 
   OrbitalMap generateOrbitalMap(ImpulseCell impCell, Random rnd) {
     final dim = orbitalMapDim;

@@ -30,10 +30,6 @@ enum Domain {
   bool isBelow(Domain other) => index > other.index;
 }
 
-class GravBuoy extends MassiveObject<ImpulseLocation> {
-  GravBuoy(super.name, {super.earthMasses = 250});
-}
-
 abstract class Grid {
   CellMap get map;
   Map<Coord3D,Vec3> gravMap = {};
@@ -72,15 +68,15 @@ abstract class Grid {
         final dz = coord.z - cell.coord.z;
 
         final offset = Vec3(dx.toDouble(), dy.toDouble(), dz.toDouble());
-        final dist = offset.mag;
+        var dist = offset.mag;
 
         if (cell.loc is ImpulseLocation) {
           glog("obj: ${obj.name}, obj coord: $coord, cell coord: ${cell.coord}, dist: $dist", level: DebugLevel.Fine);
         }
-        if (dist == 0) continue; //TODO: invent something
+        if (dist == 0) continue; //ignore for now
 
         final direction = offset.normalized;
-        final strength = obj.gravMass / (dist * dist);
+        final strength = obj.sublightMass / (dist * dist);
         //obj.mass / (dist * dist);
 
         net = net + (direction * strength);
@@ -95,6 +91,15 @@ abstract class Grid {
     for (final entry in mags.entries) {
       final raw = maxMag == 0 ? 0.0 : entry.value / maxMag;
       gravHeatMap[entry.key] = sqrt(raw); // nicer spread
+    }
+
+    //stamp max pull on every source cell
+    for (final obj in mob) {
+      final coord = obj.loc.relativeDomainCoord(map.values.first.loc);
+      if (coord != null && gravHeatMap.containsKey(coord)) {
+        gravHeatMap[coord] = 1.0;
+        gravMap[coord] = Vec3(0,0,0);
+      }
     }
 
     print("Map updated: ${DateTime.now().millisecondsSinceEpoch - t} millis");

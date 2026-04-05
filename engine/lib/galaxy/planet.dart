@@ -119,6 +119,7 @@ class Planet extends SpaceEnvironment<OrbitalLocation> {
     required this.environment,
     required this.weirdness,
     required super.earthMasses,
+    super.sublightFactor,
     super.tuningFactor = 100,
   }) {
     age         = CivAge.values.elementAt(rnd.nextInt(CivAge.values.length));

@@ -15,11 +15,6 @@ import 'options.dart';
 
 /*
 TODO: savefiles, autoscroll tweaks, mobile imgs
-distance to homeworld influence,
-special planets (all - => lower heat, all +++ => higher heat)
-find system feature, center system when clicked?
-system notes
-system shapes
  */
 
 enum ViewType {normal,textOnly,galaxy}

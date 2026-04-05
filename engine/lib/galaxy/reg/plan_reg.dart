@@ -3,6 +3,7 @@ import 'package:crawlspace_engine/galaxy/reg/reg.dart';
 import '../geometry/coord_3d.dart';
 import '../geometry/grid.dart';
 import '../geometry/location.dart';
+import '../geometry/object.dart';
 import '../planet.dart';
 import '../system.dart';
 

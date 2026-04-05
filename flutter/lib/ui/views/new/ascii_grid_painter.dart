@@ -8,6 +8,7 @@ import 'package:crawlspace_engine/galaxy/geometry/impulse.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
+import 'package:crawlspace_engine/ui_options.dart';
 import 'package:flutter/material.dart';
 import '../../../options.dart';
 import 'lerp_field.dart';
@@ -21,7 +22,6 @@ class AsciiGridPainter extends CustomPainter {
   final Coord3D? ghostCoord;
   final GravityFieldTexture? gravityTexture;
   final bool smoothG;
-  final bool hands;
 
   AsciiGridPainter({
     required this.fm,
@@ -30,7 +30,6 @@ class AsciiGridPainter extends CustomPainter {
     required this.gravityTexture,
     this.ghostCoord,
     this.smoothG = true,
-    this.hands = false,
   });
 
   @override
@@ -93,7 +92,7 @@ class AsciiGridPainter extends CustomPainter {
           if (!smoothG) {
             _paintCellBackground(canvas,layerRect,color: _bkgColorForCell(grid,cell));
             (canvas, layerRect, ship.loc.grid.gravDirectionAt(cell.coord));
-          } else if (hands) {
+          } else if (fm.uiOptions.boolOptions[OptBool.vectorHands]!) {
             final sx = x + 0.5;
             final sy = y + 0.5;
             final texture = gravityTexture; if (texture != null) {
@@ -103,8 +102,25 @@ class AsciiGridPainter extends CustomPainter {
             }
           }
 
-          final paragraph = _getParagraph(glyph, color, fontSize);
-          canvas.drawParagraph(paragraph, Offset(dx, dy));
+          _paintGridBoundary(canvas, baseRect);
+
+
+          final paragraph = _buildParagraph(glyph, color, fontSize);
+          final boxes = paragraph.getBoxesForRange(0, glyph.length);
+
+          if (boxes.isNotEmpty) {
+            final box = boxes.first.toRect();
+            final cellCenter = baseRect.center;
+
+            final px = cellCenter.dx - (box.left + box.width / 2);
+            final py = cellCenter.dy - (box.top + box.height / 2);
+
+            canvas.drawParagraph(paragraph, Offset(px, py));
+          } else {
+            canvas.drawParagraph(paragraph, baseRect.topLeft);
+          }
+
+          //canvas.drawParagraph(paragraph, Offset(dx, dy));
 
           if (state.uiTarget || state.inShipPath) {
             _paintTargetMarker(canvas, layerRect, fontSize);
@@ -128,7 +144,6 @@ class AsciiGridPainter extends CustomPainter {
             );
           }
 
-          _paintGridBoundary(canvas, baseRect);
 
         }
       }
@@ -169,18 +184,20 @@ class AsciiGridPainter extends CustomPainter {
     if (cell is SectorCell) {
       if (cell.hasPlanets(fm.galaxy)) return "O";
       if (cell.hasStars(fm.galaxy)) return "✦";
-      if (cell.hasBuoy(fm.galaxy)) return ".";
+      if (cell.hasBuoy) return "⊕";
       if (cell.blackHole) return "-";
     }
 
     if (cell is ImpulseCell) {
       if (cell.hasPlanet(fm.galaxy)) return "O";
       if (cell.hasStar(fm.galaxy)) return "✦";
+      if (cell.asteroid != null) return "+";
+      if (fm.galaxy.buoys.singleAtImpulse(cell.loc) != null) return "⊕";
       if (fm.galaxy.items.anyAt(cell.loc)) return "\$";
     }
 
     // 6. Empty
-    return fm.playerShip?.loc.domain == Domain.impulse ? "." : " ";
+    return fm.playerShip?.loc.domain == Domain.orbital ? "." : " ";
   }
 
   void _paintTargetMarker(
@@ -225,24 +242,41 @@ class AsciiGridPainter extends CustomPainter {
 
   void _drawGravityHand(Canvas canvas, Rect rect, Vec3 v, double heat) {
     final mag = v.mag;
-    if (mag < 0.0001) return;
+    if (mag < 0.0001 || heat < .2) return;
 
     final dir = v.normalized;
     final center = rect.center;
-
-    final length = rect.width * (0.12 + 0.22 * heat.clamp(0.0, 1.0));
-
+    final side = rect.shortestSide/2;
+    final length = max(side/2,(side * heat.clamp(0.01, 1.0)));
+    final angle = atan2(dir.y, dir.x);
+    final headLen = side/2;
     final end = Offset(
       center.dx + dir.x * length,
       center.dy + dir.y * length,
     );
-
     final paint = Paint()
       ..color = Colors.white.withValues(alpha: 0.75)
       ..strokeWidth = 1.2
       ..strokeCap = StrokeCap.round;
 
-    canvas.drawLine(center, end, paint);
+    if (length > headLen) {
+      // Shaft
+      canvas.drawLine(center, end, paint);
+    }
+
+    // Arrowhead
+    const headAngle = 0.4; // radians, ~23 degrees
+    final head1 = Offset(
+      end.dx - headLen * cos(angle - headAngle),
+      end.dy - headLen * sin(angle - headAngle),
+    );
+    final head2 = Offset(
+      end.dx - headLen * cos(angle + headAngle),
+      end.dy - headLen * sin(angle + headAngle),
+    );
+
+    canvas.drawLine(end, head1, paint);
+    canvas.drawLine(end, head2, paint);
   }
 
   Color _colorForCell(
@@ -343,23 +377,23 @@ class AsciiGridPainter extends CustomPainter {
     canvas.drawRect(rect, paint);
   }
 
-  final _paragraphCache = <String, ui.Paragraph>{};
+  ui.Paragraph _buildParagraph(String glyph, Color color, double fontSize) {
+    final builder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        fontFamily: 'JetBrains Mono',
+        textAlign: TextAlign.left,
+        maxLines: 1,
+      ),
+    )
+      ..pushStyle(ui.TextStyle(
+        color: color,
+        fontSize: fontSize,
+      ))
+      ..addText(glyph);
 
-  ui.Paragraph _getParagraph(String glyph, Color color, double fontSize) {
-    final key = "$glyph-${color.toARGB32()}-$fontSize";
-    return _paragraphCache.putIfAbsent(key, () {
-      final builder = ui.ParagraphBuilder(
-        ui.ParagraphStyle(
-          fontFamily: 'FixedSys',
-          textAlign: TextAlign.center,
-        ),
-      )
-        ..pushStyle(ui.TextStyle(color: color, fontSize: fontSize))
-        ..addText(glyph);
-
-      return builder.build()
-        ..layout(ui.ParagraphConstraints(width: fontSize * 1.2));
-    });
+    final p = builder.build();
+    p.layout(const ui.ParagraphConstraints(width: 1000)); // wide enough
+    return p;
   }
 
   @override

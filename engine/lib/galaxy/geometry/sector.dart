@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/geometry/path_gen.dart';
 import 'package:crawlspace_engine/galaxy/planet.dart';
 import 'package:crawlspace_engine/galaxy/star.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
@@ -10,12 +11,19 @@ import '../../stock_items/species.dart';
 import 'grid.dart';
 import '../hazards.dart';
 import 'impulse.dart';
+import 'object.dart';
 
 typedef ImpulseMap = MappedGrid<ImpulseCell>;
+
+class Asteroid extends MassiveObject {
+  Asteroid(super.name, {super.mass});
+}
 
 class SectorCell extends GridCell {
   final SectorLocation loc;
   final System system;
+  bool hasBuoy = false;
+  //int roidSeed = 1; Map<Coord3D,Asteroid> asteroidMap = {};
 
   @override
   List<Planet> planets(Galaxy g) => g.planets.inSector(loc).toList();
@@ -28,16 +36,14 @@ class SectorCell extends GridCell {
   bool hasPlanets(Galaxy g) => numPlanets(g) > 0;
   int numStars(Galaxy g) => stars(g).length;
   bool hasStars(Galaxy g) => numStars(g) > 0;
-  bool hasBuoy(Galaxy g) => buoys(g).isNotEmpty;
   bool hasGate(Galaxy g) => stars(g).any((s) => s.jumpgate);
 
   bool starOne, blackHole;
   int impulseSeed;
-  Faction outpostPropriator;
-  Coord3D outpostLoc;
+
   @override
   ImpulseMap get map => system.impulseCache.putIfAbsent(coord,
-        () => system.generateImpulseMap(this,Random(impulseSeed)),
+        () => generateImpulseMap(Random(impulseSeed)),
   );
 
   SectorCell(
@@ -48,18 +54,47 @@ class SectorCell extends GridCell {
         this.starOne = false,
         this.blackHole = false,
         Faction? propriator,
-      }) :
-        loc = SectorLocation(system, coord),
-        outpostPropriator = propriator ?? getFaction(FactionList.fed)!,
-        outpostLoc = Coord3D((system.impulseMapDim.mx/2).round(),(system.impulseMapDim.my/2).round(),0);
+      }) : loc = SectorLocation(system, coord);
+
+  ImpulseMap generateImpulseMap(Random rnd) {
+    final dim = system.impulseMapDim;
+    final sectorIon = hazMap[Hazard.ion] ?? 0;
+    final sectorNeb = hazMap[Hazard.nebula] ?? 0;
+
+    final cells = <Coord3D, ImpulseCell>{};
+    for (int x = 0; x < dim.mx; x++) {
+      for (int y = 0; y < dim.my; y++) {
+        for (int z = 0; z < dim.mz; z++) {
+          final c = Coord3D(x, y, z);
+          final buoy = hasBuoy && c == dim.center;
+          cells[c] = ImpulseCell(
+            this,
+            coord: c,
+            asteroid: !buoy && (hasHaz(Hazard.roid) || hasBuoy) && rnd.nextDouble() < .1
+              ? Asteroid("Asteroid", mass: 1000)
+              : null,
+            hazMap: buoy ? {} : {
+              Hazard.nebula: rnd.nextDouble() < sectorNeb ? sectorNeb : 0,
+              Hazard.ion: rnd.nextDouble() < sectorIon ? sectorIon : 0,
+              //Hazard.roid: hazMap[Hazard.roid] ?? (hasBuoy && rnd.nextDouble() < .1 ? : 0),
+              //Hazard.wake: c.isEdge(dim) ? 1 : 0, //TODO: perhaps for 3D only
+            },
+          );
+        }
+      }
+    }
+    final impMap = ImpulseMap(dim, cells);
+    //if (hasHaz(Hazard.roid)) PathGenerator.generate(impMap, 4, 0, rnd, haz: Hazard.roid);
+    return impMap;
+  }
 
   @override
-  bool isEmpty(Galaxy g, {countPlayer = true}) { //print("Chceking enpty");
+  bool isEmpty(Galaxy g, {countPlayer = true}) { //print("Checking empty");
     final ships = g.ships.atCell(this);
     if (ships.isNotEmpty && (countPlayer || ships.any((s) => s.npc))) return false;
     if (hasPlanets(g)) return false;
     if (hasStars(g)) return false;
-    if (hasBuoy(g)) return false;
+    if (hasBuoy) return false;
     if (starOne || blackHole) return false;
     if (hazLevel > 0) return false;
     return true;
@@ -88,7 +123,7 @@ class SectorCell extends GridCell {
   bool scannable(ScannerMode mode,Galaxy g) {
     if (mode == ScannerMode.all) return true;
     if (mode.scaningShips && g.ships.atCell(this).isNotEmpty) return true;
-    if (mode.scaningPlanets && (hasPlanets(g) || hasBuoy(g))) return true;
+    if (mode.scaningPlanets && (hasPlanets(g) || hasBuoy)) return true;
     if (mode.scaningStars && hasStars(g)) return true;
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;

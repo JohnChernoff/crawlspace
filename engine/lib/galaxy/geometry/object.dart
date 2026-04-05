@@ -28,7 +28,7 @@ class SpaceEnvironment<L extends SpaceLocation> extends MassiveObject<L> {
   double rapport = 0; // -1–1
 
   SpaceEnvironment(super.name, this.fedLvl, this.techLvl,
-      {super.shortDesc, super.mass = 1, super.earthMasses, super.tuningFactor});
+      {super.shortDesc, super.mass = 1, super.earthMasses, super.tuningFactor, super.sublightFactor});
 }
 
 class SpaceObject<L extends SpaceLocation> extends Locatable<L>
@@ -52,9 +52,16 @@ const double solarMassKg = earthMassKg * earthSunRatio;
 class MassiveObject<L extends SpaceLocation> extends SpaceObject<L> {
   double mass; //in kg
   double? earthMasses;
-  double get inertialMass => mass;
-  double get gravMass =>  (earthMasses ?? (mass / earthMassKg)) * tuningFactor;
+  double get inertialMass => earthMasses ?? (mass / earthMassKg);
+  double get gravMass =>  inertialMass * tuningFactor;
+  double get sublightMass => inertialMass * sublightFactor;
   double tuningFactor;
-  MassiveObject(super.name, {mass = .1, this.tuningFactor = 1, this.earthMasses, super.objColor, super.shortDesc})
+  double sublightFactor;
+
+  MassiveObject(super.name, {mass = .1, this.tuningFactor = 1, this.sublightFactor = 1, this.earthMasses, super.objColor, super.shortDesc})
       : this.mass = earthMasses != null ? (earthMassKg * earthMasses) : mass;
+}
+
+class GravBuoy extends MassiveObject<ImpulseLocation> {
+  GravBuoy(super.name, {super.earthMasses = 12, super.sublightFactor = 128});
 }

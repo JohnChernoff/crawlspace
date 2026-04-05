@@ -10,12 +10,15 @@ import '../star.dart';
 import 'grid.dart';
 import '../hazards.dart';
 import '../../item.dart';
+import 'object.dart';
 
 typedef OrbitalMap = MappedGrid<OrbitalCell>;
 
 class ImpulseCell extends GridCell {
   final ImpulseLocation loc;
   SectorCell sector;
+  Asteroid? asteroid;
+
   @override
   List<Planet> planets(Galaxy g) => g.planets.inImpulse(loc).toList();
   @override
@@ -30,13 +33,12 @@ class ImpulseCell extends GridCell {
   @override
   OrbitalMap get map => loc.system.orbitalCache.putIfAbsent(coord,
           () => loc.system.generateOrbitalMap(this,Random(sector.impulseSeed))); //orbitalSeed?
-  bool outpost;
 
   ImpulseCell(
       this.sector, {
         required super.coord,
         super.hazMap,
-        this.outpost = false,
+        this.asteroid
       }) : loc = ImpulseLocation(sector.system, sector.coord, coord);
 
   void hodgeTick(Hazard haz, Random rnd, {jitter = .1}) {

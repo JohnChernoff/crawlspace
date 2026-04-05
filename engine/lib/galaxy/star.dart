@@ -54,8 +54,10 @@ class Star extends MassiveObject<ImpulseLocation> {
       this.stellarClass,
       this.jumpgate, {
         super.tuningFactor = .00000001,
+        super.sublightFactor = .001,
       }) : super(
     "Class ${stellarClass.name} Star",
     earthMasses: stellarClass.solarMasses * earthSunRatio,
+
   );
 }

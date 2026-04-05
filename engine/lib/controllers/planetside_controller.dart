@@ -71,12 +71,12 @@ class PlanetsideController extends FugueController {
     if (!fm.player.starOne) {
       fm.msg("You must first find Star One.");
     }
-    else if (fm.player.credits < fm.shopOptions.costBroadcast) {
-      fm.msg("You can't afford this (${fm.shopOptions.costBroadcast} credits).");
+    else if (fm.player.credits < fm.shopSettings.costBroadcast) {
+      fm.msg("You can't afford this (${fm.shopSettings.costBroadcast} credits).");
     } else {
       fm.msg("You broadcast a message of insurrection against the Galactic Federation");
       fm.player.broadcasts++;
-      fm.player.credits -= fm.shopOptions.costBroadcast;
+      fm.player.credits -= fm.shopSettings.costBroadcast;
       propaganda(fm.player.system, 0, 4, {fm.player.system});
     }
   }
@@ -150,13 +150,13 @@ class PlanetsideController extends FugueController {
 
   void bioHack({int amount = 1}) {
     if (fm.player.dnaScram < Player.maxDna) {
-      if (fm.player.credits >= fm.shopOptions.costBioHack) {
-        fm.player.credits -= fm.shopOptions.costBioHack;
+      if (fm.player.credits >= fm.shopSettings.costBioHack) {
+        fm.player.credits -= fm.shopSettings.costBioHack;
         fm.player.dnaScram++;
         fm.msg("Dna scrambled (mutation: ${fm.player.dnaScram})");
         fm.pilotController.action(fm.player,ActionType.planet,mod: 2);
       } else {
-        fm.msg("You can't afford this (cost: ${fm.shopOptions.costBioHack} credits).");
+        fm.msg("You can't afford this (cost: ${fm.shopSettings.costBioHack} credits).");
       }
     } else {
       fm.msg("Your system cannot handle further modification.");

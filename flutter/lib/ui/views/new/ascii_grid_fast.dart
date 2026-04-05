@@ -20,6 +20,7 @@ class _AsciiGridFastState extends State<AsciiGridFast> {
   Grid? _cachedGrid;
   GravityFieldTexture? _gravityTexture;
   Future<void>? _pendingLoad;
+  bool drawHands = false;
 
   FugueEngine get fm => widget.fugueModel;
 

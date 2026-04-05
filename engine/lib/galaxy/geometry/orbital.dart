@@ -5,6 +5,7 @@ import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/planet.dart';
 import 'package:crawlspace_engine/galaxy/star.dart';
 import 'grid.dart';
+import 'object.dart';
 
 typedef SubOrbitalMap = MappedGrid<OrbitalCell>;
 

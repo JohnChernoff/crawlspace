@@ -130,7 +130,7 @@ class XenoController extends FugueController {
 
   void fireCloud(double power, Ship ship, SpaceLocation location) {
     //double cells = 8 * power;
-    for (final cell in location.cell.map.getAdjacentCells(location.cell)) {
+    for (final cell in location.map.getAdjacentCells(location.cell)) {
       cell.effects.addEffect(CellEffect.fire, XenomancySpell.firecloud.timeout);
     }
   }

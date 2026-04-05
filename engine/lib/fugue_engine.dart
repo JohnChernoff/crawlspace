@@ -9,6 +9,7 @@ import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/ship/systems/power.dart';
 import 'package:crawlspace_engine/ship/systems/shields.dart';
+import 'package:crawlspace_engine/ui_options.dart';
 import 'actors/agent.dart';
 import 'audio_service.dart';
 import 'color.dart';
@@ -107,7 +108,8 @@ class FugueEngine {
   late final XenoController xenoControl = XenoController(this);
   late final TickController tickController = TickController(this);
   int get auTick => tickController.auTick;
-  final ShopOptions shopOptions = ShopOptions();
+  final ShopSettings shopSettings = ShopSettings();
+  final UiOptions uiOptions = UiOptions();
 
   List<InputMode> _inputStack = [InputMode.main];
   InputMode get inputMode => _inputStack.last;

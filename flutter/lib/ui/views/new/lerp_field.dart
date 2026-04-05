@@ -152,7 +152,7 @@ class GravityTextureCache {
   Future<GravityFieldTexture> get(Grid grid) {
     return _cache.putIfAbsent(
       grid.map,
-          () => GravityFieldTexture.build(grid, colorForVector: GravityFieldTexture.directionalColor),
+          () => GravityFieldTexture.build(grid), // colorForVector: GravityFieldTexture.directionalColor),
     );
   }
 
