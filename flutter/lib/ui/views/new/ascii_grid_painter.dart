@@ -193,7 +193,7 @@ class AsciiGridPainter extends CustomPainter {
       if (cell.hasStar(fm.galaxy)) return "✦";
       if (cell.asteroid != null) return "+";
       if (fm.galaxy.buoys.singleAtImpulse(cell.loc) != null) return "⊕";
-      if (fm.galaxy.items.anyAt(cell.loc)) return "\$";
+      if (fm.galaxy.items.byLoc(cell.loc).isNotEmpty) return "\$";
     }
 
     // 6. Empty
@@ -470,7 +470,7 @@ _CellRenderState _renderStateForCell(
   final sameDepthAndNotEmpty = sameDepth && (
       cell.hazLevel > 0 ||
           fm.galaxy.ships.atCell(cell).isNotEmpty ||
-          (cell is ImpulseCell && (cell.hasPlanet(fm.galaxy) || fm.galaxy.items.anyAt(cell.loc))) ||
+          (cell is ImpulseCell && (cell.hasPlanet(fm.galaxy) || fm.galaxy.items.byLoc(cell.loc).isNotEmpty)) ||
           (cell is SectorCell && (cell.hasPlanets(fm.galaxy) || cell.hasStars(fm.galaxy) || cell.blackHole))
   );
   final uiTarget = targeted; // or separate this if you distinguish cursor vs final target

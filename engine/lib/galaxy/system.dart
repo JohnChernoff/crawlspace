@@ -95,7 +95,7 @@ class System extends Grid implements Nameable {
         g.buoys.register(GravBuoy(
             "${g.civMod.dominantSpecies(this)?.name ?? 'Fed'} Buoy",
             earthMasses: g.rnd.nextDouble() * 2,
-            sublightFactor: g.rnd.nextDouble() * 999),
+            sublightFactor: g.rnd.nextDouble() * 2222),
             ImpulseLocation(this, cell.coord, impulseMapDim.center)
         );
         cell.hasBuoy = true;

@@ -88,6 +88,8 @@ class SectorCell extends GridCell {
     return impMap;
   }
 
+  bool hasGravitySource(Galaxy g) => hasStars(g) || hasPlanets(g) || hasBuoy;
+
   @override
   bool isEmpty(Galaxy g, {countPlayer = true}) { //print("Checking empty");
     final ships = g.ships.atCell(this);
@@ -123,8 +125,9 @@ class SectorCell extends GridCell {
   bool scannable(ScannerMode mode,Galaxy g) {
     if (mode == ScannerMode.all) return true;
     if (mode.scaningShips && g.ships.atCell(this).isNotEmpty) return true;
-    if (mode.scaningPlanets && (hasPlanets(g) || hasBuoy)) return true;
+    if (mode.scaningPlanets && hasPlanets(g)) return true;
     if (mode.scaningStars && hasStars(g)) return true;
+    if (mode.scaningBuoys && hasBuoy) return true;
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
     if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;

@@ -68,7 +68,7 @@ class ImpulseCell extends GridCell {
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
     if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;
-    if (mode.scaningItems && g.items.anyAt(loc)) return true;
+    if (mode.scaningItems && g.items.byLoc(loc).isNotEmpty) return true;
     return false;
   }
 
@@ -79,14 +79,14 @@ class ImpulseCell extends GridCell {
     if (hasPlanet(g)) return false;
     if (hasStar(g)) return false;
     if (hazLevel > 0) return false;
-    if (g.items.anyAt(loc)) return false;
+    if (g.items.byLoc(loc).isNotEmpty) return false;
     return true;
   }
 
   @override
   String toScannerString(Galaxy g) {
     StringBuffer sb = StringBuffer(super.toScannerString(g));
-    for (Item item in g.items.atLocation(loc)) {
+    for (Item item in g.items.byLoc(loc)) {
       sb.write("\n${item.name}\n");
     }
     Planet? planet = getPlanet(g);

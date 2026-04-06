@@ -11,6 +11,7 @@ import 'package:crawlspace_engine/ship/ship_tick.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import '../fugue_engine.dart';
+import '../galaxy/galaxy.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/reg/ship_reg.dart';
 import '../galaxy/system.dart';
@@ -456,17 +457,24 @@ class Ship extends Item {
     else {
       sensor.scannedSystems.add(system);
       final itemList = fm.galaxy.items.inSystem(system);
-      for (final i in itemList) {
-        i.value.forEach((item) => item.scanned = ScanReport(sector: true));
+      for (final item in itemList) {
+        item.scanned = ScanReport(sector: true);
       }
       final scanRoll = ((sensor.accuracy[Domain.system] ?? 0) * .25);
       if (fm.mapRnd.nextDouble() < 1) { //scanRoll) {
-        for (final i in fm.galaxy.items.inSystem(system).expand((e) => e.value)) {
+        for (final i in fm.galaxy.items.inSystem(system)) {
           i.scanned = ScanReport(sector: true);
           fm.scannerController.refreshSensors(system);
         }
       }
     }
+  }
+
+  bool canLand(Galaxy g) {
+    final l = loc;
+    return l is ImpulseLocation
+        && g.planets.singleAtImpulse(l) != null
+        && nav.vel.mag < 1;
   }
 
   bool activeEffect(ShipEffect effect) => effectMap.isActive(effect);

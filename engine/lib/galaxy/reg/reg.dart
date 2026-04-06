@@ -13,7 +13,7 @@ import 'item_reg.dart';
 import 'locatables.dart';
 
 class RegModel extends GalaxySubMod {
-  late ItemRegistry items = ItemRegistry(this.galaxy);
+  late ItemRegistry items = ItemRegistry();
   PlanetRegistry planets = PlanetRegistry();
   PilotRegistry pilots = PilotRegistry();
   late ShipRegistry ships = ShipRegistry(pilots);
@@ -22,9 +22,6 @@ class RegModel extends GalaxySubMod {
   RegModel(super.galaxy);
 }
 
-typedef ItemMap = Map<SpaceLocation, Set<Item>>;
-typedef ItemEntry = MapEntry<SpaceLocation, Set<Item>>;
-typedef ItemSet = Set<ItemEntry>;
 
 enum OccupancyPolicy {
   single,
@@ -34,6 +31,8 @@ enum OccupancyPolicy {
 abstract class SpaceRegistry<T extends Locatable<L>, L extends SpaceLocation> {
   //static const _empty = <T>{}; // won't work directly because T is generic
   final Map<T, L> _locations = {};
+  Iterable<MapEntry<T, L>> get all => _locations.entries;
+
   final Map<System, Set<T>> _bySystem = {};
   T? _singleOrNull(Set<T> bucket, Object key) {
     if (bucket.isEmpty) return null;
@@ -89,6 +88,69 @@ abstract class SpaceRegistry<T extends Locatable<L>, L extends SpaceLocation> {
 
   void onRegister(T obj, L loc) {}
   void onRemove(T obj, L loc) {}
+}
+
+class OmniRegistry<T extends Locatable<L>, L extends SpaceLocation> extends SpaceRegistry<T,L> {
+  final Map<SectorLocation, Set<T>> _bySector = {};
+  final Map<ImpulseLocation, Set<T>> _byImpulse = {};
+  Set<T> inSector(SectorLocation s) => _bySector[s] ?? <T>{};
+  Locatable<SpaceLocation>? singleAtSector(SectorLocation loc) => _singleOrNull(inSector(loc), loc);
+  Set<T> inImpulse(ImpulseLocation loc) => _byImpulse[loc] ?? <T>{};
+  Locatable<SpaceLocation>? singleAtImpulse(ImpulseLocation loc) => _singleOrNull(inImpulse(loc), loc);
+
+  @override
+  void register(T obj, L loc) {
+    SpaceLocation? varLoc = loc;
+    while (varLoc != null) {
+      if (varLoc is SectorLocation) {
+        final key = SectorLocation(varLoc.system, varLoc.sectorCoord);
+        final bucket = _bySector.putIfAbsent(key, () => <T>{});
+        _checkBucketOccupancy(bucket, key, domain: Domain.system);
+        bucket.add(obj);
+      } else if (varLoc is ImpulseLocation) {
+        final key = ImpulseLocation(loc.system, varLoc.sectorCoord, varLoc.impulseCoord);
+        final bucket = _byImpulse.putIfAbsent(key, () => <T>{});
+        _checkBucketOccupancy(bucket, key, domain: Domain.impulse);
+        bucket.add(obj);
+      }
+      varLoc = varLoc.upper;
+    }
+    super.register(obj, loc);
+  }
+
+  @override
+  L remove(T obj, {bool moving = false}) {
+    final old = super.remove(obj, moving: moving);
+    SpaceLocation? varLoc = old;
+    while (varLoc != null) {
+      if (varLoc is SectorLocation) {
+        final key = SectorLocation(varLoc.system, varLoc.sectorCoord);
+        final bucket = _bySector[key];
+        if (bucket == null || !bucket.remove(obj)) {
+          throw StateError('Unexpected registry state for $obj at $key');
+        }
+        if (bucket.isEmpty) _bySector.remove(key);
+      } else if (varLoc is ImpulseLocation) {
+        final key = ImpulseLocation(old.system, varLoc.sectorCoord, varLoc.impulseCoord);
+        final bucket = _byImpulse[key];
+        if (bucket == null || !bucket.remove(obj)) {
+          throw StateError('Unexpected registry state for $obj at $key');
+        }
+        if (bucket.isEmpty) _byImpulse.remove(key);
+      }
+      varLoc = varLoc.upper;
+    }
+    return old;
+  }
+
+  Set<T> byLoc(SpaceLocation loc) => switch(loc) {
+    ImpulseLocation() => inImpulse(loc),  // before SectorLocation since it's a subtype
+    SectorLocation()  => inSector(loc),
+    OrbitalLocation() => inImpulse(loc.impulse), // fallback to impulse granularity (for now) (TODO: _byOrbital)
+    SystemLocation()  => inSystem(loc.system),  //_    => inSystem(loc.system),
+  };
+
+  T? singleByLoc(SpaceLocation loc) => _singleOrNull(byLoc(loc),loc);
 }
 
 abstract class _SectorIndexedRegistry<T extends Locatable<L>, L extends SystemLocation>

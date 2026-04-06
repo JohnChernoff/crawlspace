@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'galaxy/geometry/location.dart';
 import 'galaxy/geometry/object.dart';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
@@ -28,7 +29,7 @@ mixin Itemizable {
   bool eq(Itemizable i) => i.name == name;
 }
 
-class Item extends MassiveObject with Itemizable {
+class Item<T extends SpaceLocation> extends MassiveObject<T> with Itemizable {
   int get baseCost => _baseCost;
   String get shopDesc => name;
   static int _idCounter = 0;

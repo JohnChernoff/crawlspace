@@ -1,5 +1,6 @@
 import 'package:crawlspace_engine/galaxy/reg/reg.dart';
 
+import '../../item.dart';
 import '../geometry/location.dart';
 
 abstract class Locatable<T extends SpaceLocation> {
@@ -26,8 +27,11 @@ abstract class Locatable<T extends SpaceLocation> {
   }
 }
 
-abstract class Containable<T extends SpaceLocation> extends Locatable<T> {
+abstract class Containable<T extends SpaceLocation> extends Item<T> {
   Locatable<T>? _container;
+
+  Containable(super.name, {
+    super.shortDesc, int baseCost = 0, super.rarity, super.mass, super.volume, super.sellable = true, super.objColor});
   Locatable<T>? get container => _container;
 
   bool get hasDirectLocation => _loc != null;
@@ -65,14 +69,14 @@ abstract class Containable<T extends SpaceLocation> extends Locatable<T> {
   }
 }
 
-abstract class ContainableRegistry<T extends Containable<ImpulseLocation>>
-    extends ImpulseRegistry<T> {
-  void contain(T obj, Locatable<ImpulseLocation> container) {
+abstract class ContainableRegistry<T extends Containable<L>, L extends SpaceLocation>
+    extends SpaceRegistry<T, L> {
+  void contain(T obj, Locatable<L> container) {
     remove(obj);
     obj.setContainer(container);
   }
 
-  void place(T obj, ImpulseLocation loc) {
+  void place(T obj, L loc) {
     obj.setContainer(null);
     register(obj, loc);
   }

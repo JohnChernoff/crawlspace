@@ -2,8 +2,8 @@ import 'package:collection/collection.dart';
 import '../fugue_engine.dart';
 import '../color.dart';
 import '../galaxy/geometry/grid.dart';
-import '../galaxy/reg/reg.dart';
 import '../galaxy/system.dart';
+import '../item.dart';
 import '../ship/ship.dart';
 import 'fugue_controller.dart';
 
@@ -14,6 +14,7 @@ enum ScannerMode {
   ships(GameColors.green,false),
   planets(GameColors.blue,false),
   stars(GameColors.yellow,false),
+  buoys(GameColors.blue,true),
   ion(GameColors.orange,true),
   neb(GameColors.coral,true),
   roid(GameColors.gray,true),
@@ -26,6 +27,7 @@ enum ScannerMode {
   bool get scaningShips => this == ScannerMode.ships || this == ScannerMode.contacts;
   bool get scaningPlanets => this == ScannerMode.planets || this == ScannerMode.contacts;
   bool get scaningStars => this == ScannerMode.stars || this == ScannerMode.contacts;
+  bool get scaningBuoys => this == ScannerMode.buoys;
   bool get scaningItems => this == ScannerMode.contacts || this == ScannerMode.items;
   bool get scaningIons => this == ScannerMode.ion || this == ScannerMode.storms || this == ScannerMode.field;
   bool get scaningNeb => this == ScannerMode.neb || this == ScannerMode.field;
@@ -41,7 +43,7 @@ enum TargetPathMode {
 class ScannerController extends FugueController {
   ScannerController(super.fm);
 
-  ItemSet sensorList = {};
+  Set<Item> sensorList = {};
   ScannerMode scannerMode = ScannerMode.contacts;
   List<GridCell> currentScan = [];
   GridCell? currentScanSelection;
@@ -107,17 +109,16 @@ class ScannerController extends FugueController {
           blocks.add(TextBlock(cell.toScannerString(fm.galaxy), currentScanSelection == cell ? GameColors.gold : GameColors.green, true));
         }
       }
-      for (final m in sensorList) {
-        blocks.add(TextBlock(m.key.toString(), GameColors.white, true));
-        for (final i in m.value.where((item) => item.scanned?.system == true)) blocks.add(TextBlock(i.name, i.objColor, true));
+      for (final i in sensorList) {
+        blocks.add(TextBlock(i.toString(), GameColors.white, true));
+        if (i.scanned?.system == true) blocks.add(TextBlock(i.name, i.objColor, true));
       }
     }
     return blocks;
   }
 
   void refreshSensors(System system) {
-    final list = fm.galaxy.items.inSystem(system).where((m) => m.value.any((i) => i.scanned?.system == true)).toSet();
-    sensorList = list;
+    sensorList = fm.galaxy.items.inSystem(system).where((i) => i.scanned?.system == true).toSet();
   }
 
   void selectScannedObject(bool up) {

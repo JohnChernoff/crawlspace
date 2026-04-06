@@ -81,23 +81,23 @@ class LayerTransitController extends FugueController {
     int domIndex = (shipLoc.domain.index + indexDir).clamp(Domain.hyperspace.index, Domain.orbital.index);
     Domain newDomain = Domain.values.elementAt(domIndex);
     if (newDomain == Domain.hyperspace) selectHyperSpaceLink();
-    else if (shipLoc.domain == Domain.orbital && dir == DomainDir.down) {
-      if (ship.playship) fm.msg("You cannot do that!");
-    }
-    else if (newDomain == Domain.orbital
-        && shipLoc is ImpulseLocation
-        && fm.galaxy.planets.singleAtImpulse(shipLoc) == null) {
-      if (ship.playship) fm.msg("No planet to orbit!");
-    }
-    else if (dir == DomainDir.up) {
+    if (dir == DomainDir.up) {
       if (hostileCheck(ship) && !ship.activeEffect(ShipEffect.folding)) {
         if (ship.playship) fm.msg("You cannot accelerate to $newDomain travel with hostile vessels in the area");
       }
       else if (shipLoc.upper != null) { //null shouldn't occur here, but hey
         if (ship.playship) fm.msg("Exiting ${shipLoc.domain}, resuming $newDomain travel");
         ship.move(shipLoc.upper!, fm);
-      }
-    } else { //down
+      } //down
+    } else if (shipLoc.domain == Domain.orbital) {
+      if (ship.playship) fm.msg("You cannot do that!");
+    } else if (shipLoc is SectorLocation && !shipLoc.cell.hasGravitySource(fm.galaxy)) {
+        if (ship.playship) fm.msg("You cannot descend to impulse travel in deep space without a local grav buoy, planet or star.");
+    } else if (ship.canLand(fm.galaxy)) {
+        fm.planetsideController.planetFall();
+    } else if (shipLoc.domain == Domain.impulse) {
+      if (ship.playship) fm.msg(shipLoc.cell.planets(fm.galaxy).isNotEmpty ? "Cannot land: overspeed" : "No planet");
+    } else {
       final map = shipLoc.cell.map;
       final destCell = (ship.npc)
           ? selectNpcCell(ship)

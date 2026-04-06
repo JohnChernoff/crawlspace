@@ -123,7 +123,7 @@ class GridCellWidgetState extends State<GridCellWidget> {
       if (cell.hasStars(widget.galaxy)) stack.add(Text("✦", style: style));
       if (cell.blackHole) stack.add(Text("-", style: style));
     } else if (cell is ImpulseCell) {
-      if (widget.galaxy.items.anyAt(cell.loc)) stack.add(Text("\$", style: style));
+      if (widget.galaxy.items.byLoc(cell.loc).isNotEmpty) stack.add(Text("\$", style: style));
     }
 
     if (widget.movePreviewActual) {

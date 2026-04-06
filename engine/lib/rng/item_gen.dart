@@ -18,7 +18,7 @@ class ItemGen {
     for (int i=0; i<numArtifacts; i++) {
       final item = Rng.randomArtifact(galaxy.rnd, 100000); //items.add(item);
       final itemLoc = galaxy.rndLoc(galaxy.rnd);
-      repo.addItem(item, itemLoc);
+      repo.register(item, itemLoc);
     }
     for (final s in StockSpecies.values) {
       final t = galaxy.territory(s.species);
@@ -26,7 +26,7 @@ class ItemGen {
         final sys = t.elementAt(galaxy.rnd.nextInt(t.length));
         final r = Relic("${s.species.name} relic", s.species);
         final loc = sys.rndImpLoc(galaxy);
-        repo.addItem(r, loc);
+        repo.register(r, loc);
       }
     }
     for (final s in StockSpecies.values) {
@@ -43,12 +43,12 @@ class ItemGen {
             species: s.species);
         final sys = territory.elementAt(galaxy.rnd.nextInt(territory.length));
         final loc = sys.rndImpLoc(galaxy);
-        repo.addItem(activator, loc);
+        repo.register(activator, loc);
       }
     }
 
     final startingSystem = galaxy.farthestSystem(galaxy.fedHomeSystem);
     final loc = SectorLocation(startingSystem, Coord3D(5,5,5));
-    repo.addItem(ActivatorFactory.generate(StockActivator.xenoEnhanceScroll, .5, galaxy.rnd, species: StockSpecies.vorlon.species),loc);
+    repo.register(ActivatorFactory.generate(StockActivator.xenoEnhanceScroll, .5, galaxy.rnd, species: StockSpecies.vorlon.species),loc);
   }
 }

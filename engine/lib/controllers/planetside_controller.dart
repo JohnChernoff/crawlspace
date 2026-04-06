@@ -33,9 +33,8 @@ class PlanetsideController extends FugueController {
       final planet = cell.getPlanet(fm.galaxy); 
       if (planet == null) {
         fm.msg("No planet!"); return;
-      } else if (ship.nav.moving) {
-        fm.msg("Slow down first!"); return;
-      }
+      } //else if (ship.nav.moving) {fm.msg("Slow down first!"); return; }
+      ship.nav.resetMotionState();
       fm.player.locale = AtEnvironment(planet);
       if (fm.pilotController.action(fm.player,ActionType.planetLand)) {
         if (planet.homeworld && planet.species == StockSpecies.humanoid.species) {
@@ -208,7 +207,7 @@ class PlanetsideController extends FugueController {
       });
     }
     if (fm.aiRnd.nextDouble() < .25) { //(env.rapport * .1)) { //TODO: debug settings
-      final nearestItem = fm.galaxy.items.nearestItem(fm.player.system);
+      final nearestItem = fm.galaxy.items.nearestItem(fm.player.system, fm.galaxy);
       fm.msg("Psst - there's treasure at ${nearestItem.key}");
     }
     final security = env is Planet ? (env.population + env.fedLvl) / 2.0 : 0.5;
