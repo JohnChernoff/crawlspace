@@ -52,7 +52,7 @@ class LayerTransitController extends FugueController {
         if (fm.galaxy.stars.findGate(sysLoc.system).sector == sysLoc) { //sysLoc.level.removeShip(ship);
           if (action) fm.pilotController.action(pilot,ActionType.sector);
           if (ship.loc.domain == Domain.system) { //didn't get pulled into impulse
-            ship.move(SectorLocation(system,fm.galaxy.stars.findGate(system).sectorCoord),fm.galaxy.ships);
+            ship.move(SectorLocation(system,fm.galaxy.stars.findGate(system).sectorCoord),fm);
             system.visit(fm);
             if (ship.itinerary != null) {
               if (ship.itinerary!.last == system) {
@@ -95,7 +95,7 @@ class LayerTransitController extends FugueController {
       }
       else if (shipLoc.upper != null) { //null shouldn't occur here, but hey
         if (ship.playship) fm.msg("Exiting ${shipLoc.domain}, resuming $newDomain travel");
-        ship.move(shipLoc.upper!, fm.galaxy.ships);
+        ship.move(shipLoc.upper!, fm);
       }
     } else { //down
       final map = shipLoc.cell.map;
@@ -105,7 +105,7 @@ class LayerTransitController extends FugueController {
       final newLoc = destCell.loc;
       if (ship.playship) {
         newLoc.grid.updateGravMap(fm.galaxy);
-        ship.move(newLoc,fm.galaxy.ships);
+        ship.move(newLoc,fm);
         final proxShips = List.of(fm.galaxy.ships.atLocation(shipLoc)); //avoids ConcurrentModificationError (hopefully)
         try {
           fm.msg("Entering $newDomain...");
@@ -122,7 +122,7 @@ class LayerTransitController extends FugueController {
         changeDomain(fm.playerShip!,DomainDir.down);
         return;
       } else {
-        ship.move(newLoc,fm.galaxy.ships);
+        ship.move(newLoc,fm);
       }
     }
     fm.update();

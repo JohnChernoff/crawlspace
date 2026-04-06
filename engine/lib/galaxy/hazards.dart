@@ -28,7 +28,7 @@ enum Hazard {
         system.takeDamage(dmg);
         return "${ship.name} takes ${(dmg * 100).round()}% ion damage to ${system.name}...";
       }
-      if (this == Hazard.roid) {
+      if (this == Hazard.roid) { //TODO remove
         final dmg = fm.effectRnd.nextInt(cell is ImpulseCell ? 10 : 40) * turns;
         fm.combatController.damage(ship, dmg, DamageType.kinetic, details: "(asteroid)");
       }

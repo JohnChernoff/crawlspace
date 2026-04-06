@@ -129,6 +129,7 @@ class FugueEngine {
   }
 
   FugueEngine(this.galaxy,String playerName,{seed = 0}) { //rnd = Random(seed);
+    final t = DateTime.now().millisecondsSinceEpoch;
     audioRnd = Random(seed ^0xAAAAAA);
     mapRnd = Random(seed ^0xBBBBBBB);
     speciesRnd = Random(seed ^ 0xC0FFEE);
@@ -174,6 +175,7 @@ class FugueEngine {
     msg("Welcome to crawlspace, version $version!  Press 'H' for help, space bar toggles full screen text.");
     msg("You are ${galaxy.maxJumps} jumps away from Mentos.");
     update();
+    glog("Engine initialized, time: ${DateTime.now().millisecondsSinceEpoch - t}");
   }
 
   void populateSystem(System system, {int? numShips, int maxShips = 8}) {

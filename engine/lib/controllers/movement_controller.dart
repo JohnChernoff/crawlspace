@@ -159,7 +159,7 @@ class MovementController extends FugueController {
     final newLoc = report.preview?.actualCell?.loc;
     if (newLoc != null && ship.loc != newLoc) {
       glog("Moving ship: ${report.preview?.dump(ship)}, tick: ${fm.auTick}",level: DebugLevel.Fine);
-      ship.move(newLoc, fm.galaxy.ships);
+      ship.move(newLoc, fm);
       if (!(ship.systemControl.engine?.domain.newt ?? false)) {
         if (ship.npc && ship.loc == fm.playerShip?.loc) {
           fm.msg("Interdiction!?");

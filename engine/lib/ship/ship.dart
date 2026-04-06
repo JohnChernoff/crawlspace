@@ -257,12 +257,16 @@ class Ship extends Item {
     return sb.toString();
   }
 
-  void move(SpaceLocation newLoc, ShipRegistry registry) {
+  void move(SpaceLocation newLoc, FugueEngine fm) {
     bool newDom = newLoc.domain != loc.domain;
-    registry.move(this, newLoc);
+    fm.galaxy.ships.move(this, newLoc);
     if (newDom) { //print("Resetting loc:");
       if (loc.domain != Domain.orbital) nav.resetMotionState();
       toggleEngines(newLoc.domain);
+    } else {
+      if (newLoc is ImpulseLocation && newLoc.cell.asteroid != null) {
+        fm.combatController.damage(this, 100, DamageType.kinetic, details: "Asteroid Collision!");
+      }
     }
   }
 
