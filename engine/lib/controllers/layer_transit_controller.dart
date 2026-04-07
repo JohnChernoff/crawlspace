@@ -1,5 +1,6 @@
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import '../audio_service.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/location.dart';
 import '../actors/pilot.dart';
@@ -75,7 +76,7 @@ class LayerTransitController extends FugueController {
     return false;
   }
 
-  void changeDomain(Ship ship, DomainDir dir) {
+  void changeDomain(Ship ship, DomainDir dir, {interdiction = false}) {
     final shipLoc = ship.loc;
     final indexDir = dir == DomainDir.up ? -1 : 1;
     int domIndex = (shipLoc.domain.index + indexDir).clamp(Domain.hyperspace.index, Domain.orbital.index);
@@ -92,12 +93,14 @@ class LayerTransitController extends FugueController {
     } else if (shipLoc.domain == Domain.orbital) {
       if (ship.playship) fm.msg("You cannot do that!");
     } else if (shipLoc is SectorLocation && !shipLoc.cell.hasGravitySource(fm.galaxy)) {
-        if (ship.playship) fm.msg("You cannot descend to impulse travel in deep space without a local grav buoy, planet or star.");
+        if (ship.playship && !interdiction) {
+          fm.msg("You cannot descend to impulse travel in deep space without a local grav buoy, planet or star.");
+        }
     } else if (ship.canLand(fm.galaxy)) {
         fm.planetsideController.planetFall();
     } else if (shipLoc.domain == Domain.impulse) {
       if (ship.playship) fm.msg(shipLoc.cell.planets(fm.galaxy).isNotEmpty ? "Cannot land: overspeed" : "No planet");
-    } else {
+    } else { //move down
       final map = shipLoc.cell.map;
       final destCell = (ship.npc)
           ? selectNpcCell(ship)
@@ -108,7 +111,7 @@ class LayerTransitController extends FugueController {
         ship.move(newLoc,fm);
         final proxShips = List.of(fm.galaxy.ships.atLocation(shipLoc)); //avoids ConcurrentModificationError (hopefully)
         try {
-          fm.msg("Entering $newDomain...");
+          fm.msg(interdiction ? "Interdiction!" : "Entering $newDomain...");
           for (final ps in proxShips) {
             final h = ps.pilot.hostilityToward(fm.player.faction.species, fm.galaxy.civMod);
             fm.msg("${ps.name}${ps.pilot.hostile ? "(hostile)" : "(friendly)"} (${h.toStringAsFixed(2)}) is here");
@@ -117,13 +120,12 @@ class LayerTransitController extends FugueController {
         } on ConcurrentModificationError {
           glog("fark",error: true);
         }
-      } else if (fm.playerShip?.loc == ship.loc) {
-        fm.msg("Interdiction!");
-        changeDomain(fm.playerShip!,DomainDir.down);
-        return;
       } else {
         ship.move(newLoc,fm);
       }
+    }
+    if (ship.loc is ImpulseLocation) {
+      fm.audioController.newTrack(newMood: MusicalMood.danger);
     }
     fm.update();
   }

@@ -161,9 +161,8 @@ class MovementController extends FugueController {
       glog("Moving ship: ${report.preview?.dump(ship)}, tick: ${fm.auTick}",level: DebugLevel.Fine);
       ship.move(newLoc, fm);
       if (!(ship.systemControl.engine?.domain.newt ?? false)) {
-        if (ship.npc && ship.loc == fm.playerShip?.loc) {
-          fm.msg("Interdiction!?");
-          fm.layerTransitController.changeDomain(fm.playerShip!,DomainDir.down);
+        if (ship.npc && ship.loc == fm.playerShip?.loc && ship.pilot.hostile) {
+          fm.layerTransitController.changeDomain(fm.playerShip!,DomainDir.down, interdiction: true);
         } else {
           fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: report.preview?.auts ?? 1);
         }

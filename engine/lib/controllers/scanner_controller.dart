@@ -71,8 +71,8 @@ class ScannerController extends FugueController {
     final abbrev = fm.playerShip?.nav.targetShip != null;
     List<TextBlock> blocks = [];
     if (!abbrev) {
-      blocks.add(TextBlock("Mode: ${fm.inputMode.name}",GameColors.white,true));
-      blocks.add(TextBlock("Tick: ${fm.auTick / 100}",GameColors.brown,true));
+      //blocks.add(TextBlock("Mode: ${fm.inputMode.name}",GameColors.white,true));
+      blocks.add(TextBlock("Tick: ${fm.auTick / 100}, ",GameColors.khaki,false));
       blocks.add(TextBlock("Credits: ${fm.player.credits}",GameColors.khaki,true));
       final mainSpecies = fm.galaxy.civMod.dominantSpecies(fm.player.locale.loc.system)!;
       int dist = fm.galaxy.topo.distance(fm.player.locale.loc.system, fm.galaxy.findHomeworld(mainSpecies));
@@ -81,7 +81,6 @@ class ScannerController extends FugueController {
     Ship? ship = fm.playerShip; if (ship == null) {
       blocks.add(const TextBlock("No ship",GameColors.red,true));
     } else {
-      blocks.add(TextBlock("GForce: ${ship.nav.gForce}", GameColors.green, true));
       if (!abbrev) blocks.add(TextBlock(ship.loc.toString(),GameColors.cyan,true));
       if (ship.itinerary != null) blocks.add(TextBlock("To: ${ship.itinerary!.last.name}", GameColors.green, true));
       blocks.addAll(ship.status.display());

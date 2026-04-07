@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/ship/ship_sub.dart';
 import 'package:crawlspace_engine/ship/systems/weapon_profiler.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
@@ -16,28 +17,27 @@ class ShipStatus extends ShipSubSystem {
     List<TextBlock> blocks = [];
     blocks.addAll(dumpEffects());
     if (!abbrev) {
-      blocks.add(TextBlock(ship.name,ship.pilot.faction.color,true));
-      blocks.add(TextBlock("${ship.pilot.faction.name} ${ship.shipClass.type.name}",ship.pilot.faction.color,true));
+      blocks.add(TextBlock(ship.name,ship.pilot.faction.color,false));
+      blocks.add(TextBlock(" (${ship.pilot.faction.name} ${ship.shipClass.type.name})",ship.pilot.faction.color,true));
     }
     if (ship.pilot.faction.isPirate) blocks.add(TextBlock("*** Pirate ***",GameColors.red,true)); else {
       if (tactical) blocks.add(TextBlock("${(hostile ? 'hostile' : 'peaceful')} ",GameColors.gray,true));
     }
 
-    blocks.add(TextBlock("Hull: ${ship.hullRemaining.toStringAsFixed(2)} ",GameColors.green,false));
     //blocks.add(TextBlock("Volume: ${volume} ",GameColors.green,false));
-
-    blocks.add(TextBlock("%: ${ship.currentHullPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
-    blocks.add(TextBlock("Shields: ${systemControl.currentShieldStrength.toStringAsFixed(2)}, ",GameColors.green,false));
-    blocks.add(TextBlock("%: ${systemControl.currentShieldPercentage.toStringAsFixed(2)}",GameColors.lightBlue,true));
+    blocks.add(TextBlock("Hull: ${ship.hullRemaining.toStringAsFixed(2)} ",GameColors.green,false));
+    blocks.add(TextBlock("(${ship.currentHullPercentage.round()}%)",GameColors.lightBlue,true));
+    blocks.add(TextBlock("Shields: ${systemControl.currentShieldStrength.toStringAsFixed(2)} ",GameColors.green,false));
+    blocks.add(TextBlock("(${systemControl.currentShieldPercentage.round()}%)",GameColors.lightBlue,true));
     if (!tactical) {
-      blocks.add(TextBlock("Energy: ${ship.systemControl.getCurrentEnergy().toStringAsFixed(2)}, ",GameColors.green,false));
-      blocks.add(TextBlock("%: ${ship.systemControl.currentEnergyPercentage.round().toStringAsFixed(2)}",GameColors.lightBlue,true));
-      blocks.add(TextBlock("Energy Rate: ${ship.ticker.tick().energy.toStringAsFixed(2)}",GameColors.green,true));
+      blocks.add(TextBlock("Energy: ${ship.systemControl.getCurrentEnergy().toStringAsFixed(2)} ",GameColors.green,false));
+      blocks.add(TextBlock("(${ship.systemControl.currentEnergyPercentage.round()}%)",GameColors.lightBlue,true));
+      blocks.add(TextBlock("Energy Rate: ${ship.ticker.tick().energy.toStringAsFixed(2)}, ",GameColors.green,false));
     }
-    blocks.add(TextBlock("Xeno Matter: ${ship.xenoMatter.toStringAsFixed(2)}",GameColors.orange,true));
+    blocks.add(TextBlock("Xeno: ${ship.xenoMatter.toStringAsFixed(2)}",GameColors.orange,true));
     for (final s in systemControl.getInstalledSystems()) {
       bool cooldown = s is Weapon && s.cooldown > 0;
-      final color = cooldown ? GameColors.red : GameColors.white;
+      final color = cooldown ? GameColors.red : s.active ? GameColors.white : GameColors.gray;
       blocks.add(TextBlock("${s.name} ",color,false));
       if (s.damage > 0) blocks.add(TextBlock("${s.dmgTxt}% ", GameColors.gray, false));
       blocks.add(TextBlock("${s.active ? '+' : '-'}",color,true));
@@ -45,7 +45,7 @@ class ShipStatus extends ShipSubSystem {
         blocks.add(TextBlock("${s.ammo!.name}: ${systemControl.ammoFor(s.ammo!)}",GameColors.coral,true));
       }
     }
-    if (!tactical && nav.targetShip != null) {
+    if (!tactical && loc is ImpulseLocation && nav.targetShip != null) {
       final sustained = ship.sustainedRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
       blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
       final dist = ship.distanceFrom(nav.targetShip!).round();
@@ -55,21 +55,24 @@ class ShipStatus extends ShipSubSystem {
       blocks.addAll(combatText());
     }
     if (!tactical) {
-      blocks.add(TextBlock("Targ Facing: ${nav.targetFacing}", GameColors.gray, true));
-      blocks.add(TextBlock("Facing: ${nav.facing}", GameColors.gray, true));
-      blocks.add(TextBlock("Position: ${nav.pos}", GameColors.gray, true));
-      blocks.add(TextBlock("Heading: ${nav.autoPilot.heading.cell.coord}", GameColors.gray, true));
-      blocks.add(TextBlock("Velocity: ${nav.velocityString()}", GameColors.gray, true));
-      blocks.add(TextBlock("Speed: ${nav.speed.toStringAsFixed(2)}", GameColors.gray, true));
-      blocks.add(TextBlock("Throttle: ${nav.throttle}", GameColors.gray, true));
+      if (loc is ImpulseLocation) {
+        blocks.add(TextBlock("GForce: ${ship.nav.gForce}", GameColors.green, true));
+        blocks.add(TextBlock("Targ Facing: ${nav.targetFacing}", GameColors.gray, true));
+        blocks.add(TextBlock("Facing: ${nav.facing}", GameColors.gray, true));
+        blocks.add(TextBlock("Position: ${nav.pos}", GameColors.gray, true));
+        blocks.add(TextBlock("Heading: ${nav.autoPilot.heading.cell.coord}", GameColors.gray, true));
+        blocks.add(TextBlock("Velocity: ${nav.velocityString()}", GameColors.gray, true));
+        blocks.add(TextBlock("Speed: ${nav.speed.toStringAsFixed(2)}", GameColors.gray, true));
+        blocks.add(TextBlock("Throttle: ${nav.throttle}", GameColors.gray, true));
+      }
       if (!abbrev) {
-        blocks.add(TextBlock("Total mass: ${ship.currentMass.toStringAsFixed(2)}", GameColors.gray, true));
-        blocks.add(TextBlock("Remaining capacity: ${ship.availableSpace.toStringAsFixed(2)}", GameColors.gray, true));
+        blocks.add(TextBlock("Mass: ${ship.currentMass.toStringAsFixed(2)}, ", GameColors.gray, false));
+        blocks.add(TextBlock("Capacity: ${ship.availableSpace.toStringAsFixed(2)}", GameColors.gray, true));
         blocks.add(TextBlock("Total scrap value: ${ship.scrapVal.toStringAsFixed(2)}", GameColors.gray, true));
       }
     }
     blocks.add(const TextBlock("",GameColors.black,true));
-    if (nav.targetCoord != null) blocks.add(TextBlock("Scanning Coord: $nav.targetCoord", GameColors.orange, true));
+    //if (nav.targetCoord != null) blocks.add(TextBlock("Scanning Coord: ${nav.targetCoord}", GameColors.orange, true));
     if (showScannedShip && !tactical && (nav.targetShip != null && nav.targetShip!.npc)) {
       blocks.add(const TextBlock("Scanning Ship: ", GameColors.orange, true));
       blocks.addAll(nav.targetShip!.status.display(tactical: true));
