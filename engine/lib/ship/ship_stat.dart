@@ -5,12 +5,13 @@ import 'package:crawlspace_engine/ship/systems/weapon_profiler.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
 import '../color.dart';
 import '../fugue_engine.dart';
+import '../galaxy/galaxy.dart';
 import '../galaxy/hazards.dart';
 
 class ShipStatus extends ShipSubSystem {
   ShipStatus(super.ship);
 
-  List<TextBlock> display({bool tactical = false, bool showScannedShip = true, nebula = false}) {
+  List<TextBlock> display(Galaxy g,{bool tactical = false, bool showScannedShip = true, nebula = false}) {
     final abbrev = !tactical && nav.targetShip != null;
     final hostile = ship.pilot.hostile;
     if (nebula || (tactical && loc.cell.hasHaz(Hazard.nebula))) return [TextBlock("In Nebula", GameColors.red, true)];
@@ -72,10 +73,11 @@ class ShipStatus extends ShipSubSystem {
       }
     }
     blocks.add(const TextBlock("",GameColors.black,true));
-    //if (nav.targetCoord != null) blocks.add(TextBlock("Scanning Coord: ${nav.targetCoord}", GameColors.orange, true));
+    final c = nav.targetCoord;
+    if (c != null) blocks.add(TextBlock("Scanning: ${loc.map[c]?.toScannerString(g, verbose: true)}", GameColors.orange, true));
     if (showScannedShip && !tactical && (nav.targetShip != null && nav.targetShip!.npc)) {
       blocks.add(const TextBlock("Scanning Ship: ", GameColors.orange, true));
-      blocks.addAll(nav.targetShip!.status.display(tactical: true));
+      blocks.addAll(nav.targetShip!.status.display(g,tactical: true));
     }
     return blocks;
   }

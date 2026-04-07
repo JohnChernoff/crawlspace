@@ -133,7 +133,7 @@ class MovementController extends FugueController {
       final MoveResult? result;
       if (ship.nav.currentPath.isNotEmpty) {
         result = moveShip(ship, ship.nav.currentPath.removeAt(0).loc);
-        print("${ship.name} moved, auts: ${result.preview?.auts}, loc: ${ship.loc}, tick: ${fm.auTick}");
+        //print("${ship.name} moved, auts: ${result.preview?.auts}, loc: ${ship.loc}, tick: ${fm.auTick}");
       } else {
         result = fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.aiRnd));
         glog("Moving: ${ship.name}, Tick: ${fm.auTick}, Result: ${result?.resultType.moving}",level: DebugLevel.Fine);
@@ -142,7 +142,7 @@ class MovementController extends FugueController {
     }
   }
 
-  MoveResult? vectorShip(Ship ship, Coord3D v) { //TODO: normalize v?
+  MoveResult? vectorShip(Ship ship, Coord3D v) { //normalize v?
     final loc = ship.loc.map[ship.loc.cell.coord.add(v)]?.loc;
     return (loc != null) ? moveShip(ship, loc) : null;
   }

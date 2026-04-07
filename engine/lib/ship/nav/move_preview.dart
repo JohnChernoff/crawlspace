@@ -14,6 +14,11 @@ class MovePreviewer {
   MovePreviewer(this.ship);
   int counter = 0;
 
+  static const double gravityAssistMax = 0.9;   // max 90% faster
+  static const double gravityResistMax = 0.75;   // max 75% slower
+  static const double minTraversalMult = 0.2;   // never too cheap
+  static const double maxTraversalMult = 2.50;   // never too punishing
+
   MovementPreview finalizeNewtonianStep({
     required NavState state,
     required MoveContext ctx,
@@ -304,29 +309,95 @@ class MovePreviewer {
     return map[hitCoord] ?? fallback;
   }
 
+  double gravityTraversalMultiplier({
+    required GridCell fromCell,
+    required GridCell toCell,
+  }) {
+    final from = fromCell.coord;
+    final to = toCell.coord;
+
+    final moveVec = Vec3(
+      (to.x - from.x).toDouble(),
+      (to.y - from.y).toDouble(),
+      (to.z - from.z).toDouble(),
+    );
+
+    if (moveVec.mag <= 1e-9) return 1.0;
+
+    final moveDir = moveVec.normalized;
+
+    final gFrom = fromCell.loc.grid.gravAt(from);
+    final gTo = toCell.loc.grid.gravAt(to);
+    final gAvg = gFrom.avg(gTo);
+
+    final heatFrom = fromCell.loc.grid.gravHeatMap[from] ?? 0.0;
+    final heatTo = toCell.loc.grid.gravHeatMap[to] ?? 0.0;
+    final heat = (heatFrom + heatTo) * 0.5;
+
+    if (gAvg.mag <= 1e-9 || heat <= 1e-9) return 1.0;
+
+    final gravDir = gAvg.normalized;
+    final alignment = moveDir.dot(gravDir).clamp(-1.0, 1.0);
+
+    double mult = 1.0;
+
+    if (alignment >= 0) {
+      mult -= alignment * heat * gravityAssistMax;
+    } else {
+      mult += (-alignment) * heat * gravityResistMax;
+    }
+
+    return mult.clamp(minTraversalMult, maxTraversalMult);
+  }
+
+  int gravityAdjustedTraversalAuts({
+    required Engine engine,
+    required GridCell fromCell,
+    required GridCell toCell,
+  }) {
+    final distance = fromCell.distCell(toCell);
+    final baseAuts = max(1, (engine.baseAutPerUnitTraversal * distance).round());
+    final mult = gravityTraversalMultiplier(fromCell: fromCell, toCell: toCell);
+    return max(1, (baseAuts * mult).round());
+  }
+
   MovementPreview previewNonNewtonianStep({
     required NavState state,
     required MoveContext ctx,
     required GridCell desiredCell,
     required Engine? engine,
   }) {
-    if (engine != null) {
-      final double distance = ctx.currentCell.distCell(desiredCell);
-      final int travelAuts = (engine.baseAutPerUnitTraversal * distance).round();
+    if (engine == null) {
       return MovementPreview(
         desiredCell: desiredCell,
-        actualCell: desiredCell,
-        auts: travelAuts,
-        energyRequired: engine.efficiency * 20,
-        newState: state.copyWith(pos: Position.fromCoord(desiredCell.coord)),
+        actualCell: ctx.currentCell,
+        engineFail: true,
+        newState: state,
       );
     }
 
+    final auts = gravityAdjustedTraversalAuts(
+      engine: engine,
+      fromCell: ctx.currentCell,
+      toCell: desiredCell,
+    );
+
+    final mult = gravityTraversalMultiplier(
+      fromCell: ctx.currentCell,
+      toCell: desiredCell,
+    );
+
+    final distance = ctx.currentCell.distCell(desiredCell);
+    final energy = (ship.currentMass * distance * mult * .75) / engine.efficiency;
+
+    if (ship.playship) print("Auts: $auts, Energy: $energy");
+
     return MovementPreview(
       desiredCell: desiredCell,
-      actualCell: ctx.currentCell,
-      engineFail: true,
-      newState: state,
+      actualCell: desiredCell,
+      auts: auts,
+      energyRequired: energy,
+      newState: state.copyWith(pos: Position.fromCoord(desiredCell.coord)),
     );
   }
 

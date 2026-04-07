@@ -53,6 +53,11 @@ class Coord3D {
     return this;
   }
 
+  Coord3D sub(Object other) {
+    if (other is Coord3D) return Coord3D(x - other.x, y - other.y, z - other.z);
+    return this;
+  }
+
   @override
   bool operator ==(Object other) {
     if (other is Coord3D) return x == other.x && y == other.y && z == other.z;
@@ -90,6 +95,14 @@ class Vec3 {
   }
 
   double dot(Vec3 o) => x * o.x + y * o.y + z * o.z;
+
+  Vec3 avg(Vec3 a) => Vec3(
+    (a.x + x) * 0.5,
+    (a.y + y) * 0.5,
+    (a.z + z) * 0.5,
+  );
+
+  double get angle2D => atan2(y, x);
 
   double angleFromVec2(Vec3 v) {
     return atan2(v.y, v.x); // radians, range: -π → π

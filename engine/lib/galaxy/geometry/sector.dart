@@ -103,7 +103,7 @@ class SectorCell extends GridCell {
   }
 
   @override
-  String toScannerString(Galaxy g) {
+  String toScannerString(Galaxy g, {verbose = false}) {
     StringBuffer sb = StringBuffer(super.toScannerString(g));
     int i = sb.isEmpty ? 0 : 1;
     for (final planet in g.planets.inSector(loc)) {

@@ -98,7 +98,7 @@ abstract class Grid {
       final coord = obj.loc.relativeDomainCoord(map.values.first.loc);
       if (coord != null && gravHeatMap.containsKey(coord)) {
         gravHeatMap[coord] = 1.0;
-        gravMap[coord] = Vec3(0,0,0);
+        //gravMap[coord] = null;
       }
     }
 
@@ -124,7 +124,7 @@ abstract class GridCell extends Grid {
   void clearHazards() => hazMap.clear();
 
 
-  String toScannerString(Galaxy g) {
+  String toScannerString(Galaxy g, {verbose = false}) { //TODO: verbosity/multiline
     StringBuffer sb = StringBuffer(toString());
     final hazards = hazMap.entries.where((h) => h.key != Hazard.wake && h.value > 0);
     for (final haz in hazards) sb.write("${haz.key.shortName}: ${haz.value.toStringAsFixed(2)} ");

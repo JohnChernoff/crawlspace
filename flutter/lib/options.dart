@@ -4,8 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const Color shipColor = Colors.blue;
 const Color depthColor = Colors.blue;
-const Color scanColor = Colors.white;
-const Color scanDepthColor = Colors.white;
+const Color scanColor = Colors.blue;
+const Color scanDepthColor = Colors.lightBlueAccent;
 const Color farColor = Colors.black;
 const Color nearColor = Colors.yellowAccent;
 
