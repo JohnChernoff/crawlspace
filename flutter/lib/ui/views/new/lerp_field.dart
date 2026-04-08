@@ -67,6 +67,7 @@ class GravityFieldTexture {
           heat,
           baseColor,
           bg,
+          v,
           intensityPower: intensityPower,
         );
 
@@ -102,20 +103,21 @@ class GravityFieldTexture {
   static Color _defaultGravityColor(
       double heat,
       GameColor baseColor,
-      GameColor background, {
-        smudge = SmudgeStyle.mixed,
+      GameColor background,
+      Vec3 v, {
+        SmudgeStyle smudge = SmudgeStyle.mixed,
         double intensityPower = 0.85,
+        double directionalTint = 0,
       }) {
-
-
     final t = pow(heat.clamp(0.0, 1.0), intensityPower).toDouble();
+
     GameColor mixed;
     if (smudge == SmudgeStyle.graySat) {
       final base = GameColor.lerp(GameColors.gray, baseColor, t);
       mixed = GameColor.lerp(background, base, t);
-    } else if (smudge == SmudgeStyle.glow) { // push toward white at high intensity
-      final base = GameColor.lerp(background, baseColor, t.toDouble());
-      final glow = pow(t, 2.0); // stronger curve
+    } else if (smudge == SmudgeStyle.glow) {
+      final base = GameColor.lerp(background, baseColor, t);
+      final glow = pow(t, 2.0).toDouble();
       mixed = GameColor.lerp(base, GameColors.white, glow * 0.25);
     } else if (smudge == SmudgeStyle.mixed) {
       final satT = pow(t, 0.7).toDouble();   // saturation comes in earlier
@@ -125,7 +127,21 @@ class GravityFieldTexture {
     } else {
       mixed = GameColor.lerp(background, baseColor, t);
     }
+
+    if (v.mag > 1e-9 && directionalTint > 0) {
+      final dir = _directionalColor(v);
+      mixed = GameColor.lerp(mixed, dir, directionalTint * t);
+    }
+
     return Color.fromARGB(mixed.a, mixed.r, mixed.g, mixed.b);
+  }
+
+  static GameColor _directionalColor(Vec3 v) {
+    final angle = atan2(v.y, v.x);
+    final hue = (angle / (2 * pi) * 360 + 360) % 360;
+    final hsv = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0);
+    final c = hsv.toColor();
+    return GameColor.fromRgb(c.red, c.green, c.blue, c.alpha);
   }
 
   static double sampleHeat(double sx, double sy, int mw, int mh, Float64List h) {
