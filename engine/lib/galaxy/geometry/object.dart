@@ -63,5 +63,5 @@ class MassiveObject<L extends SpaceLocation> extends SpaceObject<L> {
 }
 
 class GravBuoy extends MassiveObject<ImpulseLocation> {
-  GravBuoy(super.name, {super.earthMasses = 12, super.sublightFactor = 128});
+  GravBuoy(super.name, {super.earthMasses = 12, super.sublightFactor = 128, super.objColor = GameColors.red});
 }
