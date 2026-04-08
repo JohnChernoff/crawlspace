@@ -2,6 +2,22 @@ class GameColor {
   final int argb;
   const GameColor(this.argb);
 
+  GameColor scale(double t) => GameColor.fromRgb(
+    (r * t).round().clamp(0, 255),
+    (g * t).round().clamp(0, 255),
+    (b * t).round().clamp(0, 255),
+    a,
+  );
+
+  static GameColor lerp(GameColor a, GameColor b, double t) {
+    return GameColor.fromRgb(
+      (a.r + (b.r - a.r) * t).round().clamp(0, 255),
+      (a.g + (b.g - a.g) * t).round().clamp(0, 255),
+      (a.b + (b.b - a.b) * t).round().clamp(0, 255),
+      (a.a + (b.a - a.a) * t).round().clamp(0, 255),
+    );
+  }
+
   const GameColor.fromRgb(int r, int g, int b, [int a = 255])
       : argb = (a << 24) | (r << 16) | (g << 8) | b;
 

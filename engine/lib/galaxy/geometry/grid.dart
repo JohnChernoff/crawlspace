@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import '../../color.dart';
 import '../../controllers/scanner_controller.dart';
 import '../../fugue_engine.dart';
 import '../planet.dart';
@@ -34,6 +35,7 @@ abstract class Grid {
   CellMap get map;
   Map<Coord3D,Vec3> gravMap = {};
   Map<Coord3D,double> gravHeatMap = {};
+  Map<Coord3D, GameColor> gravColorMap = {};
   final Map<Hazard,double> hazMap;
   final EffectMap<CellEffect> effects = EffectMap();
   List<Planet> planets(Galaxy g);
@@ -47,41 +49,63 @@ abstract class Grid {
 
   Grid({this.hazMap = const {}});
 
-  void updateGravMap(Galaxy g) {
+  void updateGravMap(Galaxy galaxy) {
     final t = DateTime.now().millisecondsSinceEpoch;
     gravMap.clear();
-    final mob = massiveObjects(g);
+    gravColorMap.clear();
+    final mob = massiveObjects(galaxy);
     //print("Massive Objects in $this: ${mob.length}");
     for (final cell in map.values) {
       Vec3 net = const Vec3(0, 0, 0);
       final objects = cell.loc is SectorLocation //TODO: make less kludgy?
           ? mob
-          : mob.where((o) => o.loc.sectorOrNull == cell.loc.sectorOrNull); //TODO: interactable
+          : mob.where((o) =>
+      o.loc.sectorOrNull == cell.loc.sectorOrNull); //TODO: interactable
       //print("Grav Obj for ${cell.loc}: ${objects.length}");
+
+      double totalStrength = 0.0;
+      double r = 0.0,
+          g = 0.0,
+          b = 0.0;
       for (final obj in objects) {
         final coord = obj.loc.relativeDomainCoord(cell.loc);
-        if (coord == null) {
-          print ("Warning: null gravity coordinate"); return;
-        }
+        if (coord == null) continue;
+
         final dx = coord.x - cell.coord.x;
         final dy = coord.y - cell.coord.y;
         final dz = coord.z - cell.coord.z;
 
         final offset = Vec3(dx.toDouble(), dy.toDouble(), dz.toDouble());
-        var dist = offset.mag;
-
-        if (cell.loc is ImpulseLocation) {
-          glog("obj: ${obj.name}, obj coord: $coord, cell coord: ${cell.coord}, dist: $dist", level: DebugLevel.Fine);
-        }
-        if (dist == 0) continue; //ignore for now
+        final dist = offset.mag;
+        if (dist == 0) continue;
 
         final direction = offset.normalized;
         final strength = obj.sublightMass / (dist * dist);
-        //obj.mass / (dist * dist);
+        final colorWeight = sqrt(strength);
 
         net = net + (direction * strength);
+
+        final c =  obj.objColor;
+        r += (c.r / 255) * colorWeight;
+        g += (c.g / 255) * colorWeight;
+        b += (c.b / 255) * colorWeight;
+        totalStrength += colorWeight;
       }
+
       gravMap[cell.coord] = net;
+
+      //final intensity = pow(heat, 0.8); // tweakable
+      //final finalColor = base.scale(intensity);
+
+      if (totalStrength > 0) {
+        gravColorMap[cell.coord] = GameColor.fromRgb(
+          ((r / totalStrength) * 255).round().clamp(0, 255),
+          ((g / totalStrength) * 255).round().clamp(0, 255),
+          ((b / totalStrength) * 255).round().clamp(0, 255),
+        );
+      } else {
+        gravColorMap [cell.coord] = GameColors.black;
+      }
     }
 
     final mags = gravMap.map((k, v) => MapEntry(k, v.mag));
@@ -97,12 +121,12 @@ abstract class Grid {
     for (final obj in mob) {
       final coord = obj.loc.relativeDomainCoord(map.values.first.loc);
       if (coord != null && gravHeatMap.containsKey(coord)) {
-        gravHeatMap[coord] = 1.0;
-        //gravMap[coord] = null;
+        gravHeatMap[coord] = 1.0; //gravMap[coord] = null;
+        gravColorMap[coord] = obj.objColor;
       }
     }
 
-    print("Map updated: ${DateTime.now().millisecondsSinceEpoch - t} millis");
+    glog("Map updated: ${DateTime.now().millisecondsSinceEpoch - t} millis");
   }
 
   Vec3 gravAt(Coord3D c) => gravMap[c] ?? const Vec3(0, 0, 0);

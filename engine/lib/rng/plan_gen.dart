@@ -37,6 +37,7 @@ class PlanetDescGen {
       "flood-plain world", "mud-rich world"],
     EnvType.arid:         ["arid world", "semi-desert world",
       "dust world", "desiccated world"],
+    EnvType.terminator: ["tidally locked terminator zone"],
   };
 
   static const Map<EnvType, List<String>> _envDetail = {
@@ -124,6 +125,9 @@ class PlanetDescGen {
       "Dust storms last for weeks and carry enough grit to strip paint.",
       "The landscape has a spare, exhausted beauty that grows on you, if you survive it.",
     ],
+    EnvType.terminator: [
+      "Tidal locking makes this the worst of both worlds - a side eternally facing the sun and a side eternally bereft."
+    ]
   };
 
   static const Map<PlanetAge, List<String>> _ageModifier = {

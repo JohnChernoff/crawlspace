@@ -10,6 +10,7 @@
 import 'dart:math';
 import 'package:crawlspace_engine/stock_items/trade/trade_enums.dart';
 import '../../galaxy/galaxy.dart';
+import '../../galaxy/planet.dart';
 import '../../galaxy/system.dart';
 import '../../item.dart';
 import '../../rng/descriptors.dart';

@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 import '../../item.dart';
 import '../../stock_items/ship/stock_pile.dart';

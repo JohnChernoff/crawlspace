@@ -19,8 +19,56 @@ enum CivAge {
   remnant,     // once great, now diminished
 }
 
+enum PlanetAge {
+  newlyColonized(),
+  modern(),
+  established(),
+  longStanding(hyphenated: true),
+  old(),
+  antiquated(),
+  ancient();
+  final bool hyphenated;
+  const PlanetAge({this.hyphenated = false});
+  @override
+  String toString() => enumToString(this,hyphenate: true);
+}
+
+enum EnvType {
+  icy(GameColors.cyan, 0.2,  0.4,  0.8), //DistrictLvl.light,DistrictLvl.medium,DistrictLvl.heavy),
+  snowy(GameColors.white, 0.4,  0.5,  0.7), //(DistrictLvl.medium,DistrictLvl.heavy,DistrictLvl.heavy),
+  desert(GameColors.khaki, 0.5,  0.6,  0.7), // (DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy),
+  rocky(GameColors.gray, 0.3,  0.5,  1.2), //(DistrictLvl.medium,DistrictLvl.medium,DistrictLvl.heavy),
+  mountainous(GameColors.brown, 0.6,  0.7,  1.1), //(DistrictLvl.light,DistrictLvl.light,DistrictLvl.heavy),
+  oceanic(GameColors.blue, 0.9,  1.0,  0.6), //DistrictLvl.medium,DistrictLvl.medium,DistrictLvl.medium),
+  volcanic(GameColors.red, 0.2,  0.4,  1.3), //(DistrictLvl.none,DistrictLvl.none,DistrictLvl.medium),
+  toxic(GameColors.neonGreen, 0.15, 0.5,  1.1), //(DistrictLvl.none,DistrictLvl.none,DistrictLvl.medium),
+  jungle(GameColors.green, 0.7,  0.7,  0.6), //(DistrictLvl.light,DistrictLvl.light,DistrictLvl.light),
+  arboreal(GameColors.olive, 0.8,  0.8,  0.7), //(DistrictLvl.medium,DistrictLvl.light,DistrictLvl.light),
+  earthlike(GameColors.skyBlue, 1.0,  1.0,  1.0),
+  paradisiacal(GameColors.gold, 1.1,  1.1,  0.7),
+  alluvial(GameColors.lightBlue, 0.9,  0.9,  0.8), //(DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy),
+  arid(GameColors.tan, 0.6,  0.5,  0.6), //(DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy),
+  terminator(GameColors.orange, 0.7,  0.8,  0.9), //(DistrictLvl.medium, DistrictLvl.medium, DistrictLvl.light),
+  ;
+  final GameColor color;
+  final double popMod, commMod, dustMod;
+  DistrictLvl get maxResLvl => DistrictLvl.fromVal(popMod);
+  DistrictLvl get maxCommLvl => DistrictLvl.fromVal(commMod);
+  DistrictLvl get maxDustLvl => DistrictLvl.fromVal(dustMod);
+
+  const EnvType(this.color,this.popMod,this.commMod,this.dustMod);
+  @override
+  String toString() => enumToString(this,hyphenate: false);
+}
+
 enum DistrictLvl { none("-"), light("+"), medium("++"), heavy("+++");
   const DistrictLvl(this.shortString);
+  factory DistrictLvl.fromVal(double v) => switch(v) {
+    > .8  => DistrictLvl.heavy,
+    > .5  => DistrictLvl.medium,
+    > .2 => DistrictLvl.light,
+     _ => DistrictLvl.none
+  };
   bool atOrAbove(DistrictLvl lvl) => index >= lvl.index;
   final String shortString;
 }
@@ -45,6 +93,7 @@ class Planet extends SpaceEnvironment<OrbitalLocation> {
   } * (homeworld ? 1.5 : 1.0);
   CivAge age = CivAge.established; //TODO: randomize
   EnvType environment;
+  GameColor get objColor => environment.color;
   late Goods export;
   double industry;    // 0–1
   double commerce;    // 0–1
@@ -102,13 +151,7 @@ class Planet extends SpaceEnvironment<OrbitalLocation> {
       demandFor(good) >= threshold;
 
   // ── Constructor ────────────────────────────────────────────────────────────
-
-  DistrictLvl tier(double v) {
-    if (v < 0.3) return DistrictLvl.none;
-    if (v < 0.5) return DistrictLvl.light;
-    if (v < 0.8) return DistrictLvl.medium;
-    return DistrictLvl.heavy;
-  }
+  DistrictLvl tier(double v) => DistrictLvl.fromVal(v);
 
   Planet(super.name, super.fedLvl, super.techLvl, Random rnd, {
     required this.species,
@@ -231,8 +274,10 @@ class Planet extends SpaceEnvironment<OrbitalLocation> {
 
   @override
   String toString() {
-    return "$name : Fed: $fedStr, Tech: $techStr, "
-        "RCI: ${tier(population).name}/"
+    return "$name : Env: $environment, Earth Masses: ${earthMasses?.toStringAsFixed(2)}, "
+        "Fed: $fedStr, Tech: $techStr, "
+        "RCI: pop: ${population.toStringAsFixed(2)}, "
+        "${tier(population).name}/"
         "${tier(commerce).name}/"
         "${tier(industry).name}";
   }

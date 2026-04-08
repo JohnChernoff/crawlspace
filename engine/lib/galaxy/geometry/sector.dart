@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
-import 'package:crawlspace_engine/galaxy/geometry/path_gen.dart';
 import 'package:crawlspace_engine/galaxy/planet.dart';
 import 'package:crawlspace_engine/galaxy/star.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';

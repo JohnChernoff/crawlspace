@@ -28,7 +28,7 @@ class SpaceEnvironment<L extends SpaceLocation> extends MassiveObject<L> {
   double rapport = 0; // -1–1
 
   SpaceEnvironment(super.name, this.fedLvl, this.techLvl,
-      {super.shortDesc, super.mass = 1, super.earthMasses, super.tuningFactor, super.sublightFactor});
+      {super.shortDesc, super.mass = 1.0, super.earthMasses, super.tuningFactor, super.sublightFactor});
 }
 
 class SpaceObject<L extends SpaceLocation> extends Locatable<L>

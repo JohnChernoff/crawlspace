@@ -49,6 +49,7 @@ enum StellarClass {
 class Star extends MassiveObject<ImpulseLocation> {
   final StellarClass stellarClass;
   bool jumpgate;
+  GameColor get objColor => stellarClass.color;
 
   Star(
       this.stellarClass,

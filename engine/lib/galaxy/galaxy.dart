@@ -12,7 +12,6 @@ import 'package:crawlspace_engine/galaxy/reg/plan_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/ship_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/star_reg.dart';
-import 'package:crawlspace_engine/rng/descriptors.dart';
 import 'package:crawlspace_engine/rng/item_gen.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../rng/star_sys_gen.dart';

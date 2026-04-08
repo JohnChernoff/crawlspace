@@ -295,6 +295,10 @@ class AsciiGridPainter extends CustomPainter {
       if (!s.npc) return shipColor;
     }
 
+    if (cell is SectorCell && cell.hasPlanets(fm.galaxy)) {
+      return Color(cell.planets(fm.galaxy).first.environment.color.argb);
+    }
+
     if (state.sameDepthAndNotEmpty) {
       return Colors.white; //depthColor;
     }

@@ -176,18 +176,40 @@ class System extends Grid implements Nameable {
       ? g.planets.randomUnoccupiedLocation(this, rnd)
       : centerLoc;
 
+      final candidates = PlanetBlueprint.candidatesFor(
+          pData.orbitalZone, pData.type,
+          tidallyLocked: pData.tidallyLocked);
+      final env = pData.isGas
+          ? EnvType.toxic  // or a new gasGiant EnvType if you want
+          : candidates[rnd.nextInt(candidates.length)];
+      // Log-scale mass factor: peaks around 1 EM, penalizes tiny worlds
+      final massFactor = (log(pData.earthMasses + 0.01) / log(10) + 2) / 4;
+      final massFactorClamped = massFactor.clamp(0.0, 1.0);
+      final envCeiling = env.popMod;                    // e.g. 0.4 for snowy
+      final popBase = (res * envCeiling + massFactorClamped * envCeiling) / 2;
+      //print("env: ${env.name}, res: $res, pop: ${env.popMod}, Pop Base: $popBase");
+
+      final population = pData.isGas ? 0.0 : Rng.betaRnd(rnd, popBase, 8);
+      bool isCommercial = !pData.isGas
+          && env != EnvType.toxic
+          && pData.relativeMass > .1
+          && population > 0.1;
+
+      final commBase = !isCommercial ? 0.0
+          : (comm * env.commMod).clamp(0.0, 1.0);
+
       final planet = Planet(
         g.nameGenerator.generatePlanetName(),
         Rng.betaRnd(rnd, fed, 15),
         Rng.betaRnd(rnd, tech, 12),
         rnd,
-        species: Rng.weightedRandom(g.civMod.civIntensity[this]!, rnd),
-        population: Rng.betaRnd(rnd, res, 20),
-        commerce: Rng.betaRnd(rnd, comm, 10),
-        industry: Rng.betaRnd(rnd, dust, 6),
-        environment: PlanetBlueprint.candidatesFor(OrbitalZone.inner, pData.type).first, //TODO: determine OrbitalZone
-        weirdness: rnd.nextDouble(),
-        earthMasses: pData.relativeMass,
+        species:    Rng.weightedRandom(g.civMod.civIntensity[this]!, rnd),
+        population: population,
+        commerce:   Rng.betaRnd(rnd, commBase, 10),
+        industry:   pData.isGas ? 0.0 : Rng.betaRnd(rnd, (dust * env.dustMod).clamp(0,1),  6),
+        environment: env,
+        weirdness:  rnd.nextDouble(),
+        earthMasses: pData.earthMasses,
         sublightFactor: 255,
       );
 

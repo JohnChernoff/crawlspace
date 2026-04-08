@@ -2,6 +2,7 @@ import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 
 void main() {
+  final stats = false;
   int n = 12;
   debugLevel = DebugLevel.Lowest;
   final engine = FugueEngine(Galaxy("Testlandia"), "Zug", seed: 0); // Random().nextInt(999));
@@ -18,15 +19,18 @@ void main() {
     }
   }
 
-  final fedVals = engine.galaxy.fedKernel.value.values.toList()..sort(); //print(vals);
-  fedVals.sort();
-  double p(double f) => fedVals[(fedVals.length * f).floor()];
-  print("***");
-  print("10% ${p(0.1)} 50% ${p(0.5)} 90% ${p(0.9)}");
+  if (stats) {
+    final fedVals = engine.galaxy.fedKernel.value.values.toList()..sort(); //print(vals);
+    fedVals.sort();
+    double p(double f) => fedVals[(fedVals.length * f).floor()];
+    print("***");
+    print("10% ${p(0.1)} 50% ${p(0.5)} 90% ${p(0.9)}");
 
-  final commVals = engine.galaxy.commerceKernel.value.values.toList()..sort(); //print(vals);
-  commVals.sort();
-  double p2(double f) => commVals[(commVals.length * f).floor()];
-  print("***");
-  print("10% ${p2(0.1)} 50% ${p2(0.5)} 90% ${p2(0.9)}");
+    final commVals = engine.galaxy.commerceKernel.value.values.toList()..sort(); //print(vals);
+    commVals.sort();
+    double p2(double f) => commVals[(commVals.length * f).floor()];
+    print("***");
+    print("10% ${p2(0.1)} 50% ${p2(0.5)} 90% ${p2(0.9)}");
+  }
+
 }

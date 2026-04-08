@@ -4,43 +4,7 @@ import '../galaxy/planet.dart';
 
 Random _rndDescriptor = Random();
 
-enum PlanetAge {
-  newlyColonized(),
-  modern(),
-  established(),
-  longStanding(hyphenated: true),
-  old(),
-  antiquated(),
-  ancient();
-  final bool hyphenated;
-  const PlanetAge({this.hyphenated = false});
-  @override
-  String toString() => enumToString(this,hyphenate: true);
-}
-
 enum WordType { noun, adj }
-enum EnvType {
-  icy(DistrictLvl.light,DistrictLvl.medium,DistrictLvl.heavy),
-  snowy(DistrictLvl.medium,DistrictLvl.heavy,DistrictLvl.heavy),
-  desert(DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy),
-  rocky(DistrictLvl.medium,DistrictLvl.medium,DistrictLvl.heavy),
-  mountainous (DistrictLvl.light,DistrictLvl.light,DistrictLvl.heavy),
-  oceanic(DistrictLvl.medium,DistrictLvl.medium,DistrictLvl.medium),
-  volcanic(DistrictLvl.none,DistrictLvl.none,DistrictLvl.medium),
-  toxic(DistrictLvl.none,DistrictLvl.none,DistrictLvl.medium),
-  jungle(DistrictLvl.light,DistrictLvl.light,DistrictLvl.light),
-  arboreal(DistrictLvl.medium,DistrictLvl.light,DistrictLvl.light),
-  earthlike(DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy),
-  paradisiacal(DistrictLvl.medium,DistrictLvl.heavy,DistrictLvl.light),
-  alluvial(DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy),
-  arid(DistrictLvl.heavy,DistrictLvl.heavy,DistrictLvl.heavy),
-  terminator(DistrictLvl.medium, DistrictLvl.medium, DistrictLvl.light),
-  ;
-  final DistrictLvl maxResLvl,maxCommLvl,maxDustLvl;
-  const EnvType(this.maxResLvl,this.maxCommLvl,this.maxDustLvl);
-  @override
-  String toString() => enumToString(this,hyphenate: false);
-}
 
 enum PlanetDescriptor {
   rebel(0,9,0,77,[],[],[],WordType.adj),

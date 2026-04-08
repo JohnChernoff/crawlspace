@@ -1,13 +1,11 @@
 import 'dart:math';
-
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/rng/star_sys_gen.dart';
-
 import '../galaxy/galaxy.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/grid.dart';
+import '../galaxy/planet.dart';
 import '../galaxy/star.dart';
-import 'descriptors.dart';
 
 /// Orbital zone relative to the frost line.
 /// Drives EnvType selection and mass budget.
@@ -28,6 +26,34 @@ class PlanetBlueprint {
   final bool tidallyLocked;      // new
   final double relativeMass;
   final StellarClass parentStar;
+
+  /// Returns Earth masses for this blueprint.
+  /// Uses log-space interpolation within each type's physical range,
+  /// since planet mass distributions are log-normal in nature.
+  double get earthMasses {
+    // Min/max Earth-mass ranges per type, grounded in real astrophysics.
+    final (double minM, double maxM) = switch (type) {
+      PlanetType.terrestrial => (0.05,  1.5),    // Mercury-ish to slightly above Earth
+      PlanetType.superEarth  => (1.5,   10.0),   // 1.5–10 Earth masses
+      PlanetType.iceWorld    => (0.01,  1.0),    // Pluto-like to Ganymede-ish
+      PlanetType.icyGiant    => (10.0,  50.0),   // Uranus/Neptune territory
+      PlanetType.gasGiant    => (50.0,  4000.0), // Saturn up to ~13 Jupiter masses
+    };
+
+    // Log-space lerp: feels natural across orders of magnitude.
+    final logMin = log(minM);
+    final logMax = log(maxM);
+    return exp(logMin + relativeMass * (logMax - logMin));
+  }
+
+  bool get isGas => type == PlanetType.icyGiant || type == PlanetType.gasGiant;
+
+  OrbitalZone get orbitalZone {
+    if (orbitalRadius < parentStar.habitableRadius)  return OrbitalZone.inner;
+    if (orbitalRadius < parentStar.frostRadius)      return OrbitalZone.habitable;
+    if (orbitalRadius < parentStar.frostRadius * 3)  return OrbitalZone.outer;
+    return OrbitalZone.distant;
+  }
 
   const PlanetBlueprint({
     required this.type,
@@ -67,6 +93,7 @@ class PlanetBlueprint {
       _ => EnvType.values,
     };
   }
+
   @override
   String toString() => 'PlanetBlueprint('
       'type: $type, '
@@ -202,7 +229,7 @@ class PlanetBlueprintGenerator {
     PlanetType.terrestrial => 0.1 + rnd.nextDouble() * 0.4,
     PlanetType.superEarth  => 0.4 + rnd.nextDouble() * 0.3,
     PlanetType.iceWorld    => 0.1 + rnd.nextDouble() * 0.3,
-    PlanetType.gasGiant    => 0.7 + rnd.nextDouble() * 0.3,
+    PlanetType.gasGiant    => 0.3 + rnd.nextDouble() * 0.7,
     PlanetType.icyGiant    => 0.4 + rnd.nextDouble() * 0.3,
   };
 

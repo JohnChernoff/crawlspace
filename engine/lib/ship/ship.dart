@@ -13,7 +13,6 @@ import 'package:crawlspace_engine/ship/systems/sensors.dart';
 import '../fugue_engine.dart';
 import '../galaxy/galaxy.dart';
 import '../galaxy/geometry/coord_3d.dart';
-import '../galaxy/reg/ship_reg.dart';
 import '../galaxy/system.dart';
 import '../galaxy/geometry/grid.dart';
 import '../galaxy/geometry/impulse.dart';

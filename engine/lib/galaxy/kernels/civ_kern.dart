@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:crawlspace_engine/galaxy/kernels/kern_field.dart';
 import '../system.dart';
 
@@ -16,6 +18,20 @@ class CivKernelField extends KernelField {
         final d = dist[s]!;
         value[s] = val(s) + kernel(d);
       }
+    }
+
+    // Normalize to 0–1 across all systems
+    final maxVal = value.values.reduce(max);
+    if (maxVal > 0) {
+      for (final s in galaxy.systems) {
+        value[s] = (value[s]! / maxVal).clamp(0.0, 1.0);
+      }
+    }
+
+    final mean = value.values.reduce((a, b) => a + b) / value.length;
+    final scale = 0.4 / mean; // target mean of 0.4
+    for (final s in galaxy.systems) {
+      value[s] = (value[s]! * scale).clamp(0.0, 1.0);
     }
   }
 }

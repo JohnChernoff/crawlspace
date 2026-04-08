@@ -6,7 +6,6 @@ import 'package:crawlspace_engine/galaxy/reg/pilot_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/plan_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/ship_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/star_reg.dart';
-import '../../item.dart';
 import '../geometry/location.dart';
 import '../system.dart';
 import 'item_reg.dart';
