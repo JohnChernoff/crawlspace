@@ -141,7 +141,7 @@ class PilotController extends FugueController {
                   //print("${ship.name} cannot find ${fm.target?.name}"); //TODO: fallback strategy
                 }
                 else if (w.cooldown == 0) {  //print("${ship.name} firing...");
-                  fm.combatController.fire(ship);
+                  fm.combatController.fire(ship,fm.galaxy);
                   return;
                 } else { //print("${ship.name} waiting...");
                   fm.pilotController.action(pilot, ActionType.combat, actionAuts: 1);

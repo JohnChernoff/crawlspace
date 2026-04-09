@@ -11,6 +11,7 @@ import 'package:crawlspace_engine/galaxy/reg/pilot_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/plan_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/ship_reg.dart';
+import 'package:crawlspace_engine/galaxy/reg/slug_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/star_reg.dart';
 import 'package:crawlspace_engine/rng/item_gen.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
@@ -90,6 +91,7 @@ class Galaxy {
   ShipRegistry get ships => rm.ships;
   ItemRegistry get items => rm.items;
   PilotRegistry get pilots => rm.pilots;
+  SlugReg get slugs => rm.slugs;
   bool formed = false;
 
   // Static (computed at gen, recomputed on tickCentury)

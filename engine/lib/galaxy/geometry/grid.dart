@@ -94,9 +94,6 @@ abstract class Grid {
 
       gravMap[cell.coord] = net;
 
-      //final intensity = pow(heat, 0.8); // tweakable
-      //final finalColor = base.scale(intensity);
-
       if (totalStrength > 0) {
         gravColorMap[cell.coord] = GameColor.fromRgb(
           ((r / totalStrength) * 255).round().clamp(0, 255),

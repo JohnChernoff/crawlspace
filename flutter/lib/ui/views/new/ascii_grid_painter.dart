@@ -194,6 +194,7 @@ class AsciiGridPainter extends CustomPainter {
       if (cell.asteroid != null) return "+";
       if (fm.galaxy.buoys.singleAtImpulse(cell.loc) != null) return "⊕";
       if (fm.galaxy.items.byLoc(cell.loc).isNotEmpty) return "\$";
+      if (fm.galaxy.slugs.inImpulse(cell.loc).isNotEmpty) return "s";
     }
 
     // 6. Empty

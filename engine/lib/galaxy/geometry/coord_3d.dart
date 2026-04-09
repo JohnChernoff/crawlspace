@@ -76,6 +76,7 @@ class Coord3D {
 class Vec3 {
   final double x, y, z;
   const Vec3(this.x, this.y, this.z);
+  factory Vec3.fromCoord(Coord3D c) => Vec3(c.x.toDouble(),c.y.toDouble(),c.z.toDouble());
   factory Vec3.copy(Vec3 v) => Vec3(v.x,v.y,v.z);
   Vec3 fromMag(double mag) => Vec3(
   mag == 0 ? 0.0 : x / mag,

@@ -1,3 +1,4 @@
+import 'package:crawlspace_engine/controllers/combat_controller.dart';
 import 'package:crawlspace_engine/controllers/fugue_controller.dart';
 import 'package:crawlspace_engine/controllers/pilot_controller.dart';
 import '../actors/pilot.dart';
@@ -15,9 +16,15 @@ class TickController extends FugueController {
   //returns false if player location domain changes
   bool runUntilNextPlayerTurn() { //fm.glog("Running until next turn...");
     final playShip = fm.playerShip;
-    final domain = playShip?.loc.domain;
+    final playLoc = playShip?.loc;
+    final domain = playLoc?.domain;
     final pilots = List.of(fm.activePilots); // ← Copy the list
     do {
+      if (playLoc is ImpulseLocation) {
+        for (ImpulseSlug slug in fm.galaxy.slugs.inSector(playLoc.sector).toSet()) {
+          slug.tick(fm);
+        }
+      }
       for (Pilot p in pilots) { //print("${p.name}'s turn");
         try {
           p.tick(fm);

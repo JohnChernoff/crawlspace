@@ -1,12 +1,52 @@
 import 'dart:math';
 
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/reg/locatables.dart';
+import 'package:crawlspace_engine/ship/nav/nav.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
+import '../fugue_engine.dart';
+import '../galaxy/galaxy.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/impulse.dart';
 import '../ship/ship.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
+
+class ImpulseSlug extends Locatable<ImpulseLocation> {
+  final int damage;
+  final DamageType dmgType;
+  double speed;
+  Coord3D target;
+  late Vec3 dir;
+  Position pos;
+  int moveCount = 0;
+  ImpulseSlug({
+    required this.damage,
+    required this.dmgType,
+    required this.speed,
+    required Coord3D origin,
+    required this.target}) : pos = Position.fromCoord(origin) {
+    final v = target.sub(origin);
+    dir = Vec3.fromCoord(v).normalized;
+  }
+  void tick(FugueEngine fm) {
+    final p = pos;
+    pos = pos.add(dir * speed);
+    if (pos.coord.inBounds(loc.dim)) {
+      if (pos.coord != p.coord) fm.galaxy.slugs.move(this, ImpulseLocation(loc.system, loc.sectorCoord, pos.coord));
+      if (fm.galaxy.ships.atLocation(loc).isNotEmpty) {
+        fm.msg("Direct hit! (${dmgType}, ${damage})");
+        fm.combatController.damage(fm.galaxy.ships.atLocation(loc).first,damage,dmgType);
+        fm.galaxy.slugs.remove(this);
+      }
+      //print("Slug: ${p.coord} -> ${pos.coord}, $p -> $pos");
+    }
+    else {
+      fm.galaxy.slugs.remove(this);
+    }
+  }
+}
 
 class CombatController extends FugueController {
   CombatController(super.fm);
@@ -25,19 +65,30 @@ class CombatController extends FugueController {
     }
   }
 
-  void fire(Ship? ship) { //FugueEngine.glog("${ship?.name} fires...");
+  void fire(Ship? ship, Galaxy g) { //FugueEngine.glog("${ship?.name} fires...");
     if (ship != null) {
       Coord3D? target = ship.nav.targetShip?.loc.cell.coord ?? ship.nav.targetCoord;
       if (target == null) {
         fm.msg("Error: no target"); return;
       }
+      final shipLoc = ship.loc;
       final cell = ship.loc.map[target];
-      if (cell is ImpulseCell) { //TODO: sector-ranged weapons?
+      if (shipLoc is ImpulseLocation && cell is ImpulseCell) { //TODO: sector-ranged weapons?
         final results = ship.fireWeapons(cell, fm.combatRnd, ship: ship.nav.targetShip);
         if (results.isEmpty && ship == fm.playerShip) {
           fm.msg("No weapons ready");
         } else {
           for (final result in results) {
+
+            final slug = ImpulseSlug(
+                damage: result.dmg,
+                dmgType: result.weapon.dmgType,
+                speed: 1,
+                origin: shipLoc.cell.coord,
+                target: target);
+
+            g.slugs.register(slug, shipLoc);
+
             if (ship.nav.targetShip != null) {
               fm.msg("${ship.name} fires weapon: ${result.weapon.name}");
               bool rangedMishap = false;

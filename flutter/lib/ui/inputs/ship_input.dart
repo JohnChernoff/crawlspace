@@ -398,7 +398,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
         ),
         FireIntent: CallbackAction<FireIntent>(
             onInvoke: (_) {
-              fm.combatController.fire(fm.playerShip);
+              fm.combatController.fire(fm.playerShip, fm.galaxy);
               return null;
             }
         ),
