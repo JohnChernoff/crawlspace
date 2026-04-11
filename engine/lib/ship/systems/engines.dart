@@ -54,9 +54,9 @@ class Engine extends ShipSystem {
   /// Hidden movement-model stats.
   /// Keep defaults conservative so existing stock data still works.
   double thrust;
-  //double maxSpeed;
   EngineArch arch;
   Domain domain;
+  bool gravFree = true;
   EngineType engineType;
   EngineEgo ego;
   double xenoGen; // per AUT

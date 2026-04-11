@@ -8,8 +8,8 @@ const Color scanColor = Colors.blue;
 const Color scanDepthColor = Colors.lightBlueAccent;
 const Color farColor = Colors.black;
 const Color nearColor = Colors.yellowAccent;
-const kViewportWidth = 32;
-const kViewportHeight = 32;
+const kViewportWidth = 12;
+const kViewportHeight = 12;
 
 PlayerOptions fugueOptions = PlayerOptions();
 

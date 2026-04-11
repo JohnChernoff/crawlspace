@@ -81,8 +81,10 @@ class Weapon extends ShipSystem {
   final RangeConfig accuracyRangeConfig;
   final CritConfig critConfig;
   final Domain level;
+  final double speed;
   Ammo? ammo;
   int cooldown = 0;
+  double get slugSpeed => ammo != null ? ammo!.speed : speed;
 
   @override
   ShipSystemType get type => usesAmmo ? ShipSystemType.launcher : ShipSystemType.weapon;
@@ -103,6 +105,7 @@ class Weapon extends ShipSystem {
     this.critConfig = const CritConfig(),
     this.clipRate = 0,
     this.ammoType,
+    this.speed = 1.0,
     required super.baseCost,
     required super.baseRepairCost,
     required super.powerDraw,
@@ -137,6 +140,7 @@ class Weapon extends ShipSystem {
       ammoType: data.ammoType,
       energyRate: data.energyRate,
       fireRate: data.fireRate,
+      speed: data.speed,
       baseAccuracy: data.baseAccuracy,
       dmgRangeConfig: data.dmgRangeConfig,
       accuracyRangeConfig: data.accuracyRangeConfig,
@@ -148,17 +152,17 @@ class Weapon extends ShipSystem {
 
   bool get usesAmmo => clipRate > 0;
 
-  double fire(double dist, math.Random rnd, {Ship? targetShip, int? clips}) {
+  double fire(double dist, math.Random rnd, {Ship? targetShip, int? clips, required bool slug}) {
     double damage = 0;
     double hitRoll = rnd.nextDouble();
     //double effectiveAccuracy = baseAccuracy * accuracyRangeConfig.rangeMultiplier(dist);
     final effectiveAccuracy =
     (baseAccuracy * accuracyRangeConfig.rangeMultiplier(dist))
         .clamp(0.05, 0.95);
-    bool hit = hitRoll < effectiveAccuracy;
+    bool hit = slug || (hitRoll < effectiveAccuracy);
 
     if (hit) {
-      damage = _calcDamage(dist, rnd);
+      damage = _calcDamage(dist, rnd, slug);
       double overhit = effectiveAccuracy - hitRoll;
       double critChance = math.min(
         1.0,
@@ -173,15 +177,17 @@ class Weapon extends ShipSystem {
     return damage;
   }
 
-  double _calcDamage(double dist, math.Random rnd) {
-    double dmg = ammo == null
-      ? dmgBase + Rng.rollDice(dmgDice, dmgDiceSides, rnd) * dmgMult
-      : (dmgBase + (rnd.nextDouble() * ammo!.maxDamage)) * dmgMult;
-    //print("Gross damage: $dmg");
+  double _calcDamage(double dist, math.Random rnd, bool slug) {
+    double dmg = _grossDamage(rnd); //print("Gross damage: $dmg");
     //TODO: egos, etc.
+    if (slug && ammo == null) return dmg; //ranged weapons always include distance modifier
     final netDamage = dmg * dmgRangeConfig.rangeMultiplier(dist); //print("Net damage: $netDamage");
     return netDamage;
   }
+
+  double _grossDamage(math.Random rnd) => ammo == null
+      ? dmgBase + Rng.rollDice(dmgDice, dmgDiceSides, rnd) * dmgMult
+      : (dmgBase + (rnd.nextDouble() * ammo!.maxDamage)) * dmgMult;
 
 }
 
@@ -202,6 +208,7 @@ class WeaponData {
   final RangeConfig accuracyRangeConfig;
   final CritConfig critConfig;
   final Domain level;
+  final double speed;
 
   const WeaponData({
     required this.systemData,
@@ -219,6 +226,7 @@ class WeaponData {
     this.critConfig = const CritConfig(),
     this.clipRate = 0,
     this.ammoType,
+    this.speed = 1.0,
     this.ego = WeaponEgo.none,
   });
 }
@@ -245,6 +253,7 @@ class Ammo extends Item {
   final double splashFalloff;
   final int enchantment;
   final int maxEnchantment;
+  final double speed;
   double get expectedDamage => maxDamage * 0.5;
 
   Ammo(super.name, {
@@ -257,8 +266,9 @@ class Ammo extends Item {
     this.volitity = .9,
     this.ego = AmmoEgo.none,
     super.mass = 0.1,
-    this.enchantment= 0,
+    this.enchantment = 0,
     this.maxEnchantment = 9,
+    this.speed = .1,
     super.rarity = .01,
   });
 
@@ -275,7 +285,8 @@ class Ammo extends Item {
         splashFalloff: ammo.splashFalloff,
         enchantment: ammo.enchantment,
         maxEnchantment: ammo.maxEnchantment,
-        baseCost: ammo.baseCost
+        baseCost: ammo.baseCost,
+        speed: ammo.speed
     );
   }
 }

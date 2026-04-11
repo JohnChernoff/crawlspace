@@ -265,7 +265,7 @@ class Ship extends Item {
       toggleEngines(newLoc.domain);
     } else {
       if (newLoc is ImpulseLocation && newLoc.cell.asteroid != null) {
-        fm.combatController.damage(this, 100, DamageType.kinetic, details: "Asteroid Collision!");
+        fm.combatController.asteroidEncounter(this,newLoc.cell.asteroid!);
       }
     }
   }
@@ -413,7 +413,7 @@ class Ship extends Item {
     return "${hullStrength - hullDamage} hull remaining";
   }
 
-  List<FireResult> fireWeapons(ImpulseCell target, Random rnd, {Ship? ship}) {
+  List<FireResult> fireWeapons(ImpulseCell target, Random rnd, {Ship? ship, required bool slug}) {
     List<FireResult> results = [];
     if (loc is ImpulseLocation && (ship == null || ship.loc.domain == loc.domain)) {
       int? minCool;
@@ -430,7 +430,7 @@ class Ship extends Item {
           }
         }
         if (ammoOK) {
-          dmg += weapon.fire(loc.distCell(target), rnd, targetShip: ship, clips: clips);
+          dmg += weapon.fire(loc.distCell(target), rnd, targetShip: ship, clips: clips, slug: slug);
           if (minCool == null || minCool > weapon.cooldown) minCool = weapon.cooldown;
         }
         results.add(FireResult(dmg.floor(),weapon,ammoWarn));

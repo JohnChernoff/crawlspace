@@ -1,7 +1,9 @@
 import 'dart:math';
 
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/actors/pilot.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/reg/locatables.dart';
 import 'package:crawlspace_engine/ship/nav/nav.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
@@ -9,11 +11,12 @@ import '../fugue_engine.dart';
 import '../galaxy/galaxy.dart';
 import '../galaxy/geometry/coord_3d.dart';
 import '../galaxy/geometry/impulse.dart';
+import '../galaxy/geometry/sector.dart';
 import '../ship/ship.dart';
 import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 
-class ImpulseSlug extends Locatable<ImpulseLocation> {
+class ImpulseSlug extends SpaceObject<ImpulseLocation> {
   final int damage;
   final DamageType dmgType;
   double speed;
@@ -21,34 +24,52 @@ class ImpulseSlug extends Locatable<ImpulseLocation> {
   late Vec3 dir;
   Position pos;
   int moveCount = 0;
+  Ship fromShip;
   ImpulseSlug({
+    super.objColor,
     required this.damage,
     required this.dmgType,
     required this.speed,
-    required Coord3D origin,
-    required this.target}) : pos = Position.fromCoord(origin) {
-    final v = target.sub(origin);
+    required this.fromShip,
+    required this.target}) : pos = Position.fromCoord(fromShip.loc.cell.coord), super("${fromShip.name} slug (${dmgType})") {
+    final v = target.sub(fromShip.loc.cell.coord);
     dir = Vec3.fromCoord(v).normalized;
   }
-  void tick(FugueEngine fm) {
+
+  void tick(FugueEngine fm) { //print(this);
     final p = pos;
     pos = pos.add(dir * speed);
-    if (pos.coord.inBounds(loc.dim)) {
-      if (pos.coord != p.coord) fm.galaxy.slugs.move(this, ImpulseLocation(loc.system, loc.sectorCoord, pos.coord));
-      if (fm.galaxy.ships.atLocation(loc).isNotEmpty) {
-        fm.msg("Direct hit! (${dmgType}, ${damage})");
-        fm.combatController.damage(fm.galaxy.ships.atLocation(loc).first,damage,dmgType);
+    if (!_hitCheck(fm)) {
+      if (!pos.coord.inBounds(loc.dim)) {
         fm.galaxy.slugs.remove(this);
+      } else {
+        if (pos.coord != p.coord) fm.galaxy.slugs.move(this, ImpulseLocation(loc.system, loc.sectorCoord, pos.coord));
+        if (!_hitCheck(fm)) {
+          if (loc.cell.asteroid != null && fm.combatRnd.nextBool()) {
+            fm.msg("Asteroid hit! (${dmgType}, ${damage})"); //TODO: reduce asteroid mass? mining?!
+            fm.galaxy.slugs.remove(this);
+          }
+        } //print("Slug: ${p.coord} -> ${pos.coord}, $p -> $pos");
       }
-      //print("Slug: ${p.coord} -> ${pos.coord}, $p -> $pos");
-    }
-    else {
-      fm.galaxy.slugs.remove(this);
     }
   }
+
+  bool _hitCheck(FugueEngine fm) {
+    final ships = fm.galaxy.ships.atLocation(loc).where((s) => s != fromShip);
+    if (ships.isNotEmpty) { //TODO: what if we pass over a location?
+      fm.msg("Direct hit! (${dmgType}, ${damage})");
+      fm.combatController.damage(fm.galaxy.ships.atLocation(loc).first,damage,dmgType);
+      fm.galaxy.slugs.remove(this); return true;
+    }
+    return false;
+  }
+
+  @override
+  String toString() => "$name, ${loc.localCoord}";
 }
 
 class CombatController extends FugueController {
+  final slugs = true;
   CombatController(super.fm);
 
   void awaitNextWeapon(Ship? ship) {
@@ -65,45 +86,67 @@ class CombatController extends FugueController {
     }
   }
 
+  void asteroidEncounter(Ship ship, Asteroid asteroid) {
+    final roidPen = (asteroid.mass / Asteroid.maxMass).clamp(0.0, 1.0);
+    final speedPen = ship.nav.speedPenalty.clamp(0.0, 1.0);
+    final piloting = (ship.pilot.skills[SkillType.piloting] ?? 0.0).clamp(0.0, 1.0);
+
+    // Bigger asteroid + higher speed = more dangerous encounter.
+    final hazard = (0.55 * speedPen) + (0.45 * roidPen);
+
+    // Pilot skill reduces the effective chance of collision.
+    final collisionChance = (hazard * (1.0 - 0.7 * piloting)).clamp(0.0, 1.0);
+
+    final roll = fm.combatRnd.nextDouble();
+
+    if (roll < collisionChance) {
+      final damageAmount = 50 + (950 * speedPen * (0.35 + 0.65 * roidPen)).floor();
+      damage(
+        ship,
+        damageAmount,
+        DamageType.kinetic,
+        details: "Asteroid Collision!",
+      );
+    } else {
+      if (ship.playship) fm.msg("Asteroid dodged");
+    }
+  }
+
   void fire(Ship? ship, Galaxy g) { //FugueEngine.glog("${ship?.name} fires...");
     if (ship != null) {
-      Coord3D? target = ship.nav.targetShip?.loc.cell.coord ?? ship.nav.targetCoord;
+      Coord3D? target = ship.nav.targetShip?.loc.cell.coord ?? ship.nav.targetLoc?.cell.coord;
       if (target == null) {
         fm.msg("Error: no target"); return;
       }
       final shipLoc = ship.loc;
       final cell = ship.loc.map[target];
       if (shipLoc is ImpulseLocation && cell is ImpulseCell) { //TODO: sector-ranged weapons?
-        final results = ship.fireWeapons(cell, fm.combatRnd, ship: ship.nav.targetShip);
+        final results = ship.fireWeapons(cell, fm.combatRnd, ship: ship.nav.targetShip, slug: slugs);
         if (results.isEmpty && ship == fm.playerShip) {
           fm.msg("No weapons ready");
-        } else {
+        } else if (ship.nav.targetShip != null) {
           for (final result in results) {
-
-            final slug = ImpulseSlug(
-                damage: result.dmg,
-                dmgType: result.weapon.dmgType,
-                speed: 1,
-                origin: shipLoc.cell.coord,
-                target: target);
-
-            g.slugs.register(slug, shipLoc);
-
-            if (ship.nav.targetShip != null) {
-              fm.msg("${ship.name} fires weapon: ${result.weapon.name}");
-              bool rangedMishap = false;
-              if (result.weapon.usesAmmo) {
-                if (result.ammoWarn) {
-                  fm.msg("No ammo for ${result.weapon.name}");
+            fm.msg("${ship.name} fires weapon: ${result.weapon.name}");
+            bool rangedMishap = result.ammoWarn;
+            if (rangedMishap) fm.msg("No ammo for ${result.weapon.name}");
+            if (slugs) {
+              final slug = ImpulseSlug(
+                  objColor: ship.pilot.faction.color,
+                  damage: result.dmg,
+                  dmgType: result.weapon.dmgType,
+                  speed: result.weapon.slugSpeed,
+                  fromShip: ship,
+                  target: target);
+              g.slugs.register(slug, shipLoc);
+              slug.tick(fm);
+            } else {
+              if (!rangedMishap && result.weapon.usesAmmo) {
+                final path = ship.loc.map.greedyPath(ship.loc.cell,
+                    ship.nav.targetShip!.loc.cell, ship.loc.map.dim.maxDim, fm.combatRnd, jitter: 0, ignoreHaz: true);
+                final obstacle = path.firstWhereOrNull((c) => c.hazLevel > 0);
+                if (obstacle != null) {
+                  fm.msg("${result.weapon.ammo!.name} hits ${obstacle.hazMap.entries.firstWhere((o) => o.value > 0).key.name}!");
                   rangedMishap = true;
-                } else {
-                  final path = ship.loc.map.greedyPath(ship.loc.cell,
-                      ship.nav.targetShip!.loc.cell, ship.loc.map.dim.maxDim, fm.combatRnd, jitter: 0, ignoreHaz: true);
-                  final obstacle = path.firstWhereOrNull((c) => c.hazLevel > 0);
-                  if (obstacle != null) {
-                    fm.msg("${result.weapon.ammo!.name} hits ${obstacle.hazMap.entries.firstWhere((o) => o.value > 0).key.name}!");
-                    rangedMishap = true;
-                  }
                 }
               }
               if (!rangedMishap) {
@@ -113,9 +156,9 @@ class CombatController extends FugueController {
                   damage(ship.nav.targetShip!,result.dmg,result.weapon.dmgType);
                 }
               }
-              fm.pilotController.action(ship.pilot, ActionType.combat, actionAuts: 1); //or result.minCool?
             }
           }
+          fm.pilotController.action(ship.pilot, ActionType.combat, actionAuts: 1); //or result.minCool?
         }
       } else {
         fm.msg("Wrong firing domain");

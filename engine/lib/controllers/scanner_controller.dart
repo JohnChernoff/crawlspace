@@ -1,4 +1,5 @@
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import '../fugue_engine.dart';
 import '../color.dart';
 import '../galaxy/geometry/grid.dart';
@@ -109,8 +110,12 @@ class ScannerController extends FugueController {
         }
       }
       for (final i in sensorList) {
-        blocks.add(TextBlock(i.toString(), GameColors.white, true));
-        if (i.scanned?.system == true) blocks.add(TextBlock(i.name, i.objColor, true));
+        final loc = i.maybeLoc;
+        if (loc == null) refreshSensors(ship.loc.system);
+        else if (ship.loc.locatable(loc) && i.scanned?.system == true) {
+          currentScan.add(loc.cell); print("Cell: ${i.name}");
+          blocks.add(TextBlock("${loc.relativeDomainCoord(ship.loc)}: ${i.name}", currentScanSelection == loc.cell ? GameColors.gold : i.objColor, true));
+        }
       }
     }
     return blocks;
@@ -146,16 +151,16 @@ class ScannerController extends FugueController {
       if (ships.length > 1) {
         currentScannedShipIndex++;
         if (currentScannedShipIndex >= ships.length) currentScannedShipIndex = 0;
-        playShip.nav.targetCoord = null;
+        playShip.nav.targetLoc = null;
         playShip.nav.targetShip = ships.elementAt(currentScannedShipIndex);
       }
       else if (ships.length == 1) {
-        playShip.nav.targetCoord = null;
+        playShip.nav.targetLoc = null;
         playShip.nav.targetShip = ships.first;
       }
       else {
         playShip.nav.targetShip = null;
-        playShip.nav.targetCoord = scannedCell.coord;
+        playShip.nav.targetLoc = scannedCell.loc;
       }
     }
     fm.update();

@@ -8,7 +8,7 @@ import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:flutter/material.dart';
 
 enum SmudgeStyle {
-  glow,graySat,mixed,none
+  glow, graySat, mixed, none
 }
 
 class GravityFieldTexture {
@@ -19,6 +19,7 @@ class GravityFieldTexture {
   final Uint32List colorGrid;
   final int mw;
   final int mh;
+  final int pxPerCell;
 
   GravityFieldTexture(
       this.image,
@@ -28,16 +29,21 @@ class GravityFieldTexture {
       this.colorGrid,
       this.mw,
       this.mh,
+      this.pxPerCell,
       );
 
   static Future<GravityFieldTexture> build(
       Grid grid, {
         Color bkgCol = Colors.black,
         double intensityPower = 0.85,
+        int pxPerCell = 8,
         Color Function(double heat, GameColor baseColor, Vec3 v)? colorForGravity,
       }) async {
-    final mw = grid.map.dim.mx;
-    final mh = grid.map.dim.my;
+    final cellW = grid.map.dim.mx;
+    final cellH = grid.map.dim.my;
+
+    final mw = cellW * pxPerCell;
+    final mh = cellH * pxPerCell;
     final rgba = Uint8List(mw * mh * 4);
 
     final heatGrid = Float64List(mw * mh);
@@ -45,16 +51,47 @@ class GravityFieldTexture {
     final vyGrid = Float64List(mw * mh);
     final colorGrid = Uint32List(mw * mh);
 
-    final bg = GameColor.fromRgb(bkgCol.red, bkgCol.green, bkgCol.blue, bkgCol.alpha);
+    final bg = GameColor.fromRgb(
+      bkgCol.red,
+      bkgCol.green,
+      bkgCol.blue,
+      bkgCol.alpha,
+    );
 
-    for (int y = 0; y < mh; y++) {
-      for (int x = 0; x < mw; x++) {
-        final i = y * mw + x;
+    // Build the original per-cell field once.
+    final cellHeatGrid = Float64List(cellW * cellH);
+    final cellVxGrid = Float64List(cellW * cellH);
+    final cellVyGrid = Float64List(cellW * cellH);
+    final cellColorGrid = Uint32List(cellW * cellH);
+
+    for (int y = 0; y < cellH; y++) {
+      for (int x = 0; x < cellW; x++) {
+        final i = y * cellW + x;
         final coord = Coord3D(x, y, 0);
 
         final heat = grid.gravHeatMap[coord] ?? 0.0;
         final v = grid.gravAt(coord);
         final baseColor = grid.gravColorMap[coord] ?? GameColors.black;
+
+        cellHeatGrid[i] = heat;
+        cellVxGrid[i] = v.x;
+        cellVyGrid[i] = v.y;
+        cellColorGrid[i] = baseColor.argb;
+      }
+    }
+
+    // Now render a supersampled texture by sampling inside each cell.
+    for (int py = 0; py < mh; py++) {
+      for (int px = 0; px < mw; px++) {
+        final i = py * mw + px;
+
+        // Sample in "cell space", where integer coordinates are cell indices.
+        final sx = (px + 0.5) / pxPerCell;
+        final sy = (py + 0.5) / pxPerCell;
+
+        final heat = sampleHeat(sx, sy, cellW, cellH, cellHeatGrid);
+        final v = sampleVector(sx, sy, cellW, cellH, cellVxGrid, cellVyGrid);
+        final baseColor = sampleColor(sx, sy, cellW, cellH, cellColorGrid);
 
         heatGrid[i] = heat;
         vxGrid[i] = v.x;
@@ -72,7 +109,7 @@ class GravityFieldTexture {
         );
 
         final off = i * 4;
-        rgba[off]     = outColor.red;
+        rgba[off] = outColor.red;
         rgba[off + 1] = outColor.green;
         rgba[off + 2] = outColor.blue;
         rgba[off + 3] = outColor.alpha;
@@ -97,6 +134,7 @@ class GravityFieldTexture {
       colorGrid,
       mw,
       mh,
+      pxPerCell,
     );
   }
 
@@ -120,8 +158,8 @@ class GravityFieldTexture {
       final glow = pow(t, 2.0).toDouble();
       mixed = GameColor.lerp(base, GameColors.white, glow * 0.25);
     } else if (smudge == SmudgeStyle.mixed) {
-      final satT = pow(t, 0.7).toDouble();   // saturation comes in earlier
-      final brightT = pow(t, 1.2).toDouble(); // brightness comes in later
+      final satT = pow(t, 0.7).toDouble();
+      final brightT = pow(t, 1.2).toDouble();
       final base = GameColor.lerp(GameColors.gray, baseColor, satT);
       mixed = GameColor.lerp(background, base, brightT);
     } else {
@@ -144,7 +182,15 @@ class GravityFieldTexture {
     return GameColor.fromRgb(c.red, c.green, c.blue, c.alpha);
   }
 
-  static double sampleHeat(double sx, double sy, int mw, int mh, Float64List h) {
+  /// Samples a scalar field in "cell space".
+  /// Example: sx=3.5 means halfway through cell column 3.
+  static double sampleHeat(
+      double sx,
+      double sy,
+      int mw,
+      int mh,
+      Float64List h,
+      ) {
     final fx = sx - 0.5;
     final fy = sy - 0.5;
     final x0 = fx.floor();
@@ -152,15 +198,23 @@ class GravityFieldTexture {
     final tx = fx - x0;
     final ty = fy - y0;
 
-    final h00 = _heatAtFlat(h, x0,     y0,     mw, mh);
-    final h10 = _heatAtFlat(h, x0 + 1, y0,     mw, mh);
-    final h01 = _heatAtFlat(h, x0,     y0 + 1, mw, mh);
+    final h00 = _heatAtFlat(h, x0, y0, mw, mh);
+    final h10 = _heatAtFlat(h, x0 + 1, y0, mw, mh);
+    final h01 = _heatAtFlat(h, x0, y0 + 1, mw, mh);
     final h11 = _heatAtFlat(h, x0 + 1, y0 + 1, mw, mh);
 
     return _lerp(_lerp(h00, h10, tx), _lerp(h01, h11, tx), ty);
   }
 
-  static Vec3 sampleVector(double sx, double sy, int mw, int mh, Float64List vx, Float64List vy) {
+  /// Samples a vector field in "cell space".
+  static Vec3 sampleVector(
+      double sx,
+      double sy,
+      int mw,
+      int mh,
+      Float64List vx,
+      Float64List vy,
+      ) {
     final fx = sx - 0.5;
     final fy = sy - 0.5;
     final x0 = fx.floor();
@@ -168,9 +222,9 @@ class GravityFieldTexture {
     final tx = fx - x0;
     final ty = fy - y0;
 
-    final v00 = _vectAtFlat(vx, vy, x0,     y0,     mw, mh);
-    final v10 = _vectAtFlat(vx, vy, x0 + 1, y0,     mw, mh);
-    final v01 = _vectAtFlat(vx, vy, x0,     y0 + 1, mw, mh);
+    final v00 = _vectAtFlat(vx, vy, x0, y0, mw, mh);
+    final v10 = _vectAtFlat(vx, vy, x0 + 1, y0, mw, mh);
+    final v01 = _vectAtFlat(vx, vy, x0, y0 + 1, mw, mh);
     final v11 = _vectAtFlat(vx, vy, x0 + 1, y0 + 1, mw, mh);
 
     return Vec3(
@@ -180,7 +234,13 @@ class GravityFieldTexture {
     );
   }
 
-  static GameColor sampleColor(double sx, double sy, int mw, int mh, Uint32List colors) {
+  static GameColor sampleColor(
+      double sx,
+      double sy,
+      int mw,
+      int mh,
+      Uint32List colors,
+      ) {
     final fx = sx - 0.5;
     final fy = sy - 0.5;
     final x0 = fx.floor();
@@ -188,9 +248,9 @@ class GravityFieldTexture {
     final tx = fx - x0;
     final ty = fy - y0;
 
-    final c00 = _colorAtFlat(colors, x0,     y0,     mw, mh);
-    final c10 = _colorAtFlat(colors, x0 + 1, y0,     mw, mh);
-    final c01 = _colorAtFlat(colors, x0,     y0 + 1, mw, mh);
+    final c00 = _colorAtFlat(colors, x0, y0, mw, mh);
+    final c10 = _colorAtFlat(colors, x0 + 1, y0, mw, mh);
+    final c01 = _colorAtFlat(colors, x0, y0 + 1, mw, mh);
     final c11 = _colorAtFlat(colors, x0 + 1, y0 + 1, mw, mh);
 
     final top = GameColor.lerp(c00, c10, tx);
@@ -201,12 +261,25 @@ class GravityFieldTexture {
   static double _heatAtFlat(Float64List h, int x, int y, int mw, int mh) =>
       h[y.clamp(0, mh - 1) * mw + x.clamp(0, mw - 1)];
 
-  static Vec3 _vectAtFlat(Float64List vx, Float64List vy, int x, int y, int mw, int mh) {
+  static Vec3 _vectAtFlat(
+      Float64List vx,
+      Float64List vy,
+      int x,
+      int y,
+      int mw,
+      int mh,
+      ) {
     final i = y.clamp(0, mh - 1) * mw + x.clamp(0, mw - 1);
     return Vec3(vx[i], vy[i], 0);
   }
 
-  static GameColor _colorAtFlat(Uint32List colors, int x, int y, int mw, int mh) {
+  static GameColor _colorAtFlat(
+      Uint32List colors,
+      int x,
+      int y,
+      int mw,
+      int mh,
+      ) {
     final i = y.clamp(0, mh - 1) * mw + x.clamp(0, mw - 1);
     return GameColor(colors[i]);
   }
@@ -220,10 +293,17 @@ class GravityTextureCache {
 
   final Map<CellMap, Future<GravityFieldTexture>> _cache = {};
 
-  Future<GravityFieldTexture> get(Grid grid) {
+  Future<GravityFieldTexture> get(
+      Grid grid, {
+        int pxPerCell = 6,
+      }) {
     return _cache.putIfAbsent(
       grid.map,
-          () => GravityFieldTexture.build(grid, intensityPower: 0.85),
+          () => GravityFieldTexture.build(
+        grid,
+        intensityPower: 0.85,
+        pxPerCell: pxPerCell,
+      ),
     );
   }
 

@@ -4,8 +4,10 @@ import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:crawlspace_engine/ship/nav/move_ctx.dart';
 import 'package:crawlspace_engine/ship/nav/nav.dart';
+import 'package:crawlspace_flutter/options.dart';
 import 'package:flutter/material.dart';
 import 'ascii_grid_painter.dart';
+import 'grid_viewport.dart';
 import 'lerp_field.dart';
 
 class AsciiGridFast extends StatefulWidget {
@@ -37,7 +39,7 @@ class _AsciiGridFastState extends State<AsciiGridFast> {
   }
 
   Future<void> _syncGravityTexture() async {
-    if (_pendingLoad != null) return; // already loading
+    if (_pendingLoad != null) return;
 
     final ship = fm.playerShip;
     final grid = ship?.loc.grid;
@@ -64,7 +66,7 @@ class _AsciiGridFastState extends State<AsciiGridFast> {
 
       setState(() {
         _gravityTexture = texture;
-        _pendingLoad = null; // clear so future grid changes can trigger reload
+        _pendingLoad = null;
       });
     });
     await _pendingLoad;
@@ -96,6 +98,15 @@ class _AsciiGridFastState extends State<AsciiGridFast> {
       );
     }
 
+    final viewport = ship == null
+        ? null
+        : GridViewport.centeredOn(
+      center: ship.loc.cell.coord,
+      mapDim: ship.loc.map.dim,
+      width: kViewportWidth,
+      height: kViewportHeight,
+    );
+
     return LayoutBuilder(
       builder: (context, bc) {
         return CustomPaint(
@@ -106,6 +117,7 @@ class _AsciiGridFastState extends State<AsciiGridFast> {
             ghostCoord: ghostCoord,
             showAllCellsOnZPlane: fm.scannerController.showAllCellsOnZPlane,
             gravityTexture: _gravityTexture,
+            viewport: viewport,
           ),
         );
       },

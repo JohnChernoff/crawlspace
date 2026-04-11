@@ -1,20 +1,15 @@
-import 'dart:math';
-import 'dart:ui' as ui;
 import 'package:crawlspace_engine/controllers/movement_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
-import 'package:crawlspace_engine/galaxy/geometry/impulse.dart';
-import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
-import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ui_options.dart';
+import 'package:crawlspace_flutter/ui/views/new/cell_renderer.dart';
 import 'package:flutter/material.dart';
-import '../../../options.dart';
+import 'grid_viewport.dart';
 import 'lerp_field.dart';
 
 //TODO: remove target when not targeting
-
 class AsciiGridPainter extends CustomPainter {
   final FugueEngine fm;
   final MovementPreview? preview;
@@ -22,12 +17,15 @@ class AsciiGridPainter extends CustomPainter {
   final Coord3D? ghostCoord;
   final GravityFieldTexture? gravityTexture;
   final bool smoothG;
+  final GridViewport? viewport;
+  late final cr = CellRenderer(fm);
 
   AsciiGridPainter({
     required this.fm,
     required this.preview,
     required this.showAllCellsOnZPlane,
     required this.gravityTexture,
+    required this.viewport,
     this.ghostCoord,
     this.smoothG = true,
   });
@@ -45,26 +43,53 @@ class AsciiGridPainter extends CustomPainter {
     final map = ship.loc.map;
     final dim = map.dim;
     final is2D = map.dim.mz == 1;
-    final cellW = size.width / dim.mx;
-    final cellH = size.height / dim.my;
+
+    final vp = viewport ??
+        GridViewport.centeredOn(
+          center: ship.loc.cell.coord,
+          mapDim: dim,
+          width: dim.mx,
+          height: dim.my,
+        );
+
+    final cellW = size.width / vp.width;
+    final cellH = size.height / vp.height;
     final layerSize = is2D ? cellH : cellH / 2;
     final paint = Paint();
-    final projectedPath = ship.nav.projectedPath(4).toSet();
-
+    final projectedPath = ship.nav.projectedPath(4,fm).toSet();
 
     if (is2D && gravityTexture != null && smoothG) {
-      paintImage(
-        canvas: canvas,
-        rect: Offset.zero & size,
-        image: gravityTexture!.image,
-        fit: BoxFit.fill,
-        filterQuality: FilterQuality.high,
+      final ppc = gravityTexture!.pxPerCell.toDouble();
+
+      final src = Rect.fromLTWH(
+        vp.startX * ppc,
+        vp.startY * ppc,
+        vp.width * ppc,
+        vp.height * ppc,
+      );
+
+      final dst = Offset.zero & size;
+
+      canvas.drawImageRect(
+        gravityTexture!.image,
+        src,
+        dst,
+        paint,
       );
     }
 
-    for (int y = 0; y < dim.my; y++) {
-      for (int x = 0; x < dim.mx; x++) {
-        final baseRect = Rect.fromLTWH(x * cellW, y * cellH, cellW, cellH);
+    for (int sy = 0; sy < vp.height; sy++) {
+      final y = vp.startY + sy;
+
+      for (int sx = 0; sx < vp.width; sx++) {
+        final x = vp.startX + sx;
+
+        final baseRect = Rect.fromLTWH(
+          sx * cellW,
+          sy * cellH,
+          cellW,
+          cellH,
+        );
 
         if (!smoothG) {
           paint.color = Colors.black;
@@ -76,36 +101,59 @@ class AsciiGridPainter extends CustomPainter {
           final cell = entry.cell;
           final z = cell.coord.z;
           final t = dim.mz <= 1 ? 0.0 : z / (dim.mz - 1);
-          final stackXInset = 4; //cellW * 0.04;
-          final zLiftPerLayer = 1; //max(1.0, cellH * 0.015);
-          final dx = is2D ?  baseRect.left + cellW/2 : baseRect.left - stackXInset + (cellW - layerSize) * t;
+          final stackXInset = 4;
+          final zLiftPerLayer = 1;
+          final dx = is2D
+              ? baseRect.left + cellW / 2
+              : baseRect.left - stackXInset + (cellW - layerSize) * t;
           final dy = baseRect.top - (cell.coord.z * zLiftPerLayer) + (cellH - layerSize) * t;
-          final state = _renderStateForCell(cell, fm, ship, targetPathCoords, projectedPath, targetLoc?.cell,scanSelection,playerZ);
-          final glyph = _glyphForCell(cell, ship);
-          final color = _colorForCell(cell, ship, state, is2D: is2D);
-          final fontSize = _fontSizeForCell(layerSize, z, dim);
+          final state = CellRenderState.forCell(
+            cell,
+            fm,
+            ship,
+            targetPathCoords,
+            projectedPath,
+            targetLoc?.cell,
+            scanSelection,
+            playerZ,
+          );
+          final glyph = cr.glyphForCell(cell, ship);
+          final color = cr.colorForCell(cell, ship, state, is2D: is2D);
+          final fontSize = cr.fontSizeForCell(layerSize, z, dim);
 
           final layerRect = is2D
               ? baseRect
               : Rect.fromLTWH(dx, dy, layerSize, layerSize);
           final grid = ship.loc.grid;
           if (!smoothG) {
-            _paintCellBackground(canvas,layerRect,color: _bkgColorForCell(grid,cell));
-            (canvas, layerRect, ship.loc.grid.gravDirectionAt(cell.coord));
+            cr.paintCellBackground(canvas, layerRect, color: cr.bkgColorForCell(grid, cell));
           } else if (fm.uiOptions.boolOptions[OptBool.vectorHands]!) {
-            final sx = x + 0.5;
-            final sy = y + 0.5;
-            final texture = gravityTexture; if (texture != null) {
-              final v = GravityFieldTexture.sampleVector(sx, sy, texture.mw, texture.mh, texture.vxGrid, texture.vyGrid);
-              final heat = GravityFieldTexture.sampleHeat(sx, sy, texture.mw, texture.mh, texture.heatGrid);
-              _drawGravityHand(canvas, baseRect, v, heat);
+            final wx = x + 0.5;
+            final wy = y + 0.5;
+            final texture = gravityTexture;
+            if (texture != null) {
+              final v = GravityFieldTexture.sampleVector(
+                wx,
+                wy,
+                texture.mw,
+                texture.mh,
+                texture.vxGrid,
+                texture.vyGrid,
+              );
+              final heat = GravityFieldTexture.sampleHeat(
+                wx,
+                wy,
+                texture.mw,
+                texture.mh,
+                texture.heatGrid,
+              );
+              cr.drawGravityHand(canvas, baseRect, v, heat);
             }
           }
 
-          _paintGridBoundary(canvas, baseRect);
+          cr.paintGridBoundary(canvas, baseRect);
 
-
-          final paragraph = _buildParagraph(glyph, color, fontSize);
+          final paragraph = cr.buildParagraph(glyph, color, fontSize);
           final boxes = paragraph.getBoxesForRange(0, glyph.length);
 
           if (boxes.isNotEmpty) {
@@ -120,14 +168,12 @@ class AsciiGridPainter extends CustomPainter {
             canvas.drawParagraph(paragraph, baseRect.topLeft);
           }
 
-          //canvas.drawParagraph(paragraph, Offset(dx, dy));
-
           if (state.uiTarget || state.inShipPath) {
-            _paintTargetMarker(canvas, layerRect, fontSize);
+            cr.paintTargetMarker(canvas, layerRect, fontSize);
           }
 
           if (state.inTargetPath) {
-            _paintCellOutline(
+            cr.paintCellOutline(
               canvas,
               layerRect,
               color: Colors.white,
@@ -136,276 +182,24 @@ class AsciiGridPainter extends CustomPainter {
           }
 
           if (state.targeted) {
-            _paintCellOutline(
+            cr.paintCellOutline(
               canvas,
               layerRect,
               color: Colors.redAccent,
               strokeWidth: 2.0,
             );
           }
-
-
         }
       }
     }
-  }
-
-  String _glyphForCell(GridCell cell, Ship player) {
-    final ships = fm.galaxy.ships.atCell(cell);
-
-    // 1. Player ship
-    for (final s in ships) {
-      if (!s.npc) return "@";
-    }
-
-    // 2. NPC ships (if visible)
-    for (final s in ships) {
-      if (s.npc && player.canScan(cell)) {
-        return s.pilot.faction.species.glyph;
-      }
-    }
-
-    // 3. Effects
-    if (cell.effects.anyActive) {
-      return "#";
-    }
-
-    // 4. Hazards
-    final hazards = cell.hazMap.entries
-        .where((e) => e.value > 0 && e.key != Hazard.wake)
-        .map((e) => e.key)
-        .toList();
-
-    if (hazards.isNotEmpty) {
-      return _hazardGlyph(hazards);
-    }
-
-    // 5. Special cells
-    if (cell is SectorCell) {
-      if (cell.hasPlanets(fm.galaxy)) return "O";
-      if (cell.hasStars(fm.galaxy)) return "✦";
-      if (cell.hasBuoy) return "⊕";
-      if (cell.blackHole) return "-";
-    }
-
-    if (cell is ImpulseCell) {
-      if (cell.hasPlanet(fm.galaxy)) return "O";
-      if (cell.hasStar(fm.galaxy)) return "✦";
-      if (cell.asteroid != null) return "+";
-      if (fm.galaxy.buoys.singleAtImpulse(cell.loc) != null) return "⊕";
-      if (fm.galaxy.items.byLoc(cell.loc).isNotEmpty) return "\$";
-      if (fm.galaxy.slugs.inImpulse(cell.loc).isNotEmpty) return "s";
-    }
-
-    // 6. Empty
-    return fm.playerShip?.loc.domain == Domain.orbital ? "." : " ";
-  }
-
-  void _paintTargetMarker(
-      Canvas canvas,
-      Rect rect,
-      double fontSize,
-      ) {
-    final pb = ui.ParagraphBuilder(
-      ui.ParagraphStyle(textAlign: TextAlign.center, fontFamily: 'FixedSys'),
-    )
-      ..pushStyle(ui.TextStyle(
-        color: Colors.white,
-        fontSize: fontSize,
-      ))
-      ..addText("X");
-
-    final p = pb.build()
-      ..layout(ui.ParagraphConstraints(width: rect.width));
-
-    canvas.drawParagraph(p, Offset(rect.left, rect.top));
-  }
-
-  String _hazardGlyph(List<Hazard> hazards) {
-    if (hazards.length == 1) return hazards.first.glyph;
-
-    final h = hazards.toSet();
-
-    if (h.contains(Hazard.nebula) && h.contains(Hazard.ion)) return '≈';
-    if (h.contains(Hazard.nebula) && h.contains(Hazard.roid)) return '✱';
-    if (h.contains(Hazard.ion) && h.contains(Hazard.roid)) return '%';
-    if (h.contains(Hazard.gamma) && h.contains(Hazard.roid)) return '§';
-
-    if (hazards.length >= 3) return '※';
-
-    return hazards.first.glyph;
-  }
-
-  Color _bkgColorForCell(Grid grid, GridCell cell) { //final h = sqrt(normalized); // instead of just normalized
-    final h = grid.gravHeatMap[cell.coord] ?? 0; //print(h);
-    return Color.lerp(Colors.black,Colors.lightGreenAccent, h)!;
-  }
-
-  void _drawGravityHand(Canvas canvas, Rect rect, Vec3 v, double heat) {
-    final mag = v.mag;
-    if (mag < 0.0001 || heat < .2) return;
-
-    final dir = v.normalized;
-    final center = rect.center;
-    final side = rect.shortestSide/2;
-    final length = max(side/2,(side * heat.clamp(0.01, 1.0)));
-    final angle = atan2(dir.y, dir.x);
-    final headLen = side/2;
-    final end = Offset(
-      center.dx + dir.x * length,
-      center.dy + dir.y * length,
-    );
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.75)
-      ..strokeWidth = 1.2
-      ..strokeCap = StrokeCap.round;
-
-    if (length > headLen) {
-      // Shaft
-      canvas.drawLine(center, end, paint);
-    }
-
-    // Arrowhead
-    const headAngle = 0.4; // radians, ~23 degrees
-    final head1 = Offset(
-      end.dx - headLen * cos(angle - headAngle),
-      end.dy - headLen * sin(angle - headAngle),
-    );
-    final head2 = Offset(
-      end.dx - headLen * cos(angle + headAngle),
-      end.dy - headLen * sin(angle + headAngle),
-    );
-
-    canvas.drawLine(end, head1, paint);
-    canvas.drawLine(end, head2, paint);
-  }
-
-  Color _colorForCell(
-      GridCell cell,
-      Ship player,
-      _CellRenderState state,
-      { required bool is2D }) {
-    final ships = fm.galaxy.ships.atCell(cell);
-
-    if (state.selected) {
-      return state.sameDepthAndNotEmpty ? scanDepthColor : scanColor;
-    }
-
-    // Player ship
-    for (final s in ships) {
-      if (!s.npc) return shipColor;
-    }
-
-    if (cell is SectorCell && cell.hasPlanets(fm.galaxy)) {
-      return Color(cell.planets(fm.galaxy).first.environment.color.argb);
-    }
-
-    if (state.sameDepthAndNotEmpty) {
-      return Colors.white; //depthColor;
-    }
-
-    // NPC ships
-    for (final s in ships) {
-      if (s.npc && player.canScan(cell)) {
-        return Color(s.pilot.faction.color.argb);
-      }
-    }
-
-    // Effects
-    if (cell.effects.anyActive) {
-      final effect = cell.effects.allActive.first;
-      return Color(effect.effectColor.argb);
-    }
-
-    // Hazards
-    final hazards = cell.hazMap.entries
-        .where((e) => e.value > 0 && e.key != Hazard.wake)
-        .map((e) => e.key)
-        .toList();
-
-    if (hazards.isNotEmpty) {
-      return Color(hazards.first.color.argb);
-    }
-
-    final dim = player.loc.map.dim;
-    final dist = player.distanceFromLocation(cell.loc);
-    final proximity = ((1.0 - (dist / dim.maxDist).clamp(0, 1)) * 8).round() / 8;
-    return Color.lerp(farColor, nearColor, proximity)!;
-  }
-
-  double _fontSizeForCell(double baseSize, int z, GridDim dim) {
-    final maxZ = max(1, dim.mz - 1);
-    final t = sqrt(z / maxZ);
-
-    final depthFactor = 0.6 + 0.6 * t;
-
-    return max(baseSize * depthFactor, baseSize * 0.45);
-  }
-
-  void _paintCellBackground(
-      Canvas canvas,
-      Rect rect, {
-        required Color color,
-        double strokeWidth = 1.0,
-      }) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.fill;
-    canvas.drawRect(rect.deflate(strokeWidth / 2), paint);
-  }
-
-  void _paintCellOutline(
-      Canvas canvas,
-      Rect rect, {
-        required Color color,
-        double strokeWidth = 1.0,
-      }) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    canvas.drawRect(rect.deflate(strokeWidth / 2), paint);
-  }
-
-  void _paintGridBoundary(
-      Canvas canvas,
-      Rect rect, {
-        Color color = const Color(0x33FFFFFF),
-        double strokeWidth = 0.5,
-      }) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth;
-
-    canvas.drawRect(rect, paint);
-  }
-
-  ui.Paragraph _buildParagraph(String glyph, Color color, double fontSize) {
-    final builder = ui.ParagraphBuilder(
-      ui.ParagraphStyle(
-        fontFamily: 'JetBrains Mono',
-        textAlign: TextAlign.left,
-        maxLines: 1,
-      ),
-    )
-      ..pushStyle(ui.TextStyle(
-        color: color,
-        fontSize: fontSize,
-      ))
-      ..addText(glyph);
-
-    final p = builder.build();
-    p.layout(const ui.ParagraphConstraints(width: 1000)); // wide enough
-    return p;
   }
 
   @override
   bool shouldRepaint(covariant AsciiGridPainter oldDelegate) {
     return oldDelegate.preview != preview ||
         oldDelegate.ghostCoord != ghostCoord ||
-        oldDelegate.fm.auTick != fm.auTick; // only repaint on game tick
+        oldDelegate.viewport != viewport ||
+        oldDelegate.fm.auTick != fm.auTick;
   }
 }
 
@@ -426,75 +220,8 @@ List<_PaintCell> _visibleCellsAtXY(
   for (int z = 0; z < dim.mz; z++) {
     final cell = map.atXYZ(x, y, z);
     if (cell == null) continue;
-    //TODO: add scanner logic
-    //if (!cell.scannable(ScannerMode.active, ship.registry)) continue;
     result.add(_PaintCell(cell));
   }
 
   return result;
 }
-
-class _CellRenderState {
-  final bool scanned;
-  final bool targeted;
-  final bool inTargetPath;
-  final bool inShipPath;
-  final bool uiTarget;
-  final bool sameDepth;
-  final bool sameDepthAndNotEmpty;
-
-  const _CellRenderState({
-    this.scanned = false,
-    this.targeted = false,
-    this.inTargetPath = false,
-    this.inShipPath = false,
-    this.uiTarget = false,
-    this.sameDepth = false,
-    this.sameDepthAndNotEmpty = false,
-  });
-
-  bool get selected => scanned || targeted;
-  bool get special => scanned || targeted || sameDepthAndNotEmpty;
-}
-
-_CellRenderState _renderStateForCell(
-    GridCell cell,
-    FugueEngine fm,
-    Ship player,
-    Set<Coord3D> targetPathCoords,
-    Set<Coord3D> shipPathCoords,
-    GridCell? targetCell,      // precomputed targetLoc?.cell
-    GridCell? scanSelection,   // precomputed currentScanSelection
-    int playerZ,
-    ) {
-  final scanned = scanSelection?.loc == cell.loc;
-  final targeted = targetCell == cell;
-  final inTargetPath = targetPathCoords.contains(cell.coord);
-  final inShipPath = shipPathCoords.contains(cell.coord);
-  final sameDepth = (cell.coord.z - playerZ).abs() == 0;
-  final sameDepthAndNotEmpty = sameDepth && (
-      cell.hazLevel > 0 ||
-          fm.galaxy.ships.atCell(cell).isNotEmpty ||
-          (cell is ImpulseCell && (cell.hasPlanet(fm.galaxy) || fm.galaxy.items.byLoc(cell.loc).isNotEmpty)) ||
-          (cell is SectorCell && (cell.hasPlanets(fm.galaxy) || cell.hasStars(fm.galaxy) || cell.blackHole))
-  );
-  final uiTarget = targeted; // or separate this if you distinguish cursor vs final target
-
-  return _CellRenderState(
-    scanned: scanned,
-    targeted: targeted,
-    inTargetPath: inTargetPath,
-    inShipPath: inShipPath,
-    uiTarget: uiTarget,
-    sameDepth: sameDepth,
-    sameDepthAndNotEmpty: sameDepthAndNotEmpty,
-  );
-}
-
-/*
-  double _opacityForZ(int z, GridDim dim) { //apply to Paint.alpha
-    final maxZ = max(1, dim.mz - 1);
-    final t = sqrt(z / maxZ);
-    return 0.55 + 0.45 * t;
-  }
- */

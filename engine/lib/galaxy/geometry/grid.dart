@@ -147,6 +147,8 @@ abstract class GridCell extends Grid {
 
   String toScannerString(Galaxy g, {verbose = false}) { //TODO: verbosity/multiline
     StringBuffer sb = StringBuffer(toString());
+    final items = g.items.byLoc(loc); if (verbose) print("$loc => $items");
+    if (items.isNotEmpty && verbose) return items.toString();
     final hazards = hazMap.entries.where((h) => h.key != Hazard.wake && h.value > 0);
     for (final haz in hazards) sb.write("${haz.key.shortName}: ${haz.value.toStringAsFixed(2)} ");
     final ships = g.ships.atCell(this);

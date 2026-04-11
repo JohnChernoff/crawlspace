@@ -25,6 +25,9 @@ class GameColor {
   int get r => (argb >> 16) & 0xFF;
   int get g => (argb >> 8) & 0xFF;
   int get b => argb & 0xFF;
+
+  @override
+  String toString() => "[$a, $r, $g, $b]";
 }
 
 class GameColors {

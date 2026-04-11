@@ -20,6 +20,14 @@ sealed class SpaceLocation {
     if (c != null) return c; else throw StateError("Unknown cell at: $localCoord");
   }
 
+  bool locatable(SpaceLocation loc) {
+    SpaceLocation? l = loc;
+    while (l != null && !interactable(l)) {
+      l = l.upper;
+    }
+    return l != null;
+  }
+
   bool interactable(SpaceLocation loc) => loc.upper == upper;
 
   SectorLocation? get sectorOrNull {

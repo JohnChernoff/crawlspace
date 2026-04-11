@@ -92,7 +92,7 @@ class LayerTransitController extends FugueController {
       } //down
     } else if (shipLoc.domain == Domain.orbital) {
       if (ship.playship) fm.msg("You cannot do that!");
-    } else if (shipLoc is SectorLocation && !shipLoc.cell.hasGravitySource(fm.galaxy)) {
+    } else if (shipLoc is SectorLocation && !shipLoc.cell.hasGravitySource(fm.galaxy) && !(ship.systemControl.engine?.gravFree ?? false)) {
         if (ship.playship && !interdiction) {
           fm.msg("You cannot descend to impulse travel in deep space without a local grav buoy, planet or star.");
         }

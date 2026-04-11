@@ -19,7 +19,7 @@ class ShipGenerator {
     //print("Faction: ${pilot.faction.name}, tech: $level, $techLvl");
     ShipType shipType = Rng.weightedRandom(owner.faction.shipWeights.normalized,rnd);
     bool okType(ShipType type) {
-      if (shipType.dangerLvl > level) return false;
+      if (shipType.dangerLvl > techLvl) return false;
       if (owner.faction.isPirate || owner.faction.isWarmonger) {
         return rnd.nextDouble() < .1 || type.slots.map((s) => s.type).contains(ShipSystemType.weapon);
       }

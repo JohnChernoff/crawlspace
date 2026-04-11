@@ -85,10 +85,7 @@ class ImpulseCell extends GridCell {
 
   @override
   String toScannerString(Galaxy g, {verbose = false}) {
-    StringBuffer sb = StringBuffer(super.toScannerString(g));
-    for (Item item in g.items.byLoc(loc)) {
-      sb.write("\n${item.name}\n");
-    }
+    StringBuffer sb = StringBuffer(super.toScannerString(g, verbose: verbose));
     Planet? planet = getPlanet(g);
     if (planet != null) sb.write(verbose ? planet.shortString() : planet.name);
     return sb.toString();

@@ -73,8 +73,10 @@ class ShipStatus extends ShipSubSystem {
       }
     }
     blocks.add(const TextBlock("",GameColors.black,true));
-    final c = nav.targetCoord;
-    if (c != null) blocks.add(TextBlock("Scanning: ${loc.map[c]?.toScannerString(g, verbose: true)}", GameColors.orange, true));
+    final targLoc = nav.targetLoc;
+    print(targLoc);
+    if (targLoc != null) blocks.add(TextBlock("Scanning: ${targLoc.cell.toScannerString(g, verbose: true)}", GameColors.orange, true));
+    //else blocks.add(TextBlock("No target", GameColors.gray, true));
     if (showScannedShip && !tactical && (nav.targetShip != null && nav.targetShip!.npc)) {
       blocks.add(const TextBlock("Scanning Ship: ", GameColors.orange, true));
       blocks.addAll(nav.targetShip!.status.display(g,tactical: true));

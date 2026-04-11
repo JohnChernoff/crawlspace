@@ -15,6 +15,7 @@ import 'object.dart';
 typedef ImpulseMap = MappedGrid<ImpulseCell>;
 
 class Asteroid extends MassiveObject {
+  static const maxMass = 5000, minMass = 500;
   Asteroid(super.name, {super.mass});
 }
 
@@ -70,7 +71,7 @@ class SectorCell extends GridCell {
             this,
             coord: c,
             asteroid: !buoy && (hasHaz(Hazard.roid) || hasBuoy) && rnd.nextDouble() < .1
-              ? Asteroid("Asteroid", mass: 1000)
+              ? Asteroid("Asteroid", mass: Asteroid.minMass + (rnd.nextDouble() * (Asteroid.maxMass - Asteroid.minMass)))
               : null,
             hazMap: buoy ? {} : {
               Hazard.nebula: rnd.nextDouble() < sectorNeb ? sectorNeb : 0,
@@ -103,7 +104,7 @@ class SectorCell extends GridCell {
 
   @override
   String toScannerString(Galaxy g, {verbose = false}) {
-    StringBuffer sb = StringBuffer(super.toScannerString(g));
+    StringBuffer sb = StringBuffer(super.toScannerString(g, verbose: verbose));
     int i = sb.isEmpty ? 0 : 1;
     for (final planet in g.planets.inSector(loc)) {
       final comma = i++ > 1 ? "," : "";

@@ -390,7 +390,7 @@ class MovePreviewer {
     final distance = ctx.currentCell.distCell(desiredCell);
     final energy = (ship.currentMass * distance * mult * .75) / engine.efficiency;
 
-    if (ship.playship) print("Auts: $auts, Energy: $energy");
+    //if (ship.playship) print("Auts: $auts, Energy: $energy");
 
     return MovementPreview(
       desiredCell: desiredCell,

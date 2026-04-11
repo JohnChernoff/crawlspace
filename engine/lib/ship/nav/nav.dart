@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/ship/nav/autopilot.dart';
 import 'package:crawlspace_engine/ship/nav/move_preview.dart';
 import 'package:crawlspace_engine/ship/nav/rotation_preview.dart';
@@ -8,6 +9,7 @@ import 'package:crawlspace_engine/ship/systems/engines.dart';
 import '../../galaxy/geometry/coord_3d.dart';
 import '../../galaxy/geometry/grid.dart';
 import '../../galaxy/geometry/location.dart';
+import '../../galaxy/geometry/object.dart';
 import '../../utils.dart';
 
 class NavState {
@@ -122,7 +124,7 @@ class ShipNav {
   void set targetShip(Ship? ship) {
     _targetShip = ship;
   }
-  Coord3D? targetCoord;
+  SpaceLocation? targetLoc;
   List<GridCell> currentPath = [];
   Map<Ship, SpaceLocation> lastKnown = {};
   Position _pos;
@@ -234,38 +236,47 @@ class ShipNav {
   }
 
   void applyGravity(FugueEngine fm) {
+    ship.nav.applyForce(accumulateGravity(_pos,fm));
+  }
+
+  Vec3 accumulateGravity(Position p, FugueEngine fm) {
     final loc = ship.loc;
-    if (loc is! SystemLocation || loc.domain.isAbove(Domain.impulse)) return;
+    if (loc is! SystemLocation || loc.domain.isAbove(Domain.impulse)) {
+      return Vec3(0, 0, 0);
+    }
 
     final objects = loc.sector.cell.massiveObjects(fm.galaxy);
-    if (objects.isEmpty) return;
-
     Vec3 gravity = Vec3(0, 0, 0);
+
     for (final obj in objects) {
       final objCoord = obj.loc.relativeDomainCoord(loc);
-      if (objCoord != null) {
-        final objPos = Position.fromCoord(objCoord);
-        final dx = objPos.x - pos.x;
-        final dy = objPos.y - pos.y;
-        final dz = objPos.z - pos.z;
-
-        final distSq = max(0.25,
-            dx*dx.toDouble() + dy*dy.toDouble() + dz*dz.toDouble());
-        final dist = sqrt(distSq);
-        final strength = (obj.gravMass * gravConstant) / distSq;
-
-        gravity = gravity + Vec3(
-          (dx / dist) * strength,
-          (dy / dist) * strength,
-          (dz / dist) * strength,
-        );
-      }
+      if (objCoord == null) continue;
+      final objPos = Position.fromCoord(objCoord);
+      final dx = objPos.x - p.x;
+      final dy = objPos.y - p.y;
+      final dz = objPos.z - p.z;
+      final distSq = max(0.25, dx * dx + dy * dy + dz * dz);
+      final dist = sqrt(distSq);
+      final strength = (obj.gravMass * gravConstant) / distSq;
+      gravity = gravity + Vec3(
+        (dx / dist) * strength,
+        (dy / dist) * strength,
+        (dz / dist) * strength,
+      );
     }
-    ship.nav.applyForce(gravity);
+
+    return gravity;
   }
 
   //gravMap for discrete gridcells
   Vec3? get gForce => ship.loc.grid.gravMap[ship.loc.cell.coord];
+
+  double get speedPenalty {
+    const k = 1.8;
+    final base = 1 - exp(-k * speed);
+    // slight compression toward 1 at higher speeds
+    return pow(base, 0.9).toDouble().clamp(0.0, 1.0);
+  }
 
   void rotate(double degrees) {
     _facing = (_facing + degrees) % 360;
@@ -313,17 +324,23 @@ class ShipNav {
     return (ship.currentMass * thrustMag) / engine.efficiency;
   }
 
-  List<Coord3D> projectedPath(int length, {iterations = 25}) {
+  List<Coord3D> projectedPath(int length, FugueEngine fm, {int iterations = 25}) {
     if (!ship.loc.domain.newt) return [];
+
     final List<Coord3D> path = [ship.loc.cell.coord];
-    Vec3 v = vel.normalized;
-    Position p = Position(_pos.x,_pos.y,_pos.z);
+    Vec3 v = _vel; // keep full velocity, not just direction
+    Position p = Position(_pos.x, _pos.y, _pos.z);
+    // Mirror the gravity sources applyGravity() uses
     bool outOfBounds = false;
     int i = 0;
-    while ((i++ < iterations) && path.length < length && !outOfBounds) {
-      p = p.add(v);
+
+    while (i++ < iterations && path.length < length && !outOfBounds) {
+      v = v + accumulateGravity(p, fm);
+      // Normalize only for stepping — keep velocity magnitude for gravity sim
+      final stepDir = v.mag > 1e-9 ? v.normalized : v;
+      p = p.add(stepDir);
       outOfBounds = !(p.coord.inBounds(ship.loc.dim));
-      if (!outOfBounds && p.coord != path.last) path.add(p.coord); //if (outOfBounds) print("OOB: $p");
+      if (!outOfBounds && p.coord != path.last) path.add(p.coord);
     }
     path.remove(ship.loc.cell.coord);
     return path;

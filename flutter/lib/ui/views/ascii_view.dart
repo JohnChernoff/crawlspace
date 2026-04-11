@@ -3,6 +3,7 @@ import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_flutter/main.dart';
 import 'package:crawlspace_flutter/ui/views/alpha_select.dart';
 import 'package:crawlspace_flutter/ui/views/new/ascii_grid_fast.dart';
+import 'package:crawlspace_flutter/ui/views/new/minimap.dart';
 import 'package:flutter/material.dart';
 import '../inputs/menu_input.dart';
 import '../inputs/ship_input.dart';
@@ -62,9 +63,12 @@ class AsciiViewState extends State<AsciiView> {
   Widget asciiView({twoShipScan = false}) {
     return ColoredBox(color: Colors.black, child: Column(children: [
       Expanded(child: Row(children: [
-        Expanded(flex: 2, child: MessageLog(
+        Expanded(flex: 2, child: Column(children: [
+          Expanded(flex: 2, child: MessageLog(
             key: const ValueKey("main-log"),
-            messageStream: widget.fm.msgController.msgWorker.stream)), // already stream-based, fine
+            messageStream: widget.fm.msgController.msgWorker.stream)),
+          Expanded(child: MiniMapWidget(widget.fm))
+      ])), // already stream-based, fine
         if (currentView == ViewType.normal)
           Expanded(child: ListenableBuilder(  // text panels rebuild on notify
               listenable: widget.fugueModel,
