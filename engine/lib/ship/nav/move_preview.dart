@@ -154,7 +154,7 @@ class MovePreviewer {
     final noEngine = engine == null;
     final engineFail = noEngine && ctx.throttle != ThrottleMode.drift;
 
-    if (!ctx.newtonian) {
+    if (!ship.nav.effectiveNewt) {
       return previewNonNewtonianStep(
         state: state,
         ctx: ctx,
@@ -225,7 +225,6 @@ class MovePreviewer {
       state = last.newState;
 
       ctx = ctx.advance(last.actualCell ?? ctx.currentCell);
-
 
       if (last.engineFail || last.emergencyDecel != null) {
         return MovementPreview(
@@ -376,20 +375,20 @@ class MovePreviewer {
       );
     }
 
-    final auts = gravityAdjustedTraversalAuts(
-      engine: engine,
-      fromCell: ctx.currentCell,
-      toCell: desiredCell,
-    );
-
-    final mult = gravityTraversalMultiplier(
-      fromCell: ctx.currentCell,
-      toCell: desiredCell,
-    );
-
     final distance = ctx.currentCell.distCell(desiredCell);
-    final energy = (ship.currentMass * distance * mult * .75) / engine.efficiency;
 
+    final auts = ctx.ship.nav.autoPilotMode == AutoPilotMode.simple
+        ? (engine.baseAutPerUnitTraversal * distance).round()
+        : gravityAdjustedTraversalAuts(
+          engine: engine,
+          fromCell: ctx.currentCell,
+          toCell: desiredCell);
+
+    final mult = ctx.ship.nav.autoPilotMode == AutoPilotMode.simple
+        ? 1
+        : gravityTraversalMultiplier(fromCell: ctx.currentCell, toCell: desiredCell);
+
+    final energy = (ship.currentMass * distance * mult * .75) / engine.efficiency;
     //if (ship.playship) print("Auts: $auts, Energy: $energy");
 
     return MovementPreview(

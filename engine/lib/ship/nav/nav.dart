@@ -67,14 +67,19 @@ class Position {
   String toString() => "[${x.toStringAsFixed(2)},${y.toStringAsFixed(2)},${z.toStringAsFixed(2)}]";
 }
 
+enum AutoPilotMode {none,simple,enhanced}
+
 class ShipNav {
   static const double thrustScale = 0.25; // tune this alone to slow everything down
   static const double gravConstant = .05; // tune by feel
+
   Ship ship;
   Vec3 _vel = Vec3(0, 0, 0);
   Vec3 get vel => _vel;
   bool get moving => _vel.mag > 0.025;
   bool get hasDestination => autoPilot.heading != ship.loc;
+
+  AutoPilotMode autoPilotMode = AutoPilotMode.simple;
 
   void applyForce(Vec3 force) {
     _vel = Vec3(
@@ -194,10 +199,9 @@ class ShipNav {
   late MovePreviewer movePreviewer;
   late RotationPreviewer rotationPreviewer;
 
-  bool get autopilotOn => _autopilotOn;
-  bool get effectiveAutopilot => _autopilotOn || _autoStopping;
-  void toggleAutoPilot() { _autopilotOn = !_autopilotOn; }
-  bool _autopilotOn = false;
+  bool get effectiveAutopilot => autoPilotMode == AutoPilotMode.enhanced || _autoStopping;
+  bool get effectiveNewt => ship.playship && ship.loc.domain.newt && autoPilotMode != AutoPilotMode.simple;
+
   void set autoStop(bool b) {
     _autoStopping = b;
     if (b) autoPilot.heading = ship.loc;
@@ -325,7 +329,7 @@ class ShipNav {
   }
 
   List<Coord3D> projectedPath(int length, FugueEngine fm, {int iterations = 25}) {
-    if (!ship.loc.domain.newt) return [];
+    if (!ship.nav.effectiveNewt) return [];
 
     final List<Coord3D> path = [ship.loc.cell.coord];
     Vec3 v = _vel; // keep full velocity, not just direction

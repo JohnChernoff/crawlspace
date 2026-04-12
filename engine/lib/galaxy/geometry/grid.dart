@@ -144,7 +144,6 @@ abstract class GridCell extends Grid {
   void clearHazard(Hazard haz) => hazMap.remove(haz);
   void clearHazards() => hazMap.clear();
 
-
   String toScannerString(Galaxy g, {verbose = false}) { //TODO: verbosity/multiline
     StringBuffer sb = StringBuffer(toString());
     final items = g.items.byLoc(loc); if (verbose) print("$loc => $items");

@@ -1,5 +1,6 @@
 import 'dart:math';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/ship/nav/nav.dart';
 import 'package:crawlspace_engine/ship/ship_sub.dart';
 import 'package:crawlspace_engine/ship/systems/weapon_profiler.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
@@ -11,7 +12,8 @@ import '../galaxy/hazards.dart';
 class ShipStatus extends ShipSubSystem {
   ShipStatus(super.ship);
 
-  List<TextBlock> display(Galaxy g,{bool tactical = false, bool showScannedShip = true, nebula = false}) {
+  List<TextBlock> display(FugueEngine fm,{bool tactical = false, bool showScannedShip = true, nebula = false}) {
+    Galaxy g = fm.galaxy;
     final abbrev = !tactical && nav.targetShip != null;
     final hostile = ship.pilot.hostile;
     if (nebula || (tactical && loc.cell.hasHaz(Hazard.nebula))) return [TextBlock("In Nebula", GameColors.red, true)];
@@ -47,16 +49,18 @@ class ShipStatus extends ShipSubSystem {
       }
     }
     if (!tactical && loc is ImpulseLocation && nav.targetShip != null) {
-      final sustained = ship.sustainedRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
-      blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
-      final dist = ship.distanceFrom(nav.targetShip!).round();
-      final volley = ship.volleyRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
-      final fit = (volley.efficiencyAt(dist) * 100).round();
-      blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
-      blocks.addAll(combatText());
+      if (!fm.combatController.slugs) {
+        final sustained = ship.sustainedRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
+        blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
+        final dist = ship.distanceFrom(nav.targetShip!).round();
+        final volley = ship.volleyRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
+        final fit = (volley.efficiencyAt(dist) * 100).round();
+        blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
+      }
+      blocks.addAll(combatText(fm.combatController.slugs));
     }
     if (!tactical) {
-      if (loc is ImpulseLocation) {
+      if (ship.nav.effectiveNewt) {
         blocks.add(TextBlock("GForce: ${ship.nav.gForce}", GameColors.green, true));
         blocks.add(TextBlock("Targ Facing: ${nav.targetFacing}", GameColors.gray, true));
         blocks.add(TextBlock("Facing: ${nav.facing}", GameColors.gray, true));
@@ -73,18 +77,17 @@ class ShipStatus extends ShipSubSystem {
       }
     }
     blocks.add(const TextBlock("",GameColors.black,true));
-    final targLoc = nav.targetLoc;
-    print(targLoc);
+    final targLoc = nav.targetLoc; //print(targLoc);
     if (targLoc != null) blocks.add(TextBlock("Scanning: ${targLoc.cell.toScannerString(g, verbose: true)}", GameColors.orange, true));
     //else blocks.add(TextBlock("No target", GameColors.gray, true));
     if (showScannedShip && !tactical && (nav.targetShip != null && nav.targetShip!.npc)) {
       blocks.add(const TextBlock("Scanning Ship: ", GameColors.orange, true));
-      blocks.addAll(nav.targetShip!.status.display(g,tactical: true));
+      blocks.addAll(nav.targetShip!.status.display(fm,tactical: true));
     }
     return blocks;
   }
 
-  List<TextBlock> combatText() {
+  List<TextBlock> combatText(bool slugs) {
     final target = nav.targetShip;
     if (target == null) return [];
 
@@ -107,7 +110,7 @@ class ShipStatus extends ShipSubSystem {
     final blocks = <TextBlock>[];
 
     // Header line
-    blocks.add(TextBlock(
+    if (!slugs) blocks.add(TextBlock(
         "TARGET: ${target.name} "
             "dist:${dist.toStringAsFixed(1)}$trend"
             "->${projDist?.toStringAsFixed(1) ?? '?'} ",
@@ -127,8 +130,8 @@ class ShipStatus extends ShipSubSystem {
           w.accuracyRangeConfig.rangeMultiplier(projDist) > 0;
 
       final col = w.cooldown == 0
-          ? (wInRange ? GameColors.green : GameColors.orange)
-          : (wProjInRange ? GameColors.lightBlue : GameColors.gray);
+          ? (slugs || wInRange ? GameColors.green : GameColors.orange)
+          : (slugs || wProjInRange ? GameColors.lightBlue : GameColors.gray);
 
       final readyStr = w.cooldown == 0 ? "READY" : "${w.cooldown}t";
 

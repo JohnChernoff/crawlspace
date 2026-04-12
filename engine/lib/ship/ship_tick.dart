@@ -47,7 +47,7 @@ class ShipTick extends ShipSubSystem {
       }
     }
     final newCell;
-    if (!dryRun && ship.playship && loc.domain.newt) { // && (nav.moving || nav.activeHeading)) {
+    if (!dryRun && ship.nav.effectiveNewt) { // && (nav.moving || nav.activeHeading)) {
       if (fm.auTick % 1 == 0) { //(fm.aiRnd.nextDouble() < 1) { //moveProbability) {
         newCell = tickMove(fm);
       } else newCell = false;
@@ -96,7 +96,5 @@ class ShipTick extends ShipSubSystem {
 
     return (loc.cell.coord != prevLoc);
   }
-
-
 
 }

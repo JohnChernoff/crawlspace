@@ -1,13 +1,11 @@
-import 'package:crawlspace_engine/controllers/layer_transit_controller.dart';
 import 'package:crawlspace_engine/controllers/scanner_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
-import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/item.dart';
-import 'package:crawlspace_engine/ship/nav/nav.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 import 'package:crawlspace_engine/stock_items/trade/commodities.dart';
 import 'package:crawlspace_engine/ui_options.dart';
 import 'package:crawlspace_flutter/main.dart';
+import 'package:crawlspace_flutter/ui/inputs/ship_movement.dart';
 import 'package:crawlspace_flutter/ui/views/galaxy_map.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -35,11 +33,6 @@ class XenoIntent extends Intent {
   const XenoIntent();
 }
 
-class ThrottleIntent extends Intent {
-  final ThrottleMode mode;
-  const ThrottleIntent(this.mode);
-}
-
 class SystemSelectIntent extends Intent {
   final bool unselect;
   const SystemSelectIntent(this.unselect);
@@ -48,15 +41,6 @@ class SystemSelectIntent extends Intent {
 class AlphaSelectIntent extends Intent {
   final AlphaSelectionType selectionType;
   const AlphaSelectIntent(this.selectionType);
-}
-
-class DirectionIntent extends Intent {
-  final int dx,dy,dz;
-  const DirectionIntent(this.dx,this.dy,this.dz);
-}
-
-class StopIntent extends Intent {
-  const StopIntent();
 }
 
 class OpenInventoryIntent extends Intent {
@@ -71,11 +55,6 @@ class InstallationIntent extends Intent {
 
 class OpenPlanetMenuIntent extends Intent {
   const OpenPlanetMenuIntent();
-}
-
-class DomainIntent extends Intent {
-  final DomainDir dir;
-  const DomainIntent(this.dir);
 }
 
 class HyperSpaceIntent extends Intent {
@@ -122,19 +101,16 @@ class ScrapIntent extends Intent {
   const ScrapIntent(this.collect);
 }
 
-class CruiseIntent extends Intent {
-    const CruiseIntent();
-}
+
 
 class DepthViewIntent extends Intent {
   final DepthViewOption depthView;
   const DepthViewIntent(this.depthView);
 }
 
-const downComboKey = LogicalKeyboardKey.shift;
-const upComboKey = LogicalKeyboardKey.keyZ;
 
-class ShipInput extends StatelessWidget with GeneralInputMixin {
+
+class ShipInput extends StatelessWidget with GeneralInputMixin, ShipMovementMixin {
   final Widget child;
   @override
   final FugueEngine fm;
@@ -146,90 +122,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
       autofocus: true,
       shortcuts: {
         ...getGeneralShortcuts(context),
-        LogicalKeySet(LogicalKeyboardKey.arrowUp):
-        const DirectionIntent(0, -1, 0),
-        LogicalKeySet(LogicalKeyboardKey.arrowDown):
-        const DirectionIntent(0, 1, 0),
-        LogicalKeySet(LogicalKeyboardKey.arrowLeft):
-        const DirectionIntent(-1, 0, 0),
-        LogicalKeySet(LogicalKeyboardKey.arrowRight):
-        const DirectionIntent(1, 0, 0),
-        LogicalKeySet(LogicalKeyboardKey.end):
-        const DirectionIntent(-1, 1, 0),
-        LogicalKeySet(LogicalKeyboardKey.home):
-        const DirectionIntent(-1, -1, 0),
-        LogicalKeySet(LogicalKeyboardKey.pageUp):
-        const DirectionIntent(1, -1, 0),
-        LogicalKeySet(LogicalKeyboardKey.pageDown):
-        const DirectionIntent(1, 1, 0),
-
-        LogicalKeySet(LogicalKeyboardKey.arrowUp,downComboKey):
-        const DirectionIntent(0, -1, -1),
-        LogicalKeySet(LogicalKeyboardKey.arrowDown,downComboKey):
-        const DirectionIntent(0, 1, -1),
-        LogicalKeySet(LogicalKeyboardKey.arrowLeft,downComboKey):
-        const DirectionIntent(-1, 0, -1),
-        LogicalKeySet(LogicalKeyboardKey.arrowRight,downComboKey):
-        const DirectionIntent(1, 0, -1),
-        LogicalKeySet(LogicalKeyboardKey.end,downComboKey):
-        const DirectionIntent(-1, 1, -1),
-        LogicalKeySet(LogicalKeyboardKey.home,downComboKey):
-        const DirectionIntent(-1, -1, -1),
-        LogicalKeySet(LogicalKeyboardKey.pageUp,downComboKey):
-        const DirectionIntent(1, -1, -1),
-        LogicalKeySet(LogicalKeyboardKey.pageDown,downComboKey):
-        const DirectionIntent(1, 1, -1),
-        LogicalKeySet(LogicalKeyboardKey.clear,downComboKey):
-        const DirectionIntent(0, 0, -1),
-
-        LogicalKeySet(LogicalKeyboardKey.arrowUp,upComboKey):
-        const DirectionIntent(0, -1, 1),
-        LogicalKeySet(LogicalKeyboardKey.arrowDown,upComboKey):
-        const DirectionIntent(0, 1, 1),
-        LogicalKeySet(LogicalKeyboardKey.arrowLeft,upComboKey):
-        const DirectionIntent(-1, 0, 1),
-        LogicalKeySet(LogicalKeyboardKey.arrowRight,upComboKey):
-        const DirectionIntent(1, 0, 1),
-        LogicalKeySet(LogicalKeyboardKey.end,upComboKey):
-        const DirectionIntent(-1, 1, 1),
-        LogicalKeySet(LogicalKeyboardKey.home,upComboKey):
-        const DirectionIntent(-1, -1, 1),
-        LogicalKeySet(LogicalKeyboardKey.pageUp,upComboKey):
-        const DirectionIntent(1, -1, 1),
-        LogicalKeySet(LogicalKeyboardKey.pageDown,upComboKey):
-        const DirectionIntent(1, 1, 1),
-        LogicalKeySet(LogicalKeyboardKey.clear,upComboKey):
-        const DirectionIntent(0, 0, 1),
-
-        LogicalKeySet(LogicalKeyboardKey.clear):
-        const CruiseIntent(),
-
-        LogicalKeySet(LogicalKeyboardKey.period):
-        const DomainIntent(DomainDir.down),
-
-        LogicalKeySet(LogicalKeyboardKey.comma):
-        const DomainIntent(DomainDir.up),
-
-        LogicalKeySet(LogicalKeyboardKey.digit0):
-        const ThrottleIntent(ThrottleMode.drift),
-
-        LogicalKeySet(LogicalKeyboardKey.digit1):
-        const ThrottleIntent(ThrottleMode.tenth),
-
-        LogicalKeySet(LogicalKeyboardKey.digit2):
-        const ThrottleIntent(ThrottleMode.quarter),
-
-        LogicalKeySet(LogicalKeyboardKey.digit3):
-        const ThrottleIntent(ThrottleMode.half),
-
-        LogicalKeySet(LogicalKeyboardKey.digit4):
-        const ThrottleIntent(ThrottleMode.full),
-
-        LogicalKeySet(LogicalKeyboardKey.digit5):
-        const ThrottleIntent(ThrottleMode.stop),
-
-        LogicalKeySet(LogicalKeyboardKey.keyS):
-        const StopIntent(),
+        ...getMovementShortcuts(context),
 
         LogicalKeySet(LogicalKeyboardKey.keyL):
         const OpenPlanetMenuIntent(),
@@ -308,14 +201,7 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
       },
       actions: {
         ...generalActions,
-        DirectionIntent: CallbackAction<DirectionIntent>(
-          onInvoke: (intent) { //print("Moving ship");
-            if (fm.playerShip == null) return null;
-            fm.movementController.handleMove(
-                fm.playerShip!,Coord3D(intent.dx, intent.dy, intent.dz));
-            return null;
-          },
-        ),
+        ...movementActions,
         OpenPlanetMenuIntent: CallbackAction(
           onInvoke: (_) {
             fm.planetsideController.planetFall();
@@ -335,30 +221,6 @@ class ShipInput extends StatelessWidget with GeneralInputMixin {
             }
             return null;
           }
-        ),
-        CruiseIntent: CallbackAction<CruiseIntent>(
-            onInvoke: (_) { //fm.movementController.cruise(fm.playerShip);
-              fm.movementController.loiter(fm.playerShip);
-              return null;
-            }
-        ),
-        ThrottleIntent: CallbackAction<ThrottleIntent>(
-            onInvoke: (intent) {
-              if (fm.playerShip != null) fm.movementController.setThrottle(intent.mode,fm.playerShip!);
-              return null;
-            }
-        ),
-        StopIntent: CallbackAction<StopIntent>(
-            onInvoke: (_) {
-              if (fm.playerShip != null) fm.movementController.fullStop(fm.playerShip!);
-              return null;
-            }
-        ),
-        DomainIntent: CallbackAction<DomainIntent>(
-            onInvoke: (intent) {
-              if (fm.playerShip != null) fm.layerTransitController.changeDomain(fm.playerShip!, intent.dir);
-              return null;
-            }
         ),
         ScannerSelectionIntent: CallbackAction<ScannerSelectionIntent>(
             onInvoke: (intent) {

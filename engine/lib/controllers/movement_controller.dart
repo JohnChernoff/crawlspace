@@ -102,8 +102,8 @@ class MovementController extends FugueController {
 
   void handleMove(Ship ship, Coord3D vec) {
     if (fm.inputMode == InputMode.main) {
-      if (ship.loc.domain.newt) {
-        if (ship.nav.autopilotOn) {
+      if (ship.nav.effectiveNewt) {
+        if (ship.nav.autoPilotMode == AutoPilotMode.enhanced) {
           fm.movementController.acquireTarget(vec).then((loc) {
             if (loc != null) {
               ship.nav.autoPilot.heading = loc;
@@ -158,9 +158,9 @@ class MovementController extends FugueController {
     final report = reportMove(ship, desiredLocation, ctx: ctx);
     final newLoc = report.preview?.actualCell?.loc;
     if (newLoc != null && ship.loc != newLoc) {
-      glog("Moving ship: ${report.preview?.dump(ship)}, tick: ${fm.auTick}",level: DebugLevel.Fine);
+      glog("Moving ship: ${report.preview?.dump(ship)}, tick: ${fm.auTick}",level: DebugLevel.Debug);
       ship.move(newLoc, fm);
-      if (!(ship.systemControl.engine?.domain.newt ?? false)) {
+      if (!ship.nav.effectiveNewt) { //print("Ergh: ${ report.preview?.auts}");
         if (ship.npc && ship.loc == fm.playerShip?.loc && ship.pilot.hostile) {
           fm.layerTransitController.changeDomain(fm.playerShip!,DomainDir.down, interdiction: true);
         } else {
@@ -185,61 +185,7 @@ class MovementController extends FugueController {
     if (desiredLocation == null)
       return MoveResult(null, MoveResultType.badDestination);
 
-    var preview = ctx.newtonian
-        ? ship.nav.movePreviewer.previewFixedStep(
-        state: NavState.fromShip(ship),
-        ctx: ctx,
-        desiredCell: desiredLocation.cell)
-        : ship.nav.movePreviewer.moveUntilNextCell(
-        desiredLocation.cell,
-        ctx: ctx);
-
-    glog("Tick: ${fm.auTick}, Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}",level: DebugLevel.Fine);
-    // IMPORTANT: energy is burned here in reportMove, and moveUntilNextCell
-    // already accumulates energyRequired across sub-steps for display.
-    // The two MUST NOT both call burnEnergy — reportMove is the single point
-    // of truth for actually spending energy.  If you ever disable ignoreEngineFail,
-    // verify the partial-energy re-preview path doesn't burn twice (the
-    // previewFixedStep call below is read-only; only the explicit burnEnergy
-    // calls below this comment actually spend energy).
-    if (ctx.newtonian && (!ship.npc || !npcFreeMovement)) {
-      final double available = ship.systemControl.getCurrentEnergy();
-      if (available <= 0 && !ignoreEngineFail) {
-        // Completely out of energy — coast as pure drift, engine flagged as failed.
-        // In stop mode this means the ship can no longer brake; it will overshoot.
-        preview = ship.nav.movePreviewer.previewFixedStep(
-            state: NavState.fromShip(ship),
-            ctx: ctx.withoutEngine(),
-            desiredCell: desiredLocation.cell);
-        if (ctx.throttle == ThrottleMode.stop) {
-          fm.msg("Warning: out of energy, cannot complete braking burn!");
-        }
-      } else if (available < preview.energyRequired && preview.energyRequired > 0 && !ignoreEngineFail) {
-        // Partial energy — scale thrust proportionally, cost is exactly what's available.
-        final double thrustFraction = available / preview.energyRequired;
-        preview = ship.nav.movePreviewer.previewFixedStep(
-            state: NavState.fromShip(ship),
-            ctx: ctx.copyWith(thrustFraction: thrustFraction),
-            desiredCell: desiredLocation.cell);
-        ship.systemControl.burnEnergy(available);
-      } else {
-        ship.systemControl.burnEnergy(preview.energyRequired);
-      }
-    } else if (!ship.npc || !npcFreeMovement) {
-      // Non-Newtonian: binary — either afford it or stay put.
-      if (!ship.systemControl.burnEnergy(preview.energyRequired)) {
-        fm.msg("Insufficient energy");
-        preview = MovementPreview(
-            desiredCell: desiredLocation.cell,
-            actualCell: ship.loc.cell,
-            energyRequired: 0,
-            newState: NavState.fromShip(ship),
-            auts: 1
-        );
-      }
-    } else { // NPC free movement — burn what we can, don't penalise.
-      ship.systemControl.burnEnergy(preview.energyRequired);
-    }
+   final preview = finalizePreview(ship, desiredLocation, ctx: ctx, ignoreEngineFail: ignoreEngineFail);
 
     ship.nav.setVelocity(
         preview.newState.vel.x,
@@ -247,8 +193,6 @@ class MovementController extends FugueController {
         preview.newState.vel.z);
     ship.nav.pos = preview.newState.pos;
 
-    // Clear heading and zero velocity on arrival for stop mode (engine must
-    // not have failed, otherwise the ship couldn't execute its braking burn).
     final bool arrived = preview.actualCell == desiredLocation.cell;
     if (arrived && ctx.throttle == ThrottleMode.stop && !preview.engineFail) {
       if (ship.playship) fm.msg("Arrived..."); //ship.nav.resetMotionState();
@@ -287,8 +231,63 @@ class MovementController extends FugueController {
     return MoveResult(preview, MoveResultType.heldPosition);
   }
 
+  MovementPreview finalizePreview(Ship ship, SpaceLocation desiredLocation, {
+    required MoveContext ctx, bool ignoreEngineFail = false}) {
+    var preview = ctx.newtonian
+        ? ship.nav.movePreviewer.previewFixedStep(
+        state: NavState.fromShip(ship),
+        ctx: ctx,
+        desiredCell: desiredLocation.cell)
+        : ship.nav.movePreviewer.moveUntilNextCell(
+        desiredLocation.cell,
+        ctx: ctx);
+
+    glog("Tick: ${fm.auTick}, Energy: ${ship.systemControl.getCurrentEnergy()} ${preview.energyRequired}",level: DebugLevel.Fine);
+    if (ctx.newtonian && (!ship.npc || !npcFreeMovement)) {
+      final double available = ship.systemControl.getCurrentEnergy();
+      if (available <= 0 && !ignoreEngineFail) {
+        // Completely out of energy — coast as pure drift, engine flagged as failed.
+        // In stop mode this means the ship can no longer brake; it will overshoot.
+        preview = ship.nav.movePreviewer.previewFixedStep(
+            state: NavState.fromShip(ship),
+            ctx: ctx.withoutEngine(),
+            desiredCell: desiredLocation.cell);
+        if (ctx.throttle == ThrottleMode.stop) {
+          fm.msg("Warning: out of energy, cannot complete braking burn!");
+        }
+      } else if (available < preview.energyRequired && preview.energyRequired > 0 && !ignoreEngineFail) {
+        // Partial energy — scale thrust proportionally, cost is exactly what's available.
+        final double thrustFraction = available / preview.energyRequired;
+        preview = ship.nav.movePreviewer.previewFixedStep(
+            state: NavState.fromShip(ship),
+            ctx: ctx.copyWith(thrustFraction: thrustFraction),
+            desiredCell: desiredLocation.cell);
+        ship.systemControl.burnEnergy(available);
+      } else {
+        ship.systemControl.burnEnergy(preview.energyRequired);
+      }
+    } else if (!ship.npc || !npcFreeMovement) {
+      // Non-Newtonian: binary — either afford it or stay put.
+      if (!ship.systemControl.burnEnergy(preview.energyRequired)) {
+        fm.msg("Insufficient energy: ${preview.energyRequired.round()} required");
+        preview = MovementPreview(
+            desiredCell: desiredLocation.cell,
+            actualCell: ship.loc.cell,
+            energyRequired: 0,
+            newState: NavState.fromShip(ship),
+            auts: 1
+        );
+      }
+    } else { // NPC free movement — burn what we can, don't penalise.
+      ship.systemControl.burnEnergy(preview.energyRequired);
+    }
+    return preview;
+  }
+
   void loiter(Ship? ship, {int? auts}) {
-    if (ship != null) fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: auts ?? (ship.nav.moving ? 100 : 10));
+    if (ship != null) fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: auts ?? (ship.nav.moving
+        ? 100
+        : ship.inCombat(fm.galaxy) ? 1 : 10));
   }
 
   void manualThrust(Ship ship, {Coord3D? direction, awaitNextCell = true}) {

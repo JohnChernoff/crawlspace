@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
+import 'package:crawlspace_engine/ship/nav/nav.dart';
 import 'package:crawlspace_engine/ship/systems/ship_sys.dart';
 import '../galaxy/system.dart';
 import '../galaxy/geometry/impulse.dart';
@@ -109,7 +110,6 @@ class PilotController extends FugueController {
     }
     fm.update();
     if (pilot == fm.player) {
-
       return fm.tickController.runUntilNextPlayerTurn();
     }
     return true;
@@ -131,14 +131,15 @@ class PilotController extends FugueController {
             Weapon? w = ship.systemControl.primaryWeapon;
             if (w != null && ship.currentHullPercentage > (ship.pilot.faction.courage * 100)) {
               final r = w.accuracyRangeConfig.idealRange, d = ship.distance(l: playLoc); //print("${ship.name} combat...$r, $d");
-              if ((r -d).abs() > 1) { //print("${ship.name} maneuvering...");
+              if (!fm.combatController.slugs && (r -d).abs() > 1) { //print("${ship.name} maneuvering...");
                 final idealCells = ship.loc.map.values
                     .where((c) => (playLoc.distCell(c) - r).abs() < 1.5) //TODO: tweak acceptable range
                     .sorted((c1,c2) => ship.distance(c: c1.coord).compareTo(ship.distance(c: c2.coord)));
                 ship.nav.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd); //print(ship.currentPath);
               } else {
-                if (playLoc != target.loc) {
-                  //print("${ship.name} cannot find ${fm.target?.name}"); //TODO: fallback strategy
+                if (playLoc != target.loc) { //print("${ship.name} cannot find ${fm.target?.name}"); //TODO: fallback strategy
+                  fm.pilotController.action(pilot, ActionType.combat, actionAuts: 1);
+                  return;
                 }
                 else if (w.cooldown == 0) {  //print("${ship.name} firing...");
                   fm.combatController.fire(ship,fm.galaxy);
@@ -229,6 +230,13 @@ class PilotController extends FugueController {
       ? fm.menuFactory.buildUninstallMenu(ship)
       : fm.menuFactory.buildInstallMenu(ship)); //show menu anyhow
     if (!available) fm.msg("No available system");
+  }
+
+  void setAutoPilotMode(AutoPilotMode mode) {
+    final ship = fm.playerShip; if (ship != null) {
+      ship.nav.autoPilotMode = mode;
+      fm.msg("Autopilot: ${ship.nav.autoPilotMode}");
+    }
   }
 
   void hailShip(Ship ship) {

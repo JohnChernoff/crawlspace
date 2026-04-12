@@ -450,6 +450,8 @@ class Ship extends Item {
     return t == 999 ? 0 : t;
   }
 
+  bool inCombat(Galaxy g) => loc.domain == Domain.impulse && g.ships.activeShips.any((s) => s.loc.interactable(loc) && s.pilot.hostile);
+
   void scanSystem(System system, FugueEngine fm) {
     final sensor = systemControl.getSensor();
     if (sensor == null || sensor.scannedSystems.contains(system)) return;

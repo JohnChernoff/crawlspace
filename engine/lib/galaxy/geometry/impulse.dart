@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:crawlspace_engine/controllers/combat_controller.dart';
 import 'package:crawlspace_engine/galaxy/galaxy.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
@@ -30,6 +31,9 @@ class ImpulseCell extends GridCell {
   bool hasPlanet(Galaxy g) => getPlanet(g) != null;
   Star? getStar(Galaxy g) => g.stars.singleAtImpulse(loc);
   bool hasStar(Galaxy g) => getStar(g) != null;
+
+  Set<ImpulseSlug> slugs(Galaxy g) => g.slugs.inImpulse(loc);
+
   @override
   OrbitalMap get map => loc.system.orbitalCache.putIfAbsent(coord,
           () => loc.system.generateOrbitalMap(this,Random(sector.impulseSeed))); //orbitalSeed?
@@ -67,8 +71,9 @@ class ImpulseCell extends GridCell {
     if (mode.scaningPlanets && hasPlanet(g)) return true;
     if (mode.scaningNeb && hasHaz(Hazard.nebula)) return true;
     if (mode.scaningIons && hasHaz(Hazard.ion)) return true;
-    if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;
+    if (mode.scaningRoids && asteroid != null) return true;
     if (mode.scaningItems && g.items.byLoc(loc).isNotEmpty) return true;
+    if (mode.scaningSlugs && slugs(g).isNotEmpty) return true;
     return false;
   }
 
@@ -80,6 +85,8 @@ class ImpulseCell extends GridCell {
     if (hasStar(g)) return false;
     if (hazLevel > 0) return false;
     if (g.items.byLoc(loc).isNotEmpty) return false;
+    if (asteroid != null) return false;
+    if (slugs(g).isNotEmpty) return false;
     return true;
   }
 
@@ -88,6 +95,9 @@ class ImpulseCell extends GridCell {
     StringBuffer sb = StringBuffer(super.toScannerString(g, verbose: verbose));
     Planet? planet = getPlanet(g);
     if (planet != null) sb.write(verbose ? planet.shortString() : planet.name);
+    Star? star = getStar(g);
+    if (star != null) sb.write(verbose ? star.stellarClass : star.name);
+    for (final slug in slugs(g)) sb.write("$slug ");
     return sb.toString();
   }
 

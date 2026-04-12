@@ -65,7 +65,7 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
   }
 
   @override
-  String toString() => "$name, ${loc.localCoord}";
+  String toString() => "${dmgType.name} slug (${fromShip.name})";
 }
 
 class CombatController extends FugueController {

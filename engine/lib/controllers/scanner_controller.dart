@@ -16,12 +16,13 @@ enum ScannerMode {
   planets(GameColors.blue,false),
   stars(GameColors.yellow,false),
   buoys(GameColors.blue,true),
-  ion(GameColors.orange,true),
+  ion(GameColors.neonGreen,true),
   neb(GameColors.coral,true),
   roid(GameColors.gray,true),
   oddities(GameColors.neonPink,false),
   storms(GameColors.red,false),
-  field(GameColors.brown,false);
+  field(GameColors.brown,false),
+  slugs(GameColors.orange,false);
   final GameColor color;
   final bool accessable;
   const ScannerMode(this.color, this.accessable);
@@ -35,6 +36,7 @@ enum ScannerMode {
   bool get scaningRoids => this == ScannerMode.roid || this == ScannerMode.field;
   bool get scaningBlackhole => this == ScannerMode.oddities;
   bool get scaningStarOne => this == ScannerMode.oddities;
+  bool get scaningSlugs => this == ScannerMode.slugs || this == ScannerMode.contacts;
 }
 
 enum TargetPathMode {
@@ -71,9 +73,9 @@ class ScannerController extends FugueController {
   List<TextBlock> statusText() {
     final abbrev = fm.playerShip?.nav.targetShip != null;
     List<TextBlock> blocks = [];
+    blocks.add(TextBlock("Tick: ${fm.auTick / 100}, ",GameColors.khaki,abbrev));
     if (!abbrev) {
       //blocks.add(TextBlock("Mode: ${fm.inputMode.name}",GameColors.white,true));
-      blocks.add(TextBlock("Tick: ${fm.auTick / 100}, ",GameColors.khaki,false));
       blocks.add(TextBlock("Credits: ${fm.player.credits}",GameColors.khaki,true));
       final mainSpecies = fm.galaxy.civMod.dominantSpecies(fm.player.locale.loc.system)!;
       int dist = fm.galaxy.topo.distance(fm.player.locale.loc.system, fm.galaxy.findHomeworld(mainSpecies));
@@ -84,7 +86,7 @@ class ScannerController extends FugueController {
     } else {
       if (!abbrev) blocks.add(TextBlock(ship.loc.toString(),GameColors.cyan,true));
       if (ship.itinerary != null) blocks.add(TextBlock("To: ${ship.itinerary!.last.name}", GameColors.green, true));
-      blocks.addAll(ship.status.display(fm.galaxy));
+      blocks.addAll(ship.status.display(fm));
     }
     return blocks;
   }
