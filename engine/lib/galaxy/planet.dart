@@ -165,7 +165,7 @@ class Planet extends SpaceEnvironment<OrbitalLocation> {
     super.sublightFactor,
     super.tuningFactor = 100,
   }) {
-    age         = CivAge.values.elementAt(rnd.nextInt(CivAge.values.length));
+    age = CivAge.values.elementAt(rnd.nextInt(CivAge.values.length));
 
     // Use getRndExport() so export respects env/tech/industry constraints.
     // Falls back to a random pick if no filtered goods match (shouldn't happen

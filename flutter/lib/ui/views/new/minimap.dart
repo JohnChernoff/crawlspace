@@ -70,6 +70,14 @@ class MiniMapPainter extends CustomPainter {
         final style = cellStyle(cx, cy);
         final rect = Rect.fromLTWH(x, y, cellWidth, cellHeight);
         _paintMiniMapCell(canvas, rect, style);
+
+        final cell = ship.loc.map.atXYZ(cx, cy, 0);
+        if (fm.scannerController.currentScanSelection == cell) {
+          final scanPaint = Paint()
+            ..color = Colors.white
+            ..style = PaintingStyle.stroke;
+          canvas.drawRect(rect,scanPaint);
+        }
       }
     }
 
@@ -224,7 +232,7 @@ class MiniMapPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5;
 
-        final inset = rect.shortestSide * 0.2;
+        final inset = rect.shortestSide * 0.25;
         canvas.drawLine(
           Offset(rect.left + inset, rect.top + inset),
           Offset(rect.right - inset, rect.bottom - inset),

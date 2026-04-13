@@ -360,6 +360,8 @@ class PlanetDescGen {
     "Krakkar":            "Grenz. The Krakkar homeworld. Every structure here was built to outlast whatever comes next.",
   };
 
+  static String capitalize(String str) => "${str.substring(0,1).toUpperCase()}${str.substring(1)}";
+
   // ── Generator ────────────────────────────────────────────────────────────
 
   static List<String> generate(Planet p, Galaxy g, Random rnd) {
@@ -392,7 +394,7 @@ class PlanetDescGen {
     final ageMod = _pick(rnd, _ageModifier[PlanetAge.established]!);
     final envCore = _pick(rnd, _envCore[p.environment]!);
     final envDetail = _pick(rnd, _envDetail[p.environment]!);
-    return "${article(ageMod)} $envCore. $envDetail";
+    return capitalize("${article(ageMod)} $envCore. $envDetail");
   }
 
   static String _politicalLine(Planet p, Species dominant, Random rnd) {

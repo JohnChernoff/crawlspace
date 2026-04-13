@@ -44,7 +44,7 @@ class PlanetsideController extends FugueController {
               level: MenuLevel.planet, headerTxt: planet.name, noExit: true);
           fm.audioController.newTrack(newMood: MusicalMood.planet);
           fm.msg("Landing on ${planet.name}");
-          fm.msg(planet.shortDesc ?? "What a dump");
+          //fm.msg(planet.shortDesc ?? "What a dump");
           if (fm.player.tradeTarget?.destination == planet) {
             fm.msg(
                 "You deliver your cargo.  Reward: ${fm.player.tradeTarget

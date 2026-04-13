@@ -388,7 +388,7 @@ class MovePreviewer {
         ? 1
         : gravityTraversalMultiplier(fromCell: ctx.currentCell, toCell: desiredCell);
 
-    final energy = (ship.currentMass * distance * mult * .75) / engine.efficiency;
+    final energy = ((ship.currentMass * distance * mult) / engine.efficiency) * .66;
     //if (ship.playship) print("Auts: $auts, Energy: $energy");
 
     return MovementPreview(
