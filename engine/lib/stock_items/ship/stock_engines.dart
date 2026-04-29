@@ -42,7 +42,7 @@ final Map<StockSystem, EngineData> stockEngines = {
     ),
     domain: Domain.impulse,
     engineType: EngineType.nuclear,
-    efficiency: .5,
+    efficiency: .33,
     baseAutPerUnitTraversal: 10,
     thrust: 500,   // accel ≈ 1000/900 ≈ 1.11 → stop from 2.6 in ~3 cells
     arch: EngineArch.center
@@ -60,7 +60,7 @@ final Map<StockSystem, EngineData> stockEngines = {
     ),
     domain: Domain.system,
     engineType: EngineType.nuclear,
-    efficiency: .5,
+    efficiency: .33,
     baseAutPerUnitTraversal: 10,
     thrust: 500,    // sublight: lower accel is fine, map is much larger
     arch: EngineArch.center
@@ -114,7 +114,7 @@ final Map<StockSystem, EngineData> stockEngines = {
     ),
     domain: Domain.impulse,
     engineType: EngineType.antimatter,
-    efficiency: .9,
+    efficiency: .77,
     baseAutPerUnitTraversal: 8,
     thrust: 2000,   // high-end impulse: stop from 3.4 in ~3 cells at ~800kg loaded
     xenoGen: .25,
@@ -134,7 +134,7 @@ final Map<StockSystem, EngineData> stockEngines = {
       ),
       domain: Domain.impulse,
       engineType: EngineType.antimatter,
-      efficiency: .9,
+      efficiency: .8,
       baseAutPerUnitTraversal: 8,
       thrust: 9999,   //
       xenoGen: .25,

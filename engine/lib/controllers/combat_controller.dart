@@ -126,34 +126,38 @@ class CombatController extends FugueController {
           fm.msg("No weapons ready");
         } else if (ship.nav.targetShip != null) {
           for (final result in results) {
-            fm.msg("${ship.name} fires weapon: ${result.weapon.name}");
-            bool rangedMishap = result.ammoWarn;
-            if (rangedMishap) fm.msg("No ammo for ${result.weapon.name}");
-            if (slugs) {
-              final slug = ImpulseSlug(
-                  objColor: ship.pilot.faction.color,
-                  damage: result.dmg,
-                  dmgType: result.weapon.dmgType,
-                  speed: result.weapon.slugSpeed,
-                  fromShip: ship,
-                  target: target);
-              g.slugs.register(slug, shipLoc);
-              slug.tick(fm);
+            if (result.resultEnum == FireResultEnum.noEnergy) {
+              fm.msg("Insufficient energy for ${result.weapon.name}");
             } else {
-              if (!rangedMishap && result.weapon.usesAmmo) {
-                final path = ship.loc.map.greedyPath(ship.loc.cell,
-                    ship.nav.targetShip!.loc.cell, ship.loc.map.dim.maxDim, fm.combatRnd, jitter: 0, ignoreHaz: true);
-                final obstacle = path.firstWhereOrNull((c) => c.hazLevel > 0);
-                if (obstacle != null) {
-                  fm.msg("${result.weapon.ammo!.name} hits ${obstacle.hazMap.entries.firstWhere((o) => o.value > 0).key.name}!");
-                  rangedMishap = true;
+              fm.msg("${ship.name} fires weapon: ${result.weapon.name}");
+              bool rangedMishap = result.resultEnum == FireResultEnum.ammoWarn;
+              if (rangedMishap) fm.msg("No ammo for ${result.weapon.name}");
+              if (slugs) {
+                final slug = ImpulseSlug(
+                    objColor: ship.pilot.faction.color,
+                    damage: result.dmg,
+                    dmgType: result.weapon.dmgType,
+                    speed: result.weapon.slugSpeed,
+                    fromShip: ship,
+                    target: target);
+                g.slugs.register(slug, shipLoc);
+                slug.tick(fm);
+              } else {
+                if (!rangedMishap && result.weapon.usesAmmo) {
+                  final path = ship.loc.map.greedyPath(ship.loc.cell,
+                      ship.nav.targetShip!.loc.cell, ship.loc.map.dim.maxDim, fm.combatRnd, jitter: 0, ignoreHaz: true);
+                  final obstacle = path.firstWhereOrNull((c) => c.hazLevel > 0);
+                  if (obstacle != null) {
+                    fm.msg("${result.weapon.ammo!.name} hits ${obstacle.hazMap.entries.firstWhere((o) => o.value > 0).key.name}!");
+                    rangedMishap = true;
+                  }
                 }
-              }
-              if (!rangedMishap) {
-                if (result.dmg <= 0) {
-                  fm.msg("${ship.name} misses!");
-                } else {
-                  damage(ship.nav.targetShip!,result.dmg,result.weapon.dmgType);
+                if (!rangedMishap) {
+                  if (result.dmg <= 0) {
+                    fm.msg("${ship.name} misses!");
+                  } else {
+                    damage(ship.nav.targetShip!,result.dmg,result.weapon.dmgType);
+                  }
                 }
               }
             }

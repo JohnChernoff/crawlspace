@@ -41,7 +41,16 @@ mixin ShipMovementMixin {
 
   Map<LogicalKeySet, Intent> getMovementShortcuts(BuildContext ctx) => {
 
-        LogicalKeySet(LogicalKeyboardKey.arrowUp):
+      LogicalKeySet(LogicalKeyboardKey.f1):
+        const DirectionIntent(0, -1, 0),
+      LogicalKeySet(LogicalKeyboardKey.f2):
+        const DirectionIntent(0, 1, 0),
+      LogicalKeySet(LogicalKeyboardKey.f3):
+        const DirectionIntent(-1, 0, 0),
+      LogicalKeySet(LogicalKeyboardKey.f4):
+        const DirectionIntent(1, 0, 0),
+
+      LogicalKeySet(LogicalKeyboardKey.arrowUp):
         const DirectionIntent(0, -1, 0),
         LogicalKeySet(LogicalKeyboardKey.arrowDown):
         const DirectionIntent(0, 1, 0),

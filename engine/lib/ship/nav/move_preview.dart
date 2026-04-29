@@ -25,6 +25,7 @@ class MovePreviewer {
     required GridCell desiredCell,
     required NewtonianStepInput input,
     required VelocityStepResult velocity,
+    double energyMult = 3.33,
     int auts = 1,
   }) {
     final newPos = Position(
@@ -42,8 +43,10 @@ class MovePreviewer {
     final deltaV = sqrt((dvx * dvx) + (dvy * dvy) + (dvz * dvz));
 
     final energy = input.engine != null
-        ? (ship.currentMass * deltaV) / input.engine!.efficiency
+        ? ((ship.currentMass * deltaV) / input.engine!.efficiency) * energyMult
         : 0.0;
+    if (ship.playship) print("DeltaV: $deltaV, Auts: $auts, Energy: $energy");
+
 
     if (actualCell == null) {
       final bounceCell = boundaryCellFromTrajectory(
@@ -365,6 +368,7 @@ class MovePreviewer {
     required MoveContext ctx,
     required GridCell desiredCell,
     required Engine? engine,
+    double energyMult = .5,
   }) {
     if (engine == null) {
       return MovementPreview(
@@ -388,8 +392,8 @@ class MovePreviewer {
         ? 1
         : gravityTraversalMultiplier(fromCell: ctx.currentCell, toCell: desiredCell);
 
-    final energy = ((ship.currentMass * distance * mult) / engine.efficiency) * .66;
-    //if (ship.playship) print("Auts: $auts, Energy: $energy");
+    final energy = ((ship.currentMass * distance * mult) / engine.efficiency) * energyMult;
+    if (ship.playship) print("Auts: $auts, Energy: $energy");
 
     return MovementPreview(
       desiredCell: desiredCell,

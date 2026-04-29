@@ -59,11 +59,13 @@ class SlotAssignment {
   SlotAssignment(this.slot,this.system);
 }
 
+enum FireResultEnum {none,ammoWarn,noEnergy}
+
 class FireResult {
   int dmg;
   Weapon weapon;
-  bool ammoWarn;
-  FireResult(this.dmg,this.weapon,this.ammoWarn);
+  FireResultEnum resultEnum;
+  FireResult(this.dmg,this.weapon,this.resultEnum);
 }
 
 class Scrap extends Item {
@@ -409,31 +411,34 @@ class Ship extends Item {
     return hullDamage >= hullStrength;
   }
 
-  String damageReport() {
-    return "${hullStrength - hullDamage} hull remaining";
-  }
+  String damageReport() => "${hullStrength - hullDamage} hull remaining";
 
   List<FireResult> fireWeapons(ImpulseCell target, Random rnd, {Ship? ship, required bool slug}) {
     List<FireResult> results = [];
     if (loc is ImpulseLocation && (ship == null || ship.loc.domain == loc.domain)) {
       int? minCool;
       for (final weapon in systemControl.readyWeapons) {
-        double dmg = 0;
-        bool ammoWarn = false;
-        bool ammoOK = true;
-        int? clips;
-        if (weapon.usesAmmo) {
-          ammoOK = systemControl.ammoOK(weapon); if (ammoOK) {
-            clips = systemControl.fireAmmoRound(weapon);
-          } else {
-            ammoWarn = true;
+        if (!systemControl.burnEnergy(weapon.energyRate.toDouble())) {
+          results.add(FireResult(0, weapon, FireResultEnum.noEnergy));
+        } else {
+          double dmg = 0;
+          FireResultEnum resultEnum = FireResultEnum.none;
+          bool ammoOK = true;
+          int? clips;
+          if (weapon.usesAmmo) {
+            ammoOK = systemControl.ammoOK(weapon);
+            if (ammoOK) {
+              clips = systemControl.fireAmmoRound(weapon);
+            } else {
+              resultEnum = FireResultEnum.ammoWarn;
+            }
           }
+          if (ammoOK) {
+            dmg += weapon.fire(loc.distCell(target), rnd, targetShip: ship, clips: clips, slug: slug);
+            if (minCool == null || minCool > weapon.cooldown) minCool = weapon.cooldown;
+          }
+          results.add(FireResult(dmg.floor(),weapon,resultEnum));
         }
-        if (ammoOK) {
-          dmg += weapon.fire(loc.distCell(target), rnd, targetShip: ship, clips: clips, slug: slug);
-          if (minCool == null || minCool > weapon.cooldown) minCool = weapon.cooldown;
-        }
-        results.add(FireResult(dmg.floor(),weapon,ammoWarn));
       }
     }
     return results;

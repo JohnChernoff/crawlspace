@@ -77,7 +77,7 @@ class FugueEngine {
     }
   }
 
-  final String version = "0.1s";
+  final String version = "0.1t";
   final Galaxy galaxy;
   late Player player;
   int numAgents = 3;
