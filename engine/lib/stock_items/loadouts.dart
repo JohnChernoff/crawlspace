@@ -243,7 +243,7 @@ class Loadout {
         StockSystem.wepCosmogripher,    // sinclair ~ bauchmann slot (trustedPartner) ✓
         StockSystem.lchPlasmaCannon,    // bauchmann native ✓
       ]),
-      ShipType.destroyer: ShipConfig(ShipClassType.marduk, [
+      ShipType.destroyer: ShipConfig(ShipClassType.nemesis, [
         // marduk engine=rimbaud: nimrod→rimbaud=compatible ✓
         // marduk weapon=salazar: sinclair→salazar=needsAdapter ✗ → use genCorp weapons
         // marduk power=salazar: genAojginx(smythe) → salazar→smythe=needsAdapter ✗ → genCorp power

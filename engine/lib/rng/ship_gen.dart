@@ -1,8 +1,12 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
+import 'package:crawlspace_engine/ship/systems/engines.dart';
+import 'package:crawlspace_engine/ship/systems/ship_sys.dart';
 import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 import 'package:crawlspace_engine/stock_items/loadouts.dart';
+import 'package:crawlspace_engine/stock_items/ship/stock_engines.dart';
+import 'package:crawlspace_engine/stock_items/ship/stock_pile.dart';
 import '../actors/pilot.dart';
 import '../galaxy/galaxy.dart';
 import '../galaxy/geometry/grid.dart';
@@ -46,6 +50,30 @@ class ShipGenerator {
     return ship;
   }
 
+  static bool installRandomSystem(Ship ship, ShipSystemType type, Random rnd, { Domain? domain }) {
+    int techLvl = ship.techLvl ?? 1;
+    return switch (type) {
+      ShipSystemType.weapon => ship.rndSystemInstaller.installRndWeapon(techLvl, rnd),
+      ShipSystemType.launcher => ship.rndSystemInstaller.installRndWeapon(techLvl, rnd),
+      ShipSystemType.engine => (domain != null) ? ship.rndSystemInstaller.installRndEngine(domain,techLvl, rnd) : false,
+      ShipSystemType.shield => ship.rndSystemInstaller.installRndShield(techLvl, rnd),
+      ShipSystemType.power => ship.rndSystemInstaller.installRndShield(techLvl, rnd),
+      ShipSystemType.adapter => false,
+      ShipSystemType.sensor => false,
+      ShipSystemType.ammo => false,
+      // TODO: Handle this case.
+      ShipSystemType.emitter => throw UnimplementedError(),
+      // TODO: Handle this case.
+      ShipSystemType.converter => throw UnimplementedError(),
+      // TODO: Handle this case.
+      ShipSystemType.quarters => throw UnimplementedError(),
+      // TODO: Handle this case.
+      ShipSystemType.scrapper => throw UnimplementedError(),
+      // TODO: Handle this case.
+      ShipSystemType.unknown => throw UnimplementedError(),
+    };
+  }
+
   static void installRandomSystems(Ship ship, Random rnd) {
     final techLvl = ship.techLvl ?? 5;
     ship.rndSystemInstaller.installRndPower(8, rnd);
@@ -63,8 +91,17 @@ class ShipGenerator {
 
     final systems = loadout.shipMap[ship.shipClass.type]?.systems;
     if (systems != null && systems.isNotEmpty) for (final system in systems) {
-      print("Installing: ${system.name}");
-      ship.install(system.createSystem(),active: true);
+
+      final report = ship.install(system.createSystem(),active: true);
+      if (report?.result == InstallResult.success) {
+        print("Installed: ${system.name}");
+      } else {
+        if (system.type == ShipSystemType.engine) {
+          installRandomSystem(ship, system.type, rnd, domain: stockEngines[system]?.domain);
+        } else {
+          installRandomSystem(ship, system.type, rnd);
+        }
+      }
     }
   }
 

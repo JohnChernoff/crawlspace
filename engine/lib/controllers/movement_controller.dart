@@ -18,6 +18,10 @@ class MoveResult {
   final MoveResultType resultType;
   final MovementPreview? preview;
   const MoveResult(this.preview,this.resultType);
+  @override
+  String toString() =>
+      "[Result Type: ${resultType.name}\n, $preview]";
+
 }
 
 enum MoveResultType {
@@ -64,6 +68,17 @@ class MovementPreview {
 
   String dump(Ship ship) =>
     "${ship.name}, aut: ${auts}, loc: ${ship.loc.cell.coord}, energy: $energyRequired}";
+
+  @override
+  String toString() =>
+      "Desired Cell Coord: ${desiredCell?.coord}\n"
+      "Actual Cell Coord: ${actualCell?.coord}\n"
+      "Auts: ${auts}\n"
+      "Energy Required: ${energyRequired}\n"
+      "Engine Fail: ${engineFail}\n"
+      "Emergency Stop: ${emergencyDecel}\n"
+      "Nav State: ${newState.pos},${newState.vel}\n"
+      "Doinked: ${doinked.name}\n";
 }
 
 class MovementController extends FugueController {
@@ -132,8 +147,10 @@ class MovementController extends FugueController {
     if (ship.npc) {
       final MoveResult? result;
       if (ship.nav.currentPath.isNotEmpty) {
-        result = moveShip(ship, ship.nav.currentPath.removeAt(0).loc);
-        //print("${ship.name} moved, auts: ${result.preview?.auts}, loc: ${ship.loc}, tick: ${fm.auTick}");
+        final newLoc = ship.nav.currentPath.removeAt(0).loc;
+        print("${ship.loc.cell.coord} -> ${newLoc.cell.coord}");
+        result = moveShip(ship, newLoc);
+        print("${ship.name} moved, $result, tick: ${fm.auTick}");
       } else {
         result = fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.aiRnd));
         glog("Moving: ${ship.name}, Tick: ${fm.auTick}, Result: ${result?.resultType.moving}",level: DebugLevel.Fine);
@@ -206,7 +223,8 @@ class MovementController extends FugueController {
     if (newCell == null) return MoveResult(preview,MoveResultType.error);
 
     if (ship.loc.domain == Domain.impulse) {
-      if (fm.galaxy.ships.atCell(newCell).isNotEmpty) {
+      final ships = fm.galaxy.ships.atCell(newCell);
+      if (ship.loc.cell != newCell && ships.isNotEmpty) {
         return MoveResult(preview,MoveResultType.impCollision); //TODO: fix
       }
       if (ship.pilot.safeMovement &&
@@ -279,6 +297,7 @@ class MovementController extends FugueController {
         );
       }
     } else { // NPC free movement — burn what we can, don't penalise.
+      //print("NPC movement");
       ship.systemControl.burnEnergy(preview.energyRequired);
     }
     return preview;

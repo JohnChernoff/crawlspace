@@ -219,13 +219,15 @@ class Ship extends Item {
   double get availableSpace => shipClass.volume - currentVolume;
   bool okVolume(double m) => availableSpace > m;
 
-  void install(ShipSystem? system, {bool active = true}) {
+  InstallReport? install(ShipSystem? system, {bool active = true}) {
     if (system != null) {
       addToInventory(system);
       final report = systemControl.installSystem(system);
       if (report.result == InstallResult.success) systemControl.toggleSystem(system, on: active);
       else print("Error installing ${system.name}: ${report.result.name}");
+      return report;
     }
+    return null;
   }
 
   bool addToInventory(Item i) {

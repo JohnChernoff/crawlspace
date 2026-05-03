@@ -149,8 +149,7 @@ class PilotController extends FugueController {
                   return;
                 }
               }
-            } else {
-              fm.msg("${ship.name} flees!");
+            } else { //fm.msg("${ship.name} flees!");
               final idealCells = ship.loc.map.values
                   .sorted((c1,c2) => playLoc.distCell(c2).compareTo(playLoc.distCell(c1)));
               ship.nav.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd);
