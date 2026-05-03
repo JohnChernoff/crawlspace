@@ -45,7 +45,7 @@ class MovePreviewer {
     final energy = input.engine != null
         ? ((ship.currentMass * deltaV) / input.engine!.efficiency) * energyMult
         : 0.0;
-    if (ship.playship) print("DeltaV: $deltaV, Auts: $auts, Energy: $energy");
+    //if (ship.playship) print("DeltaV: $deltaV, Auts: $auts, Energy: $energy");
 
 
     if (actualCell == null) {
@@ -393,7 +393,7 @@ class MovePreviewer {
         : gravityTraversalMultiplier(fromCell: ctx.currentCell, toCell: desiredCell);
 
     final energy = ((ship.currentMass * distance * mult) / engine.efficiency) * energyMult;
-    if (ship.playship) print("Auts: $auts, Energy: $energy");
+    //if (ship.playship) print("Auts: $auts, Energy: $energy");
 
     return MovementPreview(
       desiredCell: desiredCell,

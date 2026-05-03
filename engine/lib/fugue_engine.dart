@@ -185,14 +185,14 @@ class FugueEngine {
       final pilot = Pilot(Rng.generateName(rnd: itemRnd), locale, rnd: itemRnd, galaxy: galaxy, isPirate: false);
       final ship = ShipGenerator.generateShip(system, galaxy, itemRnd, owner: pilot);
       galaxy.ships.addFlying(ship,locale.loc,pilot);
-      ShipGenerator.installRandomSystems(ship, itemRnd);
+      ShipGenerator.installSpeciesSystems(ship, itemRnd); //ShipGenerator.installRandomSystems(ship, itemRnd);
     }
     final numPirates = (itemRnd.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
     for (int i = 0; i < numPirates; i++) {
       final pilot = Pilot(Rng.generateName(rnd: itemRnd), locale, rnd: itemRnd, galaxy: galaxy, isPirate: true);
       final pirateShip = ShipGenerator.generateShip(system, galaxy, itemRnd, owner: pilot);
       galaxy.ships.addFlying(pirateShip,locale.loc, pilot);
-      ShipGenerator.installRandomSystems(pirateShip, itemRnd);
+      ShipGenerator.installSpeciesSystems(pirateShip, itemRnd); //ShipGenerator.installRandomSystems(pirateShip, itemRnd);
     } //print("Adding pirates: $numPirates");
   }
 

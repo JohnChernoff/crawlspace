@@ -66,6 +66,7 @@ class CritConfig {
 }
 
 class Weapon extends ShipSystem {
+  static double damageMultiplier = 3.3;
   final int dmgDice;
   final int dmgDiceSides;
   final int dmgBase;
@@ -182,7 +183,7 @@ class Weapon extends ShipSystem {
     //TODO: egos, etc.
     if (slug && ammo == null) return dmg; //ranged weapons always include distance modifier
     final netDamage = dmg * dmgRangeConfig.rangeMultiplier(dist); //print("Net damage: $netDamage");
-    return netDamage;
+    return netDamage * damageMultiplier;
   }
 
   double _grossDamage(math.Random rnd) => ammo == null

@@ -63,7 +63,13 @@ enum StockSystem {
   final Corporation manufacturer;
   const StockSystem(this.type,this.techLvl, this.rarity, {this.manufacturer = Corporation.genCorp});
 
-  Item createSystem() => switch(type) {
+  ShipSystem? createSystem() {
+    final item = createSystemItem();
+    if (item is ShipSystem) return item;
+    return null;
+  }
+
+  Item createSystemItem() => switch(type) {
       ShipSystemType.power => PowerGenerator.fromStock(this),
       ShipSystemType.engine => Engine.fromStock(this),
       ShipSystemType.shield => Shield.fromStock(this),

@@ -165,7 +165,7 @@ class SystemShop extends Shop {
     //final militaryAvailable = g.corpMod.militaryAvailable(location.loc.system);
 
     while (inventory.count < quantity) {
-      inventory.add(Rng.weightedRandom(weights, rnd).createSystem());
+      inventory.add(Rng.weightedRandom(weights, rnd).createSystemItem());
     }
   }
 

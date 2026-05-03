@@ -163,7 +163,7 @@ enum Corporation implements Normalizable  {
       stockSpecies: StockSpecies.humanoid,
       spread: 3.0,
       corpName: "Tanaka Engineering",
-      lore: "Quasar Consistency",  // fixed spelling :)
+      lore: "Quasar Consistency",
       products: {
         ShipSystemType.engine: CorpTier.premium,
       },

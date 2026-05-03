@@ -199,13 +199,14 @@ class MiniMapPainter extends CustomPainter {
       Rect rect,
       MiniMapCellStyle style,
       ) {
+    final square = Rect.fromCenter(center: rect.center, width: rect.shortestSide, height: rect.shortestSide);
     switch (style.shape) {
       case MiniMapShape.rect:
         if (style.color == Colors.black) return;
         final paint = Paint()
           ..color = style.color
           ..style = PaintingStyle.fill;
-        canvas.drawRect(rect, paint);
+        canvas.drawRect(square, paint);
         break;
 
       case MiniMapShape.oval:
@@ -213,7 +214,7 @@ class MiniMapPainter extends CustomPainter {
           ..color = style.color
           ..style = PaintingStyle.fill;
         canvas.drawOval(
-          rect.deflate(rect.shortestSide * 0.15),
+          square,
           paint,
         );
         break;
@@ -232,15 +233,15 @@ class MiniMapPainter extends CustomPainter {
           ..style = PaintingStyle.stroke
           ..strokeWidth = 1.5;
 
-        final inset = rect.shortestSide * 0.25;
+        final inset = 0;
         canvas.drawLine(
-          Offset(rect.left + inset, rect.top + inset),
-          Offset(rect.right - inset, rect.bottom - inset),
+          Offset(square.left + inset, square.top + inset),
+          Offset(square.right - inset, square.bottom - inset),
           stroke,
         );
         canvas.drawLine(
-          Offset(rect.right - inset, rect.top + inset),
-          Offset(rect.left + inset, rect.bottom - inset),
+          Offset(square.right - inset, square.top + inset),
+          Offset(square.left + inset, square.bottom - inset),
           stroke,
         );
         break;

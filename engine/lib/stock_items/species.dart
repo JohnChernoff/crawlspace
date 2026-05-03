@@ -97,6 +97,7 @@ class Species {
   final WeightedTrait<DamageType>? damageWeights; //null = all
   final WeightedTrait<AmmoDamageType>? ammoDamageWeights; //null = all
   final double rangedProb;
+
   const Species(this.name,this.homeWorld,this.propagation,this.glyph, {
       required this.graphCol,
       this.desc = "Mostly Harmless",
@@ -118,6 +119,8 @@ class Species {
       this.ammoDamageWeights,
       this.rangedProb = .5,
   });
+
+  StockSpecies? getStock() => StockSpecies.values.where((s) => s.name.toLowerCase() == name.toLowerCase()).firstOrNull;
 
   @override
   String toString() => name;
@@ -190,7 +193,7 @@ enum StockSpecies {
         xenoWeights: WeightedTrait({XenomancySchool.elemental: .9,},
             defWeight: .2, allValues: XenomancySchool.values),
         damageWeights: WeightedTrait({DamageType.etherial: .01},
-            defWeight: .5, allValues: DamageType.values)
+            defWeight: .5, allValues: DamageType.values),
       )
   ),
   vorlon(Species("Vorlon","Ubuntov",.33,"V",graphCol: GameColors.purple,

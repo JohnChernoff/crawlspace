@@ -86,7 +86,7 @@ class ShipSystemControl {
   bool toggleSystem(ShipSystem? s, {bool? on}) {
     if (s != null) {
       if (on == null) s.active = !s.active; else s.active = on;
-      if (s.active && getCurrentEnergy() <= 0) {
+      if (on != true && s.active && getCurrentEnergy() <= 0) {
         s.active = false; return false;
       }
     }

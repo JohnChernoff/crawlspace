@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/ship/systems/ship_system.dart';
+import 'package:crawlspace_engine/stock_items/loadouts.dart';
 import '../actors/pilot.dart';
 import '../galaxy/galaxy.dart';
 import '../galaxy/geometry/grid.dart';
@@ -17,7 +18,9 @@ class ShipGenerator {
     final level = max(0,1 - (galaxy.topo.distance(location.system, galaxy.findHomeworld(owner.faction.species)) / galaxy.maxJumps));
     final techLvl = max(1,(level * 10).round()); //TODO: something more sophisticated?
     //print("Faction: ${pilot.faction.name}, tech: $level, $techLvl");
-    ShipType shipType = Rng.weightedRandom(owner.faction.shipWeights.normalized,rnd);
+    final loadout = Loadout.bySpecies(owner.faction.species.getStock());
+    ShipType shipType = loadout.shipMap.keys.elementAt(rnd.nextInt( loadout.shipMap.keys.length)); //TODO: weigh by hw prox
+    //Rng.weightedRandom(owner.faction.shipWeights.normalized,rnd);
     bool okType(ShipType type) {
       if (shipType.dangerLvl > techLvl) return false;
       if (owner.faction.isPirate || owner.faction.isWarmonger) {
@@ -36,19 +39,33 @@ class ShipGenerator {
         shipType = Rng.weightedRandom(owner.faction.shipWeights.normalized,rnd);
       }
     }
-    final shipClassType = ShipClassType.values.firstWhereOrNull((t) => t.type == shipType) ?? ShipClassType.mentok;
+    final shipClassType = loadout.shipMap[shipType]?.shipClass ?? ShipClassType.mentok;
+    //ShipClassType.values.firstWhereOrNull((t) => t.type == shipType) ?? ShipClassType.mentok;
     Ship ship = Ship("HMS ${Rng.randomAlienName(rnd)}", shipClass: ShipClass.fromEnum(shipClassType), techLvl: techLvl, owner: owner);
     //print("Generated ship: $ship");
     return ship;
   }
 
-  static installRandomSystems(Ship ship, Random rnd) {
+  static void installRandomSystems(Ship ship, Random rnd) {
     final techLvl = ship.techLvl ?? 5;
     ship.rndSystemInstaller.installRndPower(8, rnd);
     ship.rndSystemInstaller.installRndEngine(Domain.impulse, techLvl, rnd);
     ship.rndSystemInstaller.installRndEngine(Domain.system, techLvl, rnd); //no hyperspace
     ship.rndSystemInstaller.installRndShield(techLvl, rnd);
     ship.rndSystemInstaller.installRndWeapon(techLvl, rnd);
+  }
+
+  static void installSpeciesSystems(Ship ship, Random rnd) {
+    final stock = ship.pilot.faction.species.getStock();
+    final loadout = Loadout.bySpecies(stock);
+    print("${ship.shipClass.name}, ${ship.shipClass.type}");
+    print("$stock: ${loadout.shipMap}");
+
+    final systems = loadout.shipMap[ship.shipClass.type]?.systems;
+    if (systems != null && systems.isNotEmpty) for (final system in systems) {
+      print("Installing: ${system.name}");
+      ship.install(system.createSystem(),active: true);
+    }
   }
 
 }

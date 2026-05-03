@@ -33,9 +33,9 @@ class ShipStatus extends ShipSubSystem {
     blocks.add(TextBlock("Shields: ${systemControl.currentShieldStrength.toStringAsFixed(2)} ",GameColors.green,false));
     blocks.add(TextBlock("(${systemControl.currentShieldPercentage.round()}%)",GameColors.lightBlue,true));
     if (!tactical) {
-      blocks.add(TextBlock("Energy: ${ship.systemControl.getCurrentEnergy().toStringAsFixed(2)} ",GameColors.green,false));
+      blocks.add(TextBlock("Energy: ${(ship.systemControl.getCurrentEnergy() / 100).toStringAsFixed(2)} ",GameColors.green,false));
       blocks.add(TextBlock("(${ship.systemControl.currentEnergyPercentage.round()}%)",GameColors.lightBlue,true));
-      blocks.add(TextBlock("Energy Rate: ${ship.ticker.tick().energy.toStringAsFixed(2)}, ",GameColors.green,false));
+      blocks.add(TextBlock("Energy Rate: ${(ship.ticker.tick().energy / 10).toStringAsFixed(2)}, ",GameColors.green,false));
     }
     blocks.add(TextBlock("Xeno: ${ship.xenoMatter.toStringAsFixed(2)}",GameColors.orange,true));
     for (final s in systemControl.getInstalledSystems()) {
