@@ -18,7 +18,7 @@ class AsciiGridPainter extends CustomPainter {
   final GravityFieldTexture? gravityTexture;
   final bool smoothG;
   final GridViewport? viewport;
-  late final cr = CellRenderer(fm);
+  late final renderer = CellRenderer(fm);
 
   AsciiGridPainter({
     required this.fm,
@@ -117,16 +117,16 @@ class AsciiGridPainter extends CustomPainter {
             scanSelection,
             playerZ,
           );
-          final glyph = cr.glyphForCell(cell, ship);
-          final color = cr.colorForCell(cell, ship, state, is2D: is2D);
-          final fontSize = cr.fontSizeForCell(layerSize, z, dim);
+          final sprite = renderer.spriteForCell(cell, ship);
+          final color = renderer.colorForCell(cell, ship, state, is2D: is2D);
+          final fontSize = renderer.fontSizeForCell(layerSize, z, dim);
 
           final layerRect = is2D
               ? baseRect
               : Rect.fromLTWH(dx, dy, layerSize, layerSize);
           final grid = ship.loc.grid;
           if (!smoothG) {
-            cr.paintCellBackground(canvas, layerRect, color: cr.bkgColorForCell(grid, cell));
+            renderer.paintCellBackground(canvas, layerRect, color: renderer.bkgColorForCell(grid, cell));
           } else if (fm.uiOptions.boolOptions[OptBool.vectorHands]!) {
             final wx = x + 0.5;
             final wy = y + 0.5;
@@ -147,14 +147,14 @@ class AsciiGridPainter extends CustomPainter {
                 texture.mh,
                 texture.heatGrid,
               );
-              cr.drawGravityHand(canvas, baseRect, v, heat);
+              renderer.drawGravityHand(canvas, baseRect, v, heat);
             }
           }
 
-          cr.paintGridBoundary(canvas, baseRect);
+          renderer.paintGridBoundary(canvas, baseRect);
 
-          final paragraph = cr.buildParagraph(glyph, color, fontSize);
-          final boxes = paragraph.getBoxesForRange(0, glyph.length);
+          final paragraph = renderer.buildParagraph(sprite.glyph, color, fontSize);
+          final boxes = paragraph.getBoxesForRange(0, sprite.glyph.length);
 
           if (boxes.isNotEmpty) {
             final box = boxes.first.toRect();
@@ -169,11 +169,11 @@ class AsciiGridPainter extends CustomPainter {
           }
 
           if (state.uiTarget || state.inShipPath) {
-            cr.paintTargetMarker(canvas, layerRect, fontSize);
+            renderer.paintTargetMarker(canvas, layerRect, fontSize);
           }
 
           if (state.inTargetPath) {
-            cr.paintCellOutline(
+            renderer.paintCellOutline(
               canvas,
               layerRect,
               color: Colors.white,
@@ -182,7 +182,7 @@ class AsciiGridPainter extends CustomPainter {
           }
 
           if (state.targeted) {
-            cr.paintCellOutline(
+            renderer.paintCellOutline(
               canvas,
               layerRect,
               color: Colors.redAccent,

@@ -64,10 +64,11 @@ class AsciiViewState extends State<AsciiView> {
     return ColoredBox(color: Colors.black, child: Column(children: [
       Expanded(child: Row(children: [
         Expanded(flex: 2, child: Column(children: [
-          Expanded(flex: 2, child: MessageLog(
+          Expanded(child: TextBlockWidget( widget.fm.scannerController.gameStatusText(),box: false,)),
+          Expanded(flex: 8, child: MessageLog(
             key: const ValueKey("main-log"),
             messageStream: widget.fm.msgController.msgWorker.stream)),
-          Expanded(child: MiniMapWidget(widget.fm))
+          Expanded(flex: 4, child: MiniMapWidget(widget.fm))
       ])), // already stream-based, fine
         if (currentView == ViewType.normal)
           Expanded(child: ListenableBuilder(  // text panels rebuild on notify
@@ -78,7 +79,7 @@ class AsciiViewState extends State<AsciiView> {
           Expanded(child: ListenableBuilder(
               listenable: widget.fugueModel,
               builder: (_,__) => TextBlockWidget(
-                  widget.fm.scannerController.statusText()))),
+                  widget.fm.scannerController.shipStatusText()))),
       ])),
       if (currentView == ViewType.normal)
         Expanded(child: Row(children: [

@@ -1,5 +1,7 @@
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/effects.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
@@ -8,29 +10,83 @@ import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
+import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:flutter/material.dart';
 
 import '../../../options.dart';
+
+class CellSprite {
+  final CellEnum cellEnum;
+  final Species? species;
+  final List<CellEffect> effects;
+  String get glyph => cellEnum == CellEnum.ship
+    ? species?.glyph ?? "?"
+    : cellEnum.glyph;
+  //TODO: images/tiles
+  String get tilePath => cellEnum.imgPath;
+  const CellSprite(this.cellEnum,{this.species,this.effects = const []});
+
+  factory CellSprite.flatten(List<CellSprite> entities) {
+    if (entities.isEmpty) return CellSprite(CellEnum.nothing);
+    if (entities.length == 1) return entities.first;
+    if (entities.every((e) => e.cellEnum.hazard)) {
+      if (entities.length > 2) return CellSprite(CellEnum.clusterFark);
+      final sprites = entities.map((e) => e.cellEnum);
+      if (sprites.contains(CellEnum.nebula) && sprites.contains(CellEnum.ion)) return CellSprite(CellEnum.ionNeb);
+      if (sprites.contains(CellEnum.nebula) && sprites.contains(CellEnum.roid)) return CellSprite(CellEnum.nebRoid);
+      if (sprites.contains(CellEnum.ion) && sprites.contains(CellEnum.roid)) return CellSprite(CellEnum.ionRoid);
+      if (sprites.contains(CellEnum.gamma) && sprites.contains(CellEnum.roid)) return CellSprite(CellEnum.radRoid);
+    }
+    return entities.sorted((a,b) => b.cellEnum.index - a.cellEnum.index).first;
+  }
+}
+
+enum CellEnum {
+  blackHole("-","img/tiles/blackHole.png",true),
+  playShip("@","img/tiles/playship.png",false),
+  ship("X","img/tiles/x.png",false),
+  star("✦","img/tiles/star.png",false),
+  planet("O","img/tiles/plan.png",false),
+  loot("\$","img/tiles/loot.png",false),
+  xenoCloud("%","img/tiles/xeno.png",false),
+  buoy("⊕","img/tiles/buoy.png",false),
+  slug("*","img/tiles/slug.png",false),
+  roid("+","img/tiles/roid.png",true),
+  nebula("~","img/tiles/neb.png",true),
+  ion("#","img/tiles/ion.png",true),
+  gamma("&","img/tiles/gamma.png",true),
+  wake("\"","img/tiles/wake.png",true),
+  radRoid("§","img/tiles/radRoid.png",true),
+  ionRoid("^","img/tiles/ionRoid.png",true),
+  nebRoid("✱","img/tiles/nebRoid.png",true),
+  ionNeb("≈","img/tiles/ionNeb.png",true),
+  clusterFark("※","img/tiles/cluster.png",true),
+  nothing("","img/tiles/nada.png",false);
+  final String glyph, imgPath;
+  final bool hazard;
+  const CellEnum(this.glyph,this.imgPath,this.hazard);
+}
 
 class CellRenderer {
   FugueEngine fm;
   CellRenderer(this.fm);
 
-  String glyphForCell(GridCell cell, Ship player) {
+  CellSprite spriteForCell(GridCell cell, Ship player) {
+    final List<CellSprite> sprites = [];
     final ships = fm.galaxy.ships.atCell(cell);
 
     for (final s in ships) {
-      if (!s.npc) return "@";
+      if (!s.npc) sprites.add(CellSprite(CellEnum.playShip));
     }
 
     for (final s in ships) {
       if (s.npc && player.canScan(cell)) {
-        return s.pilot.faction.species.glyph;
+        sprites.add(CellSprite(CellEnum.ship,species: s.pilot.faction.species));
       }
     }
 
     if (cell.effects.anyActive) {
-      return "#";
+      sprites.add(CellSprite(CellEnum.xenoCloud,effects: cell.effects.allActive.toList()));
     }
 
     final hazards = cell.hazMap.entries
@@ -38,42 +94,34 @@ class CellRenderer {
         .map((e) => e.key)
         .toList();
 
-    if (hazards.isNotEmpty) {
-      return hazardGlyph(hazards);
+    for (final hazard in hazards) {
+
+      sprites.add(CellSprite(switch(hazard) {
+        Hazard.nebula => CellEnum.nebula,
+        Hazard.ion => CellEnum.ion,
+        Hazard.roid => CellEnum.roid,
+        Hazard.gamma => CellEnum.gamma,
+        Hazard.wake => CellEnum.wake,
+      }));
     }
 
     if (cell is SectorCell) {
-      if (cell.hasPlanets(fm.galaxy)) return "O";
-      if (cell.hasStars(fm.galaxy)) return "✦";
-      if (cell.hasBuoy) return "⊕";
-      if (cell.blackHole) return "-";
+      if (cell.hasPlanets(fm.galaxy)) sprites.add(CellSprite(CellEnum.planet));
+      if (cell.hasStars(fm.galaxy)) sprites.add(CellSprite(CellEnum.star));
+      if (cell.hasBuoy) sprites.add(CellSprite(CellEnum.buoy));
+      if (cell.blackHole) sprites.add(CellSprite(CellEnum.blackHole));
     }
 
     if (cell is ImpulseCell) {
-      if (cell.hasPlanet(fm.galaxy)) return "O";
-      if (cell.hasStar(fm.galaxy)) return "✦";
-      if (cell.asteroid != null) return "+";
-      if (fm.galaxy.buoys.singleAtImpulse(cell.loc) != null) return "⊕";
-      if (fm.galaxy.items.byLoc(cell.loc).isNotEmpty) return "\$";
-      if (fm.galaxy.slugs.inImpulse(cell.loc).isNotEmpty) return "*";
+      if (cell.hasPlanet(fm.galaxy)) sprites.add(CellSprite(CellEnum.planet));
+      if (cell.hasStar(fm.galaxy)) sprites.add(CellSprite(CellEnum.star));
+      if (cell.asteroid != null) sprites.add(CellSprite(CellEnum.roid));
+      if (fm.galaxy.buoys.singleAtImpulse(cell.loc) != null) sprites.add(CellSprite(CellEnum.buoy));
+      if (fm.galaxy.items.byLoc(cell.loc).isNotEmpty) sprites.add(CellSprite(CellEnum.loot));
+      if (fm.galaxy.slugs.inImpulse(cell.loc).isNotEmpty) sprites.add(CellSprite(CellEnum.slug));
     }
 
-    return fm.playerShip?.loc.domain == Domain.orbital ? "." : " ";
-  }
-
-  String hazardGlyph(List<Hazard> hazards) {
-    if (hazards.length == 1) return hazards.first.glyph;
-
-    final h = hazards.toSet();
-
-    if (h.contains(Hazard.nebula) && h.contains(Hazard.ion)) return '≈';
-    if (h.contains(Hazard.nebula) && h.contains(Hazard.roid)) return '✱';
-    if (h.contains(Hazard.ion) && h.contains(Hazard.roid)) return '%';
-    if (h.contains(Hazard.gamma) && h.contains(Hazard.roid)) return '§';
-
-    if (hazards.length >= 3) return '※';
-
-    return hazards.first.glyph;
+    return CellSprite.flatten(sprites); //fm.playerShip?.loc.domain == Domain.orbital ? "." : " ";
   }
 
   void paintTargetMarker(

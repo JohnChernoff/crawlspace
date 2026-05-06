@@ -33,7 +33,7 @@ final Map<StockSystem, EngineData> stockEngines = {
   StockSystem.engBasicFedImp: EngineData(
     systemData: ShipSystemData.fromStock(
       StockSystem.engBasicFedImp,
-      "Mark I Fed Impulse Engine",
+      "Mk I Fed Impulse Engine",
       about: "The original Federation impulse engine design - simple, straightforward, and generally nonexplosive.",
       mass: 80,
       baseCost: 300,
@@ -51,7 +51,7 @@ final Map<StockSystem, EngineData> stockEngines = {
   StockSystem.engBasicFedSub: EngineData(
     systemData: ShipSystemData.fromStock(
       StockSystem.engBasicFedSub,
-      "Mark I Fed Sublight Engine",
+      "Mk I Fed Sublight Engine",
       about: "The original Federation sublight engine design - simple, straightforward, and generally nonexplosive.",
       mass: 80,
       baseCost: 300,
@@ -69,7 +69,7 @@ final Map<StockSystem, EngineData> stockEngines = {
   StockSystem.engBasicFedHyper: EngineData(
     systemData: ShipSystemData.fromStock(
       StockSystem.engBasicFedHyper,
-      "Mark I Fed Hyperdrive Engine",
+      "Mk I Fed Hyperdrive Engine",
       about: "The original Federation hyperspace engine design - simple, straightforward, and generally nonexplosive.",
       mass: 80,
       baseCost: 300,
@@ -87,7 +87,7 @@ final Map<StockSystem, EngineData> stockEngines = {
   StockSystem.engMovSub1: EngineData(
     systemData: ShipSystemData.fromStock(
       StockSystem.engMovSub1,
-      "Mark I Movelian Sublight Engine",
+      "Mk I Movelian Sublight Engine",
       about: "The Movelians are engine specialists. This particular model is their most basic, designed for moderately demanding travel.",
       mass: 80,
       baseCost: 1000,

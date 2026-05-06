@@ -70,21 +70,23 @@ class ScannerController extends FugueController {
     return [];
   }
 
-  List<TextBlock> statusText() {
-    final abbrev = fm.playerShip?.nav.targetShip != null;
-    List<TextBlock> blocks = [];
-    blocks.add(TextBlock("Tick: ${fm.auTick / 100}, ",GameColors.khaki,abbrev));
-    if (!abbrev) {
-      //blocks.add(TextBlock("Mode: ${fm.inputMode.name}",GameColors.white,true));
-      blocks.add(TextBlock("Credits: ${fm.player.credits}",GameColors.khaki,true));
-      final mainSpecies = fm.galaxy.civMod.dominantSpecies(fm.player.locale.loc.system)!;
-      int dist = fm.galaxy.topo.distance(fm.player.locale.loc.system, fm.galaxy.findHomeworld(mainSpecies));
-      blocks.add(TextBlock("${mainSpecies.name} Space ($dist)",mainSpecies.graphCol,true));
-    }
+  List<TextBlock> gameStatusText() {
+    return [
+      TextBlock("Tick: ${fm.auTick / 100}, ",GameColors.white,false),
+      TextBlock("Credits: ${fm.player.credits}",GameColors.gold,false),
+    ];
+  }
+
+  List<TextBlock> shipStatusText() {
+    final mainSpecies = fm.galaxy.civMod.dominantSpecies(fm.player.locale.loc.system)!;
+    int dist = fm.galaxy.topo.distance(fm.player.locale.loc.system, fm.galaxy.findHomeworld(mainSpecies));
+    List<TextBlock> blocks = [
+      TextBlock("${mainSpecies.name} Space ($dist)",mainSpecies.graphCol,true)
+    ];
     Ship? ship = fm.playerShip; if (ship == null) {
       blocks.add(const TextBlock("No ship",GameColors.red,true));
     } else {
-      if (!abbrev) blocks.add(TextBlock(ship.loc.toString(),GameColors.cyan,true));
+      blocks.add(TextBlock(ship.loc.toString(),GameColors.cyan,true));
       if (ship.itinerary != null) blocks.add(TextBlock("To: ${ship.itinerary!.last.name}", GameColors.green, true));
       blocks.addAll(ship.status.display(fm));
     }
@@ -119,6 +121,11 @@ class ScannerController extends FugueController {
           blocks.add(TextBlock("${loc.relativeDomainCoord(ship.loc)}: ${i.name}", currentScanSelection == loc.cell ? GameColors.gold : i.objColor, true));
         }
       }
+    }
+    if (ship.nav.targetShip != null) {
+      blocks.add(TextBlock("", GameColors.cyan, true));
+      blocks.add(TextBlock("Scanned Ship: ", GameColors.cyan, true));
+      blocks.addAll(ship.nav.targetShip!.status.display(fm,tactical: true));
     }
     return blocks;
   }

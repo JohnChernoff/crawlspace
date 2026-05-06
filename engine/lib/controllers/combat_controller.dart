@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/actors/pilot.dart';
+import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/reg/locatables.dart';
@@ -133,8 +134,8 @@ class CombatController extends FugueController {
               bool rangedMishap = result.resultEnum == FireResultEnum.ammoWarn;
               if (rangedMishap) fm.msg("No ammo for ${result.weapon.name}");
               if (slugs) {
-                final slug = ImpulseSlug(
-                    objColor: ship.pilot.faction.color,
+                final slug = ImpulseSlug(//ship.pilot.faction.color,
+                objColor: ship.npc ? GameColors.orange : GameColors.white,
                     damage: result.dmg,
                     dmgType: result.weapon.dmgType,
                     speed: result.weapon.slugSpeed,

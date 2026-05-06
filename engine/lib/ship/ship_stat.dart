@@ -12,7 +12,7 @@ import '../galaxy/hazards.dart';
 class ShipStatus extends ShipSubSystem {
   ShipStatus(super.ship);
 
-  List<TextBlock> display(FugueEngine fm,{bool tactical = false, bool showScannedShip = true, nebula = false}) {
+  List<TextBlock> display(FugueEngine fm,{bool tactical = false, bool showScannedShip = false, nebula = false}) {
     Galaxy g = fm.galaxy;
     final abbrev = !tactical && nav.targetShip != null;
     final hostile = ship.pilot.hostile;
@@ -43,7 +43,8 @@ class ShipStatus extends ShipSubSystem {
       final color = cooldown ? GameColors.red : s.active ? GameColors.white : GameColors.gray;
       blocks.add(TextBlock("${s.name} ",color,false));
       if (s.damage > 0) blocks.add(TextBlock("${s.dmgTxt}% ", GameColors.gray, false));
-      blocks.add(TextBlock("${s.active ? '+' : '-'}",color,true));
+      //blocks.add(TextBlock("${s.active ? '+' : '-'}",color,true));
+      blocks.add(TextBlock("",color,true));
       if (s is Weapon && s.ammo != null) {
         blocks.add(TextBlock("${s.ammo!.name}: ${systemControl.ammoFor(s.ammo!)}",GameColors.coral,true));
       }
@@ -62,8 +63,8 @@ class ShipStatus extends ShipSubSystem {
     if (!tactical) {
       if (ship.nav.effectiveNewt) {
         blocks.add(TextBlock("GForce: ${ship.nav.gForce}", GameColors.green, true));
-        blocks.add(TextBlock("Targ Facing: ${nav.targetFacing}", GameColors.gray, true));
-        blocks.add(TextBlock("Facing: ${nav.facing}", GameColors.gray, true));
+        //blocks.add(TextBlock("Targ Facing: ${nav.targetFacing}", GameColors.gray, true));
+        //blocks.add(TextBlock("Facing: ${nav.facing}", GameColors.gray, true));
         blocks.add(TextBlock("Position: ${nav.pos}", GameColors.gray, true));
         blocks.add(TextBlock("Heading: ${nav.autoPilot.heading.cell.coord}", GameColors.gray, true));
         blocks.add(TextBlock("Velocity: ${nav.velocityString()}", GameColors.gray, true));

@@ -469,7 +469,7 @@ class Ship extends Item {
         item.scanned = ScanReport(sector: true);
       }
       final scanRoll = ((sensor.accuracy[Domain.system] ?? 0) * .25);
-      if (fm.mapRnd.nextDouble() < 1) { //scanRoll) {
+      if (fm.mapRnd.nextDouble() < scanRoll) {
         for (final i in fm.galaxy.items.inSystem(system)) {
           i.scanned = ScanReport(sector: true);
           fm.scannerController.refreshSensors(system);

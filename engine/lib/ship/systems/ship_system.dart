@@ -39,7 +39,7 @@ class SystemSlot with Itemizable {
 }
 
 abstract class ShipSystem extends Item {
-  String get name => "${super.name} (${manufacturer.corpName})";
+  String get name => "${super.name} (${manufacturer.corpName.split(" ")[0]})";
   String? get flavor => about;
   ShipSystemType get type;
   String get shopDesc => this.toString();
