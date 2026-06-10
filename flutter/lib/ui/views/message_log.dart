@@ -63,8 +63,8 @@ class MessageLogState extends State<MessageLog> {
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.black.withValues(alpha: widget.postGame ? 1.0 : 0.6),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.grey.shade700),
+            //borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.white, width: 1),
           ),
           child: ListView.builder(
             reverse: true,

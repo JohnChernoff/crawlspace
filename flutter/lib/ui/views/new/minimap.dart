@@ -36,10 +36,15 @@ class MiniMapWidget extends StatelessWidget {
     return LayoutBuilder(builder: (ctx, bc) {
       final ship = fm.playerShip;
       if (ship == null) return const SizedBox.shrink();
-      return CustomPaint(
-        size: Size(bc.maxWidth, bc.maxHeight),
+      return Container(
+          padding: EdgeInsets.all(2),
+          decoration: BoxDecoration(
+        border: BoxBorder.all(color: Colors.white, width: 1)
+      ),
+      child: CustomPaint(
+        size: Size(bc.maxWidth-2, bc.maxHeight-2),
         painter: MiniMapPainter(fm, ship),
-      );
+      ));
     });
   }
 }
@@ -60,6 +65,7 @@ class MiniMapPainter extends CustomPainter {
       ..color = Colors.black
       ..style = PaintingStyle.fill;
     canvas.drawRect(Offset.zero & size, bgPaint);
+    //canvas.drawRect(Rect.fromLTWH(0,0, size.width-8,size.height-8), bgPaint);
 
     for (int cx = 0; cx < dim.mx; cx++) {
       final x = cx * cellWidth;
@@ -74,7 +80,7 @@ class MiniMapPainter extends CustomPainter {
         final cell = ship.loc.map.atXYZ(cx, cy, 0);
         if (fm.scannerController.currentScanSelection == cell) {
           final scanPaint = Paint()
-            ..color = Colors.white
+            ..color = Colors.yellowAccent
             ..style = PaintingStyle.stroke;
           canvas.drawRect(rect,scanPaint);
         }
@@ -96,9 +102,9 @@ class MiniMapPainter extends CustomPainter {
     );
 
     final viewportPaint = Paint()
-      ..color = Colors.white
+      ..color = Colors.grey
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0;
+      ..strokeWidth = 1.0;
 
     canvas.drawRect(viewportRect, viewportPaint);
   }

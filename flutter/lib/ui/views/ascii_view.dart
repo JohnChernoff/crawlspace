@@ -61,34 +61,35 @@ class AsciiViewState extends State<AsciiView> {
   }
 
   Widget asciiView({twoShipScan = false}) {
-    return ColoredBox(color: Colors.black, child: Column(children: [
-      Expanded(child: Row(children: [
+    return ColoredBox(color: Colors.black, child: Row(
+      children: [
+        Expanded(child: Column(
+          children: [
+            SizedBox(height: 48, child: TextBlockWidget(widget.fm.scannerController.gameStatusText())),
+            Expanded(flex: 8, child: MessageLog(
+                key: const ValueKey("main-log"),
+                messageStream: widget.fm.msgController.msgWorker.stream)),
+            Expanded(flex: 3, child: MiniMapWidget(widget.fm)),
+          ],
+        )),
         Expanded(flex: 2, child: Column(children: [
-          Expanded(child: TextBlockWidget( widget.fm.scannerController.gameStatusText(),box: false,)),
-          Expanded(flex: 8, child: MessageLog(
-            key: const ValueKey("main-log"),
-            messageStream: widget.fm.msgController.msgWorker.stream)),
-          Expanded(flex: 4, child: MiniMapWidget(widget.fm))
-      ])), // already stream-based, fine
-        if (currentView == ViewType.normal)
-          Expanded(child: ListenableBuilder(  // text panels rebuild on notify
-              listenable: widget.fugueModel,
-              builder: (_,__) => TextBlockWidget(
-                  widget.fm.scannerController.scannerText()))),
-        if (currentView == ViewType.normal)
-          Expanded(child: ListenableBuilder(
-              listenable: widget.fugueModel,
-              builder: (_,__) => TextBlockWidget(
-                  widget.fm.scannerController.shipStatusText()))),
-      ])),
-      if (currentView == ViewType.normal)
-        Expanded(child: Row(children: [
-          Expanded(child: AspectRatio(
-              aspectRatio: 2,
-              child: AsciiGridFast(widget.fm)  // NOT wrapped in ListenableBuilder
-          ))
-        ]))
-    ]));
+          Expanded(child: Row(children: [
+            Expanded(child: ListenableBuilder(
+                listenable: widget.fugueModel,
+                builder: (_,__) => TextBlockWidget(
+                    widget.fm.scannerController.scannerText()))),
+            Expanded(child: ListenableBuilder(
+                listenable: widget.fugueModel,
+                builder: (_,__) => TextBlockWidget(
+                    widget.fm.scannerController.shipStatusText()))),
+          ])),
+          Expanded(child: Stack(fit: StackFit.expand, children: [
+            Image(image: AssetImage("img/galaxy.jpg"), fit: BoxFit.fill),
+            Center(child: AspectRatio(aspectRatio: 1, child: AsciiGridFast(widget.fm))), // NOT wrapped in ListenableBuilder
+          ])),
+        ])),
+      ],
+    ));
   }
 }
 
@@ -122,7 +123,8 @@ class TextBlockWidget extends StatelessWidget {
         ? ListView(children: lines)
         : Column(crossAxisAlignment: CrossAxisAlignment.start, children: lines);
 
-    return DecoratedBox(
+    return Container(
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
             border: box ? Border.all(color: Colors.white) : null),
         child: content);
