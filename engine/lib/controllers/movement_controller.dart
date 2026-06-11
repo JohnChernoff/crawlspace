@@ -84,8 +84,6 @@ class MovementPreview {
 class MovementController extends FugueController {
   bool npcFreeMovement = true;
 
-  /// Small passive stabilization so ships do not drift forever.
-
   MovementController(super.fm);
 
   void setThrottle(ThrottleMode mode, Ship ship) {
@@ -153,15 +151,19 @@ class MovementController extends FugueController {
         print("${ship.name} moved, $result, tick: ${fm.auTick}");
       } else {
         result = fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.aiRnd));
-        glog("Moving: ${ship.name}, Tick: ${fm.auTick}, Result: ${result?.resultType.moving}",level: DebugLevel.Fine);
+        if (result != null) {
+          glog("Moving: ${ship.name}, Tick: ${fm.auTick}, Result: ${result?.resultType.moving}",level: DebugLevel.Fine);
+        } else {
+          glog("Doink: ${ship.name}",level: DebugLevel.Fine);
+        }
       }
       fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: result?.preview?.auts ?? 1);
     }
   }
 
-  MoveResult? vectorShip(Ship ship, Coord3D v) { //normalize v?
+  MoveResult? vectorShip(Ship ship, Coord3D v, {noHaz = true}) { //normalize v?
     final loc = ship.loc.map[ship.loc.cell.coord.add(v)]?.loc;
-    return (loc != null) ? moveShip(ship, loc) : null;
+    return (loc != null && (!noHaz || loc.cell.hazLevel == 0)) ? moveShip(ship, loc) : null;
   }
 
   //does not call pilotController.action because newtonian movement relies on ship.tick

@@ -26,6 +26,9 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
   Position pos;
   int moveCount = 0;
   Ship fromShip;
+  Position get nextPos => pos.add(dir * speed);
+  Coord3D? get nextCoord => pos.coord == nextPos.coord ? null : nextPos.coord;
+
   ImpulseSlug({
     super.objColor,
     required this.damage,
@@ -38,13 +41,13 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
   }
 
   void tick(FugueEngine fm) { //print(this);
-    final p = pos;
-    pos = pos.add(dir * speed);
+    final currPos = pos;
+    pos = nextPos;
     if (!_hitCheck(fm)) {
       if (!pos.coord.inBounds(loc.dim)) {
         fm.galaxy.slugs.remove(this);
       } else {
-        if (pos.coord != p.coord) fm.galaxy.slugs.move(this, ImpulseLocation(loc.system, loc.sectorCoord, pos.coord));
+        if (pos.coord != currPos.coord) fm.galaxy.slugs.move(this, ImpulseLocation(loc.system, loc.sectorCoord, pos.coord));
         if (!_hitCheck(fm)) {
           if (loc.cell.asteroid != null && fm.combatRnd.nextBool()) {
             fm.msg("Asteroid hit! (${dmgType}, ${damage})"); //TODO: reduce asteroid mass? mining?!
@@ -127,7 +130,7 @@ class CombatController extends FugueController {
           fm.msg("No weapons ready");
         } else if (ship.nav.targetShip != null) {
           for (final result in results) {
-            if (result.resultEnum == FireResultEnum.noEnergy) {
+            if (result.resultEnum == FireResultEnum.noEnergy) { //TODO: make energy requirements greater, mute NPC errors
               fm.msg("Insufficient energy for ${result.weapon.name}");
             } else {
               fm.msg("${ship.name} fires weapon: ${result.weapon.name}");

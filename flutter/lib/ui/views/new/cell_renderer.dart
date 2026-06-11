@@ -19,12 +19,13 @@ class CellSprite {
   final CellEnum cellEnum;
   final Species? species;
   final List<CellEffect> effects;
+  final double? rotation;
   String get glyph => cellEnum == CellEnum.ship
     ? species?.glyph ?? "?"
     : cellEnum.glyph;
   //TODO: images/tiles
   String get tilePath => cellEnum.imgPath;
-  const CellSprite(this.cellEnum,{this.species,this.effects = const []});
+  const CellSprite(this.cellEnum,{this.species,this.effects = const [], this.rotation});
 
   factory CellSprite.flatten(List<CellSprite> entities) {
     if (entities.isEmpty) return CellSprite(CellEnum.nothing);
@@ -37,7 +38,7 @@ class CellSprite {
       if (sprites.contains(CellEnum.ion) && sprites.contains(CellEnum.roid)) return CellSprite(CellEnum.ionRoid);
       if (sprites.contains(CellEnum.gamma) && sprites.contains(CellEnum.roid)) return CellSprite(CellEnum.radRoid);
     }
-    return entities.sorted((a,b) => b.cellEnum.index - a.cellEnum.index).first;
+    return entities.sorted((a,b) => a.cellEnum.index - b.cellEnum.index).first;
   }
 }
 
@@ -50,7 +51,9 @@ enum CellEnum {
   loot("\$","img/tiles/loot.png",false),
   xenoCloud("%","img/tiles/xeno.png",false),
   buoy("⊕","img/tiles/buoy.png",false),
-  slug("*","img/tiles/slug.png",false),
+  fastSlug("*","img/tiles/slug.png",false),
+  ammoSlug("►","img/tiles/slug.png",false),
+  slugDest("▫","img/tiles/slugdest.png",false), //□
   roid("+","img/tiles/roid.png",true),
   nebula("~","img/tiles/neb.png",true),
   ion("#","img/tiles/ion.png",true),
@@ -66,7 +69,7 @@ enum CellEnum {
   final bool hazard;
   const CellEnum(this.glyph,this.imgPath,this.hazard);
 }
-
+//U+25AB — White Small Square
 class CellRenderer {
   FugueEngine fm;
   CellRenderer(this.fm);
@@ -118,7 +121,14 @@ class CellRenderer {
       if (cell.asteroid != null) sprites.add(CellSprite(CellEnum.roid));
       if (fm.galaxy.buoys.singleAtImpulse(cell.loc) != null) sprites.add(CellSprite(CellEnum.buoy));
       if (fm.galaxy.items.byLoc(cell.loc).isNotEmpty) sprites.add(CellSprite(CellEnum.loot));
-      if (fm.galaxy.slugs.inImpulse(cell.loc).isNotEmpty) sprites.add(CellSprite(CellEnum.slug));
+      final slugs = fm.galaxy.slugs.inImpulse(cell.loc);
+      if (slugs.isNotEmpty) {
+        sprites.add(slugs.first.speed < 1
+          ? CellSprite(CellEnum.ammoSlug, rotation: slugs.first.dir.angle2D)
+          : CellSprite(CellEnum.fastSlug, rotation: slugs.first.dir.angle2D));
+      }
+      final nextSlug = fm.galaxy.slugs.nextSlugPosition(cell);
+      if (nextSlug != null && nextSlug.speed >= 0) sprites.add(CellSprite(CellEnum.slugDest));
     }
 
     return CellSprite.flatten(sprites); //fm.playerShip?.loc.domain == Domain.orbital ? "." : " ";
@@ -198,9 +208,17 @@ class CellRenderer {
     }
 
     final loc = cell.loc; if (loc is ImpulseLocation) {
-      if (fm.galaxy.slugs.inImpulse(loc).isNotEmpty) {
-        return Color(fm.galaxy.slugs.inImpulse(loc).first.objColor.argb);
+      final slugs = fm.galaxy.slugs.inImpulse(loc);
+      if (slugs.isNotEmpty) {
+        final enemySlugs = slugs.where((s) => s.fromShip.npc).firstOrNull;
+        if (enemySlugs != null) return Color(enemySlugs.objColor.argb);
+        return Color(slugs.first.objColor.argb);
       }
+    }
+
+    if (cell is ImpulseCell) {
+      final nextSlug = fm.galaxy.slugs.nextSlugPosition(cell);
+      if (nextSlug != null) return Color(nextSlug.objColor.argb);
     }
 
     for (final s in ships) {

@@ -159,11 +159,20 @@ class AsciiGridPainter extends CustomPainter {
           if (boxes.isNotEmpty) {
             final box = boxes.first.toRect();
             final cellCenter = baseRect.center;
-
             final px = cellCenter.dx - (box.left + box.width / 2);
             final py = cellCenter.dy - (box.top + box.height / 2);
+            final rotation = sprite.rotation ?? 0;
 
-            canvas.drawParagraph(paragraph, Offset(px, py));
+            if (rotation != 0) {
+              canvas.save();
+              canvas.translate(cellCenter.dx, cellCenter.dy);
+              canvas.rotate(rotation);
+              canvas.translate(-cellCenter.dx, -cellCenter.dy);
+              canvas.drawParagraph(paragraph, Offset(px, py));
+              canvas.restore();
+            } else {
+              canvas.drawParagraph(paragraph, Offset(px, py));
+            }
           } else {
             canvas.drawParagraph(paragraph, baseRect.topLeft);
           }
