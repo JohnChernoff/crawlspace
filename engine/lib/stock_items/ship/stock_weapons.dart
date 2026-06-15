@@ -13,8 +13,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 2000,
     fireRate: 10,
     baseAccuracy: .8,
-    dmgRangeConfig: const RangeConfig(idealRange: 1.5, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .5),
-    accuracyRangeConfig: const RangeConfig(idealRange: 1.5, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .33),
   ),
 
   StockSystem.wepFedLaser2: WeaponData(
@@ -27,8 +25,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 2000,
     fireRate: 8,
     baseAccuracy: .8,
-    dmgRangeConfig: const RangeConfig(idealRange: 1.5, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .33),
-    accuracyRangeConfig: const RangeConfig(idealRange: 1.5, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .25),
   ),
 
   StockSystem.wepFedLaser3: WeaponData(
@@ -41,8 +37,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 2000,
     fireRate: 8,
     baseAccuracy: .9,
-    dmgRangeConfig: const RangeConfig(idealRange: 1.5, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .33),
-    accuracyRangeConfig: const RangeConfig(idealRange: 1.5, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .2),
   ),
 
   StockSystem.wepPlasmaRay: WeaponData(
@@ -55,8 +49,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 3600,
     fireRate: 16,
     baseAccuracy: .8,
-    dmgRangeConfig: const RangeConfig(idealRange: 2, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .2),
-    accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .1),
   ),
 
   StockSystem.wepGravRifle: WeaponData(
@@ -69,8 +61,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 1200,
     fireRate: 4,
     baseAccuracy: .8,
-    dmgRangeConfig: const RangeConfig(idealRange: 2, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .2),
-    accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .1),
   ),
 
   StockSystem.wepVibraSlap: WeaponData(
@@ -83,8 +73,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 4800,
     fireRate: 24,
     baseAccuracy: .8,
-    dmgRangeConfig: const RangeConfig(idealRange: 2, minRange: 2, maxRange: 12, closeFalloff: .01, farFalloff: .05),
-    accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 2, maxRange: 12, closeFalloff: .01, farFalloff: .05),
   ),
 
   StockSystem.wepNeuRad: WeaponData(
@@ -97,8 +85,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 6000,
     fireRate: 32,
     baseAccuracy: .8,
-    dmgRangeConfig: const RangeConfig(idealRange: 2, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .1),
-    accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .1),
   ),
 
   StockSystem.wepThermalLance: WeaponData(
@@ -111,8 +97,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 8000,
     fireRate: 16,
     baseAccuracy: .5,
-    dmgRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .25),
-    accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .5),
   ),
 
   StockSystem.wepQuarkSplitter: WeaponData(
@@ -125,8 +109,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 48000,
     fireRate: 12,
     baseAccuracy: .16,
-    dmgRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .25),
-    accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .5),
   ),
 
   StockSystem.wepGammapult: WeaponData(
@@ -139,8 +121,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 10800,
     fireRate: 16,
     baseAccuracy: .5,
-    dmgRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .25),
-    accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .5),
   ),
 
   StockSystem.wepCosmogripher: WeaponData(
@@ -153,8 +133,6 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 12800,
     fireRate: 16,
     baseAccuracy: .5,
-    dmgRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .25),
-    accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .5),
   ),
 
   StockSystem.webSingularitron: WeaponData(
@@ -167,7 +145,5 @@ final Map<StockSystem, WeaponData> stockWeapons = {
     energyRate: 18000,
     fireRate: 36,
     baseAccuracy: .5,
-    dmgRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .25),
-    accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 1, maxRange: 8, closeFalloff: .1, farFalloff: .5),
   ),
 };

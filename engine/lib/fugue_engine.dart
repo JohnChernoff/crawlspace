@@ -310,7 +310,9 @@ class FugueEngine {
     }
   }
 
-  void msg(String msg) => msgController.addMsg(msg);
+  void msg(String msg, {npc = false, delay = 100}) {
+    if (npc) glog(msg); else msgController.addMsg(msg, delay: delay);
+  }
   void resultMsg(ResultMessage msg) => msgController.addResultMsg(msg);
 
 }

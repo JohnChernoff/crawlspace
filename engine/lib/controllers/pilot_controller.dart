@@ -92,7 +92,7 @@ class PilotController extends FugueController {
   }
 
   //returns false if location domain changes
-  bool action(Pilot pilot, ActionType actionType, { mod = 1.0, int? actionAuts }) {
+  Future<bool> action(Pilot pilot, ActionType actionType, { mod = 1.0, int? actionAuts }) {
     if (pilot == fm.player && actionType.risk > 0 && fm.aiRnd.nextInt(255) < fm.player.fedLevel(fm.galaxy)) {
       //msgController.addMsg("You have a bad feeling about this...");
       if (fm.aiRnd.nextInt(128) < (max(actionType.risk - (actionType.dna ? fm.player.dnaScram : 0),1))) {
@@ -112,7 +112,7 @@ class PilotController extends FugueController {
     if (pilot == fm.player) {
       return fm.tickController.runUntilNextPlayerTurn();
     }
-    return true;
+    return Future.value(true);
   }
 
   void npcShipAct(Ship ship) {
@@ -130,10 +130,10 @@ class PilotController extends FugueController {
         } else if (loc is ImpulseLocation) {
             Weapon? w = ship.systemControl.primaryWeapon;
             if (w != null && ship.currentHullPercentage > (ship.pilot.faction.courage * 100)) {
-              final r = w.accuracyRangeConfig.idealRange, d = ship.distance(l: playLoc); //print("${ship.name} combat...$r, $d");
-              if (!fm.combatController.slugs && (r -d).abs() > 1) { //print("${ship.name} maneuvering...");
+              final hitChance = w.effectiveAccuracy(ship.distance(l: playLoc)); //print("${ship.name} combat...$r, $d");
+              if (hitChance < .1) { //print("${ship.name} maneuvering...");
                 final idealCells = ship.loc.map.values
-                    .where((c) => (playLoc.distCell(c) - r).abs() < 1.5) //TODO: tweak acceptable range
+                    .where((c) => (w.effectiveAccuracy(playLoc.distCell(c)) > .5)) //TODO: tweak acceptable range
                     .sorted((c1,c2) => ship.distance(c: c1.coord).compareTo(ship.distance(c: c2.coord)));
                 ship.nav.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd); //print(ship.currentPath);
               } else {

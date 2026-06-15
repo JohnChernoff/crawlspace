@@ -18,7 +18,8 @@ import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 
 class ImpulseSlug extends SpaceObject<ImpulseLocation> {
-  final int damage;
+  final double toHit;
+  final int projectedDamage;
   final DamageType dmgType;
   double speed;
   Coord3D target;
@@ -31,7 +32,8 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
 
   ImpulseSlug({
     super.objColor,
-    required this.damage,
+    required this.projectedDamage,
+    this.toHit = 1,
     required this.dmgType,
     required this.speed,
     required this.fromShip,
@@ -50,7 +52,7 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
         if (pos.coord != currPos.coord) fm.galaxy.slugs.move(this, ImpulseLocation(loc.system, loc.sectorCoord, pos.coord));
         if (!_hitCheck(fm)) {
           if (loc.cell.asteroid != null && fm.combatRnd.nextBool()) {
-            fm.msg("Asteroid hit! (${dmgType}, ${damage})"); //TODO: reduce asteroid mass? mining?!
+            fm.msg("Asteroid hit! (${dmgType}, ${projectedDamage})"); //TODO: reduce asteroid mass? mining?!
             fm.galaxy.slugs.remove(this);
           }
         } //print("Slug: ${p.coord} -> ${pos.coord}, $p -> $pos");
@@ -61,8 +63,12 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
   bool _hitCheck(FugueEngine fm) {
     final ships = fm.galaxy.ships.atLocation(loc).where((s) => s != fromShip);
     if (ships.isNotEmpty) { //TODO: what if we pass over a location?
-      fm.msg("Direct hit! (${dmgType}, ${damage})");
-      fm.combatController.damage(fm.galaxy.ships.atLocation(loc).first,damage,dmgType);
+      if (fm.combatRnd.nextDouble() < toHit) { //TODO: factor ship speed, pilot skill, etc.
+        fm.msg("Direct hit! (${dmgType}, ${projectedDamage})");
+        fm.combatController.damage(fm.galaxy.ships.atLocation(loc).first,projectedDamage,dmgType);
+      } else {
+        fm.msg("Dodged!");
+      }
       fm.galaxy.slugs.remove(this); return true;
     }
     return false;
@@ -73,7 +79,7 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
 }
 
 class CombatController extends FugueController {
-  final slugs = true;
+  int msgDelay = 0;
   CombatController(super.fm);
 
   void awaitNextWeapon(Ship? ship) {
@@ -112,7 +118,7 @@ class CombatController extends FugueController {
         details: "Asteroid Collision!",
       );
     } else {
-      if (ship.playship) fm.msg("Asteroid dodged");
+      if (ship.playship) fm.msg("Asteroid dodged", delay: msgDelay);
     }
   }
 
@@ -120,49 +126,34 @@ class CombatController extends FugueController {
     if (ship != null) {
       Coord3D? target = ship.nav.targetShip?.loc.cell.coord ?? ship.nav.targetLoc?.cell.coord;
       if (target == null) {
-        fm.msg("Error: no target"); return;
+        fm.msg("Error: no target", delay: msgDelay); return;
       }
       final shipLoc = ship.loc;
       final cell = ship.loc.map[target];
       if (shipLoc is ImpulseLocation && cell is ImpulseCell) { //TODO: sector-ranged weapons?
-        final results = ship.fireWeapons(cell, fm.combatRnd, ship: ship.nav.targetShip, slug: slugs);
+        final results = ship.fireWeapons(cell, fm.combatRnd, ship: ship.nav.targetShip);
         if (results.isEmpty && ship == fm.playerShip) {
-          fm.msg("No weapons ready");
+          fm.msg("No weapons ready", npc: ship.npc, delay: msgDelay);
         } else if (ship.nav.targetShip != null) {
           for (final result in results) {
-            if (result.resultEnum == FireResultEnum.noEnergy) { //TODO: make energy requirements greater, mute NPC errors
-              fm.msg("Insufficient energy for ${result.weapon.name}");
+            if (result.resultEnum == FireResultEnum.noEnergy) { //TODO: increase energy requirements
+              fm.msg("Insufficient energy for ${result.weapon.name}",npc: ship.npc, delay: msgDelay);
             } else {
-              fm.msg("${ship.name} fires weapon: ${result.weapon.name}");
-              bool rangedMishap = result.resultEnum == FireResultEnum.ammoWarn;
-              if (rangedMishap) fm.msg("No ammo for ${result.weapon.name}");
-              if (slugs) {
+              fm.msg("${ship.name} fires weapon: ${result.weapon.name}", delay: msgDelay);
+              if (result.resultEnum == FireResultEnum.ammoWarn) {
+                fm.msg("No ammo for ${result.weapon.name}",npc: ship.npc, delay: msgDelay);
+              }
+              else {
                 final slug = ImpulseSlug(//ship.pilot.faction.color,
-                objColor: ship.npc ? GameColors.orange : GameColors.white,
-                    damage: result.dmg,
+                    objColor: ship.npc ? GameColors.orange : GameColors.white,
+                    projectedDamage: result.projectedDamage,
+                    toHit: result.weapon.effectiveAccuracy(ship.distance(c: target)),
                     dmgType: result.weapon.dmgType,
-                    speed: result.weapon.slugSpeed,
+                    speed: result.weapon.speed,
                     fromShip: ship,
                     target: target);
                 g.slugs.register(slug, shipLoc);
                 slug.tick(fm);
-              } else {
-                if (!rangedMishap && result.weapon.usesAmmo) {
-                  final path = ship.loc.map.greedyPath(ship.loc.cell,
-                      ship.nav.targetShip!.loc.cell, ship.loc.map.dim.maxDim, fm.combatRnd, jitter: 0, ignoreHaz: true);
-                  final obstacle = path.firstWhereOrNull((c) => c.hazLevel > 0);
-                  if (obstacle != null) {
-                    fm.msg("${result.weapon.ammo!.name} hits ${obstacle.hazMap.entries.firstWhere((o) => o.value > 0).key.name}!");
-                    rangedMishap = true;
-                  }
-                }
-                if (!rangedMishap) {
-                  if (result.dmg <= 0) {
-                    fm.msg("${ship.name} misses!");
-                  } else {
-                    damage(ship.nav.targetShip!,result.dmg,result.weapon.dmgType);
-                  }
-                }
               }
             }
           }
@@ -186,21 +177,21 @@ class CombatController extends FugueController {
     final netDamage = dmg * (1 - shieldReduction);
     final ShieldHitResult result = ship.takeShieldDamage(netDamage);
     if (result.type == ShieldHitType.absorbed) {
-      fm.msg("${ship.name} absorbs ${result.toShield.round()} damage$suffix");
+      fm.msg("${ship.name} absorbs ${result.toShield.round()} damage$suffix", delay: msgDelay);
     } else if (result.type == ShieldHitType.efficientBlock) {
-      fm.msg("${ship.name} blocks ${netDamage.round()} damage$suffix");
+      fm.msg("${ship.name} blocks ${netDamage.round()} damage$suffix", delay: msgDelay);
     } else {
       if (result.type == ShieldHitType.phaseCatch) {
         final phased = netDamage - result.toShield - result.toHull;
-        fm.msg("${ship.name} phases $phased, absorbs ${result.toShield.round()} damage$suffix");
+        fm.msg("${ship.name} phases $phased, absorbs ${result.toShield.round()} damage$suffix", delay: msgDelay);
       } else if (result.toShield > 0) {
-        fm.msg("${ship.name} absorbs ${result.toShield.round()} damage$suffix");
+        fm.msg("${ship.name} absorbs ${result.toShield.round()} damage$suffix", delay: msgDelay);
       }
       if (result.toHull > 0) {
         final hullResistance = ship.hullResistance(dmgType);
         final hullReduction = resistanceReduction(hullResistance);
         final hullDmg = result.toHull * (1 - hullReduction);
-        fm.msg("${ship.name} takes ${hullDmg.round()} hull damage$suffix");
+        fm.msg("${ship.name} takes ${hullDmg.round()} hull damage$suffix", delay: msgDelay);
         fm.pilotController.wakePilot(ship.pilot);
         if (ship.takeHullDamage(hullDmg)) explode(ship);
       }

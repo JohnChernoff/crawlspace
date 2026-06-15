@@ -13,8 +13,7 @@ final Map<StockSystem, WeaponData> stockLaunchers = {
     fireRate: 12,
     baseAccuracy: .8,
     clipRate: 1,
-    dmgRangeConfig: const RangeConfig(idealRange: 2, minRange: 0, maxRange: 12, closeFalloff: .1, farFalloff: .1),
-    accuracyRangeConfig: const RangeConfig(idealRange: 4, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .1),
+    accel: 2,
     ammoType: AmmoType.slug,
   ),
 
@@ -28,8 +27,7 @@ final Map<StockSystem, WeaponData> stockLaunchers = {
     fireRate: 10,
     baseAccuracy: .8,
     clipRate: 1,
-    dmgRangeConfig: const RangeConfig(idealRange: 1, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .5),
-    accuracyRangeConfig: const RangeConfig(idealRange: 1, minRange: 0, maxRange: 8, closeFalloff: .1, farFalloff: .33),
+    accel: 1,
     ammoType: AmmoType.torpedo,
   ),
 };

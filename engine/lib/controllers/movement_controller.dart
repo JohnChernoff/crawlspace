@@ -152,7 +152,7 @@ class MovementController extends FugueController {
       } else {
         result = fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.aiRnd));
         if (result != null) {
-          glog("Moving: ${ship.name}, Tick: ${fm.auTick}, Result: ${result?.resultType.moving}",level: DebugLevel.Fine);
+          glog("Moving: ${ship.name}, Tick: ${fm.auTick}, Result: ${result.resultType.moving}",level: DebugLevel.Fine);
         } else {
           glog("Doink: ${ship.name}",level: DebugLevel.Fine);
         }

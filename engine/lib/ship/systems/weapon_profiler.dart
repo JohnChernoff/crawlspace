@@ -28,18 +28,17 @@ class RangeProfileOptions {
   });
 
   double weaponScoreAtRange(Weapon w, double dist) {
-    final hitChance = (w.baseAccuracy * w.accuracyRangeConfig.rangeMultiplier(dist))
+    final hitChance = (w.baseAccuracy * w.effectiveAccuracy(dist))
         .clamp(minHitChance, maxHitChance);
 
     final avgRawDamage = _avgRawDamage(w);
-    final rangeDamage = avgRawDamage * w.dmgRangeConfig.rangeMultiplier(dist);
+    final rangeDamage = avgRawDamage * (w.damageRangeConfig.rangeMultiplier(dist));
 
     double critMultiplier = 1.0;
     if (includeCrits && w.critConfig.baseChance > 0) {
       // Simple expectation model; ignores accuracyScaling for now.
       critMultiplier += w.critConfig.baseChance * (w.critConfig.severity - 1.0);
     }
-
     double score = rangeDamage * hitChance * critMultiplier;
 
     if (weightByFireRate) {

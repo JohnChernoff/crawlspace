@@ -24,7 +24,7 @@ import 'pilot_controller.dart';
 class PlanetsideController extends FugueController {
   PlanetsideController(super.fm);
 
-  void planetFall() {
+  Future<void> planetFall() async {
     Ship? ship = fm.playerShip; if (ship == null) {
       fm.msg("No ship!"); return;
     }
@@ -36,7 +36,7 @@ class PlanetsideController extends FugueController {
       } //else if (ship.nav.moving) {fm.msg("Slow down first!"); return; }
       ship.nav.resetMotionState();
       fm.player.locale = AtEnvironment(planet);
-      if (fm.pilotController.action(fm.player,ActionType.planetLand)) {
+      if (await fm.pilotController.action(fm.player,ActionType.planetLand)) {
         if (planet.homeworld && planet.species == StockSpecies.humanoid.species) {
           fm.homecoming(home: true);
         } else {

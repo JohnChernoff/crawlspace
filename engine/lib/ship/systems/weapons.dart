@@ -9,18 +9,35 @@ import '../../stock_items/ship/stock_pile.dart';
 import '../../stock_items/ship/stock_weapons.dart';
 import 'ship_system.dart';
 
+// top level constants
+const _lightSpeedRange = RangeConfig(flat: true);
+const _radioRange = RangeConfig(flat: true);
+const _chargedParticleRange = RangeConfig(             // ion, particle
+    flat: false,
+    idealRange: 4,
+    maxRange: 8,
+    farFalloff: 0.25  // beam spreading/decoherence
+);
+const _plasmoidRange = RangeConfig(idealRange: 1, maxRange: 2, farFalloff: 2.0);
+const _thermalRange = RangeConfig(idealRange: 3, maxRange: 6, farFalloff: 0.4);
+const _ballisticRange = RangeConfig(flat: true);
+
 enum DamageType {
-  none,
-  kinetic, //*** earth/material
-  photonic, //shield centric damage *** elemental
-  plasma, //great against shields, fire against hull *** elec
-  fire, //damage over time to hull *** poison
-  sonic, //effective against reduced (50% or less) shields and hull *** vorpal
-  ion, //some % of the damage dealt affects ship systems directly *** vampiric
-  gravitron, //pulls ship towards/away when damage is dealt
-  neutrino, //ignores shields
-  etherial, //random damage
-  all
+  none(0),
+  kinetic(.1,damageRange: _ballisticRange), //*** earth/material
+  photonic(1, damageRange: _lightSpeedRange), //shield centric damage *** elemental
+  plasma(.2, damageRange: _plasmoidRange), //great against shields, fire against hull *** elec
+  fire(.25, damageRange: _thermalRange), //damage over time to hull *** poison
+  sonic(.5, damageRange: _radioRange), //effective against reduced (50% or less) shields and hull *** vorpal
+  ion(1, damageRange: _chargedParticleRange), //some % of the damage dealt affects ship systems directly *** vampiric
+  gravitron(1, damageRange: _lightSpeedRange), //pulls ship towards/away when damage is dealt
+  neutrino(1, damageRange: _lightSpeedRange), //ignores shields
+  etherial(1, damageRange: _lightSpeedRange), //random damage
+  all(1);
+  final double speed;
+  final RangeConfig damageRange;
+  const DamageType(this.speed, {
+      this.damageRange = const RangeConfig()});
 }
 
 enum WeaponEgo {
@@ -30,25 +47,31 @@ enum WeaponEgo {
 //enum RangeAttenuation {  linear,exponential }
 
 class RangeConfig {
+  final bool flat;
   final double idealRange;
   final double minRange, maxRange;
   final double closeFalloff, farFalloff;
 
   const RangeConfig({
-      required this.idealRange,
-      required this.minRange,
-      required this.maxRange,
-      required this.closeFalloff,
-      required this.farFalloff
+      this.flat = false,
+      this.idealRange = 0,
+      this.minRange = 0,
+      this.maxRange = 999,
+      this.closeFalloff = 0,
+      this.farFalloff = 0
   });
 
   double rangeMultiplier(double dist) {
     if (dist < minRange || dist > maxRange) return 0.0;
     //if (dist == idealRange) return 1.0;
     if (dist > idealRange) {
-      return math.exp(-farFalloff * (dist - idealRange));
+      return (flat && farFalloff == 0)
+          ? 1.0
+          : math.exp(-farFalloff * (dist - idealRange));
     } else {
-      return math.exp(-closeFalloff * (idealRange - dist));
+      return (flat && closeFalloff == 0)
+          ? 1.0
+          : math.exp(-closeFalloff * (idealRange - dist));
     }
   }
 }
@@ -78,14 +101,15 @@ class Weapon extends ShipSystem {
   final int energyRate; //units of energy per round of fire
   final int fireRate; //aut to complete one round of fire (cooldown)
   final double baseAccuracy; //base chance to hit
-  final RangeConfig dmgRangeConfig;
-  final RangeConfig accuracyRangeConfig;
+  final double accuracyFalloff; //accuracy over distance modifier
+  final RangeConfig? _dmgRangeOverride; //unusual overrides of inherent dmg
   final CritConfig critConfig;
   final Domain level;
-  final double speed;
+  final double accel;
   Ammo? ammo;
   int cooldown = 0;
-  double get slugSpeed => ammo != null ? ammo!.speed : speed;
+  double get speed => (ammo != null ? ammo!.speed : dmgType.speed) * accel;
+  RangeConfig get damageRangeConfig => _dmgRangeOverride ?? dmgType.damageRange;
 
   @override
   ShipSystemType get type => usesAmmo ? ShipSystemType.launcher : ShipSystemType.weapon;
@@ -98,15 +122,15 @@ class Weapon extends ShipSystem {
     required this.ego,
     required this.energyRate,
     required this.fireRate,
-    required this.baseAccuracy,
-    required this.dmgRangeConfig,
-    required this.accuracyRangeConfig,
+    this.baseAccuracy = 1,
+    this.accuracyFalloff = .1, //.002 at speed .1 = ~50% at max (32) range
+    RangeConfig? dmgRangeOverride,
     this.level = Domain.impulse,
     this.dmgMult = 1.0,
     this.critConfig = const CritConfig(),
     this.clipRate = 0,
     this.ammoType,
-    this.speed = 1.0,
+    this.accel = 1,
     required super.baseCost,
     required super.baseRepairCost,
     required super.powerDraw,
@@ -116,7 +140,7 @@ class Weapon extends ShipSystem {
     super.rarity,
     super.stability,
     super.repairDifficulty
-  });
+  }) : _dmgRangeOverride = dmgRangeOverride;
 
   factory Weapon.fromStock(StockSystem stock) {
     WeaponData data = stockWeapons[stock] ?? stockLaunchers[stock]!;
@@ -141,48 +165,45 @@ class Weapon extends ShipSystem {
       ammoType: data.ammoType,
       energyRate: data.energyRate,
       fireRate: data.fireRate,
-      speed: data.speed,
       baseAccuracy: data.baseAccuracy,
-      dmgRangeConfig: data.dmgRangeConfig,
-      accuracyRangeConfig: data.accuracyRangeConfig,
+      dmgRangeOverride: data.dmgRangeOverride,
       level: data.level,
       dmgMult: data.dmgMult,
       critConfig: data.critConfig,
+      accel: data.accel
     );
   }
 
   bool get usesAmmo => clipRate > 0;
 
-  double fire(double dist, math.Random rnd, {Ship? targetShip, int? clips, required bool slug}) {
+  double fire(double dist, math.Random rnd, {Ship? targetShip, int? clips}) {
     double damage = 0;
-    double hitRoll = rnd.nextDouble();
-    //double effectiveAccuracy = baseAccuracy * accuracyRangeConfig.rangeMultiplier(dist);
-    final effectiveAccuracy =
-    (baseAccuracy * accuracyRangeConfig.rangeMultiplier(dist))
-        .clamp(0.05, 0.95);
-    bool hit = slug || (hitRoll < effectiveAccuracy);
-
-    if (hit) {
-      damage = _calcDamage(dist, rnd, slug);
-      double overhit = effectiveAccuracy - hitRoll;
-      double critChance = math.min(
-        1.0,
-        critConfig.baseChance +
-            (overhit * critConfig.accuracyScaling),
-      );
-      if (rnd.nextDouble() < critChance) {
-        damage *= critConfig.severity;
-      }
+    final ea = effectiveAccuracy(dist);
+    final roll = rnd.nextDouble();
+    damage = _calcDamage(dist, rnd);
+    double overhit = ea - roll;
+    double critChance = math.min(
+      1.0,
+      critConfig.baseChance +
+          (overhit * critConfig.accuracyScaling),
+    );
+    if (rnd.nextDouble() < critChance) {
+      damage *= critConfig.severity;
     }
     cooldown = fireRate;
     return damage;
   }
 
-  double _calcDamage(double dist, math.Random rnd, bool slug) {
+  double baseProbability(double dist) =>
+      math.exp(-dist * accuracyFalloff / dmgType.speed);
+  double effectiveAccuracy(double dist) =>
+      (baseProbability(dist) * baseAccuracy).clamp(0.05, 0.95);
+  bool hitRoll(double dist, math.Random rnd) => rnd.nextDouble() < effectiveAccuracy(dist);
+
+  double _calcDamage(double dist, math.Random rnd) {
     double dmg = _grossDamage(rnd); //print("Gross damage: $dmg");
     //TODO: egos, etc.
-    if (slug && ammo == null) return dmg; //ranged weapons always include distance modifier
-    final netDamage = dmg * dmgRangeConfig.rangeMultiplier(dist); //print("Net damage: $netDamage");
+    final netDamage = dmg * damageRangeConfig.rangeMultiplier(dist); //print("Net damage: $netDamage");
     return netDamage * damageMultiplier;
   }
 
@@ -205,11 +226,11 @@ class WeaponData {
   final int energyRate; //units of energy per round of fire
   final int fireRate; //aut to complete one round of fire
   final double baseAccuracy; //base chance to hit
-  final RangeConfig dmgRangeConfig;
-  final RangeConfig accuracyRangeConfig;
+  final double accuracyFalloff;
+  final RangeConfig? dmgRangeOverride;
   final CritConfig critConfig;
   final Domain level;
-  final double speed;
+  final double accel;
 
   const WeaponData({
     required this.systemData,
@@ -219,16 +240,16 @@ class WeaponData {
     required this.dmgType,
     required this.energyRate,
     required this.fireRate,
-    required this.baseAccuracy,
-    required this.dmgRangeConfig,
-    required this.accuracyRangeConfig,
+    this.baseAccuracy = 1,
+    this.accuracyFalloff = .1,
+    this.dmgRangeOverride,
     this.level = Domain.impulse,
     this.dmgMult = 1.0,
     this.critConfig = const CritConfig(),
     this.clipRate = 0,
     this.ammoType,
-    this.speed = 1.0,
     this.ego = WeaponEgo.none,
+    this.accel = 1,
   });
 }
 

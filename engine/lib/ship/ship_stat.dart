@@ -50,15 +50,13 @@ class ShipStatus extends ShipSubSystem {
       }
     }
     if (!tactical && loc is ImpulseLocation && nav.targetShip != null) {
-      if (!fm.combatController.slugs) {
-        final sustained = ship.sustainedRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
-        blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
-        final dist = ship.distanceFrom(nav.targetShip!).round();
-        final volley = ship.volleyRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
-        final fit = (volley.efficiencyAt(dist) * 100).round();
-        blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
-      }
-      blocks.addAll(combatText(fm.combatController.slugs));
+      final sustained = ship.sustainedRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
+      blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
+      final dist = ship.distanceFrom(nav.targetShip!).round();
+      final volley = ship.volleyRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
+      final fit = (volley.efficiencyAt(dist) * 100).round();
+      blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
+      blocks.addAll(combatText());
     }
     if (!tactical) {
       if (ship.nav.effectiveNewt) {
@@ -88,7 +86,7 @@ class ShipStatus extends ShipSubSystem {
     return blocks;
   }
 
-  List<TextBlock> combatText(bool slugs) {
+  List<TextBlock> combatText() {
     final target = nav.targetShip;
     if (target == null) return [];
 
@@ -111,7 +109,7 @@ class ShipStatus extends ShipSubSystem {
     final blocks = <TextBlock>[];
 
     // Header line
-    if (!slugs) blocks.add(TextBlock(
+    blocks.add(TextBlock(
         "TARGET: ${target.name} "
             "dist:${dist.toStringAsFixed(1)}$trend"
             "->${projDist?.toStringAsFixed(1) ?? '?'} ",
@@ -126,13 +124,13 @@ class ShipStatus extends ShipSubSystem {
           : 10;
       final empty = 10 - filled;
 
-      final wInRange = w.accuracyRangeConfig.rangeMultiplier(dist) > 0;
+      final wInRange = w.effectiveAccuracy(dist) > .5;
       final wProjInRange = projDist != null &&
-          w.accuracyRangeConfig.rangeMultiplier(projDist) > 0;
+          w.effectiveAccuracy(projDist) > 0;
 
       final col = w.cooldown == 0
-          ? (slugs || wInRange ? GameColors.green : GameColors.orange)
-          : (slugs || wProjInRange ? GameColors.lightBlue : GameColors.gray);
+          ? (wInRange ? GameColors.green : GameColors.orange)
+          : (wProjInRange ? GameColors.lightBlue : GameColors.gray);
 
       final readyStr = w.cooldown == 0 ? "READY" : "${w.cooldown}t";
 

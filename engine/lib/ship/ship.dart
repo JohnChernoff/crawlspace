@@ -59,13 +59,13 @@ class SlotAssignment {
   SlotAssignment(this.slot,this.system);
 }
 
-enum FireResultEnum {none,ammoWarn,noEnergy}
+enum FireResultEnum {fired,ammoWarn,noEnergy}
 
 class FireResult {
-  int dmg;
+  int projectedDamage;
   Weapon weapon;
   FireResultEnum resultEnum;
-  FireResult(this.dmg,this.weapon,this.resultEnum);
+  FireResult(this.weapon,this.projectedDamage,this.resultEnum);
 }
 
 class Scrap extends Item {
@@ -415,16 +415,16 @@ class Ship extends Item {
 
   String damageReport() => "${hullStrength - hullDamage} hull remaining";
 
-  List<FireResult> fireWeapons(ImpulseCell target, Random rnd, {Ship? ship, required bool slug}) {
+  List<FireResult> fireWeapons(ImpulseCell target, Random rnd, {Ship? ship}) {
     List<FireResult> results = [];
     if (loc is ImpulseLocation && (ship == null || ship.loc.domain == loc.domain)) {
       int? minCool;
       for (final weapon in systemControl.readyWeapons) {
         if (!systemControl.burnEnergy(weapon.energyRate.toDouble())) {
-          results.add(FireResult(0, weapon, FireResultEnum.noEnergy));
+          results.add(FireResult(weapon,0,FireResultEnum.noEnergy));
         } else {
           double dmg = 0;
-          FireResultEnum resultEnum = FireResultEnum.none;
+          FireResultEnum resultEnum = FireResultEnum.fired;
           bool ammoOK = true;
           int? clips;
           if (weapon.usesAmmo) {
@@ -436,10 +436,10 @@ class Ship extends Item {
             }
           }
           if (ammoOK) {
-            dmg += weapon.fire(loc.distCell(target), rnd, targetShip: ship, clips: clips, slug: slug);
+            dmg += weapon.fire(loc.distCell(target), rnd, targetShip: ship, clips: clips);
             if (minCool == null || minCool > weapon.cooldown) minCool = weapon.cooldown;
           }
-          results.add(FireResult(dmg.floor(),weapon,resultEnum));
+          results.add(FireResult(weapon,dmg.floor(),resultEnum));
         }
       }
     }

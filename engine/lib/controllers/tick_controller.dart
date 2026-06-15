@@ -10,11 +10,12 @@ import 'layer_transit_controller.dart';
 
 class TickController extends FugueController {
   int auTick = 0;
+  int tickSpeed = 50;
 
   TickController(super.fm);
 
   //returns false if player location domain changes
-  bool runUntilNextPlayerTurn() { //fm.glog("Running until next turn...");
+  Future<bool> runUntilNextPlayerTurn() async { //fm.glog("Running until next turn...");
     final playShip = fm.playerShip;
     final playLoc = playShip?.loc;
     final domain = playLoc?.domain;
@@ -45,6 +46,7 @@ class TickController extends FugueController {
           glog("Skipping: ${p.name}",error: true);
         }
       }
+      await Future.delayed(Duration(milliseconds: tickSpeed));
       auTick++;
       fm.player.tick(fm);
       if (playShip != null) {
