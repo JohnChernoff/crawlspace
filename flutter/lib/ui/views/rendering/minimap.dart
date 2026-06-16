@@ -1,6 +1,8 @@
+import 'package:crawlspace_engine/color.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:crawlspace_engine/galaxy/geometry/impulse.dart';
+import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
@@ -19,11 +21,13 @@ class MiniMapCellStyle {
   final Color color;
   final MiniMapShape shape;
   final double scale; // 0..1ish
+  final bool fill;
 
   const MiniMapCellStyle(
       this.color,
       this.shape, {
-        this.scale = 1.0,
+        this.fill = true,
+        this.scale = .75,
       });
 }
 
@@ -80,7 +84,7 @@ class MiniMapPainter extends CustomPainter {
         final cell = ship.loc.map.atXYZ(cx, cy, 0);
         if (fm.scannerController.currentScanSelection == cell) {
           final scanPaint = Paint()
-            ..color = Colors.yellowAccent
+            ..color = Colors.white
             ..style = PaintingStyle.stroke;
           canvas.drawRect(rect,scanPaint);
         }
@@ -135,7 +139,8 @@ class MiniMapPainter extends CustomPainter {
         return const MiniMapCellStyle(Colors.green, MiniMapShape.oval);
       }
       if (cell.hasBuoy) {
-        return const MiniMapCellStyle(Colors.brown, MiniMapShape.oval);
+        final m = cell.buoys(fm.galaxy).first.mass/earthMassKg; //print("Relative Mass: $m"); //there's usually only one buoy per impulse area
+        return MiniMapCellStyle(Color(GameColor.lerp(GameColors.brown, GameColors.white, m).argb), MiniMapShape.oval, fill: false);
       }
     }
 
@@ -146,8 +151,10 @@ class MiniMapPainter extends CustomPainter {
       if (cell.hasPlanet(fm.galaxy)) {
         return const MiniMapCellStyle(Colors.green, MiniMapShape.oval);
       }
-      if (fm.galaxy.buoys.singleAtImpulse(cell.loc) != null) {
-        return const MiniMapCellStyle(Colors.brown, MiniMapShape.oval);
+      final buoy = fm.galaxy.buoys.singleAtImpulse(cell.loc);
+      if (buoy != null) {
+        final m = buoy.mass/earthMassKg; //print("Relative Mass: $m");
+        return MiniMapCellStyle(Color(GameColor.lerp(GameColors.brown, GameColors.white, m).argb), MiniMapShape.oval);
       }
       if (cell.asteroid != null) {
         final mass = cell.asteroid!.mass;
@@ -205,20 +212,20 @@ class MiniMapPainter extends CustomPainter {
       Rect rect,
       MiniMapCellStyle style,
       ) {
-    final square = Rect.fromCenter(center: rect.center, width: rect.shortestSide, height: rect.shortestSide);
+    final square = Rect.fromCenter(center: rect.center, width: rect.shortestSide * style.scale, height: rect.shortestSide * style.scale);
     switch (style.shape) {
       case MiniMapShape.rect:
         if (style.color == Colors.black) return;
         final paint = Paint()
           ..color = style.color
-          ..style = PaintingStyle.fill;
+          ..style = style.fill ? PaintingStyle.fill : PaintingStyle.stroke;
         canvas.drawRect(square, paint);
         break;
 
       case MiniMapShape.oval:
         final paint = Paint()
           ..color = style.color
-          ..style = PaintingStyle.fill;
+          ..style = style.fill ? PaintingStyle.fill : PaintingStyle.stroke;
         canvas.drawOval(
           square,
           paint,

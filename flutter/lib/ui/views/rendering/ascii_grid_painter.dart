@@ -4,7 +4,7 @@ import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
 import 'package:crawlspace_engine/ui_options.dart';
-import 'package:crawlspace_flutter/ui/views/new/cell_renderer.dart';
+import 'package:crawlspace_flutter/ui/views/rendering/cell_renderer.dart';
 import 'package:flutter/material.dart';
 import 'grid_viewport.dart';
 import 'lerp_field.dart';

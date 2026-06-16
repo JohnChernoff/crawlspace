@@ -117,7 +117,7 @@ class ScannerController extends FugueController {
         final loc = i.maybeLoc;
         if (loc == null) refreshSensors(ship.loc.system);
         else if (ship.loc.locatable(loc) && i.scanned?.system == true) {
-          currentScan.add(loc.cell); print("Cell: ${i.name}");
+          //currentScan.add(loc.cell); print("Cell: ${i.name}");
           blocks.add(TextBlock("${loc.relativeDomainCoord(ship.loc)}: ${i.name}", currentScanSelection == loc.cell ? GameColors.gold : i.objColor, true));
         }
       }

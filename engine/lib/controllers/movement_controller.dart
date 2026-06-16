@@ -146,9 +146,9 @@ class MovementController extends FugueController {
       final MoveResult? result;
       if (ship.nav.currentPath.isNotEmpty) {
         final newLoc = ship.nav.currentPath.removeAt(0).loc;
-        print("${ship.loc.cell.coord} -> ${newLoc.cell.coord}");
+        //print("${ship.loc.cell.coord} -> ${newLoc.cell.coord}");
         result = moveShip(ship, newLoc);
-        print("${ship.name} moved, $result, tick: ${fm.auTick}");
+        //print("${ship.name} moved, $result, tick: ${fm.auTick}");
       } else {
         result = fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.aiRnd));
         if (result != null) {
