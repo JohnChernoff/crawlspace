@@ -310,8 +310,8 @@ class FugueEngine {
     }
   }
 
-  void msg(String msg, {npc = false, delay = 100}) {
-    if (npc) glog(msg); else msgController.addMsg(msg, delay: delay);
+  void msg(String msg, {npc = false, delay = 100, level = DebugLevel.Fine}) {
+    if (npc) glog(msg, level: level); else msgController.addMsg(msg, delay: delay);
   }
   void resultMsg(ResultMessage msg) => msgController.addResultMsg(msg);
 

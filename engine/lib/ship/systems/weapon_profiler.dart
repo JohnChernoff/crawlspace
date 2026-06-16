@@ -53,10 +53,10 @@ class RangeProfileOptions {
   }
 
   double _avgRawDamage(Weapon w) {
-    final diceAvg = w.dmgDice * (w.dmgDiceSides + 1) / 2.0;
+    final diceAvg = w.dmgProf.dmgDice * (w.dmgProf.dmgDiceSides + 1) / 2.0;
     return w.ammo == null
-        ? w.dmgBase + diceAvg * w.dmgMult
-        : (w.dmgBase + w.ammo!.expectedDamage) * w.dmgMult;
+        ? w.dmgProf.dmgBase + diceAvg * w.dmgProf.dmgMult
+        : (w.dmgProf.dmgBase + w.ammo!.expectedDamage) * w.dmgProf.dmgMult;
   }
 }
 

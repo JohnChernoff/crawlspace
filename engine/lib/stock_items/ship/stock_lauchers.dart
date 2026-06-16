@@ -6,9 +6,8 @@ final Map<StockSystem, WeaponData> stockLaunchers = {
   StockSystem.lchPlasmaCannon:  WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.lchPlasmaCannon,"Plasma Cannon",
         mass: 10, baseCost: 7500, baseRepairCost: 1.5, powerDraw: .5),
-    dmgDice: 0, dmgDiceSides: 0, dmgBase: 0,
+    dmgProf: DamageProfile(),
     dmgType: DamageType.plasma,
-    dmgMult: 1,
     energyRate: 20,
     fireRate: 12,
     baseAccuracy: .8,
@@ -20,9 +19,8 @@ final Map<StockSystem, WeaponData> stockLaunchers = {
   StockSystem.lchfedTorpLauncher: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.lchfedTorpLauncher,"Fed Torp Mk 1",
         mass: 10, baseCost: 10000, baseRepairCost: 1.5, powerDraw: .5),
-    dmgDice: 0, dmgDiceSides: 0, dmgBase: 0,
+    dmgProf: DamageProfile(),
     dmgType: DamageType.kinetic,
-    dmgMult: 2,
     energyRate: 20,
     fireRate: 10,
     baseAccuracy: .8,

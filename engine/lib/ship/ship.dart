@@ -63,9 +63,10 @@ enum FireResultEnum {fired,ammoWarn,noEnergy}
 
 class FireResult {
   int projectedDamage;
+  int clips;
   Weapon weapon;
   FireResultEnum resultEnum;
-  FireResult(this.weapon,this.projectedDamage,this.resultEnum);
+  FireResult(this.weapon,this.projectedDamage,this.resultEnum,this.clips);
 }
 
 class Scrap extends Item {
@@ -418,10 +419,10 @@ class Ship extends Item {
   List<FireResult> fireWeapons(ImpulseCell target, Random rnd, {Ship? ship}) {
     List<FireResult> results = [];
     if (loc is ImpulseLocation && (ship == null || ship.loc.domain == loc.domain)) {
-      int? minCool;
+      //int? minCool;
       for (final weapon in systemControl.readyWeapons) {
-        if (!systemControl.burnEnergy(weapon.energyRate.toDouble())) {
-          results.add(FireResult(weapon,0,FireResultEnum.noEnergy));
+        if (!systemControl.burnEnergy(weapon.energyRate)) {
+          results.add(FireResult(weapon,0,FireResultEnum.noEnergy,0));
         } else {
           double dmg = 0;
           FireResultEnum resultEnum = FireResultEnum.fired;
@@ -436,10 +437,10 @@ class Ship extends Item {
             }
           }
           if (ammoOK) {
-            dmg += weapon.fire(loc.distCell(target), rnd, targetShip: ship, clips: clips);
-            if (minCool == null || minCool > weapon.cooldown) minCool = weapon.cooldown;
+            dmg += weapon.fire(loc.distCell(target), rnd, targetShip: ship);
+            //if (minCool == null || minCool > weapon.cooldown) minCool = weapon.cooldown;
           }
-          results.add(FireResult(weapon,dmg.floor(),resultEnum));
+          results.add(FireResult(weapon,dmg.floor(),resultEnum,clips ?? 1));
         }
       }
     }

@@ -57,6 +57,8 @@ abstract class ShipSystem extends Item {
   final double baseRepairCost; //credits per 1% repair
   String get dmgTxt => "${(damage * 100).round()}";
   double damage; //% damaged
+  final double maxDamage;
+  bool get inoperable => damage >= maxDamage;
   double adapterPenalty = 0;
   int enhancement;
   final int maxEnhancement;
@@ -85,6 +87,7 @@ abstract class ShipSystem extends Item {
     super.rarity = .1,
     this.techLvl = 1,
     this.damage = 0,
+    this.maxDamage = .9,
     this.enhancement = 0,
     this.maxEnhancement = 9,
     this.repairDifficulty = .5, //determines which shops can repair this item (currently unused)

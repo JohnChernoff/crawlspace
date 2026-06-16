@@ -12,6 +12,8 @@ import '../galaxy/hazards.dart';
 class ShipStatus extends ShipSubSystem {
   ShipStatus(super.ship);
 
+  String displayEnergy(double e, {digits = 2}) => (e / 100).toStringAsFixed(digits);
+
   List<TextBlock> display(FugueEngine fm,{bool tactical = false, bool showScannedShip = false, nebula = false}) {
     Galaxy g = fm.galaxy;
     final abbrev = !tactical && nav.targetShip != null;
@@ -33,19 +35,27 @@ class ShipStatus extends ShipSubSystem {
     blocks.add(TextBlock("Shields: ${systemControl.currentShieldStrength.toStringAsFixed(2)} ",GameColors.green,false));
     blocks.add(TextBlock("(${systemControl.currentShieldPercentage.round()}%)",GameColors.lightBlue,true));
     if (!tactical) {
-      blocks.add(TextBlock("Energy: ${(ship.systemControl.getCurrentEnergy() / 100).toStringAsFixed(2)} ",GameColors.green,false));
+      blocks.add(TextBlock("Energy: ${displayEnergy(ship.systemControl.getCurrentEnergy())} ",GameColors.green,false));
       blocks.add(TextBlock("(${ship.systemControl.currentEnergyPercentage.round()}%)",GameColors.lightBlue,true));
-      blocks.add(TextBlock("Energy Rate: ${(ship.ticker.tick().energy / 10).toStringAsFixed(2)}, ",GameColors.green,false));
+      blocks.add(TextBlock("Energy Rate: ${displayEnergy(ship.ticker.tick().energy)}, ",GameColors.green,false));
     }
     blocks.add(TextBlock("Xeno: ${ship.xenoMatter.toStringAsFixed(2)}",GameColors.orange,true));
     for (final s in systemControl.getInstalledSystems()) {
       if (s is Weapon) {
         final wc = s.cooldown > 0 ? GameColor.lerp(GameColors.red, GameColors.green, (s.fireRate - s.cooldown) / s.fireRate) : GameColors.gold;
-        final ammo = s.ammo != null ? "\n(${s.ammo!.name}: ${ship.systemControl.ammoFor(s.ammo!)})" : "";
+        final ammo = s.ammo != null
+            ? "\n(${s.ammo!.name}: ${ship.systemControl.ammoFor(s.ammo!)})"
+            : s.usesAmmo ? "\n(no ammo)" : "";
         blocks.add(TextBlock("${s.name}$ammo",wc,false));
         if (loc is ImpulseLocation && nav.targetShip != null && s.cooldown == 0) {
-          final a = s.effectiveAccuracy(ship.distance(ship: nav.targetShip));
-          blocks.add(TextBlock(", toHit: ${(a * 100).truncate()}%", GameColor.lerp(GameColors.red, GameColors.green, a), false));
+          if (!ship.systemControl.hasEnergy(s.energyRate)) {
+            blocks.add(TextBlock(" - energy req: ${displayEnergy(s.energyRate, digits: 0)}", GameColors.gray, false));
+          } else if (ship.distance(ship: nav.targetShip) > s.dmgType.damageRange.maxRange) {
+            blocks.add(TextBlock(" out of range: ${s.dmgType.damageRange.maxRange}", GameColors.red, false));
+          } else if (!s.usesAmmo || s.ammo != null) {
+            final a = s.effectiveAccuracy(ship.distance(ship: nav.targetShip));
+            blocks.add(TextBlock(", toHit: ${(a * 100).truncate()}%", GameColor.lerp(GameColors.red, GameColors.green, a), false));
+          }
         }
       } else {
         blocks.add(TextBlock("${s.name} ",s.active ? GameColors.white : GameColors.gray,false));

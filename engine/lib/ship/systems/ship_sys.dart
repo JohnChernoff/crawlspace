@@ -31,6 +31,8 @@ class ShipSystemControl {
     }
   }
 
+  bool hasEnergy(double e) => getCurrentEnergy() >= e;
+
   Iterable<SlotAssignment> get slots => systemMap;
   int ammoFor(Ammo a) => ammoMap[a] ?? 0;
   Iterable<({Ammo ammo, int count})> get ammo => ammoMap.entries.map((a) => (ammo: a.key, count: a.value));

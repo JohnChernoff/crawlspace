@@ -18,6 +18,7 @@ import 'fugue_controller.dart';
 import 'pilot_controller.dart';
 
 class ImpulseSlug extends SpaceObject<ImpulseLocation> {
+  final quantity;
   final double toHit;
   final int projectedDamage;
   final DamageType dmgType;
@@ -25,8 +26,8 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
   Coord3D target;
   late Vec3 dir;
   Position pos;
-  int moveCount = 0;
   Ship fromShip;
+  Coord3D origin;
   Position get nextPos => pos.add(dir * speed);
   Coord3D? get nextCoord => pos.coord == nextPos.coord ? null : nextPos.coord;
 
@@ -34,6 +35,8 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
     super.objColor,
     required this.projectedDamage,
     this.toHit = 1,
+    this.quantity = 1,
+    required this.origin,
     required this.dmgType,
     required this.speed,
     required this.fromShip,
@@ -50,7 +53,8 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
         fm.galaxy.slugs.remove(this); return;
       } else {
         if (pos.coord != currPos.coord) {
-          if (++moveCount > dmgType.damageRange.maxRange) {
+          if (pos.coord.distance(origin) > dmgType.damageRange.maxRange) {
+            glog("Slugged: $this", level: DebugLevel.Info);
             fm.galaxy.slugs.remove(this); return;
           } else {
             fm.galaxy.slugs.move(this, ImpulseLocation(loc.system, loc.sectorCoord, pos.coord));
@@ -69,11 +73,16 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
   bool _hitCheck(FugueEngine fm) {
     final ships = fm.galaxy.ships.atLocation(loc).where((s) => s != fromShip);
     if (ships.isNotEmpty) { //TODO: what if we pass over a location?
-      if (fm.combatRnd.nextDouble() < toHit) { //TODO: factor ship speed, pilot skill, etc.
+      final ship = fm.galaxy.ships.atLocation(loc).first; //TODO: choose randomly?
+      int totalDmg = 0;
+      for (int i=0; i<quantity;i++) {
+        if (fm.combatRnd.nextDouble() < toHit) totalDmg += projectedDamage;
+      }
+      if (totalDmg > 0) { //TODO: factor ship speed, pilot skill, etc.
         fm.msg("Direct hit! (${dmgType}, ${projectedDamage})");
-        fm.combatController.damage(fm.galaxy.ships.atLocation(loc).first,projectedDamage,dmgType);
+        fm.combatController.damage(ship,totalDmg,dmgType);
       } else {
-        fm.msg("Dodged!");
+        fm.msg("${ship.name} dodges $this");
       }
       fm.galaxy.slugs.remove(this); return true;
     }
@@ -81,7 +90,7 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
   }
 
   @override
-  String toString() => "${dmgType.name} slug (${fromShip.name})";
+  String toString() => "${quantity > 1 ? '(x$quantity) ' : ''}${dmgType.name} slug (${fromShip.name})";
 }
 
 class CombatController extends FugueController {
@@ -145,18 +154,20 @@ class CombatController extends FugueController {
             if (result.resultEnum == FireResultEnum.noEnergy) { //TODO: increase energy requirements
               fm.msg("Insufficient energy for ${result.weapon.name}",npc: ship.npc, delay: msgDelay);
             } else {
-              fm.msg("${ship.name} fires weapon: ${result.weapon.name}", delay: msgDelay);
               if (result.resultEnum == FireResultEnum.ammoWarn) {
                 fm.msg("No ammo for ${result.weapon.name}",npc: ship.npc, delay: msgDelay);
               }
               else {
+                fm.msg("${ship.name} fires weapon: ${result.weapon.name}", delay: msgDelay);
                 final slug = ImpulseSlug(//ship.pilot.faction.color,
                     objColor: ship.npc ? GameColors.orange : GameColors.white,
                     projectedDamage: result.projectedDamage,
+                    quantity: result.clips,
                     toHit: result.weapon.effectiveAccuracy(ship.distance(c: target)),
                     dmgType: result.weapon.dmgType,
                     speed: result.weapon.speed,
                     fromShip: ship,
+                    origin: ship.loc.localCoord,
                     target: target);
                 g.slugs.register(slug, shipLoc);
                 slug.tick(fm);

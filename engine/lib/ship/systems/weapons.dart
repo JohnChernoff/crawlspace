@@ -18,7 +18,7 @@ const _chargedParticleRange = RangeConfig(             // ion, particle
     maxRange: 8,
     farFalloff: 0.25  // beam spreading/decoherence
 );
-const _plasmoidRange = RangeConfig(idealRange: 1, maxRange: 2, farFalloff: 2.0);
+const _plasmoidRange = RangeConfig(idealRange: 1, maxRange: 3, farFalloff: 2.0);
 const _thermalRange = RangeConfig(idealRange: 3, maxRange: 6, farFalloff: 0.4);
 const _ballisticRange = RangeConfig(flat: true);
 
@@ -38,6 +38,47 @@ enum DamageType {
   final RangeConfig damageRange;
   const DamageType(this.speed, {
       this.damageRange = const RangeConfig()});
+}
+
+class DamageProfile {
+  final int? flatDmg;
+  final int dmgDice;
+  final int dmgDiceSides;
+  final int dmgBase;
+  final double dmgMult;
+  final CritConfig critConfig;
+
+  const DamageProfile({
+    this.flatDmg,
+    this.dmgDice = 1,
+    this.dmgDiceSides = 6,
+    this.dmgBase = 1,
+    this.dmgMult = 1,
+    this.critConfig = const CritConfig()
+  });
+
+  double roll(double accuracy, math.Random rnd) {
+    double damage = 0;
+    final roll = rnd.nextDouble();
+    damage = _grossDamage(rnd);
+    double overhit = accuracy - roll;
+    double critChance = math.min(
+      1.0,
+      critConfig.baseChance +
+          (overhit * critConfig.accuracyScaling),
+    );
+    if (rnd.nextDouble() < critChance) {
+      damage *= critConfig.severity;
+    }
+    return damage;
+  }
+
+  double _grossDamage(math.Random rnd) =>
+      (dmgBase +
+          (flatDmg == null
+            ? Rng.rollDice(dmgDice, dmgDiceSides, rnd)
+            : rnd.nextDouble() * flatDmg!))
+          * dmgMult;
 }
 
 enum WeaponEgo {
@@ -90,15 +131,12 @@ class CritConfig {
 
 class Weapon extends ShipSystem {
   static double damageMultiplier = 3.3;
-  final int dmgDice;
-  final int dmgDiceSides;
-  final int dmgBase;
-  final double dmgMult;
+  final DamageProfile dmgProf;
   final DamageType dmgType;
   final WeaponEgo ego;
   final AmmoType? ammoType;
   final int clipRate; //units of ammo per round of fire
-  final int energyRate; //units of energy per round of fire
+  final double energyRate; //units of energy per round of fire
   final int fireRate; //aut to complete one round of fire (cooldown)
   final double baseAccuracy; //base chance to hit
   final double accuracyFalloff; //accuracy over distance modifier
@@ -115,9 +153,7 @@ class Weapon extends ShipSystem {
   ShipSystemType get type => usesAmmo ? ShipSystemType.launcher : ShipSystemType.weapon;
 
   Weapon(super.name,{
-    required this.dmgDice,
-    required this.dmgDiceSides,
-    required this.dmgBase,
+    required this.dmgProf,
     required this.dmgType,
     required this.ego,
     required this.energyRate,
@@ -126,7 +162,6 @@ class Weapon extends ShipSystem {
     this.accuracyFalloff = .1, //.002 at speed .1 = ~50% at max (32) range
     RangeConfig? dmgRangeOverride,
     this.level = Domain.impulse,
-    this.dmgMult = 1.0,
     this.critConfig = const CritConfig(),
     this.clipRate = 0,
     this.ammoType,
@@ -156,9 +191,7 @@ class Weapon extends ShipSystem {
       rarity: data.systemData.rarity,
       about: data.systemData.about,
       //
-      dmgDice: data.dmgDice,
-      dmgDiceSides: data.dmgDiceSides,
-      dmgBase: data.dmgBase,
+      dmgProf: data.dmgProf,
       dmgType: data.dmgType,
       ego: data.ego,
       clipRate: data.clipRate,
@@ -168,7 +201,6 @@ class Weapon extends ShipSystem {
       baseAccuracy: data.baseAccuracy,
       dmgRangeOverride: data.dmgRangeOverride,
       level: data.level,
-      dmgMult: data.dmgMult,
       critConfig: data.critConfig,
       accel: data.accel
     );
@@ -176,54 +208,37 @@ class Weapon extends ShipSystem {
 
   bool get usesAmmo => clipRate > 0;
 
-  double fire(double dist, math.Random rnd, {Ship? targetShip, int? clips}) {
-    double damage = 0;
-    final ea = effectiveAccuracy(dist);
-    final roll = rnd.nextDouble();
-    damage = _calcDamage(dist, rnd);
-    double overhit = ea - roll;
-    double critChance = math.min(
-      1.0,
-      critConfig.baseChance +
-          (overhit * critConfig.accuracyScaling),
-    );
-    if (rnd.nextDouble() < critChance) {
-      damage *= critConfig.severity;
-    }
+  double fire(double dist, math.Random rnd, {Ship? targetShip}) { //TODO: what is targetShip for?
     cooldown = fireRate;
-    return damage;
+    return _calcDamage(dist, rnd);
   }
 
   double baseProbability(double dist) =>
       math.exp(-dist * accuracyFalloff / dmgType.speed);
   double effectiveAccuracy(double dist) =>
       (baseProbability(dist) * baseAccuracy).clamp(0.05, 0.95);
-  bool hitRoll(double dist, math.Random rnd) => rnd.nextDouble() < effectiveAccuracy(dist);
 
   double _calcDamage(double dist, math.Random rnd) {
-    double dmg = _grossDamage(rnd); //print("Gross damage: $dmg");
+    if (inoperable) return 0;
+    final ea = effectiveAccuracy(dist);
+    double dmg = ammo != null
+        ? DamageProfile(flatDmg: (ammo!.maxDamage.floor() + ammo!.enchantment)).roll(ea, rnd)
+        : dmgProf.roll(ea,rnd); //print("Gross damage: $dmg");
     //TODO: egos, etc.
     final netDamage = dmg * damageRangeConfig.rangeMultiplier(dist); //print("Net damage: $netDamage");
-    return netDamage * damageMultiplier;
+    return (netDamage * damageMultiplier) / (1-damage);
   }
-
-  double _grossDamage(math.Random rnd) => ammo == null
-      ? dmgBase + Rng.rollDice(dmgDice, dmgDiceSides, rnd) * dmgMult
-      : (dmgBase + (rnd.nextDouble() * ammo!.maxDamage)) * dmgMult;
 
 }
 
 class WeaponData {
   final ShipSystemData systemData;
-  final int dmgDice;
-  final int dmgDiceSides;
-  final int dmgBase;
-  final double dmgMult;
   final DamageType dmgType;
+  final DamageProfile dmgProf;
   final WeaponEgo ego;
   final AmmoType? ammoType;
   final int clipRate; //unit of ammo per round of fire
-  final int energyRate; //units of energy per round of fire
+  final double energyRate; //units of energy per round of fire
   final int fireRate; //aut to complete one round of fire
   final double baseAccuracy; //base chance to hit
   final double accuracyFalloff;
@@ -234,9 +249,7 @@ class WeaponData {
 
   const WeaponData({
     required this.systemData,
-    required this.dmgDice,
-    required this.dmgDiceSides,
-    required this.dmgBase,
+    required this.dmgProf,
     required this.dmgType,
     required this.energyRate,
     required this.fireRate,
@@ -244,7 +257,6 @@ class WeaponData {
     this.accuracyFalloff = .1,
     this.dmgRangeOverride,
     this.level = Domain.impulse,
-    this.dmgMult = 1.0,
     this.critConfig = const CritConfig(),
     this.clipRate = 0,
     this.ammoType,
