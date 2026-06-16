@@ -3,22 +3,32 @@ import 'package:crawlspace_engine/stock_items/corps.dart';
 import '../../item.dart';
 import '../../stock_items/ship/stock_pile.dart';
 
+enum ShipSystemFunction {
+  offensiveCombat(4),
+  defensiveCombat(4),
+  navigation(1),
+  energy(2),
+  other(3);
+  final sortOrder;
+  const ShipSystemFunction(this.sortOrder);
+}
 enum ShipSystemType {
-  weapon(3),
-  launcher(3.5),
-  engine(2.5),
-  shield(2),
-  power(1.5),
-  emitter(1.25),
-  converter(1),
-  sensor(.75),
-  quarters(.5),
-  scrapper(.25),
-  ammo(.16), //handled separately in system control
-  adapter(.1),
-  unknown(0);
+  weapon(3,ShipSystemFunction.offensiveCombat),
+  launcher(3.5,ShipSystemFunction.offensiveCombat),
+  engine(2.5,ShipSystemFunction.navigation),
+  shield(2,ShipSystemFunction.defensiveCombat),
+  power(1.5,ShipSystemFunction.energy),
+  emitter(1.25,ShipSystemFunction.defensiveCombat),
+  converter(1,ShipSystemFunction.energy),
+  sensor(.75,ShipSystemFunction.navigation),
+  quarters(.5,ShipSystemFunction.other),
+  scrapper(.25,ShipSystemFunction.other),
+  ammo(.16,ShipSystemFunction.offensiveCombat), //handled separately in system control
+  adapter(.1,ShipSystemFunction.other),
+  unknown(0,ShipSystemFunction.other);
   final costMultiplier;
-  const ShipSystemType(this.costMultiplier);
+  final ShipSystemFunction function;
+  const ShipSystemType(this.costMultiplier, this.function);
 }
 
 class SystemSlot with Itemizable {

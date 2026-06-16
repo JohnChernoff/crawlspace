@@ -108,7 +108,7 @@ class ShipSystemControl {
 
   Iterable<ShipSystem> getInstalledSystems({List<ShipSystemType>? types}) {
     if (types != null) return systemMap.where((s) => types.contains(s.system?.type)).map((i) => i.system!);
-    return systemMap.where((s) => (s.system != null)).map((i) => i.system!);
+    return systemMap.where((s) => (s.system != null)).map((i) => i.system!).sorted((a,b) => a.type.function.sortOrder.compareTo(b.type.function.sortOrder));
   }
 
   void removeSystem(ShipSystem sys) {

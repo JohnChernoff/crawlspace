@@ -39,24 +39,20 @@ class ShipStatus extends ShipSubSystem {
     }
     blocks.add(TextBlock("Xeno: ${ship.xenoMatter.toStringAsFixed(2)}",GameColors.orange,true));
     for (final s in systemControl.getInstalledSystems()) {
-      bool cooldown = s is Weapon && s.cooldown > 0;
-      final color = cooldown ? GameColors.red : s.active ? GameColors.white : GameColors.gray;
-      blocks.add(TextBlock("${s.name} ",color,false));
+      if (s is Weapon) {
+        final wc = s.cooldown > 0 ? GameColor.lerp(GameColors.red, GameColors.green, (s.fireRate - s.cooldown) / s.fireRate) : GameColors.gold;
+        final ammo = s.ammo != null ? "\n(${s.ammo!.name}: ${ship.systemControl.ammoFor(s.ammo!)})" : "";
+        blocks.add(TextBlock("${s.name}$ammo",wc,false));
+        if (loc is ImpulseLocation && nav.targetShip != null && s.cooldown == 0) {
+          final a = s.effectiveAccuracy(ship.distance(ship: nav.targetShip));
+          blocks.add(TextBlock(", toHit: ${(a * 100).truncate()}%", GameColor.lerp(GameColors.red, GameColors.green, a), false));
+        }
+      } else {
+        blocks.add(TextBlock("${s.name} ",s.active ? GameColors.white : GameColors.gray,false));
+      }
       if (s.damage > 0) blocks.add(TextBlock("${s.dmgTxt}% ", GameColors.gray, false));
       //blocks.add(TextBlock("${s.active ? '+' : '-'}",color,true));
-      blocks.add(TextBlock("",color,true));
-      if (s is Weapon && s.ammo != null) {
-        blocks.add(TextBlock("${s.ammo!.name}: ${systemControl.ammoFor(s.ammo!)}",GameColors.coral,true));
-      }
-    }
-    if (!tactical && loc is ImpulseLocation && nav.targetShip != null) {
-      final sustained = ship.sustainedRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
-      blocks.add(TextBlock(sustained.summary(), GameColors.orange, true));
-      final dist = ship.distanceFrom(nav.targetShip!).round();
-      final volley = ship.volleyRangeProfile(maxRange: loc.system.impulseMapDim.maxDim * 2);
-      final fit = (volley.efficiencyAt(dist) * 100).round();
-      blocks.add(TextBlock("Dist $dist | volley fit $fit%", GameColors.lightBlue, true));
-      blocks.addAll(combatText());
+      blocks.add(TextBlock("",GameColors.black,true));
     }
     if (!tactical) {
       if (ship.nav.effectiveNewt) {
@@ -82,63 +78,6 @@ class ShipStatus extends ShipSubSystem {
     if (showScannedShip && !tactical && (nav.targetShip != null && nav.targetShip!.npc)) {
       blocks.add(const TextBlock("Scanning Ship: ", GameColors.orange, true));
       blocks.addAll(nav.targetShip!.status.display(fm,tactical: true));
-    }
-    return blocks;
-  }
-
-  List<TextBlock> combatText() {
-    final target = nav.targetShip;
-    if (target == null) return [];
-
-    final dist = ship.distance(l: target.loc);
-    final projDist = nav.projectedTargetDist;
-    final trend = nav.trendGlyph;
-    final profile = ship.volleyRangeProfile();
-
-    final inRange = profile.usableBand != null &&
-        dist >= profile.usableBand!.start &&
-        dist <= profile.usableBand!.end;
-    final projInRange = projDist != null && profile.usableBand != null &&
-        projDist >= profile.usableBand!.start &&
-        projDist <= profile.usableBand!.end;
-
-    final rangeColor = inRange
-        ? (projInRange ? GameColors.green : GameColors.orange)
-        : (projInRange ? GameColors.lightBlue : GameColors.red);
-
-    final blocks = <TextBlock>[];
-
-    // Header line
-    blocks.add(TextBlock(
-        "TARGET: ${target.name} "
-            "dist:${dist.toStringAsFixed(1)}$trend"
-            "->${projDist?.toStringAsFixed(1) ?? '?'} ",
-        rangeColor, true));
-    //blocks.add(TextBlock(profile.asciiBars(), GameColors.cyan, true));
-
-    // Per-weapon lines
-    for (final w in systemControl.availableWeapons) {
-      final maxCooldown = w.fireRate;
-      final filled = maxCooldown > 0
-          ? ((1 - w.cooldown / maxCooldown) * 10).round().clamp(0, 10)
-          : 10;
-      final empty = 10 - filled;
-
-      final wInRange = w.effectiveAccuracy(dist) > .5;
-      final wProjInRange = projDist != null &&
-          w.effectiveAccuracy(projDist) > 0;
-
-      final col = w.cooldown == 0
-          ? (wInRange ? GameColors.green : GameColors.orange)
-          : (wProjInRange ? GameColors.lightBlue : GameColors.gray);
-
-      final readyStr = w.cooldown == 0 ? "READY" : "${w.cooldown}t";
-
-      blocks.add(TextBlock(
-          "${w.name.substring(0, min(10, w.name.length)).padRight(10)} "
-              "${'█' * filled}${'░' * empty} "
-              "$readyStr ",
-          col, true));
     }
     return blocks;
   }

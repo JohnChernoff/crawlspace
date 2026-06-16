@@ -47,9 +47,15 @@ class ImpulseSlug extends SpaceObject<ImpulseLocation> {
     pos = nextPos;
     if (!_hitCheck(fm)) {
       if (!pos.coord.inBounds(loc.dim)) {
-        fm.galaxy.slugs.remove(this);
+        fm.galaxy.slugs.remove(this); return;
       } else {
-        if (pos.coord != currPos.coord) fm.galaxy.slugs.move(this, ImpulseLocation(loc.system, loc.sectorCoord, pos.coord));
+        if (pos.coord != currPos.coord) {
+          if (++moveCount > dmgType.damageRange.maxRange) {
+            fm.galaxy.slugs.remove(this); return;
+          } else {
+            fm.galaxy.slugs.move(this, ImpulseLocation(loc.system, loc.sectorCoord, pos.coord));
+          }
+        }
         if (!_hitCheck(fm)) {
           if (loc.cell.asteroid != null && fm.combatRnd.nextBool()) {
             fm.msg("Asteroid hit! (${dmgType}, ${projectedDamage})"); //TODO: reduce asteroid mass? mining?!
