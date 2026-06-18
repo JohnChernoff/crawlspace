@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:crawlspace_engine/ship/systems/xeno_can.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
 import '../../fugue_engine.dart';
 import '../../item.dart';
@@ -15,22 +16,22 @@ enum StockSystem {
   engBasicFedImp(ShipSystemType.engine,1,.9),
   engBasicFedSub(ShipSystemType.engine,1,.9),
   engBasicFedHyper(ShipSystemType.engine,1,.9),
-  engMovSub1(ShipSystemType.engine,3,.75, manufacturer: Corporation.rimbaud),
+  engMovSub1(ShipSystemType.engine,3,.75, manufacturer: Corporation.montak),
   engVorImp1(ShipSystemType.engine,5,.5, manufacturer: Corporation.nimrod),
-  engOrbBlock(ShipSystemType.engine,5,.5, manufacturer: Corporation.genCorp),
+  engOrbBlock(ShipSystemType.engine,5,.5, manufacturer: Corporation.umbrix),
 
   genBasicNuclear(ShipSystemType.power,1,.9),
   genZemlinsky(ShipSystemType.power,2,.75),
   genAojginx(ShipSystemType.power,4,.66, manufacturer: Corporation.smythe),
   genGjellorny(ShipSystemType.power,5,.5, manufacturer: Corporation.rimbaud),
-  genBellauxfz(ShipSystemType.power,7,.25),
+  genBellauxfz(ShipSystemType.power,7,.25, manufacturer: Corporation.lopez),
 
   shdBasicEnergon(ShipSystemType.shield,1,.9),
   shdMovEnergon(ShipSystemType.shield,2,.8),
-  shdCassat(ShipSystemType.shield,3,.5),
-  shdRemlok(ShipSystemType.shield,5,.33),
-  shdOrtegroq(ShipSystemType.shield,7,.25),
-  shdKevlop(ShipSystemType.shield,8,.1),
+  shdCassat(ShipSystemType.shield,3,.5, manufacturer: Corporation.rimbaud),
+  shdRemlok(ShipSystemType.shield,5,.33, manufacturer: Corporation.nimrod),
+  shdOrtegroq(ShipSystemType.shield,7,.25, manufacturer: Corporation.umbrix),
+  shdKevlop(ShipSystemType.shield,8,.1, manufacturer: Corporation.gregoriev),
 
   wepFedLaser1(ShipSystemType.weapon,1,.9),
   wepFedLaser2(ShipSystemType.weapon,2,.9),
@@ -54,7 +55,12 @@ enum StockSystem {
   senFed1(ShipSystemType.sensor,1,.9),
   senLael1(ShipSystemType.sensor,5,.5, manufacturer: Corporation.laventar),
 
-  adaGenMult(ShipSystemType.adapter,3,.8, manufacturer: Corporation.genCorp),
+  adaGenMult(ShipSystemType.adapter,3,.8),
+
+  xenoFed(ShipSystemType.xenocan,2,.5),
+  xenoVor(ShipSystemType.xenocan,5,.25, manufacturer: Corporation.umbrix),
+  xenoLael(ShipSystemType.xenocan,7,.1, manufacturer: Corporation.laventar),
+
   ;
 
   final ShipSystemType type;
@@ -77,6 +83,7 @@ enum StockSystem {
       ShipSystemType.launcher => Weapon.fromStock(this),
       ShipSystemType.ammo => Ammo.fromStock(this),
       ShipSystemType.sensor => Sensor.fromStock(this),
+      ShipSystemType.xenocan => XenoContainer.fromStock(this),
   // TODO: Handle this case.
     ShipSystemType.scrapper => throw UnimplementedError(),
   // TODO: Handle this case.

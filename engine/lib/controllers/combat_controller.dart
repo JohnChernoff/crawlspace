@@ -137,12 +137,13 @@ class CombatController extends FugueController {
     }
   }
 
-  void fire(Ship? ship, Galaxy g) { //FugueEngine.glog("${ship?.name} fires...");
+  void fire(Ship? ship, Galaxy g, {coolWait = true}) { //FugueEngine.glog("${ship?.name} fires...");
     if (ship != null) {
       Coord3D? target = ship.nav.targetShip?.loc.cell.coord ?? ship.nav.targetLoc?.cell.coord;
       if (target == null) {
         fm.msg("Error: no target", delay: msgDelay); return;
       }
+      int mincool = 999;
       final shipLoc = ship.loc;
       final cell = ship.loc.map[target];
       if (shipLoc is ImpulseLocation && cell is ImpulseCell) { //TODO: sector-ranged weapons?
@@ -159,6 +160,7 @@ class CombatController extends FugueController {
               }
               else {
                 fm.msg("${ship.name} fires weapon: ${result.weapon.name}", delay: msgDelay);
+                if (result.weapon.cooldown < mincool) mincool = result.weapon.cooldown;
                 final slug = ImpulseSlug(//ship.pilot.faction.color,
                     objColor: ship.npc ? GameColors.orange : GameColors.white,
                     projectedDamage: result.projectedDamage,
@@ -174,7 +176,7 @@ class CombatController extends FugueController {
               }
             }
           }
-          fm.pilotController.action(ship.pilot, ActionType.combat, actionAuts: 1); //or result.minCool?
+          fm.pilotController.action(ship.pilot, ActionType.combat, actionAuts: coolWait && mincool < 999 ? mincool : 1);
         }
       } else {
         fm.msg("Wrong firing domain");

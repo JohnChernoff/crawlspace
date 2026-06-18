@@ -1,6 +1,7 @@
 import 'package:crawlspace_engine/item.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/stock_items/corps.dart';
+import 'package:crawlspace_engine/stock_items/species.dart';
 import '../../ship/ship.dart';
 import '../../ship/systems/shields.dart';
 import '../../ship/systems/ship_system.dart';
@@ -90,37 +91,42 @@ enum ShipType {
     ShipClassSlot(ShipSystemType.sensor, 1),
   ]),
   cruiser(.5, .6, [
+    ShipClassSlot(ShipSystemType.xenocan, 1),
     ShipClassSlot(ShipSystemType.engine, 3),
     ShipClassSlot(ShipSystemType.power, 2),
     ShipClassSlot(ShipSystemType.shield, 1),
     ShipClassSlot(ShipSystemType.weapon, 1),
     ShipClassSlot(ShipSystemType.launcher, 1),
     ShipClassSlot(ShipSystemType.emitter, 1),
-  ]),
+  ], military: true),
   destroyer(.66, .4, [
+    ShipClassSlot(ShipSystemType.xenocan, 1),
     ShipClassSlot(ShipSystemType.engine, 3),
     ShipClassSlot(ShipSystemType.power, 2),
     ShipClassSlot(ShipSystemType.shield, 1),
     ShipClassSlot(ShipSystemType.weapon, 2),
     ShipClassSlot(ShipSystemType.launcher, 1),
     ShipClassSlot(ShipSystemType.emitter, 1),
-  ]),
+  ], military: true),
   interceptor(.75, .3, [
+    ShipClassSlot(ShipSystemType.xenocan, 1),
     ShipClassSlot(ShipSystemType.engine, 4),  // speed is the point
     ShipClassSlot(ShipSystemType.power, 2),
     ShipClassSlot(ShipSystemType.shield, 1),
     ShipClassSlot(ShipSystemType.weapon, 2),
     ShipClassSlot(ShipSystemType.launcher, 2),
-  ]),
+  ], military: true),
   battleship(.9, .2, [
+    ShipClassSlot(ShipSystemType.xenocan, 1),
     ShipClassSlot(ShipSystemType.engine, 3),
     ShipClassSlot(ShipSystemType.power, 3),
     ShipClassSlot(ShipSystemType.shield, 2),
     ShipClassSlot(ShipSystemType.weapon, 3),
     ShipClassSlot(ShipSystemType.launcher, 3),
     ShipClassSlot(ShipSystemType.emitter, 2),
-  ]),
+  ], military: true),
   flagship(.99, .1, [
+    ShipClassSlot(ShipSystemType.xenocan, 1),
     ShipClassSlot(ShipSystemType.engine, 3),
     ShipClassSlot(ShipSystemType.power, 4),
     ShipClassSlot(ShipSystemType.shield, 3),
@@ -128,7 +134,7 @@ enum ShipType {
     ShipClassSlot(ShipSystemType.launcher, 4),
     ShipClassSlot(ShipSystemType.emitter, 3),
     ShipClassSlot(ShipSystemType.quarters, 2),
-  ]),
+  ], military: true),
   freighter(.1, .5, [
     ShipClassSlot(ShipSystemType.engine, 3),
     ShipClassSlot(ShipSystemType.power, 2),
@@ -154,18 +160,20 @@ enum ShipType {
     ShipClassSlot(ShipSystemType.shield, 1),
     ShipClassSlot(ShipSystemType.weapon, 1),
     ShipClassSlot(ShipSystemType.emitter, 4),  // the whole point
-  ]),
+  ], military: true),
   gunship(.8, .3, [
     ShipClassSlot(ShipSystemType.engine, 3),
     ShipClassSlot(ShipSystemType.power, 3),
     ShipClassSlot(ShipSystemType.shield, 1),
     ShipClassSlot(ShipSystemType.weapon, 4),
     ShipClassSlot(ShipSystemType.launcher, 3),
-  ]);
+  ], military: true);
 
   final double dangerLvl, freq;
   final List<ShipClassSlot> slots;
-  const ShipType(this.dangerLvl, this.freq, this.slots);
+  final bool military;
+  bool get combat => slots.any((s) => s.type.function == ShipSystemFunction.offensiveCombat);
+  const ShipType(this.dangerLvl, this.freq, this.slots, {this.military = false});
 }
 
 enum ShipClassType {
@@ -193,7 +201,10 @@ enum ShipClassType {
   hermes("Hermes",
       type: ShipType.skiff,
       mass: 1000, volume: 1500, maxXeno: 6, maxSpeed: 1, //0.35,  // commit
-      extras: [ShipClassSlot(ShipSystemType.launcher, 1)],
+      extras: [
+        ShipClassSlot(ShipSystemType.launcher, 1),
+        ShipClassSlot(ShipSystemType.xenocan, 1),
+      ],
       engineArch: EngineArch.rear,
       corpMap: {
         ShipSystemType.engine: Corporation.smythe,
@@ -223,7 +234,10 @@ enum ShipClassType {
   perseus("Perseus",
       type: ShipType.cruiser,
       mass: 1500, volume: 5500, maxXeno: 10, maxSpeed: 0.27,
-      extras: [ShipClassSlot(ShipSystemType.emitter, 1)],
+      extras: [
+        ShipClassSlot(ShipSystemType.emitter, 1),
+        ShipClassSlot(ShipSystemType.xenocan, 1),
+      ],
       corpMap: {
         ShipSystemType.engine:  Corporation.sinclair,
         ShipSystemType.power:   Corporation.sinclair,
@@ -409,6 +423,11 @@ enum ShipClassType {
         ShipSystemType.shield:  Corporation.gregoriev,
         ShipSystemType.weapon:  Corporation.smythe,
         ShipSystemType.emitter: Corporation.gregoriev,
+      },
+      speciesMap: {
+        StockSpecies.humanoid : .9,
+        StockSpecies.moveliean : .8,
+        StockSpecies.gersh: .5
       }),
 
   nullfield("Nullfield",
@@ -421,6 +440,9 @@ enum ShipClassType {
         ShipSystemType.shield:  Corporation.gregoriev,
         ShipSystemType.weapon:  Corporation.smythe,
         ShipSystemType.emitter: Corporation.gregoriev,
+      },
+      speciesMap: {
+        StockSpecies.vorlon : .9,
       }),
 
   // ── Gunships ──────────────────────────────────────────────────────────────
@@ -433,6 +455,10 @@ enum ShipClassType {
         ShipSystemType.shield:  Corporation.smythe,
         ShipSystemType.weapon:  Corporation.salazar,
         ShipSystemType.launcher: Corporation.bauchmann,
+      },
+      speciesMap: {
+        StockSpecies.krakkar : .9,
+        StockSpecies.humanoid : .5,
       }),
 
   apocalypse("Apocalypse",
@@ -448,15 +474,21 @@ enum ShipClassType {
         ShipSystemType.shield:  Corporation.bauchmann,
         ShipSystemType.weapon:  Corporation.salazar,
         ShipSystemType.launcher: Corporation.salazar,
-      });
+      },
+      speciesMap: {
+        StockSpecies.krakkar : .9,
+      }),
+  ;
 
   final String className;
+  final Map<StockSpecies, double> speciesMap;
   final Map<ShipSystemType, Corporation> corpMap;
   final List<ShipClassSlot> extras;
   final ShipType type;
   final double mass, volume, maxXeno, maxSpeed;
   final EngineArch engineArch;
   final double handling;
+  List<ShipClassSlot> get slots => [...extras, ...type.slots];
 
   const ShipClassType(this.className, {
     required this.type,
@@ -468,5 +500,13 @@ enum ShipClassType {
     this.handling = 1,
     this.extras = const [],
     this.corpMap = const {},
+    this.speciesMap = const {
+      StockSpecies.humanoid: 1,
+      StockSpecies.vorlon: 1,
+      StockSpecies.gersh: 1,
+      StockSpecies.orblix: 1,
+      StockSpecies.moveliean: 1,
+    }
   });
+
 }

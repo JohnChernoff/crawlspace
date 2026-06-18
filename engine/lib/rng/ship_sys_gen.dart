@@ -1,10 +1,12 @@
 import 'dart:math';
 import 'package:crawlspace_engine/rng/rng.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
-import 'package:crawlspace_engine/ship/systems/ship_sys.dart';
+import 'package:crawlspace_engine/ship/ship_sys.dart';
+import 'package:crawlspace_engine/ship/systems/xeno_can.dart';
 import 'package:crawlspace_engine/stock_items/ship/stock_ammo.dart';
 import 'package:crawlspace_engine/stock_items/ship/stock_engines.dart';
 import 'package:crawlspace_engine/stock_items/ship/stock_lauchers.dart';
+import 'package:crawlspace_engine/stock_items/ship/stock_pile.dart';
 import 'package:crawlspace_engine/stock_items/ship/stock_power.dart';
 import 'package:crawlspace_engine/stock_items/ship/stock_shields.dart';
 import 'package:crawlspace_engine/stock_items/ship/stock_weapons.dart';
@@ -92,5 +94,9 @@ class RndSystemInstaller {
       }
     }
     return sysCtl.getInstalledSystems(types: [ShipSystemType.launcher]).isNotEmpty;
+  }
+
+  bool installRndXeno(int techLvl, Random rnd, {maxAttempts = 10}) {
+    return sysCtl.installSystem(XenoContainer.fromStock(StockSystem.xenoFed)).result == InstallResult.success;
   }
 }

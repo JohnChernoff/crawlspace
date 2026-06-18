@@ -264,9 +264,8 @@ class PlanetsideController extends FugueController {
         final owner = Pilot(Rng.generateName(rnd: fm.itemRnd),locale, rnd: fm.itemRnd,  galaxy: fm.galaxy, isPirate: false);
         final n = fm.itemRnd.nextInt(5) + 1;
         for (int i=0;i<n;i++) {
-          final ship = ShipGenerator.generateShip(fm.player.system, fm.galaxy, fm.itemRnd, owner: owner);
+          final ship = ShipGenerator.generateRandomShip(fm.player.system, fm.galaxy, fm.itemRnd, owner: owner);
           fm.galaxy.ships.addDocked(ship,locale.env);
-          ShipGenerator.installRandomSystems(ship, fm.itemRnd);
         }
         locale.env.yard = ShipYard(locale.env, 1, fm.itemRnd,fm.galaxy);
       }

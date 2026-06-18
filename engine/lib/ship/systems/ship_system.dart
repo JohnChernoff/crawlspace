@@ -12,6 +12,7 @@ enum ShipSystemFunction {
   final sortOrder;
   const ShipSystemFunction(this.sortOrder);
 }
+
 enum ShipSystemType {
   weapon(3,ShipSystemFunction.offensiveCombat),
   launcher(3.5,ShipSystemFunction.offensiveCombat),
@@ -25,6 +26,7 @@ enum ShipSystemType {
   scrapper(.25,ShipSystemFunction.other),
   ammo(.16,ShipSystemFunction.offensiveCombat), //handled separately in system control
   adapter(.1,ShipSystemFunction.other),
+  xenocan(2,ShipSystemFunction.energy),
   unknown(0,ShipSystemFunction.other);
   final costMultiplier;
   final ShipSystemFunction function;

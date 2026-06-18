@@ -5,6 +5,7 @@ import 'package:crawlspace_engine/menu.dart';
 import 'package:crawlspace_engine/menu_factory.dart';
 import 'package:crawlspace_engine/rng/ship_gen.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';
+import 'package:crawlspace_engine/ship/systems/xeno_can.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/ship/systems/power.dart';
@@ -152,6 +153,7 @@ class FugueEngine {
         ammo: {Ammo.fromStock(StockSystem.ammoPlasmaBall) : 50},
         owner: player
     );
+    pShip.install(XenoContainer.fromStock(StockSystem.xenoFed));
     galaxy.ships.addFlying(pShip,SectorLocation(farSys, farSys.map.rndCoord(mapRnd)),player);
     player.system.visit(this);
 
@@ -183,16 +185,16 @@ class FugueEngine {
     numShips ??= (itemRnd.nextDouble() * (galaxy.civKernel.val(system) * maxShips)).floor();
     for (int i = 0; i < numShips; i++) { //print("Populating System: ${system.name}, ships: $numShips");
       final pilot = Pilot(Rng.generateName(rnd: itemRnd), locale, rnd: itemRnd, galaxy: galaxy, isPirate: false);
-      final ship = ShipGenerator.generateShip(system, galaxy, itemRnd, owner: pilot);
+      final ship = ShipGenerator.generateRandomShip(system, galaxy, itemRnd, owner: pilot);
       galaxy.ships.addFlying(ship,locale.loc,pilot);
-      ShipGenerator.installSpeciesSystems(ship, itemRnd); //ShipGenerator.installRandomSystems(ship, itemRnd);
+      //ShipGenerator.installSpeciesSystems(ship, itemRnd); //ShipGenerator.installRandomSystems(ship, itemRnd);
     }
     final numPirates = (itemRnd.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
     for (int i = 0; i < numPirates; i++) {
       final pilot = Pilot(Rng.generateName(rnd: itemRnd), locale, rnd: itemRnd, galaxy: galaxy, isPirate: true);
-      final pirateShip = ShipGenerator.generateShip(system, galaxy, itemRnd, owner: pilot);
+      final pirateShip = ShipGenerator.generateRandomShip(system, galaxy, itemRnd, owner: pilot);
       galaxy.ships.addFlying(pirateShip,locale.loc, pilot);
-      ShipGenerator.installSpeciesSystems(pirateShip, itemRnd); //ShipGenerator.installRandomSystems(pirateShip, itemRnd);
+      //ShipGenerator.installSpeciesSystems(pirateShip, itemRnd); //ShipGenerator.installRandomSystems(pirateShip, itemRnd);
     } //print("Adding pirates: $numPirates");
   }
 

@@ -5,7 +5,16 @@ import '../color.dart';
 import '../item.dart';
 import '../ship/systems/ship_system.dart';
 
-enum BrandSupport { native, trustedPartner, compatible, thirdParty, needsAdapter } //null: needsAdapter
+enum BrandSupport {
+  native(4),
+  trustedPartner(3),
+  compatible(2),
+  thirdParty(1),
+  needsAdapter(0);
+  final level;
+  const BrandSupport(this.level);
+}
+
 enum CorpTier {
   budget(.5),    // cheap, common
   standard(1),  // mid-range, widely available
@@ -229,6 +238,20 @@ enum Corporation implements Normalizable  {
           ShipSystemType.adapter: CorpTier.standard,
         },
         brandRelations: {}),
+
+    spelunkl(
+      color: GameColors.gray,
+      stockSpecies: StockSpecies.orblix,
+      spread: 22.5,
+      corpName: "Spelunkl Enterprises",
+      lore: "Capitalize the Cosmos",
+      products: {
+        ShipSystemType.scrapper: CorpTier.premium,
+        ShipSystemType.sensor: CorpTier.premium,
+        ShipSystemType.quarters: CorpTier.premium,
+        ShipSystemType.engine: CorpTier.standard,
+      },
+      brandRelations: {}),
     ;
 
   String get selectionName => corpName;

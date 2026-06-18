@@ -3,7 +3,7 @@ import 'package:collection/collection.dart';
 import 'package:crawlspace_engine/controllers/xeno_controller.dart';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_engine/ship/nav/nav.dart';
-import 'package:crawlspace_engine/ship/systems/ship_sys.dart';
+import 'package:crawlspace_engine/ship/ship_sys.dart';
 import '../galaxy/system.dart';
 import '../galaxy/geometry/impulse.dart';
 import '../galaxy/geometry/location.dart';
@@ -135,7 +135,11 @@ class PilotController extends FugueController {
                 final idealCells = ship.loc.map.values
                     .where((c) => (w.effectiveAccuracy(playLoc.distCell(c)) > .5)) //TODO: tweak acceptable range
                     .sorted((c1,c2) => ship.distance(c: c1.coord).compareTo(ship.distance(c: c2.coord)));
-                ship.nav.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd); //print(ship.currentPath);
+                if (idealCells.isNotEmpty) {
+                  ship.nav.currentPath = ship.loc.map.greedyPath(ship.loc.cell, idealCells.first, 3, fm.aiRnd); //print(ship.currentPath);
+                } else {
+                  glog("${ship.name} cannot find a reasonable square");
+                }
               } else {
                 if (playLoc != target.loc) { //print("${ship.name} cannot find ${fm.target?.name}"); //TODO: fallback strategy
                   fm.pilotController.action(pilot, ActionType.combat, actionAuts: 1);

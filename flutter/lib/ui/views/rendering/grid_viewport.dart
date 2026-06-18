@@ -2,6 +2,9 @@ import 'dart:math';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 
+const kViewportWidth = 12;
+const kViewportHeight = 12;
+
 class GridViewport {
   final int startX;
   final int startY;

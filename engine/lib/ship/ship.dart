@@ -6,7 +6,7 @@ import 'package:crawlspace_engine/galaxy/hazards.dart';
 import 'package:crawlspace_engine/galaxy/geometry/object.dart';
 import 'package:crawlspace_engine/rng/ship_sys_gen.dart';
 import 'package:crawlspace_engine/ship/ship_stat.dart';
-import 'package:crawlspace_engine/ship/systems/ship_sys.dart';
+import 'package:crawlspace_engine/ship/ship_sys.dart';
 import 'package:crawlspace_engine/ship/ship_tick.dart';
 import 'package:crawlspace_engine/ship/systems/engines.dart';
 import 'package:crawlspace_engine/ship/systems/sensors.dart';

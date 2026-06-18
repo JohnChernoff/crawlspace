@@ -2,7 +2,7 @@ import 'dart:ui';
 import 'package:crawlspace_engine/fugue_engine.dart';
 import 'package:crawlspace_flutter/main.dart';
 import 'package:crawlspace_flutter/ui/views/alpha_select.dart';
-import 'package:crawlspace_flutter/ui/views/rendering//ascii_grid_fast.dart';
+import 'package:crawlspace_flutter/ui/views/rendering/ascii_grid_fast.dart';
 import 'package:crawlspace_flutter/ui/views/rendering/minimap.dart';
 import 'package:flutter/material.dart';
 import '../inputs/menu_input.dart';
