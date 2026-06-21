@@ -37,7 +37,7 @@ class System extends Grid implements Nameable {
   @override
   List<GravBuoy> buoys(Galaxy g) => g.buoys.inSystem(this).toList();
 
-  bool starOne, blackHole;
+  bool beacon, starOne, blackHole; //TODO: remove StarOne
   TrafficGenHint trafficGenHint;
   bool scouted = false;
   bool visited = false;
@@ -49,7 +49,7 @@ class System extends Grid implements Nameable {
   late SystemMetadata metadata;
 
   System(this.name,Random rnd,
-      { super.hazMap, required this.map,this.blackHole = false,this.starOne = false,
+      { super.hazMap, required this.map,this.beacon = false, this.blackHole = false,this.starOne = false,
         this.trafficGenHint = TrafficGenHint.normal, this.connected = false})
       : anomaly = 0.7 + rnd.nextDouble() * 0.6;
 

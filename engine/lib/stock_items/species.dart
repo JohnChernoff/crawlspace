@@ -73,6 +73,14 @@ class SpeciesRegistry {
   }
 }
 
+enum PrecursorSystemName {
+  light("Astricor",true),
+  dark("Czyrnopolis",false);
+  final String name;
+  final bool boolVal;
+  const PrecursorSystemName(this.name,this.boolVal);
+}
+
 class Species {
   final String name;
   final String homeWorld;
@@ -97,6 +105,7 @@ class Species {
   final WeightedTrait<DamageType>? damageWeights; //null = all
   final WeightedTrait<AmmoDamageType>? ammoDamageWeights; //null = all
   final double rangedProb;
+  final ageRank;
 
   const Species(this.name,this.homeWorld,this.propagation,this.glyph, {
       required this.graphCol,
@@ -118,6 +127,7 @@ class Species {
       this.damageWeights,
       this.ammoDamageWeights,
       this.rangedProb = .5,
+      required this.ageRank,
   });
 
   StockSpecies? getStock() => StockSpecies.values.where((s) => s.name.toLowerCase() == name.toLowerCase()).firstOrNull;
@@ -189,6 +199,7 @@ class Faction {
 enum StockSpecies {
   humanoid(
       Species("Humanoid","Xaxle",.87,"H",graphCol: GameColors.white,
+        ageRank: 5,
         militancy: .5,
         xenoWeights: WeightedTrait({XenomancySchool.elemental: .9,},
             defWeight: .2, allValues: XenomancySchool.values),
@@ -197,7 +208,8 @@ enum StockSpecies {
       )
   ),
   vorlon(Species("Vorlon","Ubuntov",.33,"V",graphCol: GameColors.purple,
-        militancy: .7,
+      ageRank: 1,
+      militancy: .7,
         xenoWeights: WeightedTrait({XenomancySchool.dark: .9,},
           defWeight: .1, allValues: XenomancySchool.values),
       damageWeights: WeightedTrait({DamageType.etherial: .08},
@@ -205,6 +217,7 @@ enum StockSpecies {
       )
   ),
   gersh(Species("Greshplerglesnortz","Hew",.25, xenomancy: .1,"G",graphCol: GameColors.green,
+      ageRank: 6,
       militancy: .4,
       xenoWeights: WeightedTrait({XenomancySchool.gravimancy: .7,XenomancySchool.dark: .1},
           defWeight: .3, allValues: XenomancySchool.values),
@@ -213,6 +226,7 @@ enum StockSpecies {
       ),
   ),
   edualx(Species("Edualx","Zarm",.25, xenomancy: .4,"S",graphCol: GameColors.orange,
+      ageRank: 7,
       militancy: .2,
       xenoWeights: WeightedTrait({XenomancySchool.antimatter: .7},
           defWeight: .2, allValues: XenomancySchool.values),
@@ -221,6 +235,7 @@ enum StockSpecies {
       ),
   ),
   lael(Species("Lael","Grenz",.25, xenomancy: .4,"L",graphCol: GameColors.gold,
+      ageRank: 0,
       militancy: .1,
       xenoWeights: WeightedTrait({XenomancySchool.chronomancy: .7},
           defWeight: .2, allValues: XenomancySchool.values),
@@ -229,6 +244,7 @@ enum StockSpecies {
     ),
   ),
   orblix(Species("Orblix","Bollox",.25, xenomancy: .4,"O",graphCol: GameColors.tan,
+      ageRank: 4,
       militancy: .33,
       xenoWeights: WeightedTrait({XenomancySchool.gravimancy: .7},
           defWeight: .2, allValues: XenomancySchool.values),
@@ -237,6 +253,7 @@ enum StockSpecies {
     ),
   ),
   moveliean(Species("Moveliean","Movelia",.25, xenomancy: .4,"M",graphCol: GameColors.brown,
+      ageRank: 2,
       militancy: .66,
       xenoWeights: WeightedTrait({XenomancySchool.quantum: .7},
           defWeight: .2, allValues: XenomancySchool.values),
@@ -245,6 +262,7 @@ enum StockSpecies {
     ),
   ),
   krakkar(Species("Krakkar","Arkadyz",.25, xenomancy: .4,"K",graphCol: GameColors.coral,
+      ageRank: 3,
       militancy: .9,
       xenoWeights: WeightedTrait({XenomancySchool.astramancy: .7},
           defWeight: .2, allValues: XenomancySchool.values),

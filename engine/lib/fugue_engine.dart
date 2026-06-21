@@ -59,6 +59,14 @@ enum InputMode {
   const InputMode(this.showMenu);
 }
 
+/*
+Beacons emitting numbers
+Homeworlds -> grants 1/8th of beacon key
+currying favor with species -> kill pirates, find artefacts
+Beacon Door sequence (asteroid punishment)
+Star One endgame
+ */
+
 //should registered items register in their constructors?
 //cargo systems?  passengers, smuggling? cloaking systems?
 //hyperspace landing spot?   Graph not detecting player location?

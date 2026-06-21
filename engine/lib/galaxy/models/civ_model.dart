@@ -22,11 +22,48 @@ class CivModel extends GalaxySubMod {
   // Stored — the ground truth
   Map<Faction, Map<Species, double>> factionAttitudes = {};
   Map<Species, Map<Species, double>>? _cachedPoliticalMap;
+  Map<Species,PrecursorSystemName> PrecursorSystemNameMap = {};
 
+  // The one species secretly hostile to humans — its claimed/official
+  // attitude toward humans is friendlier than the truth. Null until
+  // generatePolitics() picks one. Exposed so quest/dialogue/codex code
+  // can flag this species' homeworld as the "secretly hostile" clue-giver.
+  Species? secretlyHostileSpecies;
+  Map<Species, Map<Species, double>>? _cachedOfficialPoliticalMap;
 
   Map<Species, Map<Species, double>> get politicalMap {
     return _cachedPoliticalMap ??= _computePoliticalMap();
   }
+
+  // The "public record" — what dialogue, codex entries, and diplomatic
+  // archives tell the player. Identical to politicalMap (the ground truth)
+  // for every species except secretlyHostileSpecies, whose attitude toward
+  // humans is deliberately overstated here. FooSham (via calcBeat) always
+  // reads politicalMap, never this — so play is the only way to catch the lie.
+  Map<Species, Map<Species, double>> get officialPoliticalMap {
+    return _cachedOfficialPoliticalMap ??= _computeOfficialPoliticalMap();
+  }
+
+  Map<Species, Map<Species, double>> _computeOfficialPoliticalMap() {
+    // Deep copy of the true map, then overstate one species' respect for humans.
+    final official = <Species, Map<Species, double>>{
+      for (final entry in politicalMap.entries) entry.key: Map.of(entry.value),
+    };
+
+    final liar = secretlyHostileSpecies;
+    final human = StockSpecies.humanoid.species;
+    if (liar != null && official.containsKey(liar)) {
+      official[liar]![human] = officialHumanRespectOverride;
+    }
+    return official;
+  }
+
+  void _invalidateOfficialPoliticalMap() => _cachedOfficialPoliticalMap = null;
+
+  // How friendly the liar species *claims* to be toward humans, regardless
+  // of their true (politicalMap) attitude. Tune to taste — high enough to
+  // read as "publicly cordial" even if the truth is openly hostile.
+  static const double officialHumanRespectOverride = 0.7;
 
   Map<Species, Map<Species, double>> _computePoliticalMap() {
     final map = <Species, Map<Species, double>>{};
@@ -54,9 +91,15 @@ class CivModel extends GalaxySubMod {
     return map;
   }
 
-  void _invalidatePoliticalMap() => _cachedPoliticalMap = null;
+  void _invalidatePoliticalMap() {
+    _cachedPoliticalMap = null;
+    _invalidateOfficialPoliticalMap();
+  }
 
   CivModel(super.galaxy) {
+    for (final s in StockSpecies.values) {
+      PrecursorSystemNameMap[s.species] = galaxy.rnd.nextBool() ? PrecursorSystemName.light : PrecursorSystemName.dark;
+    }
     homeworlds[StockSpecies.humanoid.species] = galaxy.fedHomeSystem;
     galaxy.spreadAssign(allSpecies, homeworlds, galaxy.systems);
     computeCivFields();
@@ -87,33 +130,33 @@ class CivModel extends GalaxySubMod {
   }
 
   GameColor systemSpeciesColor(System s) {
-      final mix = civIntensity[s];
-      if (mix == null || mix.isEmpty) return GameColors.black;
+    final mix = civIntensity[s];
+    if (mix == null || mix.isEmpty) return GameColors.black;
 
-      double r = 0, g = 0, b = 0;
-      for (final e in mix.entries) {
-        final col = e.key.graphCol;
-        final w = e.value;
-        r += col.r * w;
-        g += col.g * w;
-        b += col.b * w;
-      }
+    double r = 0, g = 0, b = 0;
+    for (final e in mix.entries) {
+      final col = e.key.graphCol;
+      final w = e.value;
+      r += col.r * w;
+      g += col.g * w;
+      b += col.b * w;
+    }
 
-      // diversity metric (Shannon-ish)
-      double diversity = 0;
-      for (final w in mix.values) {
-        if (w > 0) diversity -= w * log(w);
-      }
-      diversity = diversity.clamp(0, 2.0);
+    // diversity metric (Shannon-ish)
+    double diversity = 0;
+    for (final w in mix.values) {
+      if (w > 0) diversity -= w * log(w);
+    }
+    diversity = diversity.clamp(0, 2.0);
 
-      // boost saturation
-      final boost = 1 + diversity * 0.3;
+    // boost saturation
+    final boost = 1 + diversity * 0.3;
 
-      r = ((r - 128) * boost + 128).clamp(0, 255);
-      g = ((g - 128) * boost + 128).clamp(0, 255);
-      b = ((b - 128) * boost + 128).clamp(0, 255);
+    r = ((r - 128) * boost + 128).clamp(0, 255);
+    g = ((g - 128) * boost + 128).clamp(0, 255);
+    b = ((b - 128) * boost + 128).clamp(0, 255);
 
-      return GameColor.fromRgb(r.round(), g.round(), b.round());
+    return GameColor.fromRgb(r.round(), g.round(), b.round());
   }
 
   void generatePolitics(Random rnd, {PoliticsMode mode = PoliticsMode.flux}) {
@@ -176,6 +219,12 @@ class CivModel extends GalaxySubMod {
     _ensureMinimumRespect(rnd);
     rivalries = _generateRivalries(allSpecies, rnd);
     _applyRivalryConstraints(rivalries, rnd);
+
+    // Pick the one species whose public stance toward humans is a lie.
+    // Re-rolled each call so it can vary across playthroughs/seeds.
+    final candidates = allSpecies.where((s) => s != StockSpecies.humanoid.species).toList();
+    secretlyHostileSpecies = candidates.isEmpty ? null : candidates[rnd.nextInt(candidates.length)];
+    _invalidateOfficialPoliticalMap();
   }
 
 // Sets attitude for all factions of species a toward species b
@@ -303,10 +352,12 @@ class CivModel extends GalaxySubMod {
   }
 
   // Returns true if an anomaly exists between two species in a given system —
-  // i.e. the FooSham table doesn't match what the political map predicts
-  // Used to surface insurgency/intelligence opportunities to the player
+  // i.e. FooSham play (the ground truth) contradicts what the official
+  // political record claims. This is the player's only way to catch the
+  // secretlyHostileSpecies' lie: officialLocalInfluence reflects the public
+  // claim, observedBeatMap reflects what calcBeat (truth) actually produced.
   bool detectAnomaly(System system, Species a, Species b, Map<String,Set<String>> observedBeatMap) {
-    final expectedInfluence = localInfluence(system, a, b);
+    final expectedInfluence = officialLocalInfluence(system, a, b);
     final avatarA = speciesThrows.entries.firstWhereOrNull((e) => e.value.species == a)?.key;
     final avatarB = speciesThrows.entries.firstWhereOrNull((e) => e.value.species == b)?.key;
     if (avatarA == null || avatarB == null) return false;
@@ -315,7 +366,7 @@ class CivModel extends GalaxySubMod {
     final expectedABeatsB = expectedInfluence < 0.5;
     final observedABeatsB = observedBeatMap[avatarA]?.contains(avatarB) ?? false;
 
-    // Anomaly if observed beat direction contradicts political expectation
+    // Anomaly if observed beat direction contradicts the *official* claim.
     return expectedABeatsB != observedABeatsB;
   }
 
@@ -367,7 +418,18 @@ class CivModel extends GalaxySubMod {
   }
 
   double localInfluence(System system, Species a, Species b) {
-    final baseline = politicalMap[a]?[b] ?? 0.5;
+    return _blendedInfluence(politicalMap, system, a, b);
+  }
+
+  // Same local-dominance blending as localInfluence, but reads the public
+  // claim instead of the ground truth — used as the "expected" side of
+  // detectAnomaly so the lie is something FooSham play can actually surface.
+  double officialLocalInfluence(System system, Species a, Species b) {
+    return _blendedInfluence(officialPoliticalMap, system, a, b);
+  }
+
+  double _blendedInfluence(Map<Species, Map<Species, double>> map, System system, Species a, Species b) {
+    final baseline = map[a]?[b] ?? 0.5;
     final intensities = civIntensity[system];
     if (intensities == null) return baseline;
 
@@ -382,7 +444,7 @@ class CivModel extends GalaxySubMod {
         ? (intensities[dominant]! / maxIntensity).clamp(0.0, 1.0)
         : 0.0;
 
-    final localBias = politicalMap[dominant]?[dominant == a ? b : a] ?? 0.5;
+    final localBias = map[dominant]?[dominant == a ? b : a] ?? 0.5;
     return _lerp(baseline, localBias, dominantIntensity).clamp(0.0, 1.0);
   }
 

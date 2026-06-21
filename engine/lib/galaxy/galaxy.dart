@@ -1,11 +1,13 @@
 import 'dart:math';
 import 'package:collection/collection.dart';
+import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import 'package:crawlspace_engine/galaxy/models/corp_model.dart';
 import 'package:crawlspace_engine/galaxy/models/fed_model.dart';
 import 'package:crawlspace_engine/galaxy/models/flow_model.dart';
 import 'package:crawlspace_engine/galaxy/models/topology.dart';
 import 'package:crawlspace_engine/galaxy/models/trade_model.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
+import 'package:crawlspace_engine/galaxy/reg/beacon_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/item_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/pilot_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/plan_reg.dart';
@@ -16,8 +18,10 @@ import 'package:crawlspace_engine/galaxy/reg/star_reg.dart';
 import 'package:crawlspace_engine/rng/item_gen.dart';
 import 'package:crawlspace_engine/stock_items/species.dart';
 import '../rng/star_sys_gen.dart';
+import 'beacon.dart';
 import 'flow_field.dart';
 import '../fugue_engine.dart';
+import 'geometry/coord_3d.dart';
 import 'kernels/auth_kern.dart';
 import 'kernels/civ_kern.dart';
 import 'models/civ_model.dart';
@@ -92,8 +96,9 @@ class Galaxy {
   ItemRegistry get items => rm.items;
   PilotRegistry get pilots => rm.pilots;
   SlugReg get slugs => rm.slugs;
+  BeaconRegistry get beacons => rm.beacons;
   bool formed = false;
-
+  int maxBeacons = 255;
   // Static (computed at gen, recomputed on tickCentury)
   //late TradeKernelField supplyField;    // per-commodity supply gradient
   //late TradeKernelField demandField;    // per-commodity demand gradient
@@ -126,7 +131,7 @@ class Galaxy {
     heatMod = HeatModel(this);
     getRandomLinkableSystem(fedHomeSystem)?.starOne = true;
     getRandomLinkableSystem(fedHomeSystem)?.blackHole = true;
-
+    
     for (final s in systems) {
       s.metadata = SystemMetadataGenerator(s.systemMapDim,s.impulseMapDim,rnd: rnd).generate();
       s.map = s.createSystemMap(.02,.01,.001,this);
@@ -140,6 +145,13 @@ class Galaxy {
       }
       s.generateStars(this, rnd);
       s.generatePlanets(this, rnd);
+    }
+    
+    for (int i=0; i<maxBeacons; i++) {
+      final sysList = systems.where((s) => !s.beacon);
+      final system = sysList.elementAt(rnd.nextInt(sysList.length));
+      final loc = ImpulseLocation(system,Coord3D.random(system.systemMapDim, rnd),Coord3D.random(system.impulseMapDim, rnd));
+      beacons.register(Beacon(i),loc);
     }
 
     tradeMod = TradeModel(this);

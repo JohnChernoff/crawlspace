@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:crawlspace_engine/galaxy/geometry/coord_3d.dart';
 import 'package:crawlspace_engine/galaxy/geometry/grid.dart';
 import 'package:crawlspace_engine/galaxy/models/sub_model.dart';
+import 'package:crawlspace_engine/galaxy/reg/beacon_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/pilot_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/plan_reg.dart';
 import 'package:crawlspace_engine/galaxy/reg/ship_reg.dart';
@@ -20,6 +21,7 @@ class RegModel extends GalaxySubMod {
   StarRegistry stars = StarRegistry();
   BuoyRegistry buoys = BuoyRegistry();
   SlugReg slugs = SlugReg();
+  BeaconRegistry beacons = BeaconRegistry();
   RegModel(super.galaxy);
 }
 
