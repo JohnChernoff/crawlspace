@@ -99,6 +99,13 @@ class Galaxy {
   BeaconRegistry get beacons => rm.beacons;
   bool formed = false;
   int maxBeacons = 255;
+  int get magicBeaconNumber {
+    int n = 0; int e = 0;
+    for (final s in StockSpecies.values.sorted((a,b) => a.species.ageRank.compareTo(b.species.ageRank)).reversed) {
+      if (civMod.PrecursorSystemNameMap[s.species]?.boolVal == true) n += pow(1, e++).toInt();
+    }
+    return n;
+  }
   // Static (computed at gen, recomputed on tickCentury)
   //late TradeKernelField supplyField;    // per-commodity supply gradient
   //late TradeKernelField demandField;    // per-commodity demand gradient

@@ -7,6 +7,7 @@ import 'package:crawlspace_engine/galaxy/star.dart';
 import 'package:crawlspace_engine/galaxy/system.dart';
 import '../../controllers/scanner_controller.dart';
 import '../../stock_items/species.dart';
+import '../beacon.dart';
 import 'grid.dart';
 import '../hazards.dart';
 import 'impulse.dart';
@@ -37,6 +38,8 @@ class SectorCell extends GridCell {
   int numStars(Galaxy g) => stars(g).length;
   bool hasStars(Galaxy g) => numStars(g) > 0;
   bool hasGate(Galaxy g) => stars(g).any((s) => s.jumpgate);
+  Beacon? getBeacon(Galaxy g) => g.beacons.inSector(loc).singleOrNull;
+  bool hasBeacon(Galaxy g) => getBeacon(g) != null;
 
   bool starOne, blackHole;
   int impulseSeed;
@@ -99,6 +102,7 @@ class SectorCell extends GridCell {
     if (hasBuoy) return false;
     if (starOne || blackHole) return false;
     if (hazLevel > 0) return false;
+    if (hasBeacon(g)) return false;
     return true;
   }
 
@@ -118,6 +122,11 @@ class SectorCell extends GridCell {
       final comma = i++ > 1 ? "," : "";
       sb.write("$comma${buoy.name}");
     }
+    final beacon = g.beacons.inSector(loc).singleOrNull;
+    if (beacon != null) {
+      final comma = i++ > 1 ? "," : "";
+      sb.write("${comma}Beacon: ${beacon.number}");
+    }
     return sb.toString();
   }
 
@@ -133,6 +142,7 @@ class SectorCell extends GridCell {
     if (mode.scaningRoids && hasHaz(Hazard.roid)) return true;
     if (mode.scaningStarOne && starOne) return true;
     if (mode.scaningBlackhole && blackHole) return true;
+    if (mode.scaningBeacons && hasBeacon(g)) return true;
     return false;
   }
 

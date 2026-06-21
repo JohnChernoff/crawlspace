@@ -46,6 +46,7 @@ enum CellEnum {
   blackHole("-","img/tiles/blackHole.png",true),
   playShip("@","img/tiles/playship.png",false),
   ship("X","img/tiles/x.png",false),
+  beacon("B","img/tiles/beacon.png",true),
   star("✦","img/tiles/star.png",false),
   planet("O","img/tiles/plan.png",false),
   loot("\$","img/tiles/loot.png",false),
@@ -69,6 +70,7 @@ enum CellEnum {
   final bool hazard;
   const CellEnum(this.glyph,this.imgPath,this.hazard);
 }
+
 //U+25AB — White Small Square
 class CellRenderer {
   FugueEngine fm;
@@ -113,9 +115,11 @@ class CellRenderer {
       if (cell.hasStars(fm.galaxy)) sprites.add(CellSprite(CellEnum.star));
       if (cell.hasBuoy) sprites.add(CellSprite(CellEnum.buoy));
       if (cell.blackHole) sprites.add(CellSprite(CellEnum.blackHole));
+      if (cell.hasBeacon(fm.galaxy)) sprites.add(CellSprite(CellEnum.beacon));
     }
 
     if (cell is ImpulseCell) {
+      if (cell.hasBeacon(fm.galaxy)) sprites.add(CellSprite(CellEnum.beacon));
       if (cell.hasPlanet(fm.galaxy)) sprites.add(CellSprite(CellEnum.planet));
       if (cell.hasStar(fm.galaxy)) sprites.add(CellSprite(CellEnum.star));
       if (cell.asteroid != null) sprites.add(CellSprite(CellEnum.roid));

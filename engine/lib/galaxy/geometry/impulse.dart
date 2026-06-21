@@ -6,6 +6,7 @@ import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/galaxy/geometry/orbital.dart';
 import 'package:crawlspace_engine/galaxy/geometry/sector.dart';
 import '../../controllers/scanner_controller.dart';
+import '../beacon.dart';
 import '../planet.dart';
 import '../star.dart';
 import 'grid.dart';
@@ -31,6 +32,8 @@ class ImpulseCell extends GridCell {
   bool hasPlanet(Galaxy g) => getPlanet(g) != null;
   Star? getStar(Galaxy g) => g.stars.singleAtImpulse(loc);
   bool hasStar(Galaxy g) => getStar(g) != null;
+  Beacon? getBeacon(Galaxy g) => g.beacons.singleAtImpulse(loc);
+  bool hasBeacon(Galaxy g) => getBeacon(g) != null;
 
   Set<ImpulseSlug> slugs(Galaxy g) => g.slugs.inImpulse(loc);
 
@@ -74,6 +77,7 @@ class ImpulseCell extends GridCell {
     if (mode.scaningRoids && asteroid != null) return true;
     if (mode.scaningItems && g.items.byLoc(loc).isNotEmpty) return true;
     if (mode.scaningSlugs && slugs(g).isNotEmpty) return true;
+    if (mode.scaningBeacons && hasBeacon(g)) return true;
     return false;
   }
 
@@ -87,6 +91,7 @@ class ImpulseCell extends GridCell {
     if (g.items.byLoc(loc).isNotEmpty) return false;
     if (asteroid != null) return false;
     if (slugs(g).isNotEmpty) return false;
+    if (hasBeacon(g)) return false;
     return true;
   }
 
@@ -97,6 +102,8 @@ class ImpulseCell extends GridCell {
     if (planet != null) sb.write(verbose ? planet.shortString() : planet.name);
     Star? star = getStar(g);
     if (star != null) sb.write(verbose ? star.stellarClass : star.name);
+    final beacon = g.beacons.singleAtImpulse(loc);
+    if (beacon != null) sb.write("Beacon: ${beacon.number}");
     for (final slug in slugs(g)) sb.write("$slug ");
     return sb.toString();
   }

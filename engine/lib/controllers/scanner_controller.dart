@@ -11,6 +11,7 @@ import 'fugue_controller.dart';
 enum ScannerMode {
   all(GameColors.white,true),
   contacts(GameColors.cyan,true),
+  beacons(GameColors.cyan,true),
   items(GameColors.gold,true),
   ships(GameColors.green,false),
   planets(GameColors.blue,false),
@@ -26,6 +27,7 @@ enum ScannerMode {
   final GameColor color;
   final bool accessable;
   const ScannerMode(this.color, this.accessable);
+  bool get scaningBeacons => this == ScannerMode.ships || this == ScannerMode.contacts;
   bool get scaningShips => this == ScannerMode.ships || this == ScannerMode.contacts;
   bool get scaningPlanets => this == ScannerMode.planets || this == ScannerMode.contacts;
   bool get scaningStars => this == ScannerMode.stars || this == ScannerMode.contacts;
