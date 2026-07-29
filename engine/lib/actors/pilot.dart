@@ -85,8 +85,7 @@ class Pilot {
   void newTurn() { //print("au: $ticksSinceLastAction");
     ticksSinceLastAction = 0;
   }
-
-
+  
   Pilot(this.name,this._locale,{Random? rnd, Galaxy? galaxy, Faction? f, this.hp = 32, isPirate = false}) {
     //locale = AtEnvironment.fromSystem(sector);
     if (this is Player) { //FactionList.values.forEach((f) => print(f.factionName)); print(FactionList.values);
@@ -107,6 +106,9 @@ class Pilot {
     }
     for (final a in AttribType.values) attributes[a] = .5;
     for (final skill in SkillType.values) skills[skill] = .25;
+    for (final s in StockSpecies.values) {
+      reputation[s.species] = galaxy?.civMod.officialPoliticalMap[s.species]?[faction.species] ?? .5;
+    }
   }
 
   bool setHostilityToPlayer(FugueEngine fm, {bool? hostility, reset = false}) {

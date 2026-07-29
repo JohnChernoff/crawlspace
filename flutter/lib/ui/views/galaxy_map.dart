@@ -31,7 +31,8 @@ enum GalaxyMapLegend {
 }
 
 class GalaxyMap extends StatefulWidget {
-  final FugueEngine fugueModel;
+  final FugueModel fugueModel;
+  FugueEngine get fm => fugueModel.engine;
   const GalaxyMap(this.fugueModel,{super.key});
 
   @override
@@ -39,7 +40,7 @@ class GalaxyMap extends StatefulWidget {
 }
 
 class GalaxyMapState extends State<GalaxyMap> {
-  GalaxyMapLegend legend = galaxyMapLegend; //initialize from main.dart
+  late GalaxyMapLegend legend = widget.fugueModel.galaxyMapLegend; //initialize from main.dart
   late final FugueGraph fugueGraph;
   late final ForceDirectedGraphController<System> _controller;
   late final FocusNode _focusNode; // Add this
@@ -49,7 +50,7 @@ class GalaxyMapState extends State<GalaxyMap> {
   void initState() {//print("InitState for Galaxy View");
     super.initState();
     _focusNode = FocusNode(); // Initialize it here
-    fugueGraph = FugueGraph(widget.fugueModel.galaxy);
+    fugueGraph = FugueGraph(widget.fm.galaxy);
     _controller = ForceDirectedGraphController(graph: fugueGraph.graph, minScale: .001, maxScale: 5);
     _controller.scale = .1;
     _rebuildCache();
@@ -103,14 +104,14 @@ class GalaxyMapState extends State<GalaxyMap> {
       fugueOptions.getBool(FugueOption.fancyGraph)
           ? fancyNode(sys)
           : systemShape(sys,
-          hw: widget.fugueModel.galaxy.getHomeworldSpecies(sys),
-          hq: widget.fugueModel.galaxy.corpMod.getHQ(sys)
+          hw: widget.fm.galaxy.getHomeworldSpecies(sys),
+          hq: widget.fm.galaxy.corpMod.getHQ(sys)
       ),
       edgesBuilder: (context, a, b, distance) {
         return Container(
           width: distance,
           height: 8,
-          color: a == widget.fugueModel.player.system || b == widget.fugueModel.player.system
+          color: a == widget.fm.player.system || b == widget.fm.player.system
               ? Colors.white
               : avgColor([systemColor(a), systemColor(b)]),
         );
@@ -123,7 +124,7 @@ class GalaxyMapState extends State<GalaxyMap> {
   final Map<System, double> _cachedItemVals = {};
 
   void _rebuildCache() {
-    final g = widget.fugueModel.galaxy;
+    final g = widget.fm.galaxy;
 
     // surveillance
     final heatMap = g.heatMod.playerHeatMap;
@@ -151,7 +152,7 @@ class GalaxyMapState extends State<GalaxyMap> {
     if (_cachedType == nameable) return; // already cached
     _cachedType = nameable;
     _cachedItemVals.clear();
-    final g = widget.fugueModel.galaxy;
+    final g = widget.fm.galaxy;
     if (nameable is Normalizable) {
       _cachedItemVals.clear();
       _cachedItemVals.addAll(nameable.normalize(g));
@@ -179,14 +180,14 @@ class GalaxyMapState extends State<GalaxyMap> {
   }
 
   Widget systemShape(System sys, {Species? hw, Corporation? hq}) {
-    final borderCol = (widget.fugueModel.player.system == sys) ? Colors.yellowAccent : null;
+    final borderCol = (widget.fm.player.system == sys) ? Colors.yellowAccent : null;
     if (hw != null) {
       return hw == StockSpecies.humanoid.species
           ? diamondSystem(sys, borderCol: borderCol)
           : starSystem(sys, hex: false, borderCol: borderCol);
     }
     if (hq != null) return starSystem(sys, hex: true, borderCol: borderCol);
-    if (sys.planets(widget.fugueModel.galaxy).contains(widget.fugueModel.player.tradeTarget?.destination)) {
+    if (sys.planets(widget.fm.galaxy).contains(widget.fm.player.tradeTarget?.destination)) {
       return diamondSystem(sys, borderCol: borderCol);
     }
     return boxSystem(sys, borderCol: borderCol);
@@ -194,7 +195,7 @@ class GalaxyMapState extends State<GalaxyMap> {
 
   @override
   Widget build(BuildContext context) {
-    final selection = widget.fugueModel.menuController.selectedItem?.selectionName;
+    final selection = widget.fm.menuController.selectedItem?.selectionName;
     return Focus(
         focusNode: _focusNode,
         autofocus: true,
@@ -202,8 +203,8 @@ class GalaxyMapState extends State<GalaxyMap> {
           if (ev is! KeyDownEvent) return KeyEventResult.ignored;
           if (ev.logicalKey == LogicalKeyboardKey.escape) {
             setState(() {
-              currentView = ViewType.normal;
-              widget.fugueModel.update();
+              widget.fugueModel.currentView = ViewType.normal;
+              widget.fm.update();
             });
             return KeyEventResult.handled;
           } else if (ev.logicalKey == LogicalKeyboardKey.keyW) {
@@ -213,7 +214,7 @@ class GalaxyMapState extends State<GalaxyMap> {
             _cycleLegend(false);
             return KeyEventResult.handled;
           } else if (ev.logicalKey == LogicalKeyboardKey.space) {
-            widget.fugueModel.movementController.loiter(widget.fugueModel.playerShip);
+            widget.fm.movementController.loiter(widget.fm.playerShip);
             setState(() {});
           }
           return KeyEventResult.ignored;
@@ -249,7 +250,7 @@ class GalaxyMapState extends State<GalaxyMap> {
   }
 
   Widget fancyNode(System system) {
-    return switch (widget.fugueModel.agentReport(system)) {
+    return switch (widget.fm.agentReport(system)) {
       AgentSystemReport.none => boxSystem(system),
       AgentSystemReport.lastKnown => starSystem(system),
       AgentSystemReport.current => starSystem(system, hex: true),
@@ -299,11 +300,10 @@ class GalaxyMapState extends State<GalaxyMap> {
   }
 
   Color systemColor(System system) {
-    FugueEngine fm = widget.fugueModel;
-    Galaxy g = fm.galaxy;  //if (fm.player.system == system) return Colors.yellow;
-    if (fm.galaxy.fedHomeSystem == system) return Colors.white;
+    Galaxy g = widget.fm.galaxy;  //if (fm.player.system == system) return Colors.yellow;
+    if (widget.fm.galaxy.fedHomeSystem == system) return Colors.white;
     return switch(legend) {
-      GalaxyMapLegend.selection => graphColor(getVal(fm.menuController.selectedItem,system)),
+      GalaxyMapLegend.selection => graphColor(getVal(widget.fm.menuController.selectedItem,system)),
       GalaxyMapLegend.corp => Color(g.corpMod.dominantCorp(system)?.color.argb ?? 0),
       GalaxyMapLegend.star => Color(g.stars.mainStar(system).stellarClass.color.argb),
       GalaxyMapLegend.fed => graphColor(g.fedKernel.val(system), red: 128, green: 0), //blue
@@ -314,7 +314,7 @@ class GalaxyMapState extends State<GalaxyMap> {
           graphColor(_legendCache[GalaxyMapLegend.surveillance]?[system] ?? 0.0, green: 0, blue: 0),
       GalaxyMapLegend.rumors =>
           graphColor(_legendCache[GalaxyMapLegend.rumors]?[system] ?? 0.0, red: 128, blue: 0),
-      GalaxyMapLegend.history => switch(fm.agentReport(system)) {
+      GalaxyMapLegend.history => switch(widget.fm.agentReport(system)) {
         AgentSystemReport.none => system.visited ?  Colors.lightBlue : Colors.deepPurple,
         AgentSystemReport.lastKnown => Colors.orange,
         AgentSystemReport.current => Colors.red,

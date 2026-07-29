@@ -15,7 +15,8 @@ class StopIntent extends Intent {
 }
 
 class CruiseIntent extends Intent {
-  const CruiseIntent();
+  final int? auts;
+  const CruiseIntent(this.auts);
 }
 
 class ThrottleIntent extends Intent {
@@ -106,7 +107,10 @@ mixin ShipMovementMixin {
         const DirectionIntent(0, 0, 1),
 
         LogicalKeySet(LogicalKeyboardKey.clear):
-        const CruiseIntent(),
+        const CruiseIntent(null),
+
+        LogicalKeySet(LogicalKeyboardKey.clear, LogicalKeyboardKey.shift):
+        const CruiseIntent(10),
 
         LogicalKeySet(LogicalKeyboardKey.period):
         const DomainIntent(DomainDir.down),
@@ -155,8 +159,8 @@ mixin ShipMovementMixin {
       },
     ),
     CruiseIntent: CallbackAction<CruiseIntent>(
-        onInvoke: (_) { //fm.movementController.cruise(fm.playerShip);
-          fm.movementController.loiter(fm.playerShip);
+        onInvoke: (intent) {
+          fm.movementController.loiter(fm.playerShip, auts: intent.auts);
           return null;
         }
     ),

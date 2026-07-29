@@ -34,7 +34,8 @@ class OptionIntent extends Intent {
 }
 
 mixin GeneralInputMixin {
-  FugueEngine get fm;
+  FugueModel get fugueModel;
+  FugueEngine get fm => fugueModel.engine;
 
   Map<LogicalKeySet, Intent> getGeneralShortcuts(BuildContext ctx) => {
     LogicalKeySet(LogicalKeyboardKey.keyO, LogicalKeyboardKey.shift):
@@ -50,10 +51,15 @@ mixin GeneralInputMixin {
     const HelpIntent(),
 
     LogicalKeySet(LogicalKeyboardKey.keyM, LogicalKeyboardKey.shift):
-    ViewSelection(currentView == ViewType.galaxy ? ViewType.normal : ViewType.galaxy),
+    ViewSelection(fugueModel.currentView.main ? ViewType.galaxy : ViewType.normal),
+
+    LogicalKeySet(LogicalKeyboardKey.keyM):
+    ViewSelection(fugueModel.currentView.main
+        ? fugueModel.currentView == ViewType.normal ? ViewType.normalMap : ViewType.normal
+        : fugueModel.currentView),
 
     LogicalKeySet(LogicalKeyboardKey.space):
-    ViewSelection(currentView == ViewType.textOnly ? ViewType.normal : ViewType.textOnly),
+    ViewSelection(fugueModel.currentView == ViewType.textOnly ? ViewType.normal : ViewType.textOnly),
 
     LogicalKeySet(LogicalKeyboardKey.keyV):
     const VersionIntent(),
@@ -74,8 +80,10 @@ mixin GeneralInputMixin {
     ),
     ViewSelection: CallbackAction<ViewSelection>(
         onInvoke: (vt) { //print("Full Screen Toggle");
-          currentView = vt.viewType;
-          fm.update();
+          if (fugueModel.currentView != vt.viewType) {
+            fugueModel.currentView = vt.viewType;
+            fm.update();
+          }
           return null;
         }
     ),

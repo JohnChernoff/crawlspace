@@ -25,13 +25,13 @@ class AsciiViewState extends State<AsciiView> {
 
   @override
   Widget build(BuildContext context) { //print(widget.fugueModel.menuController.inputStack);
-    return currentView == ViewType.galaxy
-        ? GalaxyMap(widget.fm)
+    return widget.fugueModel.currentView == ViewType.galaxy
+        ? GalaxyMap(widget.fugueModel)
         : buildInputLayer(child: switch(widget.fm.inputMode) {
           InputMode.main || InputMode.target || InputMode.movementTarget =>  asciiView(),
           InputMode.menu => menuView(),
           InputMode.alphaSelect => AlphaSelect(widget.fm),
-        }, fugueModel: widget.fm);
+        }, fugueModel: widget.fugueModel);
   }
 
   Widget menuView() {
@@ -73,25 +73,47 @@ class AsciiViewState extends State<AsciiView> {
           ],
         )),
         Expanded(flex: 2, child: Column(children: [
-          Expanded(child: Row(children: [
-            Expanded(child: ListenableBuilder(
-                listenable: widget.fugueModel,
-                builder: (_,__) => TextBlockWidget(
-                    widget.fm.scannerController.scannerText()))),
-            Expanded(child: ListenableBuilder(
-                listenable: widget.fugueModel,
-                builder: (_,__) => TextBlockWidget(
-                    widget.fm.scannerController.shipStatusText()))),
-          ])),
-          Expanded(child: Stack(fit: StackFit.expand, children: [
-            Image(image: AssetImage("img/galaxy.jpg"), fit: BoxFit.fill),
-            Center(child: AspectRatio(aspectRatio: 1, child: AsciiGridFast(widget.fm))), // NOT wrapped in ListenableBuilder
-          ])),
+          Expanded(child: upperRightView()),
+          Expanded(child: bottomRightView()),
         ])),
       ],
     ));
   }
+
+  Widget upperRightView() {
+    return widget.fugueModel.currentView == ViewType.normalMap ? GalaxyMap(widget.fugueModel) : scannerRow();
+  }
+
+  Widget bottomRightView() {
+    return LayoutBuilder(builder: (ctx,bc) {
+      final stuffable = bc.maxWidth >= bc.maxHeight * 2;
+      if (widget.fugueModel.currentView == ViewType.normal || !stuffable) {
+        return Stack(fit: StackFit.expand, children: [
+          Image(image: AssetImage("img/galaxy.jpg"), fit: BoxFit.fill),
+          Center(child: AspectRatio(aspectRatio: 1, child: AsciiGridFast(widget.fm))), // NOT wrapped in ListenableBuilder
+        ]);
+      }
+      return scannerRow(bottom: true);
+    });
+  }
+
+  Widget scannerRow({bottom = false}) {
+    return Row(children: [
+      Expanded(child: ListenableBuilder(
+          listenable: widget.fugueModel,
+          builder: (_,__) => TextBlockWidget(
+              widget.fm.scannerController.scannerText()))),
+      if (bottom) AspectRatio(aspectRatio: 1, child: AsciiGridFast(widget.fm)),
+      Expanded(child: ListenableBuilder(
+          listenable: widget.fugueModel,
+          builder: (_,__) => TextBlockWidget(
+              widget.fm.scannerController.shipStatusText()))),
+    ]);
+  }
+
 }
+
+
 
 class TextBlockWidget extends StatelessWidget {
   final List<TextBlock> blocks;
@@ -131,9 +153,9 @@ class TextBlockWidget extends StatelessWidget {
   }
 }
 
-Widget buildInputLayer({required Widget child, required FugueEngine fugueModel}) =>
-  switch (fugueModel.inputMode) {
+Widget buildInputLayer({required Widget child, required FugueModel fugueModel}) =>
+  switch (fugueModel.engine.inputMode) {
      InputMode.main || InputMode.target || InputMode.movementTarget => ShipInput(child,fugueModel),
-     InputMode.menu => MenuInput(child,fugueModel),
-     InputMode.alphaSelect => SystemInput(child, fugueModel, raw: true)
+     InputMode.menu => MenuInput(child,fugueModel.engine),
+     InputMode.alphaSelect => SystemInput(child, fugueModel.engine, raw: true)
 };

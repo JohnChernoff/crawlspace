@@ -17,11 +17,8 @@ import 'options.dart';
 TODO: savefiles, autoscroll tweaks, mobile imgs
  */
 
-enum ViewType {normal,textOnly,galaxy}
-GalaxyMapLegend galaxyMapLegend = GalaxyMapLegend.history;
-ViewType currentView = ViewType.normal;
-
 final AudioPlayer fuguePlayer = AudioPlayer();
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -44,9 +41,19 @@ class FugueApp extends StatelessWidget {
 }
 
 enum ViewState {game,map,options}
+enum ViewType {
+  normal(true),
+  normalMap(true),
+  textOnly(false),
+  galaxy(false);
+  final bool main;
+  const ViewType(this.main);
+}
 
 class FugueModel extends ChangeNotifier {
   final FugueEngine engine;
+  GalaxyMapLegend galaxyMapLegend = GalaxyMapLegend.history;
+  ViewType currentView = ViewType.normal;
 
   FugueModel(this.engine);
 

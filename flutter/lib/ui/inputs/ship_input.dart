@@ -113,8 +113,9 @@ class DepthViewIntent extends Intent {
 class ShipInput extends StatelessWidget with GeneralInputMixin, ShipMovementMixin {
   final Widget child;
   @override
-  final FugueEngine fm;
-  const ShipInput(this.child, this.fm, {super.key});
+  final FugueModel fugueModel;
+  //FugueEngine get fm => fugueModel.engine;
+  const ShipInput(this.child, this.fugueModel, {super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -314,8 +315,8 @@ class ShipInput extends StatelessWidget with GeneralInputMixin, ShipMovementMixi
               };
              fm.menuController.getAlphaList(list).then((g) {
                 fm.menuController.selectedItem = g;
-                galaxyMapLegend = GalaxyMapLegend.selection;
-                currentView = ViewType.galaxy;
+                fugueModel.galaxyMapLegend = GalaxyMapLegend.selection;
+                fugueModel.currentView = ViewType.galaxy;
               });
               return null;
             }
