@@ -51,6 +51,7 @@ class MovementPreview {
   final int auts;
   final double energyRequired;
   final bool engineFail;
+  final bool energyFail;
   final double? emergencyDecel;
   final NavState newState;
   final BoundaryResult doinked;
@@ -61,6 +62,7 @@ class MovementPreview {
     this.auts = 1,
     this.energyRequired = 0,
     this.engineFail = false,
+    this.energyFail = false,
     this.emergencyDecel,
     this.doinked = BoundaryResult.none,
     required this.newState,
@@ -117,15 +119,13 @@ class MovementController extends FugueController {
     if (fm.inputMode == InputMode.main) {
       if (ship.nav.effectiveNewt) {
         if (ship.nav.autoPilotMode == AutoPilotMode.enhanced) {
-          fm.movementController.acquireTarget(vec).then((loc) {
+          acquireTarget(vec).then((loc) {
             if (loc != null) {
               ship.nav.autoPilot.heading = loc;
-              print(ship.systemControl.engine?.name);
-              print("Current Loc: ${ship.loc.cell.coord} , New Heading: ${loc.cell.coord}");
-              print("Mass: ${ship.currentMass}, ""Vol: ${ship.volume}, "
-                  "Thrust: ${ship.systemControl.engine?.thrust}, Throttle: ${ship.nav.throttle}");
-              // Don't call moveShip directly — set the heading and hand off to
-              // the turn engine.  tick() will call cruise()/moveShip when it runs.
+              glog("Engine: ${ship.systemControl.engine?.name}");
+              glog("Current Loc: ${ship.loc.cell.coord} , New Heading: ${loc.cell.coord}");
+              glog("Mass: ${ship.currentMass}, ""Vol: ${ship.volume}, Thrust: ${ship.systemControl.engine?.thrust}, Throttle: ${ship.nav.throttle}");
+              // Don't call moveShip directly — set the heading and hand off to the turn engine.  tick() will call cruise()/moveShip when it runs.
               loiter(ship);
             }
           });
@@ -133,11 +133,21 @@ class MovementController extends FugueController {
           manualThrust(ship, direction: vec);
         }
       } else {
-        fm.movementController.vectorShip(ship,vec);
+        final r = vectorShip(ship,vec);
+        if (r?.preview?.energyFail ?? false) {
+          final e = ship.ticker.tick(fm: null).energy;
+          if (e > 0) {
+            final auts = (r!.preview!.energyRequired / e).ceil();
+            if (auts < 100) {
+              fm.msg("Waiting $auts turns to replenish energy: ${ship.status.displayEnergy(r.preview!.energyRequired)}",level: DebugLevel.Info);
+              loiter(ship,auts: auts.ceil()); //handleMove(ship, vec);
+            }
+          }
+        }
       }
     }
     else if (fm.inputMode.targeting) {
-      fm.movementController.vectorTarget(vec);
+      vectorTarget(vec);
     }
   }
 
@@ -150,7 +160,7 @@ class MovementController extends FugueController {
         result = moveShip(ship, newLoc);
         //print("${ship.name} moved, $result, tick: ${fm.auTick}");
       } else {
-        result = fm.movementController.vectorShip(ship, Rng.rndUnitVector(fm.aiRnd));
+        result = vectorShip(ship, Rng.rndUnitVector(fm.aiRnd));
         if (result != null) {
           glog("Moving: ${ship.name}, Tick: ${fm.auTick}, Result: ${result.resultType.moving}",level: DebugLevel.Fine);
         } else {
@@ -166,7 +176,6 @@ class MovementController extends FugueController {
     return (loc != null && (!noHaz || loc.cell.hazLevel == 0)) ? moveShip(ship, loc) : null;
   }
 
-  //does not call pilotController.action because newtonian movement relies on ship.tick
   MoveResult moveShip(Ship ship, SpaceLocation desiredLocation, {
     ThrottleMode? throttleOverride, Vec3? preGravVel, bool drift = false}) {
     final ctx = MoveContext.fromShip(ship,
@@ -186,7 +195,7 @@ class MovementController extends FugueController {
           fm.pilotController.action(ship.pilot, ActionType.movement, actionAuts: report.preview?.auts ?? 1);
         }
       }
-    } else {
+    } else { //does not call pilotController.action because newtonian movement relies on ship.tick
       if (!ship.nav.moving) {
         ship.nav.autoStop = false; //print("Handbrake off");
       }
@@ -293,9 +302,10 @@ class MovementController extends FugueController {
         preview = MovementPreview(
             desiredCell: desiredLocation.cell,
             actualCell: ship.loc.cell,
-            energyRequired: 0,
+            energyRequired: preview.energyRequired,
             newState: NavState.fromShip(ship),
-            auts: 1
+            energyFail: true,
+            auts: 0
         );
       }
     } else { // NPC free movement — burn what we can, don't penalise.
