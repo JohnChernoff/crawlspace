@@ -110,7 +110,7 @@ final Map<StockSystem, EngineData> stockEngines = {
       mass: 280,
       baseCost: 100000,
       baseRepairCost: 8,
-      powerDraw: 240,
+      powerDraw: 120,
     ),
     domain: Domain.impulse,
     engineType: EngineType.antimatter,
@@ -130,7 +130,7 @@ final Map<StockSystem, EngineData> stockEngines = {
         mass: 280,
         baseCost: 100000,
         baseRepairCost: 8,
-        powerDraw: 240,
+        powerDraw: 120,
       ),
       domain: Domain.impulse,
       engineType: EngineType.antimatter,
@@ -139,5 +139,24 @@ final Map<StockSystem, EngineData> stockEngines = {
       thrust: 9999,   //
       xenoGen: .25,
       arch: EngineArch.rear
+  ),
+
+  StockSystem.engTanImp1: EngineData(
+      systemData: ShipSystemData.fromStock(
+        StockSystem.engTanImp1,
+        "Transverse Tacyon Accelerator",
+        about: "Quasi-Affordable Tanaka Engineering",
+        mass: 280,
+        baseCost: 100000,
+        baseRepairCost: 8,
+        powerDraw: 90,
+      ),
+      domain: Domain.impulse,
+      engineType: EngineType.antimatter,
+      efficiency: .85,
+      baseAutPerUnitTraversal: 7,
+      thrust: 5555,   //
+      xenoGen: .25,
+      arch: EngineArch.center
   ),
 };

@@ -19,6 +19,7 @@ enum StockSystem {
   engMovSub1(ShipSystemType.engine,3,.75, manufacturer: Corporation.montak),
   engVorImp1(ShipSystemType.engine,5,.5, manufacturer: Corporation.nimrod),
   engOrbBlock(ShipSystemType.engine,5,.5, manufacturer: Corporation.umbrix),
+  engTanImp1(ShipSystemType.engine,7,.25, manufacturer: Corporation.tanaka),
 
   genBasicNuclear(ShipSystemType.power,1,.9),
   genZemlinsky(ShipSystemType.power,2,.75),

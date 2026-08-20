@@ -14,7 +14,7 @@ class ShipStatus extends ShipSubSystem {
 
   String displayEnergy(double e, {digits = 2}) => (e / 100).toStringAsFixed(digits);
 
-  List<TextBlock> display(FugueEngine fm,{bool tactical = false, bool showScannedShip = false, nebula = false}) {
+  List<TextBlock> display(FugueEngine fm,{bool tactical = false, bool tacticalEnergy = true, bool showScannedShip = false, nebula = false}) {
     Galaxy g = fm.galaxy;
     final abbrev = !tactical && nav.targetShip != null;
     final hostile = ship.pilot.hostile;
@@ -34,7 +34,7 @@ class ShipStatus extends ShipSubSystem {
     blocks.add(TextBlock("(${ship.currentHullPercentage.round()}%)",GameColors.lightBlue,true));
     blocks.add(TextBlock("Shields: ${systemControl.currentShieldStrength.toStringAsFixed(2)} ",GameColors.green,false));
     blocks.add(TextBlock("(${systemControl.currentShieldPercentage.round()}%)",GameColors.lightBlue,true));
-    if (!tactical) {
+    if (tacticalEnergy || !tactical) {
       blocks.add(TextBlock("Energy: ${displayEnergy(ship.systemControl.getCurrentEnergy())} ",GameColors.green,false));
       blocks.add(TextBlock("(${ship.systemControl.currentEnergyPercentage.round()}%)",GameColors.lightBlue,true));
       blocks.add(TextBlock("Energy Rate: ${displayEnergy(ship.ticker.tick().energy)}, ",GameColors.green,false));

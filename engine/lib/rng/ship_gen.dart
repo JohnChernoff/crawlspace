@@ -19,7 +19,7 @@ import '../stock_items/ship/stock_ships.dart';
 
 class ShipGenerator {
 
-  static Ship generateRandomShip(System system, Galaxy galaxy, Random rnd, {required Pilot owner}) {
+  static Ship generateRandomShip(System system, Galaxy galaxy, Random rnd, {required Pilot owner, List<String> powerFilter = const []}) {
     final location = SectorLocation(system, system.map.rndCoord(rnd)); //galaxy.rndLoc(rnd);
     final dangerLvl = max(0,1 - (galaxy.topo.distance(location.system, galaxy.findHomeworld(owner.faction.species)) / galaxy.maxJumps));
     final techLvl = max(1,(dangerLvl * 10).round());
@@ -37,23 +37,30 @@ class ShipGenerator {
     Ship ship = Ship("HMS ${Rng.randomAlienName(rnd)}", shipClass: ShipClass.fromEnum(shipClassType), techLvl: techLvl, owner: owner);
 
     for (final slot in shipClassType.slots) {
-      final c = shipClassType.corpMap[slot.type] ?? Corporation.genCorp;
-      glog("Installing: ${slot.type.name} , $c, ${slot.num}",level: DebugLevel.Finer);
-      for (int i=0; i<slot.num; i++) {
-        Iterable<StockSystem> sysList = [];
-        for (int compLevel = 4; compLevel > 0 && sysList.isEmpty; compLevel--) {
-          sysList = StockSystem.values.where((s) => s.type == slot.type && c.getRelations(s.manufacturer).level >= compLevel)
-              .sorted((a,b) => (a.techLvl - techLvl).abs().compareTo((b.techLvl - techLvl).abs()));
-          if (slot.type == ShipSystemType.engine) {
-            sysList = sysList.where((s) => ship.systemControl.getEngine(stockEngines[s]!.domain) == null);
-          }
+      ship.rndSystemInstaller.installRndSystemSlots(slot, shipClassType, techLvl, rnd);
+    }
+
+    ship.toggleEngines(Domain.impulse);
+    int attempts = 0;
+    int t = techLvl;
+    var e = ship.ticker.tick().energy;
+    while (e < 0 && attempts < 9) {
+      t = min(t+1,10);
+      glog("${ship.name}: Warning: underpowered (${e}), attempting again ($attempts) at tech level: $t", level: DebugLevel.Warning);
+      final pg = ship.systemControl.getPower();
+      if (pg != null) {
+        final slot = ship.systemControl.getSlot(pg)!.slot;
+        ship.systemControl.uninstallSystem(pg, remove: true);
+        final report = ship.rndSystemInstaller.installRndSystemSlot(slot, 0, shipClassType, t, rnd);
+        if (report?.result != InstallResult.success) {
+          glog("${report?.assignment?.system?.name} : ${report?.result.name ?? '?'}", level: DebugLevel.Warning);
         }
-        if (sysList.isNotEmpty) {
-          final system = (sysList.firstWhere((_) => rnd.nextBool(), orElse: () => sysList.first)).createSystem();
-          glog("Installing System: $system",level: DebugLevel.Fine);
-          if (system != null) glog(ship.systemControl.installSystem(system).result.name, level: DebugLevel.Fine);
+        else {
+          glog("Installed: ${report?.assignment?.system?.name}",level: DebugLevel.Warning);
         }
       }
+      e = ship.ticker.tick().energy;
+      attempts++;
     }
     return ship;
   }

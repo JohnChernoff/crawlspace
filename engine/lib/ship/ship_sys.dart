@@ -9,7 +9,11 @@ import 'package:crawlspace_engine/ship/systems/power.dart';
 import 'package:crawlspace_engine/ship/systems/shields.dart';
 import 'package:crawlspace_engine/ship/systems/ship_system.dart';
 import 'package:crawlspace_engine/ship/systems/weapons.dart';
+import '../fugue_engine.dart';
 import '../galaxy/geometry/grid.dart';
+import '../stock_items/ship/stock_engines.dart';
+import '../stock_items/ship/stock_pile.dart';
+import '../stock_items/ship/stock_ships.dart';
 
 enum InstallResult {success,unsupported,duplicate,adaptable}
 
@@ -38,6 +42,9 @@ class ShipSystemControl {
   Iterable<({Ammo ammo, int count})> get ammo => ammoMap.entries.map((a) => (ammo: a.key, count: a.value));
   Iterable<ShipSystem> get uninstalledSystems => ship.inventory.all.whereType<ShipSystem>().where((s) => !isInstalled(s));
   Iterable<SlotAssignment> get vacantSlots => systemMap.where((sys) => sys.system == null);
+  SlotAssignment? getSlot(ShipSystem sys) {
+    return systemMap.where((s) => s.system == sys).singleOrNull;
+  }
 
   Engine? get engine => getEngine(ship.loc.domain);
   Engine? getEngine(Domain domain, {activeOnly = true}) {
@@ -154,7 +161,7 @@ class ShipSystemControl {
     return InstallReport(InstallResult.unsupported,null);
   }
 
-  bool uninstallSystem(ShipSystem system) {
+  bool uninstallSystem(ShipSystem system, {bool remove = false}) {
     final s = systemMap.firstWhereOrNull((s) => s.system == system);
     if (s != null) {
       s.system = null;
@@ -167,6 +174,7 @@ class ShipSystemControl {
           uninstallSystem(adapter);
         }
       }
+      if (remove) ship.inventory.remove(system);
       return true;
     } return false;
   }
