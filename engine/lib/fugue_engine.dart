@@ -186,6 +186,7 @@ class FugueEngine {
     msg("You are ${galaxy.maxJumps} jumps away from Mentos.");
     update();
     glog("Engine initialized, time: ${DateTime.now().millisecondsSinceEpoch - t}");
+    glog("\n***\n");
   }
 
   void populateSystem(System system, {int? numShips, int maxShips = 8}) {
@@ -195,14 +196,12 @@ class FugueEngine {
       final pilot = Pilot(Rng.generateName(rnd: itemRnd), locale, rnd: itemRnd, galaxy: galaxy, isPirate: false);
       final ship = ShipGenerator.generateRandomShip(system, galaxy, itemRnd, owner: pilot);
       galaxy.ships.addFlying(ship,locale.loc,pilot);
-      //ShipGenerator.installSpeciesSystems(ship, itemRnd); //ShipGenerator.installRandomSystems(ship, itemRnd);
     }
     final numPirates = (itemRnd.nextDouble() * ((1-galaxy.civKernel.val(system)) * (maxShips/2))).floor();
     for (int i = 0; i < numPirates; i++) {
       final pilot = Pilot(Rng.generateName(rnd: itemRnd), locale, rnd: itemRnd, galaxy: galaxy, isPirate: true);
       final pirateShip = ShipGenerator.generateRandomShip(system, galaxy, itemRnd, owner: pilot);
       galaxy.ships.addFlying(pirateShip,locale.loc, pilot);
-      //ShipGenerator.installSpeciesSystems(pirateShip, itemRnd); //ShipGenerator.installRandomSystems(pirateShip, itemRnd);
     } //print("Adding pirates: $numPirates");
   }
 

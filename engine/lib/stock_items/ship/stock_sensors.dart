@@ -8,7 +8,7 @@ final Map<StockSystem, SensorData> stockSensors = {
   StockSystem.senFed1: SensorData(
     systemData: ShipSystemData.fromStock(StockSystem.senFed1,"Mark I Fed System Sensor",
         about: "The original Federation system level sensor design - simple, straightforward, and generally nonexplosive.",
-        mass: 20, baseCost: 3000, baseRepairCost: 2, powerDraw: 3),
+        mass: 20, baseCost: 3000, baseRepairCost: 2, powerDraw: 15),
     sensorType: SensorType.photonic,
     scope: {Domain.system : 12},
     accuracy: {Domain.system : .5},
@@ -16,7 +16,7 @@ final Map<StockSystem, SensorData> stockSensors = {
   StockSystem.senLael1: SensorData(
     systemData: ShipSystemData.fromStock(StockSystem.senLael1,"Laventar System Sensor",
         about: "The original Laventar system sensor - still popular eons later after its initial run.",
-        mass: 25, baseCost: 30000, baseRepairCost: 5, powerDraw: 8),
+        mass: 25, baseCost: 30000, baseRepairCost: 5, powerDraw: 40),
     sensorType: SensorType.quantum,
     scope: {Domain.system: 27},
     accuracy: {Domain.system : .8},

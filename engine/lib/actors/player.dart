@@ -28,6 +28,8 @@ class Player extends Pilot {
   Player(super.name,super._locale,{super.galaxy}) {
     knownSpells["f"] = XenomancySpell.foldSpace;
     knownSpells["c"] = XenomancySpell.firecloud;
+    knownSpells["l"] = XenomancySpell.leap;
+    knownSpells["q"] = XenomancySpell.quarkblast;
   }
 
   void drink(double strength) {

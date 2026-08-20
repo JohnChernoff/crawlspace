@@ -83,6 +83,13 @@ abstract class ShipSystem extends Item {
     return sb.toString();
   }
 
+  String get summary {
+    StringBuffer sb = StringBuffer();
+    final off = active ? "" : "(off) ";
+    sb.write("$name, draw: ${powerDraw} $off");
+    return sb.toString();
+  }
+
   ShipSystem(super.name,{  //required this.type,
     required super.baseCost,
     required this.baseRepairCost,

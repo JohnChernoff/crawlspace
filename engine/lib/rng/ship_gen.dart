@@ -23,7 +23,7 @@ class ShipGenerator {
     final location = SectorLocation(system, system.map.rndCoord(rnd)); //galaxy.rndLoc(rnd);
     final dangerLvl = max(0,1 - (galaxy.topo.distance(location.system, galaxy.findHomeworld(owner.faction.species)) / galaxy.maxJumps));
     final techLvl = max(1,(dangerLvl * 10).round());
-    glog("Faction: ${owner.faction.name}, tech: $dangerLvl, $techLvl");
+    glog("Faction: ${owner.faction.name}, tech: $dangerLvl, $techLvl",level: DebugLevel.Fine);
     bool military = owner.faction.isPirate ||
         (owner.faction.isWarmonger && rnd.nextDouble() < owner.faction.militancy) ||
         rnd.nextDouble() < dangerLvl;
@@ -38,7 +38,7 @@ class ShipGenerator {
 
     for (final slot in shipClassType.slots) {
       final c = shipClassType.corpMap[slot.type] ?? Corporation.genCorp;
-      glog("Installing: ${slot.type.name} , $c, ${slot.num}");
+      glog("Installing: ${slot.type.name} , $c, ${slot.num}",level: DebugLevel.Finer);
       for (int i=0; i<slot.num; i++) {
         Iterable<StockSystem> sysList = [];
         for (int compLevel = 4; compLevel > 0 && sysList.isEmpty; compLevel--) {
@@ -50,12 +50,11 @@ class ShipGenerator {
         }
         if (sysList.isNotEmpty) {
           final system = (sysList.firstWhere((_) => rnd.nextBool(), orElse: () => sysList.first)).createSystem();
-          glog("Installing System: $system");
-          if (system != null) glog(ship.systemControl.installSystem(system).result.name);
+          glog("Installing System: $system",level: DebugLevel.Fine);
+          if (system != null) glog(ship.systemControl.installSystem(system).result.name, level: DebugLevel.Fine);
         }
       }
     }
-
     return ship;
   }
 

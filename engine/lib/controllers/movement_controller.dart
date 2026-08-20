@@ -135,7 +135,7 @@ class MovementController extends FugueController {
       } else {
         final r = vectorShip(ship,vec);
         if (r?.preview?.energyFail ?? false) {
-          final e = ship.ticker.tick(fm: null).energy;
+          final e = ship.ticker.tick().energy;
           if (e > 0) {
             final auts = (r!.preview!.energyRequired / e).ceil();
             if (auts < 100) {

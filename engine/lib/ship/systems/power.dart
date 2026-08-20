@@ -55,6 +55,7 @@ abstract class RechargableShipSystem extends ShipSystem {
   double get currentMaxEnergy => _maxEnergy * (1-damage);
   double get rawEnergy => _currentEnergy;
   double get currentEnergy => _currentEnergy * (1-damage);
+  double get currentRecharge => currentMaxEnergy * rechargeRate * (1-damage);
 }
 
 class PowerGenerator extends RechargableShipSystem {
@@ -63,6 +64,13 @@ class PowerGenerator extends RechargableShipSystem {
 
   @override
   ShipSystemType get type => ShipSystemType.power;
+
+  @override
+  String get summary {
+    StringBuffer sb = StringBuffer();
+    sb.write("$name, energy: $currentRecharge");
+    return sb.toString();
+  }
 
   PowerGenerator(super.name, {
     required super.maxEnergy,

@@ -5,7 +5,7 @@ import '../../ship/systems/weapons.dart';
 final Map<StockSystem, WeaponData> stockWeapons = {
   StockSystem.wepFedLaser1: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.shdBasicEnergon,"Fed Laser Mk 1",
-        mass: 10, baseCost: 100, baseRepairCost: 1.5, powerDraw: .5),
+        mass: 10, baseCost: 100, baseRepairCost: 1.5, powerDraw: 5),
     dmgProf: DamageProfile(dmgDice: 1, dmgDiceSides: 60, dmgBase: 1),
     dmgType: DamageType.photonic,
     energyRate: 2000,
@@ -15,7 +15,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.wepFedLaser2: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.wepFedLaser2,"Fed Laser Mk 2",
-        mass: 10, baseCost: 250, baseRepairCost: 1.5, powerDraw: .5),
+        mass: 10, baseCost: 250, baseRepairCost: 1.5, powerDraw: 5),
     dmgProf: DamageProfile(dmgDice: 4, dmgDiceSides: 20, dmgBase: 8),
     dmgType: DamageType.photonic,
     energyRate: 2000,
@@ -25,7 +25,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.wepFedLaser3: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.wepFedLaser3,"Fed Laser Mk 3",
-        mass: 10, baseCost: 500, baseRepairCost: 1.5, powerDraw: .5),
+        mass: 10, baseCost: 500, baseRepairCost: 1.5, powerDraw: 5),
     dmgProf: DamageProfile(dmgDice: 5, dmgDiceSides: 25, dmgBase: 12),
     dmgType: DamageType.photonic,
     energyRate: 2000,
@@ -35,7 +35,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.wepPlasmaRay: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.wepPlasmaRay,"Plasma Ray",
-        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .5),
+        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: 5),
     dmgProf: DamageProfile(dmgDice: 4, dmgDiceSides: 60, dmgBase: 16),
     dmgType: DamageType.plasma,
     energyRate: 3600,
@@ -45,7 +45,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.wepGravRifle: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.wepGravRifle,"Gravimetric Pulse Rifle",
-        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6),
+        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: 6),
     dmgProf: DamageProfile(dmgDice: 4, dmgDiceSides: 24, dmgBase: 16),
     dmgType: DamageType.gravitron,
     energyRate: 1200,
@@ -55,7 +55,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.wepVibraSlap: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.wepVibraSlap,"Cosmosonic Emitter",
-        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6),
+        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: 6),
     dmgProf: DamageProfile(dmgDice: 8, dmgDiceSides: 24, dmgBase: 32),
     dmgType: DamageType.sonic,
     energyRate: 4800,
@@ -65,7 +65,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.wepNeuRad: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.wepNeuRad,"Neutronic Radiator",
-        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: .6),
+        mass: 10, baseCost: 1000, baseRepairCost: 1.5, powerDraw: 6),
     dmgProf: DamageProfile(dmgDice: 8, dmgDiceSides: 32, dmgBase: 24),
     dmgType: DamageType.neutrino,
     energyRate: 6000,
@@ -75,7 +75,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.wepThermalLance: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.wepThermalLance,"Thermal Lance",
-        mass: 10, baseCost: 2000, baseRepairCost: 1.5, powerDraw: .9),
+        mass: 10, baseCost: 2000, baseRepairCost: 1.5, powerDraw: 9),
     dmgProf: DamageProfile(dmgDice: 4, dmgDiceSides: 160, dmgBase: 50),
     dmgType: DamageType.fire,
     energyRate: 8000,
@@ -85,7 +85,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.wepQuarkSplitter: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.wepQuarkSplitter,"Quark Splitter",
-        mass: 10, baseCost: 80000, baseRepairCost: 5, powerDraw: 1.2),
+        mass: 10, baseCost: 80000, baseRepairCost: 5, powerDraw: 12),
     dmgProf: DamageProfile(dmgDice: 3, dmgDiceSides: 512, dmgBase: 50),
     dmgType: DamageType.neutrino,
     energyRate: 48000,
@@ -95,7 +95,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.wepGammapult: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.wepGammapult,"Gammapult",
-        mass: 10, baseCost: 2000, baseRepairCost: 5, powerDraw: 1.7),
+        mass: 10, baseCost: 2000, baseRepairCost: 5, powerDraw: 17),
     dmgProf: DamageProfile(dmgDice: 4, dmgDiceSides: 255, dmgBase: 92),
     dmgType: DamageType.ion,
     energyRate: 10800,
@@ -105,7 +105,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.wepCosmogripher: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.wepCosmogripher,"Cosmogripher",
-        mass: 10, baseCost: 2000, baseRepairCost: 5, powerDraw: 2.25),
+        mass: 10, baseCost: 2000, baseRepairCost: 5, powerDraw: 22.5),
     dmgProf: DamageProfile(dmgDice: 5, dmgDiceSides: 255, dmgBase: 50),
     dmgType: DamageType.etherial,
     energyRate: 12800,
@@ -115,7 +115,7 @@ final Map<StockSystem, WeaponData> stockWeapons = {
 
   StockSystem.webSingularitron: WeaponData(
     systemData: ShipSystemData.fromStock(StockSystem.webSingularitron,"Singularitron",
-        mass: 10, baseCost: 200000, baseRepairCost: 5, powerDraw: 5),
+        mass: 10, baseCost: 200000, baseRepairCost: 5, powerDraw: 50),
     dmgProf: DamageProfile(dmgDice: 8, dmgDiceSides: 1280, dmgBase: 250),
     dmgType: DamageType.gravitron,
     energyRate: 18000,

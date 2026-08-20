@@ -13,15 +13,15 @@ class ShipTick extends ShipSubSystem {
     final dryRun = fm == null; //if (!dryRun) print("Tick... $dryRun");
     double totalRecharge = 0, totalBurn = 0;
     for (final rss in systemControl.rechargables) {
-      if (rss.currentEnergy < rss.currentMaxEnergy) { //print(rss.name); print(rss.rechargeRate);
-        double recharge = rss.currentMaxEnergy * rss.rechargeRate * (1-rss.damage);
-        if (!dryRun) {
-          if (rss.currentEnergy < 1) {
-            recharge = (fm.aiRnd.nextInt(rss.avgRecoveryTime) == 0) ? recharge : 0;
-          }
-          if (recharge > 0) rss.recharge(recharge);
+      double energy = rss.currentRecharge;
+      if (!dryRun) {
+        if (rss.currentEnergy < 1) {
+          energy = (fm.aiRnd.nextInt(rss.avgRecoveryTime) == 0) ? energy : 0;
         }
-        totalRecharge += recharge;
+        if ((rss.currentEnergy < rss.currentMaxEnergy) && energy > 0) rss.recharge(energy);
+      }
+      if (rss is PowerGenerator) { //print("PG: $energy");
+        totalRecharge += energy;
       }
     }
     //if (dryRun) print("Total recharge: ${totalRecharge}");

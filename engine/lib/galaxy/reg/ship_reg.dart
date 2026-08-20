@@ -35,11 +35,13 @@ class ShipRegistry {
     ship.state = FlightState(pilot, ShipNav(ship));
     _byPilot[ship.pilot] = ship;
     pilots.add(ship.pilot);
+    ship.toggleEngines(ship.loc.domain);
   }
 
   void addDocked(Ship ship, SpaceEnvironment env) {
     _add(ship,env.loc);
     ship.state = DockedState(env);
+    //ship.toggleEngines(ship.loc.domain);
   }
 
   void _remove(Ship ship) {

@@ -43,6 +43,9 @@ class ShipSystemControl {
   Engine? getEngine(Domain domain, {activeOnly = true}) {
     return getInstalledSystems().whereType<Engine>().where((s) => s.domain == domain.engineDomain && (!activeOnly || s.active)).firstOrNull;
   }
+  Iterable<Engine> getEngines({activeOnly = true}) {
+    return getInstalledSystems().whereType<Engine>().where((s) => (!activeOnly || s.active));
+  }
 
   Shield? getShield({activeOnly = true}) => getShields(activeOnly: activeOnly).firstOrNull;
   Iterable<Shield> getShields({activeOnly = true}) => getInstalledSystems().whereType<Shield>().where((s) => (!activeOnly || s.active));

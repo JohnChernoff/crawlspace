@@ -33,6 +33,7 @@ enum DamageType {
   gravitron(1, damageRange: _lightSpeedRange), //pulls ship towards/away when damage is dealt
   neutrino(1, damageRange: _lightSpeedRange), //ignores shields
   etherial(1, damageRange: _lightSpeedRange), //random damage
+  antimatter(.33,damageRange: _radioRange),
   all(1);
   final double speed;
   final RangeConfig damageRange;
@@ -151,6 +152,14 @@ class Weapon extends ShipSystem {
 
   @override
   ShipSystemType get type => usesAmmo ? ShipSystemType.launcher : ShipSystemType.weapon;
+
+  @override
+  String get summary {
+    StringBuffer sb = StringBuffer();
+    final off = active ? "" : "(off) ";
+    sb.write("$name, draw: ${powerDraw} $off, fireDraw: $energyRate");
+    return sb.toString();
+  }
 
   Weapon(super.name,{
     required this.dmgProf,

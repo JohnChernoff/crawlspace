@@ -131,6 +131,7 @@ class Ship extends Item {
   double get moveProbability => .1; //TODO: tweak
   late DockingState _state;
   DockingState get state => _state;
+
   void set state(DockingState s) {
     _state = s;
     pilotOrNull?.locale = AboardShip(this);
@@ -276,7 +277,9 @@ class Ship extends Item {
   }
 
   void toggleEngines(Domain newDom) {
-    systemControl.toggleSystem(systemControl.getEngine(loc.domain, activeOnly: false),on: false);
+    for (final s in systemControl.getEngines(activeOnly: false)) {
+      if (s.domain != newDom) systemControl.toggleSystem(s,on: false);
+    }
     systemControl.toggleSystem(systemControl.getEngine(newDom, activeOnly: false),on: true);
   }
 
@@ -487,6 +490,18 @@ class Ship extends Item {
   }
 
   bool activeEffect(ShipEffect effect) => effectMap.isActive(effect);
+
+  String summary({cr = "\n"}) {
+    StringBuffer sb = StringBuffer("Ship:$name - Type:${shipClass.type.name} - Class:${shipClass.name} $cr"); //,Pilot: ${pilot.name}$cr");
+    for (final systemSlot in systemControl.systemMap) {
+      final sys = systemSlot.system;
+      sb.write("${systemSlot.slot.name}: ${sys?.summary} ");
+      sb.write(cr);
+    }
+    sb.write("Energy per tick: ${ticker.tick().energy}");
+    sb.write(cr);
+    return sb.toString();
+  }
 
   @override
   String toString() {

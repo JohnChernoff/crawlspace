@@ -4,6 +4,7 @@ import 'package:crawlspace_engine/controllers/fugue_controller.dart';
 import 'package:crawlspace_engine/galaxy/geometry/location.dart';
 import 'package:crawlspace_engine/actors/pilot.dart';
 import 'package:crawlspace_engine/ship/ship.dart';
+import 'package:crawlspace_engine/ship/systems/weapons.dart';
 import 'package:crawlspace_engine/stock_items/xenomancy.dart';
 import '../color.dart';
 import '../effects.dart';
@@ -49,21 +50,30 @@ class XenoController extends FugueController {
             * (1 + spell.instability)).clamp(0.0, 0.5);
 
     final roll = fm.effectRnd.nextDouble();
+
+    print("Roll: $roll, Chance: $finalChance");
+    XenoResult? oops;
     if (roll > finalChance) {
+      print("Oops");
       final failureRoll = (roll - finalChance) / (1 - finalChance);
-      return failureRoll < catastropheChance
+      oops = failureRoll < catastropheChance
           ? XenoResult.castastrophe
           : XenoResult.castFail;
     }
-
     if (spell == XenomancySpell.foldSpace) {
-      foldSpace(power, ship);
+      foldSpace(power, ship, oops);
     } else if (spell == XenomancySpell.firecloud) {
-      acquireTarget().then((target) => fireCloud(power, ship, target));
-    } else {
+      acquireTarget().then((target) => fireCloud(power, ship, target, oops));
+    } else if (spell == XenomancySpell.leap) {
+      acquireTarget().then((target) => leap(power, ship, target, oops));
+    } else if (spell == XenomancySpell.quarkblast) {
+      acquireTarget().then((target) => quarkblast(power, ship, target, oops));
+    }
+    else {
       return XenoResult.unsupported;
     }
-    return XenoResult.success;
+    print(oops);
+    return oops ?? XenoResult.success;
   }
 
   double capacityFactor(double shipXeno, { k = 25.0}) => shipXeno / (shipXeno + k);
@@ -123,17 +133,44 @@ class XenoController extends FugueController {
     return targetCompleter!.future;
   }
 
-  void foldSpace(double power, Ship ship) {
-    final duration = ((XenomancySpell.foldSpace.timeout * 1.5) * power) + (XenomancySpell.foldSpace.timeout * .5);
-    ship.effectMap.addEffect(ShipEffect.folding, duration.round());
-  }
-
-  void fireCloud(double power, Ship ship, SpaceLocation location) {
-    //double cells = 8 * power;
-    for (final cell in location.map.getAdjacentCells(location.cell)) {
-      cell.effects.addEffect(CellEffect.fire, XenomancySpell.firecloud.timeout);
+  void foldSpace(double power, Ship ship, XenoResult? oops) {
+    if (oops == null) {
+      print("Folding space...");
+      final duration = ((XenomancySpell.foldSpace.timeout * 1.5) * power) + (XenomancySpell.foldSpace.timeout * .5);
+      ship.effectMap.addEffect(ShipEffect.folding, duration.round());
     }
   }
 
+  void fireCloud(double power, Ship ship, SpaceLocation location, XenoResult? oops) { //double cells = 8 * power;
+    if (oops == null) {
+      for (final cell in location.map.getAdjacentCells(location.cell)) {
+        cell.effects.addEffect(CellEffect.fire, XenomancySpell.firecloud.timeout);
+      }
+    }
+  }
+
+  void leap(double power, Ship ship, SpaceLocation location, XenoResult? oops) {
+    if (oops == null) {
+      if (power > fm.effectRnd.nextDouble()) {
+        ship.move(location, fm);
+      } else {
+        if (location is ImpulseLocation) {
+          ship.move(location.withCell(ship.loc.grid.map.rndCell(fm.effectRnd)), fm);
+        }
+      }
+    }
+  }
+
+  void quarkblast(double power, Ship ship, SpaceLocation location, XenoResult? oops) {
+    double dmg = (fm.effectRnd.nextDouble() < power) ? 1000 * power : 100 * power;
+    if (oops == null) {
+      fm.galaxy.ships.atLocation(location).forEach((s) =>
+        fm.combatController.damage(s, dmg.floor(), DamageType.antimatter)
+      );
+    }
+    else {
+      fm.combatController.damage(ship, dmg.floor(), DamageType.antimatter);
+    }
+  }
 
 }
