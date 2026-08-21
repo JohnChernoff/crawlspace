@@ -2,6 +2,8 @@ import 'stock_pile.dart';
 import '../../ship/systems/power.dart';
 import '../../ship/systems/ship_system.dart';
 
+//TODO: rechargeRate could be a flat number
+
 // Generator sizing rationale:
 // Basic fed impulse engine costs thrust/efficiency = 1000/0.5 = 2000 energy/move.
 // We want ~5 full-thrust moves before the tank runs dry (ignoring recharge),
@@ -17,7 +19,7 @@ final Map<StockSystem, PowerData> stockPPs = {
         mass: 75, baseCost: 250, baseRepairCost: 1, powerDraw: 0),
     powerType: PowerType.nuclear,
     maxEnergy: 10000,
-    rechargeRate: 0.02,
+    rechargeRate: 200,
     avgRecoveryTime: 10,
   ),
   StockSystem.genZemlinsky: PowerData(
@@ -26,7 +28,7 @@ final Map<StockSystem, PowerData> stockPPs = {
         mass: 75, baseCost: 500, baseRepairCost: 1, powerDraw: 0),
     powerType: PowerType.antimatter,
     maxEnergy: 15000,
-    rechargeRate: 0.02,
+    rechargeRate: 250,
     avgRecoveryTime: 10,
   ),
   StockSystem.genAojginx: PowerData(
@@ -35,7 +37,7 @@ final Map<StockSystem, PowerData> stockPPs = {
         mass: 75, baseCost: 1000, baseRepairCost: 1, powerDraw: 0),
     powerType: PowerType.dark,
     maxEnergy: 20000,
-    rechargeRate: 0.03,
+    rechargeRate: 400,
     avgRecoveryTime: 10,
   ),
   StockSystem.genBellauxfz: PowerData(
@@ -44,7 +46,7 @@ final Map<StockSystem, PowerData> stockPPs = {
         mass: 75, baseCost: 2500, baseRepairCost: 1, powerDraw: 0),
     powerType: PowerType.quantum,
     maxEnergy: 30000,
-    rechargeRate: 0.04,
+    rechargeRate: 500,
     avgRecoveryTime: 10,
   ),
   StockSystem.genGjellorny: PowerData(
@@ -53,7 +55,25 @@ final Map<StockSystem, PowerData> stockPPs = {
         mass: 75, baseCost: 5000, baseRepairCost: 1, powerDraw: 0),
     powerType: PowerType.astral,
     maxEnergy: 50000,
-    rechargeRate: 0.05,
+    rechargeRate: 500,
+    avgRecoveryTime: 10,
+  ),
+  StockSystem.genLithomax: PowerData(
+    systemData: ShipSystemData.fromStock(StockSystem.genLithomax,
+        "Lithomax Power Plant/Battery",
+        mass: 75, baseCost: 25000, baseRepairCost: 2, powerDraw: 0),
+    powerType: PowerType.quantum,
+    maxEnergy: 90000,
+    rechargeRate: 250,
+    avgRecoveryTime: 10,
+  ),
+  StockSystem.genMegaNuclear: PowerData(
+    systemData: ShipSystemData.fromStock(StockSystem.genMegaNuclear,
+        "Fed Mega Battery",
+        mass: 75, baseCost: 25000, baseRepairCost: 2, powerDraw: 0),
+    powerType: PowerType.quantum,
+    maxEnergy: 150000,
+    rechargeRate: 100,
     avgRecoveryTime: 10,
   ),
 };

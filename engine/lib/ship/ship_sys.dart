@@ -16,6 +16,7 @@ import '../stock_items/ship/stock_pile.dart';
 import '../stock_items/ship/stock_ships.dart';
 
 enum InstallResult {success,unsupported,duplicate,adaptable}
+enum BattleLevel {noPower,unarmed,anyWeapon,bestWeapon,allWeapons}
 
 class InstallReport {
   bool get installable => assignment != null;
@@ -88,6 +89,35 @@ class ShipSystemControl {
       ammoMap.containsKey(weapon.ammo) &&
           ammoMap[weapon.ammo]! >= weapon.clipRate;
 
+  BattleLevel get battleWorth {
+    BattleLevel level = BattleLevel.noPower;
+    final impEngine = getEngine(Domain.impulse);
+    final powerGen = getPower(activeOnly: false);
+    if (impEngine == null || powerGen == null) return BattleLevel.noPower;
+    double basePowerDraw = impEngine.powerDraw + (getCurrentShield?.powerDraw ?? 0);
+    final maxEnergy = getCurrentMaxEnergy();
+    double remainingEnergy = powerGen.currentRecharge - basePowerDraw;
+    if (remainingEnergy <= 0) return BattleLevel.noPower;
+    double totalWeaponEnergyRate = 0;
+    double totalWeaponPowerDraw = 0;
+    Weapon? bestWeapon = null;
+    for (final w in getWeapons(activeOnly: false)) {
+      if (remainingEnergy > w.powerDraw && maxEnergy > (w.energyRate + basePowerDraw + w.powerDraw)) level = BattleLevel.anyWeapon;
+      totalWeaponPowerDraw += w.powerDraw;
+      totalWeaponEnergyRate += w.energyRate;
+      if (bestWeapon == null) bestWeapon = w;
+      else if (w.energyRate > bestWeapon.energyRate) bestWeapon = w;
+    }
+    if (bestWeapon == null) return BattleLevel.unarmed;
+    else if (level == BattleLevel.noPower) return BattleLevel.noPower;
+    else if (remainingEnergy > totalWeaponPowerDraw && maxEnergy > (totalWeaponEnergyRate + totalWeaponPowerDraw + basePowerDraw)) {
+      return BattleLevel.allWeapons;
+    } else if (remainingEnergy > bestWeapon.powerDraw && maxEnergy > (bestWeapon.energyRate + bestWeapon.powerDraw + basePowerDraw)) {
+      return BattleLevel.bestWeapon;
+    }
+    return BattleLevel.anyWeapon;
+  }
+
   int fireAmmoRound(Weapon weapon) {
     final prevAmmo = ammoMap[weapon.ammo]!;
     final newAmmo = max(prevAmmo - weapon.clipRate,0);
@@ -147,7 +177,7 @@ class ShipSystemControl {
       for (final vs in vacantSlots) {
         if (vs.slot.systemType == system.type) {
           for (final adapter in adapters) {
-            if (adapter.adapting == null && adapter.supportList.containsValue(system.manufacturer)) {
+            if (adapter.adapting == null && adapter.supportList.containsKey(system.manufacturer)) {
               if (!dryRun) {
                 vs.system = adapter.adapting = system;
                 system.adapterPenalty = 1 - adapter.supportList[system.manufacturer]!;

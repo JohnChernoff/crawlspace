@@ -151,6 +151,44 @@ final Map<StockSystem, EngineData> stockEngines = {
         baseRepairCost: 8,
         powerDraw: 90,
       ),
+      domain: Domain.system,
+      engineType: EngineType.antimatter,
+      efficiency: .85,
+      baseAutPerUnitTraversal: 7,
+      thrust: 5555,   //
+      xenoGen: .25,
+      arch: EngineArch.center
+  ),
+
+  StockSystem.engTanSub1: EngineData(
+      systemData: ShipSystemData.fromStock(
+        StockSystem.engTanSub1,
+        "Transverse Tacyon Sublimator",
+        about: "Quasi-Affordable Tanaka Engineering",
+        mass: 280,
+        baseCost: 100000,
+        baseRepairCost: 8,
+        powerDraw: 90,
+      ),
+      domain: Domain.hyperspace,
+      engineType: EngineType.antimatter,
+      efficiency: .85,
+      baseAutPerUnitTraversal: 7,
+      thrust: 5555,   //
+      xenoGen: .25,
+      arch: EngineArch.center
+  ),
+
+  StockSystem.engTanHyper1: EngineData(
+      systemData: ShipSystemData.fromStock(
+        StockSystem.engTanHyper1,
+        "Transverse Tacyon Hyperaccelerator",
+        about: "Quasi-Affordable Tanaka Engineering",
+        mass: 280,
+        baseCost: 100000,
+        baseRepairCost: 8,
+        powerDraw: 90,
+      ),
       domain: Domain.impulse,
       engineType: EngineType.antimatter,
       efficiency: .85,

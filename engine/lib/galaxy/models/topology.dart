@@ -21,7 +21,7 @@ class GalaxyTopology extends GalaxySubMod {
   int distance(System a, System b) {
     final dist = distCache[a]?[b];
     if (dist == null) {
-      glog("Warning: cannot find distance cache for systems: ${a.name},${b.name}", error: true); //return distCache[a]![b]!;
+      glog("Warning: cannot find distance cache for systems: ${a.name},${b.name}", error: true);
       return 999999;
     } else return dist;
   }

@@ -146,6 +146,7 @@ class FugueEngine {
     itemRnd = Random(seed ^ 0xFEED);
     effectRnd = Random(seed ^ 0xBEAD);
     combatRnd = Random(seed ^ 0xABCDEF);
+    eventRnd = Random(seed ^ 0xABBA);
     final farSys = galaxy.farthestSystem(galaxy.fedHomeSystem);
 
     player = Player(playerName,AtEnvironment.fromSystem(SectorLocation(farSys,farSys.map.rndCoord(mapRnd))));

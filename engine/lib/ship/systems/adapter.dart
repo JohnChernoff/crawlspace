@@ -20,7 +20,7 @@ class Adapter extends ShipSystem {
   }
 
   @override
-  ShipSystemType get type => ShipSystemType.sensor;
+  ShipSystemType get type => ShipSystemType.adapter;
 
   Adapter(super.name, {
     required this.supportList,

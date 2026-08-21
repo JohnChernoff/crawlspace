@@ -14,7 +14,7 @@ enum PowerEgo {
 abstract class RechargableShipSystem extends ShipSystem {
   final double _maxEnergy;
   double _currentEnergy;
-  double rechargeRate; //% per aut
+  double rechargeRate; //charge per aut
   int avgRecoveryTime; //in auts
 
   RechargableShipSystem(super.name, {
@@ -55,7 +55,7 @@ abstract class RechargableShipSystem extends ShipSystem {
   double get currentMaxEnergy => _maxEnergy * (1-damage);
   double get rawEnergy => _currentEnergy;
   double get currentEnergy => _currentEnergy * (1-damage);
-  double get currentRecharge => currentMaxEnergy * rechargeRate * (1-damage);
+  double get currentRecharge => rechargeRate * (1-damage); //currentMaxEnergy *
 }
 
 class PowerGenerator extends RechargableShipSystem {
@@ -68,7 +68,7 @@ class PowerGenerator extends RechargableShipSystem {
   @override
   String get summary {
     StringBuffer sb = StringBuffer();
-    sb.write("$name, energy: $currentRecharge");
+    sb.write("$name, recharge: $currentRecharge, max: $currentMaxEnergy");
     return sb.toString();
   }
 

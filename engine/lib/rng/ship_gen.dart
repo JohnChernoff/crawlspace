@@ -44,9 +44,10 @@ class ShipGenerator {
     int attempts = 0;
     int t = techLvl;
     var e = ship.ticker.tick().energy;
-    while (e < 0 && attempts < 9) {
+    var bw = ship.systemControl.battleWorth;
+    while ((e < 0 || bw == BattleLevel.noPower) && attempts < 9) {
       t = min(t+1,10);
-      glog("${ship.name}: Warning: underpowered (${e}), attempting again ($attempts) at tech level: $t", level: DebugLevel.Warning);
+      glog("${ship.name}: Warning: underpowered ($e / $bw), attempting again ($attempts) at tech level: $t", level: DebugLevel.Warning);
       final pg = ship.systemControl.getPower();
       if (pg != null) {
         final slot = ship.systemControl.getSlot(pg)!.slot;
@@ -60,6 +61,7 @@ class ShipGenerator {
         }
       }
       e = ship.ticker.tick().energy;
+      bw = ship.systemControl.battleWorth;
       attempts++;
     }
     return ship;
